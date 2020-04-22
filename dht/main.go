@@ -1,7 +1,7 @@
 package main
 
 import (
-	test "github.com/ipfs/testground/plans/dht/test"
+	test "github.com/libp2p/test-plans/dht/test"
 	"github.com/testground/sdk-go/runtime"
 )
 

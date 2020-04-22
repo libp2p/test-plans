@@ -3,7 +3,7 @@ package test
 import (
 	"context"
 	"fmt"
-	"github.com/ipfs/testground/plans/dht/utils"
+	"github.com/libp2p/test-plans/dht/utils"
 	"time"
 
 	"golang.org/x/sync/errgroup"

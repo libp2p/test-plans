@@ -1,4 +1,4 @@
-module github.com/ipfs/testground/plans/dht
+module github.com/libp2p/test-plans/dht
 
 go 1.14
 
