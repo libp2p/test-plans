@@ -18,7 +18,7 @@
     count = 1020
     percentage = 0.0
   [groups.build]
-    Selectors = ["cypress"]
+    selectors = ["cypress"]
 
     [[groups.build.dependencies]]
       module = "github.com/libp2p/go-libp2p-kad-dht"
@@ -43,7 +43,7 @@
     count = 5
     percentage = 0.0
   [groups.build]
-    Selectors = ["cypress"]
+    selectors = ["cypress"]
 
     [[groups.build.dependencies]]
       module = "github.com/libp2p/go-libp2p-kad-dht"
@@ -69,7 +69,7 @@
     count = 15
     percentage = 0.0
   [groups.build]
-    Selectors = ["cypress"]
+    selectors = ["cypress"]
 
     [[groups.build.dependencies]]
       module = "github.com/libp2p/go-libp2p-kad-dht"
@@ -95,7 +95,7 @@
     count = 100
     percentage = 0.0
   [groups.build]
-    Selectors = ["cypress"]
+    selectors = ["cypress"]
 
     [[groups.build.dependencies]]
       module = "github.com/libp2p/go-libp2p-kad-dht"
@@ -121,7 +121,7 @@
     count = 25
     percentage = 0.0
   [groups.build]
-    Selectors = ["cypress"]
+    selectors = ["cypress"]
 
     [[groups.build.dependencies]]
       module = "github.com/libp2p/go-libp2p-kad-dht"
@@ -148,7 +148,7 @@
     count = 5
     percentage = 0.0
   [groups.build]
-    Selectors = ["cypress"]
+    selectors = ["cypress"]
 
     [[groups.build.dependencies]]
       module = "github.com/libp2p/go-libp2p-kad-dht"

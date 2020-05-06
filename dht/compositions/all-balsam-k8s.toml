@@ -18,7 +18,7 @@
     count = 5
     percentage = 0.0
   [groups.build]
-    Selectors = ["balsam"]
+    selectors = ["balsam"]
   [groups.run]
     artifact = "909427826938.dkr.ecr.us-east-1.amazonaws.com/testground-us-east-1-dht:018e66855db4"
     [groups.run.test_params]
@@ -34,7 +34,7 @@
     count = 15
     percentage = 0.0
   [groups.build]
-    Selectors = ["balsam"]
+    selectors = ["balsam"]
   [groups.run]
     artifact = "909427826938.dkr.ecr.us-east-1.amazonaws.com/testground-us-east-1-dht:018e66855db4"
     [groups.run.test_params]
@@ -50,7 +50,7 @@
     count = 100
     percentage = 0.0
   [groups.build]
-    Selectors = ["balsam"]
+    selectors = ["balsam"]
   [groups.run]
     artifact = "909427826938.dkr.ecr.us-east-1.amazonaws.com/testground-us-east-1-dht:018e66855db4"
     [groups.run.test_params]
@@ -66,7 +66,7 @@
     count = 5
     percentage = 0.0
   [groups.build]
-    Selectors = ["balsam"]
+    selectors = ["balsam"]
   [groups.run]
     artifact = "909427826938.dkr.ecr.us-east-1.amazonaws.com/testground-us-east-1-dht:018e66855db4"
     [groups.run.test_params]
@@ -81,7 +81,7 @@
     count = 15
     percentage = 0.0
   [groups.build]
-    Selectors = ["balsam"]
+    selectors = ["balsam"]
   [groups.run]
     artifact = "909427826938.dkr.ecr.us-east-1.amazonaws.com/testground-us-east-1-dht:018e66855db4"
     [groups.run.test_params]
@@ -96,7 +96,7 @@
     count = 100
     percentage = 0.0
   [groups.build]
-    Selectors = ["balsam"]
+    selectors = ["balsam"]
   [groups.run]
     artifact = "909427826938.dkr.ecr.us-east-1.amazonaws.com/testground-us-east-1-dht:018e66855db4"
     [groups.run.test_params]
@@ -111,7 +111,7 @@
     count = 5
     percentage = 0.0
   [groups.build]
-    Selectors = ["balsam"]
+    selectors = ["balsam"]
   [groups.run]
     artifact = "909427826938.dkr.ecr.us-east-1.amazonaws.com/testground-us-east-1-dht:018e66855db4"
     [groups.run.test_params]
@@ -127,7 +127,7 @@
     count = 5
     percentage = 0.0
   [groups.build]
-    Selectors = ["balsam"]
+    selectors = ["balsam"]
   [groups.run]
     artifact = "909427826938.dkr.ecr.us-east-1.amazonaws.com/testground-us-east-1-dht:018e66855db4"
     [groups.run.test_params]
@@ -142,7 +142,7 @@
     count = 495
     percentage = 0.0
   [groups.build]
-    Selectors = ["balsam"]
+    selectors = ["balsam"]
   [groups.run]
     artifact = "909427826938.dkr.ecr.us-east-1.amazonaws.com/testground-us-east-1-dht:018e66855db4"
     [groups.run.test_params]
@@ -157,7 +157,7 @@
     count = 250
     percentage = 0.0
   [groups.build]
-    Selectors = ["balsam"]
+    selectors = ["balsam"]
   [groups.run]
     artifact = "909427826938.dkr.ecr.us-east-1.amazonaws.com/testground-us-east-1-dht:018e66855db4"
     [groups.run.test_params]
@@ -171,7 +171,7 @@
     count = 5
     percentage = 0.0
   [groups.build]
-    Selectors = ["balsam"]
+    selectors = ["balsam"]
   [groups.run]
     artifact = "909427826938.dkr.ecr.us-east-1.amazonaws.com/testground-us-east-1-dht:018e66855db4"
     [groups.run.test_params]

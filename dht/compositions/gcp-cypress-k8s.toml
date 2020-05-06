@@ -18,7 +18,7 @@
     count = 975
     percentage = 0.0
   [groups.build]
-    Selectors = ["cypress"]
+    selectors = ["cypress"]
 
     [[groups.build.dependencies]]
       module = "github.com/libp2p/go-libp2p-kad-dht"
@@ -44,7 +44,7 @@
     count = 20
     percentage = 0.0
   [groups.build]
-    Selectors = ["cypress"]
+    selectors = ["cypress"]
 
     [[groups.build.dependencies]]
       module = "github.com/libp2p/go-libp2p-kad-dht"
@@ -72,7 +72,7 @@
     count = 5
     percentage = 0.0
   [groups.build]
-    Selectors = ["cypress"]
+    selectors = ["cypress"]
 
     [[groups.build.dependencies]]
       module = "github.com/libp2p/go-libp2p-kad-dht"

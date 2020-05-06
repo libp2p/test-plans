@@ -15,7 +15,7 @@
     count = 5
     percentage = 0.0
   [groups.build]
-    Selectors = ["balsam"]
+    selectors = ["balsam"]
   [groups.run]
     artifact = "0a67fb8fbbc9"
     [groups.run.test_params]
@@ -33,7 +33,7 @@
     count = 5
     percentage = 0.0
   [groups.build]
-    Selectors = ["balsam"]
+    selectors = ["balsam"]
   [groups.run]
     artifact = "0a67fb8fbbc9"
     [groups.run.test_params]
@@ -51,7 +51,7 @@
     count = 80
     percentage = 0.0
   [groups.build]
-    Selectors = ["balsam"]
+    selectors = ["balsam"]
   [groups.run]
     artifact = "0a67fb8fbbc9"
     [groups.run.test_params]
@@ -68,7 +68,7 @@
     count = 5
     percentage = 0.0
   [groups.build]
-    Selectors = ["balsam"]
+    selectors = ["balsam"]
   [groups.run]
     artifact = "0a67fb8fbbc9"
     [groups.run.test_params]
@@ -86,7 +86,7 @@
     count = 5
     percentage = 0.0
   [groups.build]
-    Selectors = ["balsam"]
+    selectors = ["balsam"]
   [groups.run]
     artifact = "0a67fb8fbbc9"
     [groups.run.test_params]
@@ -104,7 +104,7 @@
     count = 35
     percentage = 0.0
   [groups.build]
-    Selectors = ["cypress"]
+    selectors = ["cypress"]
 
     [[groups.build.dependencies]]
       module = "github.com/libp2p/go-libp2p-kad-dht"
@@ -128,7 +128,7 @@
     count = 5
     percentage = 0.0
   [groups.build]
-    Selectors = ["cypress"]
+    selectors = ["cypress"]
 
     [[groups.build.dependencies]]
       module = "github.com/libp2p/go-libp2p-kad-dht"
@@ -153,7 +153,7 @@
     count = 5
     percentage = 0.0
   [groups.build]
-    Selectors = ["cypress"]
+    selectors = ["cypress"]
 
     [[groups.build.dependencies]]
       module = "github.com/libp2p/go-libp2p-kad-dht"
@@ -178,7 +178,7 @@
     count = 5
     percentage = 0.0
   [groups.build]
-    Selectors = ["cypress"]
+    selectors = ["cypress"]
 
     [[groups.build.dependencies]]
       module = "github.com/libp2p/go-libp2p-kad-dht"
