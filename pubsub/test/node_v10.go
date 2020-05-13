@@ -1,3 +1,5 @@
+// +build !hardened_api
+
 // This file is used when the hardened_api build tag is not present.
 // It targets the go-libp2p-pubsub API before GossipSub v1.1.0 was introduced.
 // When using this file, peer scores will not be present in the test output.

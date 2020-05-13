@@ -1,4 +1,5 @@
 // +build hardened_api
+
 // The hardened_api build tag should be used when targeting a version of go-libp2p-pubsub after
 // GossipSub v1.1.0 was introduced.
 
