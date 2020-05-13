@@ -149,14 +149,16 @@ You can save configuration snapshots to JSON files and load them again using the
 of the configuration panel. The snapshots contain the state of all the configuration widgets, so can
 only be used with the Runner notebook, not the command line `run.py` script.
 
-There are several saved configs in `scripts/configs` that we've been using to evaluate different
-scenarios. The "baseline" config is `scripts/configs/1k.json`, which sets up a test with 1000 honest
-nodes and no attackers.
+There are several saved configs in `scripts/configs` that we've been using to evaluate different scenarios. 
 
-The saved configs are all setup to use the `cluster:k8s` runner, and they expect to find the testground
-daemon on a non-standard port (8080 instead of 8042). If you're using our 
-[shared jupyterhub server](./README-shared-environment.md), this should all Just Work, but if you're running
-elsewhere you may need to change those parameters to suit your environment.
+There are subdirectories inside of `scripts/configs` corresponding to different `testground` Runners, and
+there are a few configurations for each runner with various node counts. For example, `configs/local-exec/25-peers.json`
+will create a composition for the test using the `exec:go` builder and `local:exec` runner, with 25 pubsub peers,
+while `configs/local-docker/25-peers.json` will use the `docker:go` and `local:docker` runner.
+
+The saved configs all expect to find the `testground` daemon on a non-standard port (8080 instead of 8042). 
+If you're not running the daemon on port 8080, you can change the endpoint in the `Testground` section of
+the config UI, or tell the daemon to listen on 8080 by editing `~/testground/.env.toml`.
 
 ### Running using the cli scripts
 
