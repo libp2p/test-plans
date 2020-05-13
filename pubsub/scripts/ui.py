@@ -212,6 +212,7 @@ class ConfigPanel(object):
                 daemon_endpoint=widgets.Text(description="Daemon Endpoint", value='localhost:8080'),
                 builder=widgets.Dropdown(description="Builder", options=['docker:go', 'exec:go']),
                 runner=widgets.Dropdown(description="Runner", options=['cluster:k8s', 'local:docker', 'local:exec']),
+                plan_dir=widgets.Text(description="Subdir of $TESTGROUND_HOME/plans containing pubsub plan", value="test-plans/pubsub/test"),
                 keep_service=widgets.Checkbox(description="Keep pods after execution? (k8s only)", value=False),
                 log_level=widgets.Dropdown(description="Log level to set on test instances", options=["info", "debug", "warn", "error"]),
             ),
@@ -354,6 +355,7 @@ class ConfigPanel(object):
             # testground
             'TEST_BUILDER': w.testground.builder.value,
             'TEST_RUNNER': w.testground.runner.value,
+            'TEST_PLAN': w.testground.plan_dir.value,
 
             # time
             'T_SETUP': w.time.setup.value,

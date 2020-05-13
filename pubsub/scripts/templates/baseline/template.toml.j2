@@ -6,7 +6,7 @@ name    = "pubsub-{{ COMPOSITION_NAME }}"
 author  = "yusefnapora"
 
 [global]
-plan    = "gossipsub-hardening/test"
+plan    = "{{ TEST_PLAN | default('test-plans/pubsub/test') }}"
 case    = "evaluate"
 builder = "{{ TEST_BUILDER | default('docker:go') }}"
 runner  = "{{ TEST_RUNNER | default('local:docker') }}"
