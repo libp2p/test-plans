@@ -315,8 +315,3 @@ we aggregate the trace events at runtime and spit out a json file with aggregate
 We also capture a filtered subset of the original traces, containing only Publish, Deliver, Graft, and Prune events.
 At the end of the test, we run [tracestat](https://github.com/libp2p/go-libp2p-pubsub-tracer/blob/master/cmd/tracestat/main.go)
 on the filtered traces to calculate the latency distribution and get a summary of publish and deliver counts.
-
-### Note about "attackers"
-
-There are some references in the code to "attacker" peers and "sybils". The attack code has been omitted from the
-initial public release, however, we plan to re-introduce it in the near future.

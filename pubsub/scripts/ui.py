@@ -226,14 +226,9 @@ class ConfigPanel(object):
             node_counts=Bunch(
                 total=widgets.IntText(description="Total number of test instances", disabled=True),
                 total_peers=widgets.IntText(description="Total number of peers in all containers", disabled=True),
-                # honest_containers=widgets.IntText(description="Number of honest test containers", disabled=True),
-                # honest_peers=widgets.IntText(description="Total number of honest peers in all containers", disabled=True),
-                # attacker_peers=widgets.IntText(description="Total number of attacker peers in all containers", disabled=True),
                 publisher=widgets.IntText(description="Number of publisher nodes", value=100),
                 lurker=widgets.IntText(description="Number of lurker nodes", value=50),
-                # attacker_containers=widgets.IntText(description="Number of attacker test containers", value=0),
                 honest_per_container=widgets.IntText(description="# of honest peers per container", value=1),
-                # attackers_per_container=widgets.IntText(description="# of attacker peers per container", value=1),
             ),
 
             pubsub=Bunch(
@@ -260,7 +255,6 @@ class ConfigPanel(object):
                 jitter_pct = widgets.IntSlider(description="Latency jitter %", value=10, min=1, max=100),
                 bandwidth_mb = widgets.IntText(description="Bandwidth (mb)", value=10240),
                 degree=widgets.IntText(description="Degree (# of initial connections) for honest peers", value=20),
-                # attack_degree=widgets.IntText(description="Degree for attack peers", value=100),
 
                 # TODO: support upload of topology file
                 # topology_file = widgets.FileUpload(description="Upload fixed topology file", accept='.json', multiple=False),
@@ -271,20 +265,6 @@ class ConfigPanel(object):
                 connect_delay = widgets.Text(description='Honest peer connection delay. e.g. "30s" or "50@30s,30@1m"', value='0s'),
                 connect_jitter_pct = widgets.BoundedIntText(description='Jitter % for honest connect delay', value=5, min=0, max=100),
             ),
-
-            # attack_behavior=Bunch(
-            #     attack_node_type = widgets.Dropdown(description='Attack Type', options=['sybil']),
-            #     single_node = widgets.Checkbox(description='Target a single node?', value=False),
-            #     censor_single_node = widgets.Checkbox(description='Censor target node?', value=False),
-            #     publishers_only=widgets.Checkbox(description='Attack Publishers only?', value=False),
-            #     connect_delay = widgets.Text(description='Attacker connection delay. e.g. "30s" or "50@30s,30@1m"', value='30s'),
-            #     connect_jitter_pct = widgets.BoundedIntText(description='Jitter % for attacker delay', value=5, min=0, max=100),
-            #     sybil_degrade = widgets.BoundedFloatText(description='Sybil Drop Probability', value=1.0, min=0, max=1),
-            #     sybil_attack_delay=widgets.Text(description='Sybil Attack Delay (time between connect & attack)', value='0s'),
-            #     sybil_regraft_delay = widgets.Text(description='Regraft Delay', value='15s'),
-            #     sybil_regraft_backoff = widgets.Text(description='Regraft Backoff', value='1m'),
-            #     sybil_seen_cache_duration = widgets.Text(description='Seen Cache duration', value='2m'),
-            # ),
 
             peer_score=Bunch(
                 gossip_threshold=widgets.FloatText(description='Gossip Threshold', value=-4000),
@@ -300,16 +280,8 @@ class ConfigPanel(object):
             )
         )
 
-        # wire up node count widgets to update total node count
-
-        # with attacker peers:
-        # sum_values(w.node_counts.honest_containers, w.node_counts.publisher, w.node_counts.lurker)
-        # sum_values(w.node_counts.total, w.node_counts.honest_containers, w.node_counts.attacker_containers)
-        # mul_values(w.node_counts.honest_peers, w.node_counts.honest_containers, w.node_counts.honest_per_container)
-        # mul_values(w.node_counts.attacker_peers, w.node_counts.attacker_containers, w.node_counts.attackers_per_container)
-        # sum_values(w.node_counts.total_peers, w.node_counts.honest_peers, w.node_counts.attacker_peers)
-
-        # honest only
+        # wire up node count widgets to calculate and show the total number of containers and peers
+        # and update when the params they're derived from change
         sum_values(w.node_counts.total, w.node_counts.publisher, w.node_counts.lurker)
         mul_values(w.node_counts.total_peers, w.node_counts.total, w.node_counts.honest_per_container)
 
@@ -371,19 +343,12 @@ class ConfigPanel(object):
     def template_params(self):
         w = self.widgets
 
-        # n_attack_nodes = w.node_counts.attacker.value
-        # n_nodes_cont_attack = w.node_counts.attackers_per_container.value
-        # n_attack_peers_total = n_attack_nodes * n_nodes_cont_attack
-        n_attack_nodes = 0
-        n_nodes_cont_attack = 1
-        n_attack_peers_total = 0
-
         n_nodes = w.node_counts.total.value
         n_publisher = w.node_counts.publisher.value
         n_nodes_cont_honest = w.node_counts.honest_per_container.value
-        n_honest_nodes = n_nodes - n_attack_nodes
+        n_honest_nodes = n_nodes
         n_honest_peers_total = n_honest_nodes * n_nodes_cont_honest
-        n_container_nodes_total = n_honest_peers_total + n_attack_peers_total
+        n_container_nodes_total = n_honest_peers_total
 
         p = {
             # testground
@@ -400,9 +365,7 @@ class ConfigPanel(object):
             'N_NODES': n_nodes,
             'N_CONTAINER_NODES_TOTAL': n_container_nodes_total,
             'N_PUBLISHER': n_publisher,
-            'N_ATTACK_NODES': n_attack_nodes,
             'N_HONEST_PEERS_PER_NODE': n_nodes_cont_honest,
-            'N_ATTACK_PEERS_PER_NODE': n_nodes_cont_attack,
 
             # pubsub
             'T_HEARTBEAT': w.pubsub.heartbeat.value,
@@ -425,25 +388,12 @@ class ConfigPanel(object):
             'JITTER_PCT': w.network.jitter_pct.value,
             'BANDWIDTH_MB': w.network.bandwidth_mb.value,
             'N_DEGREE': w.network.degree.value,
-            # 'ATTACK_DEGREE': w.network.attack_degree.value,
             # TODO: load topology file
             'TOPOLOGY': {},
 
             # honest behavior
             'FLOOD_PUBLISHING': w.honest_behavior.flood_publishing.value,
             'HONEST_CONNECT_DELAY_JITTER_PCT': w.honest_behavior.connect_jitter_pct.value,
-
-            # # attack behavior
-            # 'ATTACK_NODE_TYPE': w.attack_behavior.attack_node_type.value,
-            # 'SYBIL_DEGRADE': w.attack_behavior.sybil_degrade.value,
-            # 'T_SYBIL_ATTACK_DELAY': w.attack_behavior.sybil_attack_delay.value,
-            # 'T_SYBIL_REGRAFT_DELAY': w.attack_behavior.sybil_regraft_delay.value,
-            # 'T_SYBIL_REGRAFT_BACKOFF': w.attack_behavior.sybil_regraft_backoff.value,
-            # 'T_SYBIL_SEEN_CACHE_DURATION': w.attack_behavior.sybil_seen_cache_duration.value,
-            # 'ATTACK_SINGLE_NODE': w.attack_behavior.single_node.value,
-            # 'CENSOR_SINGLE_NODE': w.attack_behavior.censor_single_node.value,
-            # 'ATTACKER_CONNECT_DELAY_JITTER_PCT': w.attack_behavior.connect_jitter_pct.value,
-            # 'ATTACK_PUBLISHERS_ONLY': w.attack_behavior.publishers_only.value,
 
             # topic & peer score configs
             'TOPIC_CONFIG': self._topic_config(),
@@ -467,14 +417,8 @@ class ConfigPanel(object):
 
         p['RUN_CONFIG'] = '\n'.join(run_config)
 
-        # if the attacker connect_delay param doesn't specify a count,
-        # make it apply to all attacker nodes
-        # delay = w.attack_behavior.connect_delay.value
-        # if '@' not in delay:
-        #     delay = '{}@{}'.format(n_attack_peers_total, delay)
-        # p['ATTACKER_CONNECT_DELAYS'] = delay
-
-        # same for honest connect delay
+        # if the connect_delay param doesn't specify a count,
+        # make it apply to all honest nodes
         delay = w.honest_behavior.connect_delay.value
         if '@' not in delay:
             delay = '{}@{}'.format(n_honest_peers_total, delay)

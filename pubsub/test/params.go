@@ -109,8 +109,6 @@ type testParams struct {
 	connectDelays           []time.Duration
 	connectDelayJitterPct   int
 	connsDef                map[string]*ConnectionsDef
-	attackSingleNode        bool
-	censorSingleNode        bool
 	connectToPublishersOnly bool
 
 	netParams          NetworkParams
@@ -168,9 +166,7 @@ func parseParams(runenv *runtime.RunEnv) testParams {
 		publisher:               runenv.BooleanParam("publisher"),
 		floodPublishing:         runenv.BooleanParam("flood_publishing"),
 		fullTraces:              runenv.BooleanParam("full_traces"),
-		nodeType:                parseNodeType(runenv.StringParam("attack_node_type")),
-		attackSingleNode:        runenv.BooleanParam("attack_single_node"),
-		censorSingleNode:        runenv.BooleanParam("censor_single_node"),
+		nodeType:                NodeTypeHonest,
 		connectToPublishersOnly: runenv.BooleanParam("connect_to_publishers_only"),
 		degree:                  runenv.IntParam("degree"),
 		containerNodesTotal:     runenv.IntParam("n_container_nodes_total"),

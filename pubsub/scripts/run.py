@@ -98,30 +98,6 @@ def load_params(template_dir, param_files):
     return params
 
 
-# N_ATTACK_NODES can either be
-# - a number
-# - a string of the form "5@10s,10@1m,20@2m"
-def parse_n_attack_nodes(params):
-    attack_nodes_param = params['N_ATTACK_NODES']
-    if attack_nodes_param is None:
-        return
-    if isinstance(attack_nodes_param, int) or isinstance(attack_nodes_param, float):
-        return
-    if attack_nodes_param.isdigit():
-        return
-
-    num_durations = attack_nodes_param.split(',')
-    n_nodes = 0
-    for num_duration in num_durations:
-        try:
-            num, duration = num_duration.split('@')
-            n_nodes += int(num)
-        except:
-            raise ValueError("Badly formatted N_ATTACK_NODES: " + attack_nodes_param)
-
-    params['N_ATTACK_NODES'] = n_nodes
-    params['ATTACKER_CONNECT_DELAYS'] = attack_nodes_param
-
 
 # The TOPOLOGY parameter can be either
 # - a JSON representation of a topology
@@ -151,12 +127,9 @@ def parse_topology(params):
 # per container
 def parse_n_container_nodes_total(params):
     n_nodes = params.get('N_NODES', 20)
-    n_attack_nodes = params.get('N_ATTACK_NODES', 0)
     n_nodes_cont_honest = params.get('N_HONEST_PEERS_PER_NODE', 1)
-    n_nodes_cont_attack = params.get('N_ATTACK_PEERS_PER_NODE', 1)
 
-    n_honest_nodes = n_nodes - n_attack_nodes
-    total = n_honest_nodes * n_nodes_cont_honest + n_attack_nodes * n_nodes_cont_attack
+    total = n_nodes * n_nodes_cont_honest
     params['N_CONTAINER_NODES_TOTAL'] = total
 
 
@@ -249,7 +222,6 @@ def run():
                 params[k] = v
 
     parse_topology(params)
-    parse_n_attack_nodes(params)
     parse_n_container_nodes_total(params)
 
     comp = composition_name()

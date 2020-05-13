@@ -69,7 +69,7 @@ instances = { count = {{ N_PUBLISHER }} }
 
 [[groups]]
 id = "lurkers"
-instances = { count = {{ N_NODES - N_PUBLISHER - N_ATTACK_NODES | int }} }
+instances = { count = {{ N_NODES - N_PUBLISHER | int }} }
 
   [groups.build]
   selectors = {{ BUILD_SELECTORS }}

@@ -317,10 +317,6 @@ func (t *testInstance) setupDiscovery(ctx context.Context) (*SyncDiscovery, erro
 	// If a topology file was supplied, use the topology defined there
 	if t.connsDef != nil {
 		topology = FixedTopology{t.connsDef}
-	} else if t.params.nodeType != NodeTypeHonest && t.params.attackSingleNode {
-		// If it's an attack against a single node, choose a topology that
-		// connects to one publisher node
-		topology = SinglePublisherTopology{}
 	}
 
 	// Register this node and get node information for all peers
