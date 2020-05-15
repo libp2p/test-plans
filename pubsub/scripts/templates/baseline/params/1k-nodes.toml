@@ -1,0 +1,3 @@
+COMPOSITION_NAME = "baseline-1k-nodes"
+N_NODES = 1000
+N_PUBLISHER = 100

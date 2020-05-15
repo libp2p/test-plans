@@ -1,0 +1,90 @@
+COMPOSITION_NAME = "baseline"
+
+# the set of go build tags to apply when building.
+# set this to an empty array if you want to target a commit before gossipsub v1.1 was merged.
+BUILD_SELECTORS = ['hardened_api']
+
+# version of go-libp2p-pubsub to use when building the test plan
+GS_VERSION = "latest"
+
+# time to run simulation (after warmup)
+T_RUN = "3m"
+
+# time to wait after subscribing to topics before publishing
+T_WARM = "30s"
+
+# cooldown time after publishing stops
+T_COOL = "30s"
+
+# total number of nodes in simulation
+N_NODES = 20
+
+# number of nodes that are attackers
+N_ATTACK_NODES = 0
+
+# number of honest (non-attack) nodes that are publishers
+# the remaining honest nodes will lurk in their topics without
+# publishing
+N_PUBLISHER = 10
+
+# how often to dump peer score values
+T_SCORE_INSPECT_PERIOD = '5s'
+
+# TOPIC_CONFIG controls which topics will be joined.
+# The n_messages and message_size params are only relevant to publisher
+# nodes.
+#
+# The message delivery rate is derived from the runtime, with each
+# publisher attempting to deliver n_messages at a uniform rate througout
+# t_run.
+#
+# Right now we use one TOPIC_CONFIG for all groups in the composition,
+# but there's no reason you coudn't give each group its own config,
+# for example to have peers publishing at different rates to the
+# same topic.
+TOPIC_CONFIG = [
+   { id = 'blocks', message_rate = "120/s", message_size = '2 KiB' },
+]
+
+[PEER_SCORE_PARAMS]
+
+IPColocationFactorWeight=0
+IPColocationFactorThreshold=1
+DecayInterval="5s"
+DecayToZero=0.01
+RetainScore="10s"
+
+    [PEER_SCORE_PARAMS.Thresholds]
+    GossipThreshold = -4000
+    PublishThreshold = -5000
+    GraylistThreshold = -10000
+    AcceptPXThreshold = 0
+
+    [PEER_SCORE_PARAMS.Topics.blocks]
+	TopicWeight = 0.25
+
+    # P1
+	TimeInMeshWeight = 0.0027
+	TimeInMeshQuantum = "1s"
+	TimeInMeshCap = 3600
+
+	# P2
+    FirstMessageDeliveriesWeight = 0.664
+    FirstMessageDeliveriesDecay = 0.9916
+    FirstMessageDeliveriesCap = 1500
+
+    # P3
+    MeshMessageDeliveriesWeight = -0.25
+    MeshMessageDeliveriesDecay = 0.97
+    MeshMessageDeliveriesCap = 400
+    MeshMessageDeliveriesThreshold = 100
+    MeshMessageDeliveriesActivation = '30s'
+    MeshMessageDeliveryWindow = '5ms'
+
+    # P3b
+    MeshFailurePenaltyWeight = -0.25
+    MeshFailurePenaltyDecay = 0.997
+
+    # P4
+    InvalidMessageDeliveriesWeight = -99
+    InvalidMessageDeliveriesDecay = 0.9994
