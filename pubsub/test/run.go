@@ -175,7 +175,6 @@ func RunSimulation(runenv *runtime.RunEnv) error {
 			if err = t.h.Network().Listen(laddr...); err != nil {
 				return nil
 			}
-			time.Sleep(5*time.Second)
 
 			id := host.InfoFromHost(t.h).ID.Pretty()
 			runenv.RecordMessage("Host peer ID: %s, seq %d, node type: %s, node type seq: %d, node index: %d / %d, addrs: %v",
