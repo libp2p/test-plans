@@ -3,6 +3,22 @@
 This is a simple Testground test plan that was created for instructional purposes.
 It is commented in a step-by-step didactic way to teach folks how to use Testground.
 
+**Contents**
+
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+
+- [About this test plan](#about-this-test-plan)
+- [Installing the test plan](#installing-the-test-plan)
+- [Running a single-group run with defaults](#running-a-single-group-run-with-defaults)
+- [Running a single-group run with parameters](#running-a-single-group-run-with-parameters)
+- [Running a composition](#running-a-composition)
+- [Running with local:exec and cluster:k8s runners](#running-with-localexec-and-clusterk8s-runners)
+- [License](#license)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 ## About this test plan
 
 This plan contains a single test case called `ping` (same as the plan).
