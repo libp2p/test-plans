@@ -126,7 +126,7 @@ Both groups have 5 instances.
 To run this composition:
 
 ```shell script
-$ testgorund run composition -f _compositions/high-low.toml
+$ testground run composition -f _compositions/high-low.toml
 ```
 
 ## Running with local:exec and cluster:k8s runners
