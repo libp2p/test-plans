@@ -36,8 +36,16 @@ var testcases = map[string]interface{}{
 //
 // Other key objects are:
 //
-//  * sync.Client: used to coordinate instances with one another.
-//  * network.Client: used to manipulate network configurations.
+//  * sync.Client (https://pkg.go.dev/github.com/testground/sdk-go/sync):
+//    used to coordinate instances with one another via synchronisations
+//    primitives like signals, barriers, pubsub. In the future, we plan to
+//    support more sophisticated patterns like locks, semaphores, etc.
+//  * network.Client (https://pkg.go.dev/github.com/testground/sdk-go/network):
+//    used to manipulate network configurations. The network.Client uses the
+//    sync service to communicate with the sidecar containers that manage
+//    the network configurations "from the outside". In other words, network
+//    configuration is NOT managed locally by the SDK. Rather, the SDK sends
+//    commands to the sidecar, and awaits until those commands are applied.
 func main() {
 
 	// Delegate this run to the SDK. InvokeMap takes a map of test case names
@@ -52,8 +60,10 @@ func main() {
 // result, the Testground SDK will perform a few useful preparation steps
 // for us:
 //
-//  1. Initializing a sync client, bound to the runenv.
-//  2. Initializing a net client.
+//  1. Initializing a sync client, bound to this runenv. Refer to the main()
+//     docs for more info.
+//  2. Initializing a net client, using the above sync client. Refer to the
+//     main() docs for more info.
 //  3. Waiting for the network to initialize.
 //  4. Claiming a global sequence number, which uniquely identifies this instance within the run.
 //  5. Claiming a group-scoped sequence number, which uniquely identifies this instance within its group.
@@ -153,7 +163,7 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	// Now subscribe to the peers topic and consume all addresses, storing them
 	// in the peers slice.
 	peersCh := make(chan *peer.AddrInfo)
-	sctx, cancel := context.WithCancel(ctx)
+	sctx, scancel := context.WithCancel(ctx)
 	sub := initCtx.SyncClient.MustSubscribe(sctx, peersTopic, peersCh)
 
 	// Receive the expected number of AddrInfos.
@@ -168,7 +178,7 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 			return err
 		}
 	}
-	cancel()
+	scancel() // cancels the Subscription.
 
 	// ✨
 	// ✨  Now we know about all other libp2p hosts in this test.
@@ -179,24 +189,24 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	pingPeers := func(tag string) error {
 		g, gctx := errgroup.WithContext(ctx)
 		for _, ai := range peers {
-			ai := ai
+			id := ai.ID // capture the ID locally for safe use within the closure.
 			g.Go(func() error {
 				// a context for the continuous stream of pings.
 				pctx, cancel := context.WithCancel(gctx)
 				defer cancel()
-				res := <-ping.Ping(pctx, ai.ID)
+				res := <-ping.Ping(pctx, id)
 				if res.Error != nil {
 					return res.Error
 				}
 
 				// record a message.
-				runenv.RecordMessage("ping result (%s) from peer %s: %s", tag, ai.ID, res.RTT)
+				runenv.RecordMessage("ping result (%s) from peer %s: %s", tag, id, res.RTT)
 
 				// record a result point; these points will be batch-inserted
 				// into InfluxDB when the test concludes.
 				//
 				// ping-result is the metric name, and round and peer are tags.
-				point := fmt.Sprintf("ping-result,round=%s,peer=%s", tag, ai.ID)
+				point := fmt.Sprintf("ping-result,round=%s,peer=%s", tag, id)
 				runenv.R().RecordPoint(point, float64(res.RTT.Milliseconds()))
 				return nil
 			})
@@ -261,6 +271,8 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 		// partitipating in this test run. MustConfigureNetwork will block until
 		// that many signals have been received. We use a unique state ID for
 		// each round.
+		//
+		// Read more about the sidecar: https://docs.testground.ai/concepts-and-architecture/sidecar
 		initCtx.NetClient.MustConfigureNetwork(ctx, &network.Config{
 			Network:        "default",
 			Enable:         true,

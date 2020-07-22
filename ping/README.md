@@ -44,7 +44,9 @@ This test case:
 
 ## Installing the test plan
 
-First, install Testground:
+First, install Testground. This is originally documented in the
+[Testground Getting Started](https://docs.testground.ai/getting-started) guide,
+and copied here for convenience.
 
 ```shell script
 $ git clone https://github.com/testground/testground.git
@@ -60,12 +62,12 @@ $ testground daemon  # will start the daemon listening on localhost:8042 by defa
 Now, import this test plan into your `TESTGROUND_HOME` dir (by default `$HOME/testground`):
 
 ```shell script
-# clone this repo in your directory of choice; let's call it `$REPO_DIR`
-$ git clone https://github.com/libp2p/test-plans $REPO_DIR
+# clone this repo in your directory of choice; let's call it `<REPO_DIR>`
+$ git clone https://github.com/libp2p/test-plans <REPO_DIR>
 
 # register the test plan with the testground client
-$ testground plan import --from $REPO_DIR --name libp2p
-created symlink $HOME/testground/plans/libp2p -> $REPO_DIR
+$ testground plan import --from <REPO_DIR> --name libp2p
+created symlink $HOME/testground/plans/libp2p -> <REPO_DIR>
 imported plans:
 libp2p/ping        ping                 (*)
 libp2p/pubsub/test evaluate
