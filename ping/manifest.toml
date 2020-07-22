@@ -4,7 +4,7 @@
 name = "ping"
 
 [builders]
-"docker:go" = { enabled = true }
+"docker:go" = { enabled = true, enable_go_build_cache = true }
 "exec:go"   = { enabled = true }
 
 [runners]
@@ -20,6 +20,6 @@ name = "ping"
 instances = { min = 2, max = 10000, default = 5 }
 
   [testcases.params]
-  secure_channel    = { type = "enum", desc = "secure channel used", values = ["secio", "noise", "tls"], default = "noise" }
+  secure_channel    = { type = "enum", desc = "secure channel used", values = ["secio", "noise", "tls"], default = "secio" }
   max_latency_ms    = { type = "int", desc = "maximum value for random local link latency", unit = "ms", default = 1000 }
   iterations        = { type = "int", desc = "number of ping iterations we'll run against each peer", unit = "count", default = 5 }

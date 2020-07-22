@@ -97,7 +97,7 @@ $ docker run --network testground-control -p 8888:8888 chronograf
 # you can skip over everything related to Telegraf and Kapacitor.
 ```
 
-
+![](chronograf.png)
 
 ## License
 

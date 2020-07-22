@@ -13,6 +13,10 @@ import (
 
 	"github.com/libp2p/go-libp2p-core/peer"
 
+	"github.com/libp2p/go-libp2p-noise"
+	"github.com/libp2p/go-libp2p-secio"
+	tls "github.com/libp2p/go-libp2p-tls"
+
 	"github.com/testground/sdk-go/network"
 	"github.com/testground/sdk-go/run"
 	"github.com/testground/sdk-go/runtime"
@@ -100,9 +104,22 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	// obtain it from the NetClient.
 	ip := initCtx.NetClient.MustGetDataNetworkIP()
 
-	// ☎️  Let's construct a libp2p node.
+	var security libp2p.Option
+	switch secureChannel {
+	case "noise":
+		security = libp2p.Security(noise.ID, noise.New)
+	case "secio":
+		security = libp2p.Security(secio.ID, secio.New)
+	case "tls":
+		security = libp2p.Security(tls.ID, tls.New)
+	}
+
+	// ☎️  Let's construct the libp2p node.
 	listenAddr := fmt.Sprintf("/ip4/%s/tcp/0", ip)
-	host, err := libp2p.New(ctx, libp2p.ListenAddrStrings(listenAddr))
+	host, err := libp2p.New(ctx,
+		security,
+		libp2p.ListenAddrStrings(listenAddr),
+	)
 	if err != nil {
 		return fmt.Errorf("failed to instantiate libp2p instance: %w", err)
 	}
@@ -163,10 +180,6 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 		for _, ai := range peers {
 			ai := ai
 			g.Go(func() error {
-				if err := host.Connect(gctx, *ai); err != nil {
-					return err
-				}
-
 				// a context for the continuous stream of pings.
 				pctx, cancel := context.WithCancel(gctx)
 				defer cancel()
@@ -189,6 +202,27 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 		}
 		return g.Wait()
 	}
+
+	// ☎️  Connect to all other peers.
+	//
+	// Note: we sidestep simultaneous connect issues by ONLY connecting to peers
+	// who published their addresses before us (this is enough to dedup and avoid
+	// two peers dialling each other at the same time).
+	//
+	// We can do this because sync service pubsub is ordered.
+	for _, ai := range peers {
+		if ai.ID == id {
+			break
+		}
+		if err := host.Connect(ctx, *ai); err != nil {
+			return err
+		}
+	}
+
+	runenv.RecordMessage("done dialling my peers")
+
+	// Wait for all peers to signal that they're done with the connection phase.
+	initCtx.SyncClient.MustSignalAndWait(ctx, "connected", runenv.TestInstanceCount)
 
 	// 📡  Let's ping all our peers without any traffic shaping rules.
 	if err := pingPeers("initial"); err != nil {
