@@ -26,7 +26,7 @@ This test case:
    PINGs and record the observed latencies, just like in point 3.
 6. We do 4-6 as many times as `iterations`.
 
-## How to run
+## Installing the test plan
 
 First, install Testground:
 
@@ -64,14 +64,16 @@ libp2p/dht         all
 # the line we've marked with (*) above indicates that the ping test plan was registered correctly.
 ```
 
+## Running a single-group run with defaults
+
 Now run the test plan and collect the results:
 
-```
+```shell script
 # run the ping test case from the ping test plan with 10 instances, using the local:docker runner, which supports
 # traffic shaping.
 $ testground run single --plan=libp2p/ping --testcase=ping \
                         --builder=docker:go --runner=local:docker \
-                        --instances=10
+                        --instances=10 \
                         --collect
 
 [...]
@@ -98,6 +100,44 @@ $ docker run --network testground-control -p 8888:8888 chronograf
 ```
 
 ![](chronograf.png)
+
+## Running a single-group run with parameters
+
+You can pass in test parameters via the CLI, using single runs:
+
+```shell script
+$ testground run single --plan=libp2p/ping --testcase=ping \
+                        --builder=docker:go --runner=local:docker \
+                        --instances=10 \
+                        --test-param iterations=10 \
+                        --test-param max_latency_ms=5000 \ 
+                        --collect
+```
+
+## Running a composition
+
+Compositions allow you to create more sophisticated runs, with groups of instances
+built against different upstream versions, or with different test parameters, etc.
+
+The [`high-low.toml`](_compositions/high-low.toml) bundled in this test plan performs a run
+with two groups: one with low latency (max=500ms), one with high latency (max=5000ms).
+Both groups have 5 instances. 
+
+To run this composition:
+
+```shell script
+$ testgorund run composition -f _compositions/high-low.toml
+```
+
+## Running with local:exec and cluster:k8s runners
+
+Via the CLI, you can pass the `--builder` and `--runner` flags to instruct which
+builder and runner to use.
+
+When using compositions, these values are part of the `[global]` section.
+
+NOTE: the `local:exec` runner DOES NOT support traffic shaping. Therefore,
+setting latencies will have a null effect (try it out, and see for yourself!).
 
 ## License
 
