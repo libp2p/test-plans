@@ -39,9 +39,10 @@ var testcases = map[string]interface{}{
 //  * sync.Client: used to coordinate instances with one another.
 //  * network.Client: used to manipulate network configurations.
 func main() {
+
 	// Delegate this run to the SDK. InvokeMap takes a map of test case names
 	// and test case functions, and dispatches accordingly depending on the test
-	// case being run.
+	// case being run. The run.Invoke* functions are entrypoint functions.
 	run.InvokeMap(testcases)
 }
 
@@ -78,8 +79,8 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	//
 	// By convention, Must* methods in the testground SDK will panic upon error.
 	//
-	// The sdk's run.Invoke* catch these panics, record a CRASH event, and abort
-	// the test immediately.
+	// The sdk's run.Invoke* entrypoint functions catch these panics, record a
+	// CRASH event, and abort the test immediately.
 	initCtx.MustWaitAllInstancesInitialized(ctx)
 
 	// 🐥  Now all instances are ready for action.

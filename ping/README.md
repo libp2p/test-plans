@@ -109,10 +109,8 @@ If you want to see the metrics we recorded in InfluxDB visually, you can fire
 up a Chronograf console:
 
 ```shell script
-$ docker run --network testground-control -p 8888:8888 chronograf
+$ docker run --network testground-control -p 8888:8888 chronograf --influxdb-url=http://testground-influxdb:8086
 # now open http://localhost:8888 in a browser.
-# set http://testground-influxdb:8086 as your connection URL in the welcome wizard.
-# you can skip over everything related to Telegraf and Kapacitor.
 ```
 
 ![](chronograf.png)
