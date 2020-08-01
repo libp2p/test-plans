@@ -20,7 +20,6 @@
   [groups.build]
     selectors = ["balsam"]
   [groups.run]
-    artifact = "909427826938.dkr.ecr.us-east-1.amazonaws.com/testground-us-east-1-dht:018e66855db4"
     [groups.run.test_params]
       bs_strategy = "6"
       bucket_size = "10"
@@ -36,7 +35,6 @@
   [groups.build]
     selectors = ["balsam"]
   [groups.run]
-    artifact = "909427826938.dkr.ecr.us-east-1.amazonaws.com/testground-us-east-1-dht:018e66855db4"
     [groups.run.test_params]
       bs_strategy = "6"
       bucket_size = "10"
@@ -52,7 +50,6 @@
   [groups.build]
     selectors = ["balsam"]
   [groups.run]
-    artifact = "909427826938.dkr.ecr.us-east-1.amazonaws.com/testground-us-east-1-dht:018e66855db4"
     [groups.run.test_params]
       bs_strategy = "6"
       bucket_size = "10"
@@ -68,7 +65,6 @@
   [groups.build]
     selectors = ["balsam"]
   [groups.run]
-    artifact = "909427826938.dkr.ecr.us-east-1.amazonaws.com/testground-us-east-1-dht:018e66855db4"
     [groups.run.test_params]
       bs_strategy = "6"
       bucket_size = "10"
@@ -83,7 +79,6 @@
   [groups.build]
     selectors = ["balsam"]
   [groups.run]
-    artifact = "909427826938.dkr.ecr.us-east-1.amazonaws.com/testground-us-east-1-dht:018e66855db4"
     [groups.run.test_params]
       bs_strategy = "6"
       bucket_size = "10"
@@ -98,7 +93,6 @@
   [groups.build]
     selectors = ["balsam"]
   [groups.run]
-    artifact = "909427826938.dkr.ecr.us-east-1.amazonaws.com/testground-us-east-1-dht:018e66855db4"
     [groups.run.test_params]
       bs_strategy = "6"
       bucket_size = "10"
@@ -113,7 +107,6 @@
   [groups.build]
     selectors = ["balsam"]
   [groups.run]
-    artifact = "909427826938.dkr.ecr.us-east-1.amazonaws.com/testground-us-east-1-dht:018e66855db4"
     [groups.run.test_params]
       bs_strategy = "6"
       bucket_size = "10"
@@ -129,7 +122,6 @@
   [groups.build]
     selectors = ["balsam"]
   [groups.run]
-    artifact = "909427826938.dkr.ecr.us-east-1.amazonaws.com/testground-us-east-1-dht:018e66855db4"
     [groups.run.test_params]
       bs_strategy = "6"
       bucket_size = "10"
@@ -144,7 +136,6 @@
   [groups.build]
     selectors = ["balsam"]
   [groups.run]
-    artifact = "909427826938.dkr.ecr.us-east-1.amazonaws.com/testground-us-east-1-dht:018e66855db4"
     [groups.run.test_params]
       bs_strategy = "6"
       bucket_size = "10"
@@ -159,7 +150,6 @@
   [groups.build]
     selectors = ["balsam"]
   [groups.run]
-    artifact = "909427826938.dkr.ecr.us-east-1.amazonaws.com/testground-us-east-1-dht:018e66855db4"
     [groups.run.test_params]
       bs_strategy = "6"
       bucket_size = "10"
@@ -173,7 +163,6 @@
   [groups.build]
     selectors = ["balsam"]
   [groups.run]
-    artifact = "909427826938.dkr.ecr.us-east-1.amazonaws.com/testground-us-east-1-dht:018e66855db4"
     [groups.run.test_params]
       bootstrapper = "true"
       bs_strategy = "6"

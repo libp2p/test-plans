@@ -16,7 +16,6 @@
     percentage = 0.0
   [groups.build]
   [groups.run]
-    artifact = "d0b0506b5d41"
     [groups.run.test_params]
       bucket_size = "4"
       client_mode = "false"
@@ -42,7 +41,6 @@
       module = "github.com/libp2p/go-libp2p-autonat"
       version = "v0.1.2-0.20200204200147-902af8cb7b6a"
   [groups.run]
-    artifact = "ec4c0ec62a02"
     [groups.run.test_params]
       bucket_size = "4"
       client_mode = "false"

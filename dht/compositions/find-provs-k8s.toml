@@ -19,7 +19,6 @@
     percentage = 0.0
   [groups.build]
   [groups.run]
-    artifact = "909427826938.dkr.ecr.us-east-1.amazonaws.com/testground-us-dht:07736f7b34c3"
     [groups.run.test_params]
       bucket_size = "4"
       client_mode = "false"
@@ -45,7 +44,6 @@
       module = "github.com/libp2p/go-libp2p-autonat"
       version = "v0.1.2-0.20200204200147-902af8cb7b6a"
   [groups.run]
-    artifact = "909427826938.dkr.ecr.us-east-1.amazonaws.com/testground-us-dht:d4709f2f74cd"
     [groups.run.test_params]
       bucket_size = "4"
       client_mode = "false"
