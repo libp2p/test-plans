@@ -17,7 +17,6 @@
   [groups.build]
     selectors = ["balsam"]
   [groups.run]
-    artifact = "0a67fb8fbbc9"
     [groups.run.test_params]
       bs_strategy = "3"
       bucket_size = "10"
@@ -35,7 +34,6 @@
   [groups.build]
     selectors = ["balsam"]
   [groups.run]
-    artifact = "0a67fb8fbbc9"
     [groups.run.test_params]
       bs_strategy = "3"
       bucket_size = "10"
@@ -53,7 +51,6 @@
   [groups.build]
     selectors = ["balsam"]
   [groups.run]
-    artifact = "0a67fb8fbbc9"
     [groups.run.test_params]
       bs_strategy = "3"
       bucket_size = "10"
@@ -70,7 +67,6 @@
   [groups.build]
     selectors = ["balsam"]
   [groups.run]
-    artifact = "0a67fb8fbbc9"
     [groups.run.test_params]
       bs_strategy = "3"
       bucket_size = "10"
@@ -88,7 +84,6 @@
   [groups.build]
     selectors = ["balsam"]
   [groups.run]
-    artifact = "0a67fb8fbbc9"
     [groups.run.test_params]
       bs_strategy = "3"
       bucket_size = "10"
@@ -114,7 +109,6 @@
       module = "github.com/libp2p/go-libp2p-xor"
       version = "df24f5b04bcbdc0059b27989163a6090f4f6dc7a"
   [groups.run]
-    artifact = "f1d89aed47ea"
     [groups.run.test_params]
       alpha = "6"
       bs_strategy = "3"
@@ -138,7 +132,6 @@
       module = "github.com/libp2p/go-libp2p-xor"
       version = "df24f5b04bcbdc0059b27989163a6090f4f6dc7a"
   [groups.run]
-    artifact = "f1d89aed47ea"
     [groups.run.test_params]
       alpha = "6"
       bs_strategy = "3"
@@ -163,7 +156,6 @@
       module = "github.com/libp2p/go-libp2p-xor"
       version = "df24f5b04bcbdc0059b27989163a6090f4f6dc7a"
   [groups.run]
-    artifact = "f1d89aed47ea"
     [groups.run.test_params]
       alpha = "6"
       bs_strategy = "3"
@@ -188,7 +180,6 @@
       module = "github.com/libp2p/go-libp2p-xor"
       version = "df24f5b04bcbdc0059b27989163a6090f4f6dc7a"
   [groups.run]
-    artifact = "f1d89aed47ea"
     [groups.run.test_params]
       alpha = "6"
       bootstrapper = "true"

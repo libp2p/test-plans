@@ -20,7 +20,6 @@
   [groups.build]
     selectors = ["balsam"]
   [groups.run]
-    artifact = "909427826938.dkr.ecr.us-east-1.amazonaws.com/testground-us-east-1-dht:701251a63b92"
     [groups.run.test_params]
       bs_strategy = "7"
       bucket_size = "10"
@@ -39,7 +38,6 @@
   [groups.build]
     selectors = ["balsam"]
   [groups.run]
-    artifact = "909427826938.dkr.ecr.us-east-1.amazonaws.com/testground-us-east-1-dht:701251a63b92"
     [groups.run.test_params]
       bs_strategy = "7"
       bucket_size = "10"
@@ -58,7 +56,6 @@
   [groups.build]
     selectors = ["balsam"]
   [groups.run]
-    artifact = "909427826938.dkr.ecr.us-east-1.amazonaws.com/testground-us-east-1-dht:701251a63b92"
     [groups.run.test_params]
       bs_strategy = "7"
       bucket_size = "10"
@@ -76,7 +73,6 @@
   [groups.build]
     selectors = ["balsam"]
   [groups.run]
-    artifact = "909427826938.dkr.ecr.us-east-1.amazonaws.com/testground-us-east-1-dht:701251a63b92"
     [groups.run.test_params]
       bs_strategy = "7"
       bucket_size = "10"
@@ -95,7 +91,6 @@
   [groups.build]
     selectors = ["balsam"]
   [groups.run]
-    artifact = "909427826938.dkr.ecr.us-east-1.amazonaws.com/testground-us-east-1-dht:701251a63b92"
     [groups.run.test_params]
       bs_strategy = "7"
       bucket_size = "10"
@@ -122,7 +117,6 @@
       module = "github.com/libp2p/go-libp2p-xor"
       version = "df24f5b04bcbdc0059b27989163a6090f4f6dc7a"
   [groups.run]
-    artifact = "909427826938.dkr.ecr.us-east-1.amazonaws.com/testground-us-east-1-dht:ca78473d669d"
     [groups.run.test_params]
       alpha = "6"
       beta = "3"
@@ -148,7 +142,6 @@
       module = "github.com/libp2p/go-libp2p-xor"
       version = "df24f5b04bcbdc0059b27989163a6090f4f6dc7a"
   [groups.run]
-    artifact = "909427826938.dkr.ecr.us-east-1.amazonaws.com/testground-us-east-1-dht:ca78473d669d"
     [groups.run.test_params]
       alpha = "6"
       beta = "3"
@@ -175,7 +168,6 @@
       module = "github.com/libp2p/go-libp2p-xor"
       version = "df24f5b04bcbdc0059b27989163a6090f4f6dc7a"
   [groups.run]
-    artifact = "909427826938.dkr.ecr.us-east-1.amazonaws.com/testground-us-east-1-dht:ca78473d669d"
     [groups.run.test_params]
       alpha = "6"
       beta = "3"
@@ -202,7 +194,6 @@
       module = "github.com/libp2p/go-libp2p-xor"
       version = "df24f5b04bcbdc0059b27989163a6090f4f6dc7a"
   [groups.run]
-    artifact = "909427826938.dkr.ecr.us-east-1.amazonaws.com/testground-us-east-1-dht:ca78473d669d"
     [groups.run.test_params]
       alpha = "6"
       beta = "3"
