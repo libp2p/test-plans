@@ -206,7 +206,7 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 				// into InfluxDB when the test concludes.
 				//
 				// ping-result is the metric name, and round and peer are tags.
-				point := fmt.Sprintf("ping-result.ms,round=%s", tag)
+				point := fmt.Sprintf("ping-result.ms,round=%s,group=%s", tag, runenv.TestGroupID)
 				runenv.R().RecordPoint(point, float64(res.RTT.Milliseconds()))
 				return nil
 			})
