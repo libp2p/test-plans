@@ -1,0 +1,33 @@
+[metadata]
+  name = "basic"
+
+[global]
+  plan = "libp2p/ping"
+  case = "ping"
+  total_instances = 10
+  builder = "docker:go"
+  runner = "cluster:k8s"
+
+[global.build_config]
+  push_registry=true
+  go_proxy_mode="remote"
+  go_proxy_url="http://localhost:8081"
+  registry_type="aws"
+
+[[groups]]
+  id = "low-latency"
+  instances = { count = 5 }
+  [groups.run.test_params]
+    max_latency_ms = "500"
+  [groups.resources]
+    memory = "1024Mi"
+    cpu = "1000m"
+
+[[groups]]
+  id = "high-latency"
+  instances = { count = 5 }
+  [groups.run.test_params]
+    max_latency_ms = "5000"
+  [groups.resources]
+    memory = "1024Mi"
+    cpu = "1000m"

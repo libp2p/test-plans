@@ -1,7 +1,7 @@
 ## The manifest file describes a test plan to Testground.
 ## Amongst other things, it indicates the name of the test plan, the supported builders and runners, and configurations for those.
 ## It describes the test cases, specifying the number of instances and test parameters each supports.
-name = "ping"
+name = "libp2p/ping"
 
 [builders]
 "docker:go" = { enabled = true, enable_go_build_cache = true }

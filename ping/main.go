@@ -13,8 +13,8 @@ import (
 
 	"github.com/libp2p/go-libp2p-core/peer"
 
-	"github.com/libp2p/go-libp2p-noise"
-	"github.com/libp2p/go-libp2p-secio"
+	noise "github.com/libp2p/go-libp2p-noise"
+	secio "github.com/libp2p/go-libp2p-secio"
 	tls "github.com/libp2p/go-libp2p-tls"
 
 	"github.com/testground/sdk-go/network"
@@ -206,7 +206,7 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 				// into InfluxDB when the test concludes.
 				//
 				// ping-result is the metric name, and round and peer are tags.
-				point := fmt.Sprintf("ping-result,round=%s,peer=%s", tag, id)
+				point := fmt.Sprintf("ping-result.ms,round=%s", tag)
 				runenv.R().RecordPoint(point, float64(res.RTT.Milliseconds()))
 				return nil
 			})
@@ -280,6 +280,8 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 			CallbackState:  sync.State(fmt.Sprintf("network-configured-%d", i)),
 			CallbackTarget: runenv.TestInstanceCount,
 		})
+
+		time.Sleep(5 * time.Second)
 
 		if err := pingPeers(fmt.Sprintf("iteration-%d", i)); err != nil {
 			return err
