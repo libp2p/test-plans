@@ -12,6 +12,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/testground/sdk-go/ptypes"
 	"github.com/testground/sdk-go/runtime"
 	"github.com/testground/sdk-go/sync"
 
@@ -33,7 +34,9 @@ import (
 	tptu "github.com/libp2p/go-libp2p-transport-upgrader"
 	tcp "github.com/libp2p/go-tcp-transport"
 	"github.com/multiformats/go-multiaddr"
-	"github.com/multiformats/go-multiaddr-net"
+	manet "github.com/multiformats/go-multiaddr-net"
+
+	tgNetwork "github.com/testground/sdk-go/network"
 
 	"go.uber.org/zap"
 )
@@ -242,7 +245,7 @@ func NewDHTNode(ctx context.Context, runenv *runtime.RunEnv, opts *SetupOpts, id
 	return node, dht, nil
 }
 
-func getSubnetAddr(subnet *runtime.IPNet) (*net.TCPAddr, error) {
+func getSubnetAddr(subnet *ptypes.IPNet) (*net.TCPAddr, error) {
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {
 		return nil, err
@@ -274,37 +277,33 @@ func SetupNetwork(ctx context.Context, ri *DHTRunInfo, latency time.Duration) er
 
 	if networkSetupNum == 0 {
 		// Wait for the network to be initialized.
-		if err := ri.Client.WaitNetworkInitialized(ctx, ri.RunEnv); err != nil {
+		if err := ri.NetClient.WaitNetworkInitialized(ctx); err != nil {
 			return err
 		}
 	}
 
 	networkSetupNum++
 
-	// TODO: just put the unique testplan id inside the runenv?
-	hostname, err := os.Hostname()
-	if err != nil {
-		return err
-	}
-
 	state := sync.State(fmt.Sprintf("network-configured-%d", networkSetupNum))
 
-	_, _ = ri.Client.Publish(ctx, sync.NetworkTopic(hostname), &sync.NetworkConfig{
-		Network: "default",
-		Enable:  true,
-		Default: sync.LinkShape{
+	cfg := &tgNetwork.Config{
+		Network:       "default",
+		Enable:        true,
+		RoutingPolicy: tgNetwork.AllowAll,
+		Default: tgNetwork.LinkShape{
 			Latency:   latency,
 			Bandwidth: 10 << 20, // 10Mib
 		},
-		State: state,
-	})
+		CallbackState:  state,
+		CallbackTarget: ri.RunEnv.TestInstanceCount,
+	}
+	err := ri.NetClient.ConfigureNetwork(ctx, cfg)
 
-	ri.RunEnv.RecordMessage("finished resetting network latency")
-
-	err = <-ri.Client.MustBarrier(ctx, state, ri.RunEnv.TestInstanceCount).C
 	if err != nil {
 		return fmt.Errorf("failed to configure network: %w", err)
 	}
+	ri.RunEnv.RecordMessage("finished resetting network latency")
+
 	return nil
 }
 
@@ -315,13 +314,16 @@ func Setup(ctx context.Context, runenv *runtime.RunEnv, opts *SetupOpts) (*DHTRu
 	}
 
 	client := sync.MustBoundClient(ctx, runenv)
+	netClient := tgNetwork.NewClient(client, runenv)
+
 	//defer watcher.Close()
 	//defer writer.Close()
 
 	ri := &DHTRunInfo{
 		RunInfo: &utils.RunInfo{
-			RunEnv: runenv,
-			Client: client,
+			RunEnv:    runenv,
+			Client:    client,
+			NetClient: netClient,
 		},
 		DHTGroupProperties: make(map[string]*SetupOpts),
 	}
