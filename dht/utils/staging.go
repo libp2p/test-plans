@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/testground/sdk-go/runtime"
 	"github.com/testground/sdk-go/sync"
 )
 
@@ -60,27 +59,11 @@ func (s *BatchStager) End() error {
 	if err != nil {
 		return err
 	}
-
-	s.ri.RunEnv.RecordMetric(&runtime.MetricDefinition{
-		Name:           "signal " + string(stage),
-		Unit:           "ns",
-		ImprovementDir: -1,
-	}, float64(time.Since(t).Nanoseconds()))
-
+	s.ri.RunEnv.R().RecordPoint("signal "+string(stage), float64(time.Since(t).Nanoseconds()))
 	t = time.Now()
-
-	err = <-s.ri.Client.MustBarrier(s.ctx, stage, s.total).C
-	s.ri.RunEnv.RecordMetric(&runtime.MetricDefinition{
-		Name:           "barrier" + string(stage),
-		Unit:           "ns",
-		ImprovementDir: -1,
-	}, float64(time.Since(t).Nanoseconds()))
-
-	s.ri.RunEnv.RecordMetric(&runtime.MetricDefinition{
-		Name:           "full " + string(stage),
-		Unit:           "ns",
-		ImprovementDir: -1,
-	}, float64(time.Since(s.t).Nanoseconds()))
+	_, err = s.ri.Client.SignalAndWait(s.ctx, stage, s.total)
+	s.ri.RunEnv.R().RecordPoint("barrier"+string(stage), float64(time.Since(t).Nanoseconds()))
+	s.ri.RunEnv.R().RecordPoint("full "+string(stage), float64(time.Since(s.t).Nanoseconds()))
 	return err
 }
 func (s *BatchStager) Reset(name string) { s.stager.Reset(name) }

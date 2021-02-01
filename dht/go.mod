@@ -24,8 +24,8 @@ require (
 	github.com/multiformats/go-multiaddr-net v0.1.2
 	github.com/opentracing/opentracing-go v1.1.0 // indirect
 	github.com/pkg/errors v0.9.1
-	github.com/testground/sdk-go v0.1.1
-	go.uber.org/zap v1.14.1
+	github.com/testground/sdk-go v0.2.7
+	go.uber.org/zap v1.15.0
 	golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a
 )
 

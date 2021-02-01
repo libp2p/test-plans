@@ -4,8 +4,9 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"github.com/libp2p/test-plans/dht/utils"
 	"time"
+
+	"github.com/libp2p/test-plans/dht/utils"
 
 	"golang.org/x/sync/errgroup"
 
@@ -87,18 +88,8 @@ func TestGetClosestPeers(ctx context.Context, ri *DHTRunInfo) error {
 				}
 
 				if err == nil {
-					runenv.RecordMetric(&runtime.MetricDefinition{
-						Name:           fmt.Sprintf("time-to-gcp-%d", i),
-						Unit:           "ns",
-						ImprovementDir: -1,
-					}, float64(time.Since(t).Nanoseconds()))
-
-					runenv.RecordMetric(&runtime.MetricDefinition{
-						Name:           fmt.Sprintf("gcp-peers-found-%d", i),
-						Unit:           "peers",
-						ImprovementDir: 1,
-					}, float64(len(pids)))
-
+					runenv.R().RecordPoint(fmt.Sprintf("time-to-gcp-%d", i), float64(time.Since(t).Nanoseconds()))
+					runenv.R().RecordPoint(fmt.Sprintf("gcp-peers-found-%d", i), float64(len(pids)))
 					actualClosest := getClosestPeerRanking(node, others, c)
 					outputGCP(runenv, node.info.Addrs.ID, c, peers, actualClosest)
 				} else {

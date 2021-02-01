@@ -106,18 +106,10 @@ func putIPNSRecord(ctx context.Context, ri *DHTRunInfo, fpOpts findProvsParams, 
 				cancel()
 				if err == nil {
 					runenv.RecordMessage("Put IPNS Key: %s", recordKey)
-					runenv.RecordMetric(&runtime.MetricDefinition{
-						Name:           fmt.Sprintf("time-to-put-%d", i),
-						Unit:           "ns",
-						ImprovementDir: -1,
-					}, float64(time.Since(t).Nanoseconds()))
+					runenv.R().RecordPoint(fmt.Sprintf("time-to-put-%d", i), float64(time.Since(t).Nanoseconds()))
 				} else {
 					runenv.RecordMessage("Failed to Put IPNS Key: %s : err: %s", recordKey, err)
-					runenv.RecordMetric(&runtime.MetricDefinition{
-						Name:           fmt.Sprintf("time-to-failed-put-%d", i),
-						Unit:           "ns",
-						ImprovementDir: -1,
-					}, float64(time.Since(t).Nanoseconds()))
+					runenv.R().RecordPoint(fmt.Sprintf("time-to-failed-put-%d", i), float64(time.Since(t).Nanoseconds()))
 				}
 
 				return nil
@@ -160,12 +152,7 @@ func getIPNSRecord(ctx context.Context, ri *DHTRunInfo, fpOpts findProvsParams, 
 					recordCh, err := node.dht.SearchValue(ectx, k)
 					if err != nil {
 						runenv.RecordMessage("Failed to Search for IPNS Key: %s : err: %s", k, err)
-						runenv.RecordMetric(&runtime.MetricDefinition{
-							Name:           fmt.Sprintf("time-to-failed-put-%d", i),
-							Unit:           "ns",
-							ImprovementDir: -1,
-						}, float64(time.Since(t).Nanoseconds()))
-						return nil //nolint
+						runenv.R().RecordPoint(fmt.Sprintf("time-to-failed-put-%d", i), float64(time.Since(t).Nanoseconds()))
 					}
 					status := "done"
 
@@ -183,11 +170,7 @@ func getIPNSRecord(ctx context.Context, ri *DHTRunInfo, fpOpts findProvsParams, 
 							tLastFound = time.Now()
 
 							if numRecs == 0 {
-								runenv.RecordMetric(&runtime.MetricDefinition{
-									Name:           fmt.Sprintf("time-to-get-first|%s|%d", groupID, i),
-									Unit:           "ns",
-									ImprovementDir: -1,
-								}, float64(tLastFound.Sub(t).Nanoseconds()))
+								runenv.R().RecordPoint(fmt.Sprintf("time-to-get-first|%s|%d"), float64(tLastFound.Sub(t).Nanoseconds()))
 							}
 
 							numRecs++
@@ -198,17 +181,9 @@ func getIPNSRecord(ctx context.Context, ri *DHTRunInfo, fpOpts findProvsParams, 
 					cancel()
 
 					if numRecs > 0 {
-						runenv.RecordMetric(&runtime.MetricDefinition{
-							Name:           fmt.Sprintf("time-to-get-last|%s|%s|%d", status, groupID, i),
-							Unit:           "ns",
-							ImprovementDir: -1,
-						}, float64(tLastFound.Sub(t).Nanoseconds()))
+						runenv.R().RecordPoint(fmt.Sprintf("time-to-get-last|%s|%s|%d", status, groupID, i), float64(tLastFound.Sub(t).Nanoseconds()))
 
-						runenv.RecordMetric(&runtime.MetricDefinition{
-							Name:           fmt.Sprintf("record-updates|%s|%s|%d|%d", status, groupID, recNum, i),
-							Unit:           "records",
-							ImprovementDir: -1,
-						}, float64(numRecs))
+						runenv.R().RecordPoint(fmt.Sprintf("record-updates|%s|%s|%d|%d", status, groupID, recNum, i), float64(numRecs))
 
 						if len(lastRec) == 0 {
 							panic("this should not be possible")
@@ -220,24 +195,14 @@ func getIPNSRecord(ctx context.Context, ri *DHTRunInfo, fpOpts findProvsParams, 
 						}
 
 						if diff := int(*recordResult.Sequence) - recNum; diff > 0 {
-							runenv.RecordMetric(&runtime.MetricDefinition{
-								Name:           fmt.Sprintf("incomplete-get|%s|%d|%d", groupID, recNum, i),
-								Unit:           "records",
-								ImprovementDir: -1,
-							}, float64(diff))
-							status = "fail"
+							runenv.R().RecordPoint(fmt.Sprintf("incomplete-get|%s|%d|%d", groupID, recNum, i), float64(diff))
 						}
 
 					} else {
 						status = "fail"
 					}
 
-					runenv.RecordMetric(&runtime.MetricDefinition{
-						Name:           fmt.Sprintf("time-to-get|%s|%s|%d|%d", status, groupID, recNum, i),
-						Unit:           "ns",
-						ImprovementDir: -1,
-					}, float64(time.Since(t).Nanoseconds()))
-
+					runenv.R().RecordPoint(fmt.Sprintf("time-to-get|%s|%s|%d|%d", status, groupID, recNum, i), float64(time.Since(t).Nanoseconds()))
 					return nil
 				})
 			}

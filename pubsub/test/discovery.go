@@ -177,12 +177,12 @@ type PeerSubscriber struct {
 	lk                  sync.Mutex
 	peers               []PeerRegistration
 	runenv              *runtime.RunEnv
-	client              *tgsync.Client
+	client              *tgsync.DefaultClient
 	containerCount      int
 	containerNodesTotal int
 }
 
-func NewPeerSubscriber(ctx context.Context, runenv *runtime.RunEnv, client *tgsync.Client, containerCount int, containerNodesTotal int) *PeerSubscriber {
+func NewPeerSubscriber(ctx context.Context, runenv *runtime.RunEnv, client *tgsync.DefaultClient, containerCount int, containerNodesTotal int) *PeerSubscriber {
 	return &PeerSubscriber{
 		runenv:              runenv,
 		client:              client,

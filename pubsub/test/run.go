@@ -53,7 +53,7 @@ type testInstance struct {
 	nodeIdx        int
 	latency        time.Duration
 	connsDef       *ConnectionsDef
-	client         *sync.Client
+	client         *sync.DefaultClient
 	discovery      *SyncDiscovery
 	peerSubscriber *PeerSubscriber
 }
@@ -194,7 +194,7 @@ func RunSimulation(runenv *runtime.RunEnv) error {
 	return errgrp.Wait()
 }
 
-func getNodeTypeSeqNum(ctx context.Context, client *sync.Client, h host.Host, nodeType NodeType) (int64, error) {
+func getNodeTypeSeqNum(ctx context.Context, client sync.Client, h host.Host, nodeType NodeType) (int64, error) {
 	topic := sync.NewTopic("node-type-"+string(nodeType), &peer.AddrInfo{})
 	return client.Publish(ctx, topic, host.InfoFromHost(h))
 }
