@@ -1,0 +1,110 @@
+## This composition runs a pubsub simulation with no adversarial nodes, to
+## establish baseline metrics.
+##
+[metadata]
+name    = "pubsub-"
+author  = "yusefnapora"
+
+[global]
+plan    = "pubsub"
+case    = "evaluate"
+builder = "docker:go"
+runner  = "local:docker"
+total_instances = 30
+
+[global.build_config]
+
+
+[global.run_config]
+log_level="info"
+
+[[groups]]
+id = "publishers"
+instances = { count = 25 }
+
+  [groups.run.test_params]
+  t_heartbeat = "1s"
+  t_heartbeat_initial_delay = "100ms"
+  t_run = "2m"
+  t_warm = "5s"
+  t_cool = "10s"
+  t_setup = "1m"
+  full_traces = "False"
+
+  publisher = "true"
+  flood_publishing = 'True'
+  topics = '[{"id": "blocks", "message_rate": "120/s", "message_size": "2 KiB"}]'
+  score_params = '{"DecayInterval": "1s", "DecayToZero": 0.01, "IPColocationFactorThreshold": 1, "IPColocationFactorWeight": 0.0, "RetainScore": "30s", "Thresholds": {"AcceptPXThreshold": 0.0, "GossipThreshold": -4000.0, "GraylistThreshold": -10000.0, "OpportunisticGraftThreshold": 0.0, "PublishThreshold": -5000.0}, "Topics": {"blocks": {"FirstMessageDeliveriesCap": 1500.0, "FirstMessageDeliveriesDecay": 0.9916, "FirstMessageDeliveriesWeight": 0.664, "InvalidMessageDeliveriesDecay": 0.9994, "InvalidMessageDeliveriesWeight": -99.0, "MeshFailurePenaltyDecay": 0.997, "MeshFailurePenaltyWeight": -0.25, "MeshMessageDeliveriesActivation": "30s", "MeshMessageDeliveriesCap": 400.0, "MeshMessageDeliveriesDecay": 0.97, "MeshMessageDeliveriesThreshold": 100.0, "MeshMessageDeliveriesWeight": -0.25, "MeshMessageDeliveryWindow": "5ms", "TimeinMeshCap": 3600.0, "TimeinMeshQuantum": "1s", "TimeinMeshWeight": 0.0027, "TopicWeight": 0.25}}}'
+  t_score_inspect_period = '5s'
+  validate_queue_size = '32'
+  outbound_queue_size = '32'
+
+  t_latency = '5ms'
+  t_latency_max = '50ms'
+  jitter_pct = '10'
+  bandwidth_mb = '10240'
+
+  topology = '{}'
+  degree = '20'
+
+  overlay_d = '10'
+  overlay_dlo = '8'
+  overlay_dhi = '16'
+  overlay_dscore = '5'
+  overlay_dlazy = '12'
+  gossip_factor = '0.25'
+  opportunistic_graft_ticks = '60'
+
+  n_container_nodes_total = '30'
+  n_nodes_per_container = '1'
+
+  connect_delays = '150@0s'
+  connect_delay_jitter_pct = '5'
+
+[[groups]]
+id = "lurkers"
+instances = { count = 5 }
+
+  [groups.build]
+  selectors = ['hardened_api']
+  dependencies = [
+    { module = "github.com/libp2p/go-libp2p-pubsub", version = "9e129db7661f8da6d605466a2dc1671b1ea33a64" }
+  ]
+
+  [groups.run.test_params]
+  t_heartbeat = "1s"
+  t_heartbeat_initial_delay = "100ms"
+  t_run = "2m"
+  t_warm = "5s"
+  t_cool = "10s"
+  t_setup = "1m"
+  full_traces = "False"
+
+  topics = '[{"id": "blocks", "message_rate": "120/s", "message_size": "2 KiB"}]'
+  score_params = '{"DecayInterval": "1s", "DecayToZero": 0.01, "IPColocationFactorThreshold": 1, "IPColocationFactorWeight": 0.0, "RetainScore": "30s", "Thresholds": {"AcceptPXThreshold": 0.0, "GossipThreshold": -4000.0, "GraylistThreshold": -10000.0, "OpportunisticGraftThreshold": 0.0, "PublishThreshold": -5000.0}, "Topics": {"blocks": {"FirstMessageDeliveriesCap": 1500.0, "FirstMessageDeliveriesDecay": 0.9916, "FirstMessageDeliveriesWeight": 0.664, "InvalidMessageDeliveriesDecay": 0.9994, "InvalidMessageDeliveriesWeight": -99.0, "MeshFailurePenaltyDecay": 0.997, "MeshFailurePenaltyWeight": -0.25, "MeshMessageDeliveriesActivation": "30s", "MeshMessageDeliveriesCap": 400.0, "MeshMessageDeliveriesDecay": 0.97, "MeshMessageDeliveriesThreshold": 100.0, "MeshMessageDeliveriesWeight": -0.25, "MeshMessageDeliveryWindow": "5ms", "TimeinMeshCap": 3600.0, "TimeinMeshQuantum": "1s", "TimeinMeshWeight": 0.0027, "TopicWeight": 0.25}}}'
+  t_score_inspect_period = '5s'
+  validate_queue_size = '32'
+  outbound_queue_size = '32'
+
+  t_latency = '5ms'
+  t_latency_max = '50ms'
+  jitter_pct = '10'
+  bandwidth_mb = '10240'
+
+  topology = '{}'
+  degree = '20'
+
+  overlay_d = '10'
+  overlay_dlo = '8'
+  overlay_dhi = '16'
+  overlay_dscore = '5'
+  overlay_dlazy = '12'
+  gossip_factor = '0.25'
+  opportunistic_graft_ticks = '60'
+
+
+  n_container_nodes_total = '30'
+  n_nodes_per_container = '1'
+
+  connect_delays = '150@0s'
+  connect_delay_jitter_pct = '5'

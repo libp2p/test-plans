@@ -1,24 +1,11 @@
 package main
 
-import (
-	"errors"
-	"fmt"
+import "github.com/testground/sdk-go/run"
 
-	"github.com/testground/sdk-go/runtime"
-)
-
-func main() {
-	runtime.Invoke(run)
+var testCases = map[string]interface{}{
+	"evaluate": RunSimulation,
 }
 
-// Pick a different example function to run
-// depending on the name of the test case.
-func run(runenv *runtime.RunEnv) error {
-	switch c := runenv.TestCase; c {
-	case "evaluate":
-		return RunSimulation(runenv)
-	default:
-		msg := fmt.Sprintf("Unknown Testcase %s", c)
-		return errors.New(msg)
-	}
+func main() {
+	run.InvokeMap(testCases)
 }
