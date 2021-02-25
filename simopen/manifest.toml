@@ -1,0 +1,32 @@
+name = "libp2p"
+
+[defaults]
+builder = "exec:go"
+runner = "local:exec"
+
+[builders."docker:go"]
+enabled = true
+
+[builders."exec:go"]
+enabled = true
+
+[runners."local:docker"]
+enabled = true
+
+[runners."local:exec"]
+enabled = true
+
+[runners."cluster:swarm"]
+enabled = false
+
+[runners."cluster:k8s"]
+enabled = false
+
+
+[[testcases]]
+name = "tcp-sim-open"
+instances = { min = 2, max = 20, default = 2 }
+
+[[testcases]]
+name = "quic-sim-open"
+instances = { min = 2, max = 20, default = 2 }
