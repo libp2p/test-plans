@@ -1,0 +1,21 @@
+[metadata]
+  name = "simopen/sim-nonsim-dial"
+
+[global]
+  plan = "simopen"
+  case = "sim-nonsim-dial"
+  total_instances = 10
+  builder = "docker:go"
+  runner = "local:docker"
+
+[[groups]]
+  id = "nonsimopen"
+  instances = { count = 5 }
+  [groups.build]
+    dependencies = [
+        { module = "github.com/libp2p/go-libp2p", version = "v0.13.0"},
+    ]
+
+[[groups]]
+  id = "simopen"
+  instances = { count = 5 }

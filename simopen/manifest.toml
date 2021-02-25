@@ -1,4 +1,4 @@
-name = "libp2p"
+name = "simopen"
 
 [defaults]
 builder = "exec:go"
@@ -27,6 +27,26 @@ enabled = false
 name = "tcp-sim-open"
 instances = { min = 2, max = 20, default = 2 }
 
+    [testcases.params]
+    iterations = { type = "int", desc = "number of iterations we'll run for each instance", unit = "count", default = 1}
+
 [[testcases]]
 name = "quic-sim-open"
 instances = { min = 2, max = 20, default = 2 }
+
+    [testcases.params]
+    iterations = { type = "int", desc = "number of iterations we'll run for each instance", unit = "count", default = 1}
+
+[[testcases]]
+name = "sim-nonsim-dial"
+instances = { min = 2, max = 20, default = 2 }
+
+    [testcases.params]
+    iterations = { type = "int", desc = "number of iterations we'll run for each instance", unit = "count", default = 1}
+
+[[testcases]]
+name = "nonsim-sim-dial"
+instances = { min = 2, max = 20, default = 2 }
+
+    [testcases.params]
+    iterations = { type = "int", desc = "number of iterations we'll run for each instance", unit = "count", default = 1}
