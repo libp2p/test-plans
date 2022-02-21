@@ -25,7 +25,7 @@ This plan contains a single test case called `ping` (same as the plan).
 
 This test case supports three test parameters:
 
-* `secure_channel`: the secure channel to use. One of: `noise`, `secio`, `tls` (default: `noise`).
+* `secure_channel`: the secure channel to use. One of: `noise`, `tls` (default: `noise`).
 * `max_latency_ms`: the maximum latency to set in traffic shaping, in milliseconds (default: `1000`).
 * `iterations`: the number of ping iterations to run (default: `5`).
 
