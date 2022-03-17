@@ -1,9 +1,12 @@
+use env_logger::Env;
 use std::net::{Ipv4Addr, TcpListener, TcpStream};
 
 const LISTENING_PORT: u16 = 1234;
 
 #[async_std::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    env_logger::Builder::from_env(Env::default().default_filter_or("debug")).init();
+
     let mut sync_client = testground::sync::Client::new().await?;
 
     let local_addr = &if_addrs::get_if_addrs()
@@ -22,9 +25,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             sync_client.signal("listening".to_string()).await?;
 
-            for _stream in listener.incoming() {
-                println!("Established inbound TCP connection.");
-            }
+            listener
+                .incoming()
+                .next()
+                .expect("Listener not to close.")?;
+            println!("Established inbound TCP connection.");
         }
         std::net::IpAddr::V4(addr) if addr.octets()[3] % 2 != 0 => {
             println!("Test instance, connecting to listening instance.");
