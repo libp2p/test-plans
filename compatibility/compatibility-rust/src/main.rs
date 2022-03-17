@@ -46,5 +46,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
+    sync_client.publish_success().await?;
+
     Ok(())
 }
