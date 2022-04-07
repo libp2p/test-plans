@@ -17,16 +17,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Seq is: {:?}", seq);
 
+    let ip_addr = match run_params.test_subnet {
+        ipnetwork::IpNetwork::V4(network) => {
+            let mut octets = network.ip().octets();
+            octets[2] = ((seq >> 8) + 1) as u8;
+            octets[3] = seq as u8;
+            octets.into()
+        }
+        _ => unimplemented!(),
+    };
+
     client
         .configure_network(testground::network_conf::NetworkConfiguration {
             network: "default".to_string(),
-            ipv4: Some(
-                ipnetwork::Ipv4Network::new(
-                    Ipv4Addr::new(16, 1, ((seq >> 8) + 1) as u8, seq as u8),
-                    24,
-                )
-                .unwrap(),
-            ),
+            ipv4: Some(ipnetwork::Ipv4Network::new(ip_addr, 32).unwrap()),
             ipv6: None,
             enable: true,
             default: testground::network_conf::LinkShape {
@@ -69,7 +73,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             client.barrier("listening".to_string(), 1).await?;
 
-            let _stream = TcpStream::connect((Ipv4Addr::new(16, 1, 1, 1), LISTENING_PORT)).unwrap();
+            let remote_addr: Ipv4Addr = {
+                let mut octets = ip_addr.octets();
+                octets[3] = 1;
+                octets.into()
+            };
+            let _stream = TcpStream::connect((remote_addr, LISTENING_PORT)).unwrap();
             println!("Established outbound TCP connection.");
         }
     }
