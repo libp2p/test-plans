@@ -12,4 +12,4 @@ enabled = true
 
 [[testcases]]
 name = "tcp-connect"
-instances = { min = 2, max = 2, default = 2 }
+instances = { min = 2, max = 42, default = 2 }

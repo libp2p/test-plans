@@ -6,6 +6,7 @@ import (
 	"net"
 	"time"
 
+	"github.com/testground/sdk-go/network"
 	"github.com/testground/sdk-go/run"
 	"github.com/testground/sdk-go/runtime"
 )
@@ -23,38 +24,40 @@ func tcpconnect(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	defer cancel()
 
 	client := initCtx.SyncClient
+	netclient := initCtx.NetClient
 
-	iface, err := net.InterfaceByName("eth1")
-	if err != nil {
-		return err
+	seq := client.MustSignalAndWait(ctx, "ip-allocation", runenv.TestInstanceCount)
+
+	config := &network.Config{
+		// Control the "default" network. At the moment, this is the only network.
+		Network: "default",
+
+		// Enable this network. Setting this to false will disconnect this test
+		// instance from this network. You probably don't want to do that.
+		Enable: true,
+		Default: network.LinkShape{
+			Latency:   100 * time.Millisecond,
+			Bandwidth: 1 << 20, // 1Mib
+		},
+		RoutingPolicy: network.AllowAll,
 	}
 
-	addrs, err := iface.Addrs()
-	if err != nil {
-		return err
-	}
+	ipC := byte((seq >> 8) + 1)
+	ipD := byte(seq)
+	config.IPv4 = runenv.TestSubnet
+	config.IPv4.IP = append(config.IPv4.IP[0:2:2], ipC, ipD)
+	config.IPv4.Mask = []byte{255, 255, 255, 0}
+	config.CallbackState = "ip-changed"
 
-	var ip net.IP
-        switch v := addrs[0].(type) {
-        case *net.IPNet:
-		if !v.IP.IsLoopback() {
-			if v.IP.To4() != nil {
-				ip = v.IP
-			}
-		}
-        }
-	runenv.RecordMessage("eth1 ip: ", ip)
+	netclient.MustConfigureNetwork(ctx, config)
 
 	var (
+		err      error
 		listener *net.TCPListener
 		conn     *net.TCPConn
 	)
 
-	// If the last octet of the IP is even, act as a listener. If it is odd,
-	// act as a dialer.
-	//
-	// TODO: This is a hack.
-	if ip[15] % 2 == 0 {
+	if seq == 1 {
 		fmt.Println("Test instance, listening for incoming connections.")
 		listener, err = net.ListenTCP("tcp4", &net.TCPAddr{Port: 1234})
 		if err != nil {
@@ -62,17 +65,16 @@ func tcpconnect(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 		}
 		defer listener.Close()
 		client.MustSignalEntry(ctx, "listening")
-		conn, err = listener.AcceptTCP()
-		fmt.Println("Established inbound TCP connection.")
+		for i := 0; i < runenv.TestInstanceCount -1; i++ {
+			conn, err = listener.AcceptTCP()
+			fmt.Println("Established inbound TCP connection.")
+		}
 	} else {
 		fmt.Println("Test instance, connecting to listening instance.")
 		client.MustBarrier(ctx, "listening", 1)
 
-		remoteAddr := ip
-		ip[15] = ip[15] -1
-
 		conn, err = net.DialTCP("tcp4", nil, &net.TCPAddr{
-			IP:   remoteAddr,
+			IP:   append(config.IPv4.IP[:3:3], 1),
 			Port: 1234,
 		})
 		fmt.Println("Established outbound TCP connection.")
