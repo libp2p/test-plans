@@ -20,7 +20,7 @@
     percentage = 0.0
   [groups.build]
   [groups.run]
-    artifact = "compatibility-rust:b8c7078232be"
+    artifact = "$ARTIFACT_RUST"
 
 [[groups]]
   id = "group2"
@@ -32,4 +32,4 @@
     percentage = 0.0
   [groups.build]
   [groups.run]
-    artifact = "tg-plan-compatibility-go:7ed26b20d6f9"
+    artifact = "$ARTIFACT_GO"
