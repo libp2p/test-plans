@@ -45,3 +45,6 @@ jobs:
       - name: run the test plan
         # TODO: same
         run: cd ./test-plans && ./run.sh
+      - name: Setup tmate session
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
