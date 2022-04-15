@@ -1,7 +1,7 @@
 #! /usr/bin/env bash
 set -e
 set -o pipefail
-set -x
+# set -x
 
 # TODO: use INPUT_TESTPLAN and INPUT_TESTCASE
 
