@@ -4,22 +4,32 @@ description: setup a local testground instance
 runs:
   using: "composite"
   steps:
-    - name: Checkout testground
-      uses: actions/checkout@v2
-      with:
-        path: testground
-        repository: testground/testground
-
-    - name: Setup Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: "1.17.x"
-
-    - name: Install testground
+    - name: Run testground Docker
       shell: bash
-      run: make install
-      working-directory: testground
-
-    - name: Run testground daemon
+      run: docker run -d --name=testground-daemon --network=host -v /var/run/docker.sock:/var/run/docker.sock iptestground/testground:edge
+    - name: Extract binary (just an experiment)
       shell: bash
-      run: testground daemon > output.log 2>&1 &
+      run: mkdir -p ${PWD}/my-bin/ && docker cp "testground-daemon:/testground" "${PWD}/my-bin/testground"
+    - name: Inject testground into PATH
+      shell: bash
+      run: echo ${PWD}/my-bin >> $GITHUB_PATH
+
+    # - name: Checkout testground
+    #   uses: actions/checkout@v2
+    #   with:
+    #     path: testground
+    #     repository: testground/testground
+
+    # - name: Setup Go
+    #   uses: actions/setup-go@v2
+    #   with:
+    #     go-version: "1.17.x"
+
+    # - name: Install testground
+    #   shell: bash
+    #   run: make install
+    #   working-directory: testground
+
+    # - name: Run testground daemon
+    #   shell: bash
+    #   run: testground daemon > output.log 2>&1 &
