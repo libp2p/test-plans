@@ -36,13 +36,13 @@ fi
 testground plan import --from ./compatibility/compatibility-go
 testground build single --wait \
     --builder docker:go \
-    --plan compatibility-go | tee build.out
-export ARTIFACT_GO=$(awk -F\" '/generated build artifact/ {print $8}' <build.out)
+    --plan compatibility-go | tee build.go.out
+export ARTIFACT_GO=$(awk -F\" '/generated build artifact/ {print $8}' <build.go.out)
 
 testground plan import --from ./compatibility/compatibility-rust
 testground build single --wait \
     --builder docker:generic \
-    --plan compatibility-rust | tee build.out
-export ARTIFACT_RUST=$(awk -F\" '/generated build artifact/ {print $8}' <build.out)
+    --plan compatibility-rust | tee build.rust.out
+export ARTIFACT_RUST=$(awk -F\" '/generated build artifact/ {print $8}' <build.rust.out)
 
 envsubst < "./compatibility/composition.template.toml" > "./compatibility/composition.toml"
