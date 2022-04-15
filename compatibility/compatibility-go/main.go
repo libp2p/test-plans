@@ -6,13 +6,15 @@ import (
 	"net"
 	"time"
 
+	"github.com/libp2p/go-libp2p"
+
 	"github.com/testground/sdk-go/network"
 	"github.com/testground/sdk-go/run"
 	"github.com/testground/sdk-go/runtime"
 )
 
 var testcases = map[string]interface{}{
-	"tcp-connect":       run.InitializedTestCaseFn(tcpconnect),
+	"tcp-connect": run.InitializedTestCaseFn(tcpconnect),
 }
 
 func main() {
@@ -20,6 +22,12 @@ func main() {
 }
 
 func tcpconnect(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
+	// just to trigger an import
+	_, err2 := libp2p.New()
+	if err2 != nil {
+		panic(err2)
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
 	defer cancel()
 
@@ -65,7 +73,7 @@ func tcpconnect(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 		}
 		defer listener.Close()
 		client.MustSignalEntry(ctx, "listening")
-		for i := 0; i < runenv.TestInstanceCount -1; i++ {
+		for i := 0; i < runenv.TestInstanceCount-1; i++ {
 			conn, err = listener.AcceptTCP()
 			fmt.Println("Established inbound TCP connection.")
 		}
