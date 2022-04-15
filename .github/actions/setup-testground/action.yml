@@ -4,13 +4,13 @@ description: setup a local testground instance
 runs:
   using: "composite"
   steps:
-    ## With a raw CP
+    # With a raw CP
     - name: Inject testground into PATH
       shell: bash
       run: mkdir ${PWD}/my-bin && echo ${PWD}/my-bin >> $GITHUB_PATH
     - name: extract binary (experiment)
       shell: bash
-      run: docker cp `docker create iptestground/testground:edge`:/testground "${PWD}/my-bin/testground"
+      run: docker cp `docker create lsenta/testground:edge`:/testground "${PWD}/my-bin/testground"
     - name: Run testground daemon
       shell: bash
       run: testground daemon > output.log 2>&1 &
@@ -20,7 +20,7 @@ runs:
     #   run: docker pull iptestground/testground:edge && docker pull iptestground/sidecar:edge
     # - name: Run testground Docker
     #   shell: bash
-    #   run: docker run -d --name=testground-daemon --network=host -v /var/run/docker.sock:/var/run/docker.sock iptestground/testground:edge
+    #   run: docker run -d --name=testground-daemon --network=host -v /var/run/docker.sock:/var/run/docker.sock lsenta/testground:edge
     # - name: Extract binary (just an experiment)
     #   shell: bash
     #   run: mkdir -p ${PWD}/my-bin/ && docker cp "testground-daemon:/testground" "${PWD}/my-bin/testground"
