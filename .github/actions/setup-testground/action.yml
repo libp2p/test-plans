@@ -4,16 +4,30 @@ description: setup a local testground instance
 runs:
   using: "composite"
   steps:
-    - name: Run testground Docker
-      shell: bash
-      run: docker run -d --name=testground-daemon --network=host -v /var/run/docker.sock:/var/run/docker.sock iptestground/testground:edge
-    - name: Extract binary (just an experiment)
-      shell: bash
-      run: mkdir -p ${PWD}/my-bin/ && docker cp "testground-daemon:/testground" "${PWD}/my-bin/testground"
+    ## With a raw CP
     - name: Inject testground into PATH
       shell: bash
-      run: echo ${PWD}/my-bin >> $GITHUB_PATH
-
+      run: mkdir ${PWD}/my-bin && echo ${PWD}/my-bin >> $GITHUB_PATH
+    - name: extract binary (experiment)
+      shell: bash
+      run: docker cp `docker create iptestground/testground:edge`:/testground "${PWD}/my-bin/testground"
+    - name: Run testground daemon
+      shell: bash
+      run: testground daemon > output.log 2>&1 &
+    ## With the containers
+    # - name: Pull some container in advance
+    #   shell: bash
+    #   run: docker pull iptestground/testground:edge && docker pull iptestground/sidecar:edge
+    # - name: Run testground Docker
+    #   shell: bash
+    #   run: docker run -d --name=testground-daemon --network=host -v /var/run/docker.sock:/var/run/docker.sock iptestground/testground:edge
+    # - name: Extract binary (just an experiment)
+    #   shell: bash
+    #   run: mkdir -p ${PWD}/my-bin/ && docker cp "testground-daemon:/testground" "${PWD}/my-bin/testground"
+    # - name: Inject testground into PATH
+    #   shell: bash
+    #   run: echo ${PWD}/my-bin >> $GITHUB_PATH
+    ## With the build.
     # - name: Checkout testground
     #   uses: actions/checkout@v2
     #   with:
