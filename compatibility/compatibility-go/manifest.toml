@@ -4,6 +4,13 @@ name = "compatibility-go"
 builder = "docker:go"
 runner = "local:docker"
 
+[builders."docker:generic"]
+enabled = true
+
+[builders."docker:generic".build_args]
+build_image = "golang:1.17-buster" # NOTE: build image vs build base image
+run_image = "scratch"
+
 [builders."docker:go"]
 enabled = true
 build_base_image = "golang:1.17-buster"

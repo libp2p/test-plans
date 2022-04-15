@@ -34,8 +34,9 @@ fi
 # similar to https://github.com/testground/testground/blob/master/integration_tests/01_k8s_kind_placebo_ok.sh
 
 testground plan import --from ./compatibility/compatibility-go
+# --builder docker:go \
 testground build single --wait \
-    --builder docker:go \
+    --builder docker:generic \
     --plan compatibility-go 2>&1 | tee build.go.out
 export ARTIFACT_GO=$(awk -F\" '/generated build artifact/ {print $8}' <build.go.out)
 
