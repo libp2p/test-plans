@@ -11,7 +11,7 @@
   disable_metrics = false
 
 [[groups]]
-  id = "group1"
+  id = "group-1-rust"
   [groups.resources]
     memory = ""
     cpu = ""
@@ -23,7 +23,7 @@
     artifact = "$ARTIFACT_RUST"
 
 [[groups]]
-  id = "group2"
+  id = "group-2-go"
   [groups.resources]
     memory = ""
     cpu = ""
