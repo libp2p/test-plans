@@ -1,3 +1,5 @@
+# ignore generated path for compatibility tests
+compatibility/composition.toml
 
 # ignore transient paths for pubsub tests
 pubsub/venv/
