@@ -14,7 +14,6 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 
 	"github.com/libp2p/go-libp2p-noise"
-	"github.com/libp2p/go-libp2p-secio"
 	tls "github.com/libp2p/go-libp2p-tls"
 
 	"github.com/testground/sdk-go/network"
@@ -119,8 +118,6 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	switch secureChannel {
 	case "noise":
 		security = libp2p.Security(noise.ID, noise.New)
-	case "secio":
-		security = libp2p.Security(secio.ID, secio.New)
 	case "tls":
 		security = libp2p.Security(tls.ID, tls.New)
 	}
