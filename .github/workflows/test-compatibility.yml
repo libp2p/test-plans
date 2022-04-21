@@ -55,6 +55,14 @@ jobs:
       - name: run the test plan
         # TODO: same.
         run: cd ./test-plans/${INPUT_TESTSUITE} && ./run.sh
+      - uses: actions/upload-artifact@v3
+        if: ${{ failure() }}
+        with:
+          name: testground-output
+          path: |
+            ~/testground/
+            testground.*
+            test-plans/*.out
       - name: Setup tmate session on failure
         # TODO: add a timeout.
         if: ${{ failure() }}
