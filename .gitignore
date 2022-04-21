@@ -1,5 +1,6 @@
 # ignore generated path for compatibility tests
 compatibility/composition.toml
+ping-interop/_compositions/2-versions.toml
 
 # ignore transient paths for pubsub tests
 pubsub/venv/
