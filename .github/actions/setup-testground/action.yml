@@ -4,7 +4,7 @@ description: setup a local testground instance
 runs:
   using: "composite"
   steps:
-    # With a raw CP
+    # With a raw CP ~= Binary distribution
     - name: Inject testground into PATH
       shell: bash
       run: mkdir ${PWD}/my-bin && echo ${PWD}/my-bin >> $GITHUB_PATH
@@ -16,8 +16,8 @@ runs:
       run: docker cp `docker create lsenta/testground:edge`:/testground "${PWD}/my-bin/testground"
     - name: Run testground daemon
       shell: bash
-      run: testground daemon > output.log 2>&1 &
-    ## With the containers
+      run: testground daemon > testground.out 2> testground.err &
+    ## Via Docker from Docker.
     # - name: Pull some container in advance
     #   shell: bash
     #   run: docker pull iptestground/testground:edge && docker pull iptestground/sidecar:edge
@@ -30,23 +30,20 @@ runs:
     # - name: Inject testground into PATH
     #   shell: bash
     #   run: echo ${PWD}/my-bin >> $GITHUB_PATH
-    ## With the build.
+    ## By Building.
     # - name: Checkout testground
     #   uses: actions/checkout@v2
     #   with:
     #     path: testground
     #     repository: testground/testground
-
     # - name: Setup Go
     #   uses: actions/setup-go@v2
     #   with:
     #     go-version: "1.17.x"
-
     # - name: Install testground
     #   shell: bash
     #   run: make install
     #   working-directory: testground
-
     # - name: Run testground daemon
     #   shell: bash
     #   run: testground daemon > output.log 2>&1 &
