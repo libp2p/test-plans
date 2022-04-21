@@ -13,8 +13,7 @@ import (
 
 	"github.com/libp2p/go-libp2p-core/peer"
 
-	"github.com/libp2p/go-libp2p-noise"
-	"github.com/libp2p/go-libp2p-secio"
+	noise "github.com/libp2p/go-libp2p-noise"
 	tls "github.com/libp2p/go-libp2p-tls"
 
 	"github.com/testground/sdk-go/network"
@@ -119,21 +118,22 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	switch secureChannel {
 	case "noise":
 		security = libp2p.Security(noise.ID, noise.New)
-	case "secio":
-		security = libp2p.Security(secio.ID, secio.New)
 	case "tls":
 		security = libp2p.Security(tls.ID, tls.New)
 	}
 
 	// ☎️  Let's construct the libp2p node.
 	listenAddr := fmt.Sprintf("/ip4/%s/tcp/0", ip)
-	host, err := libp2p.New(ctx,
+	// TODO: we don't need a ctx anymore?
+	host, err := libp2p.New(
 		security,
 		libp2p.ListenAddrStrings(listenAddr),
 	)
+	// TODO: By then, is there a risk for the node to discover the control network ip and start using it?
 	if err != nil {
 		return fmt.Errorf("failed to instantiate libp2p instance: %w", err)
 	}
+	defer host.Close()
 
 	// 🚧  Now we instantiate the ping service.
 	//
