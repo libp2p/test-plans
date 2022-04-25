@@ -13,7 +13,7 @@ import (
 
 	"github.com/libp2p/go-libp2p-core/peer"
 
-	"github.com/libp2p/go-libp2p-noise"
+	noise "github.com/libp2p/go-libp2p-noise"
 	tls "github.com/libp2p/go-libp2p-tls"
 
 	"github.com/testground/sdk-go/network"
@@ -124,13 +124,14 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 
 	// ☎️  Let's construct the libp2p node.
 	listenAddr := fmt.Sprintf("/ip4/%s/tcp/0", ip)
-	host, err := libp2p.New(ctx,
+	host, err := libp2p.New(
 		security,
 		libp2p.ListenAddrStrings(listenAddr),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to instantiate libp2p instance: %w", err)
 	}
+	defer host.Close()
 
 	// 🚧  Now we instantiate the ping service.
 	//
