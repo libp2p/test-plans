@@ -145,14 +145,14 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	// Obtain our own address info, and use the sync service to publish it to a
 	// 'peersTopic' topic, where others will read from.
 	var (
-		id = host.ID()
-		ai = &peer.AddrInfo{ID: id, Addrs: host.Addrs()}
+		hostId = host.ID()
+		ai     = &peer.AddrInfo{ID: hostId, Addrs: host.Addrs()}
 
 		// the peers topic where all instances will advertise their AddrInfo.
 		peersTopic = sync.NewTopic("peers", new(peer.AddrInfo))
 
 		// initialize a slice to store the AddrInfos of all other peers in the run.
-		peers = make([]*peer.AddrInfo, 0, runenv.TestInstanceCount-1)
+		peers = make([]*peer.AddrInfo, 0, runenv.TestInstanceCount)
 	)
 
 	// Publish our own.
@@ -168,9 +168,6 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	for len(peers) < cap(peers) {
 		select {
 		case ai := <-peersCh:
-			if ai.ID == id {
-				continue // skip over ourselves.
-			}
 			peers = append(peers, ai)
 		case err := <-sub.Done():
 			return err
@@ -187,7 +184,12 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	pingPeers := func(tag string) error {
 		g, gctx := errgroup.WithContext(ctx)
 		for _, ai := range peers {
+			if ai.ID == hostId {
+				continue
+			}
+
 			id := ai.ID // capture the ID locally for safe use within the closure.
+
 			g.Go(func() error {
 				// a context for the continuous stream of pings.
 				pctx, cancel := context.WithCancel(gctx)
@@ -220,9 +222,10 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	//
 	// We can do this because sync service pubsub is ordered.
 	for _, ai := range peers {
-		if ai.ID == id {
+		if ai.ID == hostId {
 			break
 		}
+		runenv.RecordMessage("Dial peer: %s", ai.ID)
 		if err := host.Connect(ctx, *ai); err != nil {
 			return err
 		}
