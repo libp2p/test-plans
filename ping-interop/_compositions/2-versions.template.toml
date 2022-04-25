@@ -1,0 +1,34 @@
+[metadata]
+  name = "basic"
+
+[global]
+  # TODO: this depends on how you import / install the testground file instead of depending on paths
+  plan = "libp2p/ping-interop/go-v0.19"
+  case = "ping"
+  total_instances = 2
+  builder = "docker:go"
+  runner = "local:docker"
+
+[[groups]]
+  id = "version-a"
+  instances = { count = 1 }
+
+  [groups.build]
+
+  [groups.run]
+    artifact = "$ARTIFACT_VERSION_A"
+
+[[groups]]
+  id = "version-b"
+  instances = { count = 1 }
+
+  [groups.build]
+    # TODO: there is also a dependency parameter like this one:
+    # It might be useful to run a large test groupe with the last N versions for example,
+    # It won't work with rust & other containers until we have official support.
+    # It won't work with non-backward compatible versions either (when you need a different `main.go`).
+    # dependencies = [
+    #   { module = "github.com/libp2p/go-libp2p", version = "v0.17.0"},
+    # ]
+  [groups.run]
+    artifact = "$ARTIFACT_VERSION_B"
