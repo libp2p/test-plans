@@ -1,0 +1,60 @@
+name: Test libp2p Compatibility
+
+on:
+  workflow_call:
+    inputs:
+      testsuite:
+        required: true
+        type: string
+      testplan_a:
+        required: true
+        type: string
+      version_a:
+        required: true
+        type: string
+      testplan_b:
+        required: true
+        type: string
+      version_b:
+        required: true
+        type: string
+      testcase:
+        required: true
+        type: string
+jobs:
+  run_test:
+    name: Run a test with different versions
+    runs-on: ubuntu-latest
+    env:
+      TEST_PLAN_REPO: "libp2p/test-plans"
+      TEST_PLAN_BRANCH: "master"
+      INPUT_TESTSUITE: ${{ inputs.testsuite }}
+      INPUT_TESTPLAN_A: ${{ inputs.testplan_a }}
+      INPUT_VERSION_A: ${{ inputs.version_a }}
+      INPUT_TESTPLAN_B: ${{ inputs.testplan_b }}
+      INPUT_VERSION_B: ${{ inputs.version_b }}
+      INPUT_TESTCASE: ${{ inputs.testcase }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+        with:
+          path: test-plans
+          repository: ${{ env.TEST_PLAN_REPO }}
+          ref: ${{ env.TEST_PLAN_BRANCH }}
+      - name: setup testground
+        uses: ./test-plans/.github/actions/setup-testground
+      - name: build the test plan
+        run: cd ./test-plans/${INPUT_TESTSUITE} && ./build.sh
+      - name: run the test plan
+        run: cd ./test-plans/${INPUT_TESTSUITE} && ./run.sh
+      - uses: actions/upload-artifact@v3
+        if: ${{ failure() }}
+        with:
+          name: testground-output
+          path: |
+            ~/testground/
+            testground.*
+            test-plans/*.out

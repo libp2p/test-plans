@@ -1,0 +1,18 @@
+name: start testground
+description: setup a local testground instance
+
+runs:
+  using: "composite"
+  steps:
+    - name: Inject testground into PATH
+      shell: bash
+      run: mkdir ${PWD}/my-bin && echo ${PWD}/my-bin >> $GITHUB_PATH
+    - name: pull related images
+      shell: bash
+      run: docker pull iptestground/sync-service:latest && docker pull iptestground/sidecar:edge
+    - name: extract binary (experiment)
+      shell: bash
+      run: docker cp `docker create lsenta/testground:edge`:/testground "${PWD}/my-bin/testground"
+    - name: Run testground daemon
+      shell: bash
+      run: testground daemon > testground.out 2> testground.err &
