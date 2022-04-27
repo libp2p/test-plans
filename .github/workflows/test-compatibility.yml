@@ -21,6 +21,9 @@ on:
       testcase:
         required: true
         type: string
+      testground_endpoint:
+        required: false
+        type: string
 jobs:
   run_test:
     name: Run a test with different versions
@@ -34,6 +37,7 @@ jobs:
       INPUT_TESTPLAN_B: ${{ inputs.testplan_b }}
       INPUT_VERSION_B: ${{ inputs.version_b }}
       INPUT_TESTCASE: ${{ inputs.testcase }}
+      TESTGROUND_ENDPOINT: ${{ inputs.testground_endpoint }}
     defaults:
       run:
         shell: bash

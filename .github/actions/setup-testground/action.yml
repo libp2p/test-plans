@@ -7,12 +7,22 @@ runs:
     - name: Inject testground into PATH
       shell: bash
       run: mkdir ${PWD}/my-bin && echo ${PWD}/my-bin >> $GITHUB_PATH
-    - name: pull related images
-      shell: bash
-      run: docker pull iptestground/sync-service:latest && docker pull iptestground/sidecar:edge
-    - name: extract binary (experiment)
+    - name: extract binary (until we have binary distribution)
       shell: bash
       run: docker cp `docker create lsenta/testground:edge`:/testground "${PWD}/my-bin/testground"
-    - name: Run testground daemon
+    - name: Run the daemon or configure the client
       shell: bash
-      run: testground daemon > testground.out 2> testground.err &
+      run: |
+        if [[ ! -z "${TESTGROUND_ENDPOINT}" ]]; then
+          mkdir -p ~/testground/;
+          cat <<EOF >> ~/testground/.env.toml
+
+          [client]
+          endpoint = "${TESTGROUND_ENDPOINT}"
+        EOF
+        else
+          docker pull iptestground/sync-service:latest;
+          docker pull iptestground/sidecar:edge;
+          docker pull golang:1.17-buster;
+          testground daemon > testground.out 2> testground.err &
+        fi;
