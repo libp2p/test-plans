@@ -20,8 +20,8 @@ jobs:
     name: Run a test with different versions
     runs-on: ubuntu-latest
     env:
-      TEST_PLAN_REPO: "libp2p/test-plans"
-      TEST_PLAN_BRANCH: "master"
+      TEST_PLAN_REPO: "laurentsenta/test-plans"
+      TEST_PLAN_BRANCH: "feat/ping-interop"
       TESTGROUND_ENDPOINT: ${{ inputs.testground_endpoint }}
     defaults:
       run:
