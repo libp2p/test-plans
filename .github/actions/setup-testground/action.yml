@@ -4,12 +4,22 @@ description: setup a local testground instance
 runs:
   using: "composite"
   steps:
-    - name: Inject testground into PATH
+    - name: Checkout testground
+      uses: actions/checkout@v2
+      with:
+        path: testground
+        repository: testground/testground
+
+    - name: Setup Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: "1.16.x"
+
+    - name: Install testground
+      run: make install
+      working-directory: testground
       shell: bash
-      run: mkdir ${PWD}/my-bin && echo ${PWD}/my-bin >> $GITHUB_PATH
-    - name: extract binary (until we have binary distribution)
-      shell: bash
-      run: docker cp `docker create lsenta/testground:edge`:/testground "${PWD}/my-bin/testground"
+
     - name: Run the daemon or configure the client
       shell: bash
       run: |
@@ -21,8 +31,5 @@ runs:
           endpoint = "${TESTGROUND_ENDPOINT}"
         EOF
         else
-          docker pull iptestground/sync-service:latest;
-          docker pull iptestground/sidecar:edge;
-          docker pull golang:1.17-buster;
           testground daemon > testground.out 2> testground.err &
         fi;

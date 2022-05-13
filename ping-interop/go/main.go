@@ -14,13 +14,14 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 
 	noise "github.com/libp2p/go-libp2p-noise"
-	secio "github.com/libp2p/go-libp2p-secio"
 	tls "github.com/libp2p/go-libp2p-tls"
 
 	"github.com/testground/sdk-go/network"
 	"github.com/testground/sdk-go/run"
 	"github.com/testground/sdk-go/runtime"
 	"github.com/testground/sdk-go/sync"
+
+	compat "github.com/libp2p/test-plans/ping-interop/go/compat"
 )
 
 var testcases = map[string]interface{}{
@@ -79,7 +80,7 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	// formatting strings.
 	runenv.RecordMessage("started test instance; params: secure_channel=%s, max_latency_ms=%d, iterations=%d", secureChannel, maxLatencyMs, iterations)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 
 	// 🐣  Wait until all instances in this test run have signalled.
@@ -119,21 +120,22 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	switch secureChannel {
 	case "noise":
 		security = libp2p.Security(noise.ID, noise.New)
-	case "secio":
-		security = libp2p.Security(secio.ID, secio.New)
 	case "tls":
 		security = libp2p.Security(tls.ID, tls.New)
+		// TODO: check w/Marten this is fine: We fall into the lowest common denominator for parameters (here, no secio anymore even for legacy versions).
 	}
 
 	// ☎️  Let's construct the libp2p node.
 	listenAddr := fmt.Sprintf("/ip4/%s/tcp/0", ip)
-	host, err := libp2p.New(ctx,
+	host, err := compat.NewLibp2(ctx,
 		security,
 		libp2p.ListenAddrStrings(listenAddr),
 	)
+
 	if err != nil {
 		return fmt.Errorf("failed to instantiate libp2p instance: %w", err)
 	}
+	defer host.Close()
 
 	// 🚧  Now we instantiate the ping service.
 	//
@@ -187,9 +189,11 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 		g, gctx := errgroup.WithContext(ctx)
 		for _, ai := range peers {
 			if ai.ID == hostId {
-				continue // skip over ourselves.
+				continue
 			}
+
 			id := ai.ID // capture the ID locally for safe use within the closure.
+
 			g.Go(func() error {
 				// a context for the continuous stream of pings.
 				pctx, cancel := context.WithCancel(gctx)
@@ -225,6 +229,7 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 		if ai.ID == hostId {
 			break
 		}
+		runenv.RecordMessage("Dial peer: %s", ai.ID)
 		if err := host.Connect(ctx, *ai); err != nil {
 			return err
 		}

@@ -1,0 +1,77 @@
+[metadata]
+  name = "go-cross-versions {{ .Env.Reference }}"
+
+[global]
+  plan = "libp2p/ping-interop/go"
+  case = "ping"
+  total_instances = {{ if .Env.GitReference }}5{{ else }}4{{ end }}
+  builder = "docker:go"
+  runner = "local:docker"
+
+  [global.run_config]
+  keep_containers = true
+
+[[groups]]
+  id = "v0.11"
+  instances = { count = 1 }
+
+  [groups.build]
+    selectors = ['v0.11']
+
+  [groups.build_config]
+    docker_build_image  = 'golang:1.14-buster'
+    modfile = "go.v0.11.mod"
+
+[[groups]]
+  id = "v0.17"
+  instances = { count = 1 }
+
+  [groups.build]
+    selectors = ['v0.17']
+
+  [groups.build_config]
+    docker_build_image  = 'golang:1.16-buster'
+    modfile = "go.v0.17.mod"
+
+[[groups]]
+  id = "v0.19"
+  instances = { count = 1 }
+
+  [groups.build]
+    selectors = ['v0.19']
+
+  [groups.build_config]
+    docker_build_image  = 'golang:1.17-buster'
+    modfile = "go.v0.19.mod"
+
+[[groups]]
+  id = "master"
+  instances = { count = 1 }
+
+  [groups.build]
+    selectors = ['v0.19']
+
+    [[groups.build.dependencies]]
+      module = "github.com/libp2p/go-libp2p"
+      version = "master"
+
+  [groups.build_config]
+    docker_build_image  = 'golang:1.17-buster'
+    modfile = "go.v0.19.mod"
+
+{{ if .Env.GitReference }}
+[[groups]]
+  id = "current"
+  instances = { count = 1 }
+
+  [groups.build]
+    selectors = ['v0.19']
+
+    [[groups.build.dependencies]]
+      module = "github.com/libp2p/go-libp2p"
+      version = "{{ .Env.GitReference }}"
+
+  [groups.build_config]
+    docker_build_image  = 'golang:1.17-buster'
+    modfile = "go.v0.19.mod"
+{{ end }}

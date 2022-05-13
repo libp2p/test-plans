@@ -1,4 +1,4 @@
-module github.com/libp2p/test-plans/ping-interop/go-v0.19
+module github.com/libp2p/test-plans/ping-interop/go
 
 go 1.17
 

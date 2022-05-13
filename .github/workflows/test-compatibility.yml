@@ -3,23 +3,11 @@ name: Test libp2p Compatibility
 on:
   workflow_call:
     inputs:
-      testsuite:
+      composition_file:
         required: true
         type: string
-      testplan_a:
-        required: true
-        type: string
-      version_a:
-        required: true
-        type: string
-      testplan_b:
-        required: true
-        type: string
-      version_b:
-        required: true
-        type: string
-      testcase:
-        required: true
+      custom_git_reference:
+        required: false
         type: string
       testground_endpoint:
         required: false
@@ -31,12 +19,8 @@ jobs:
     env:
       TEST_PLAN_REPO: "libp2p/test-plans"
       TEST_PLAN_BRANCH: "master"
-      INPUT_TESTSUITE: ${{ inputs.testsuite }}
-      INPUT_TESTPLAN_A: ${{ inputs.testplan_a }}
-      INPUT_VERSION_A: ${{ inputs.version_a }}
-      INPUT_TESTPLAN_B: ${{ inputs.testplan_b }}
-      INPUT_VERSION_B: ${{ inputs.version_b }}
-      INPUT_TESTCASE: ${{ inputs.testcase }}
+      INPUT_COMPOSITION_FILE: ${{ inputs.composition_file }}
+      INPUT_CUSTOM_GIT_REFERENCE: ${{ inputs.custom_git_reference }}
       TESTGROUND_ENDPOINT: ${{ inputs.testground_endpoint }}
     defaults:
       run:
@@ -50,15 +34,28 @@ jobs:
           ref: ${{ env.TEST_PLAN_BRANCH }}
       - name: setup testground
         uses: ./test-plans/.github/actions/setup-testground
-      - name: build the test plan
-        run: cd ./test-plans/${INPUT_TESTSUITE} && ./build.sh
-      - name: run the test plan
-        run: cd ./test-plans/${INPUT_TESTSUITE} && ./run.sh
+      - name: Import the plan
+        working-directory: ./test-plans
+        run: |
+          testground plan import --from ./ --name libp2p
+      - name: Run the composition file
+        working-directory: ./test-plans
+        run: |
+          GitReference=${{ inputs.custom_git_reference }} testground run composition \
+            -f ${{ inputs.composition_file }}                 \
+            --metadata-repo "${GITHUB_REPOSITORY}"            \
+            --metadata-branch "${GITHUB_REF#refs/heads/}"     \
+            --metadata-commit "${GITHUB_SHA}"                 \
+            --collect-file ./result.tgz            \
+            --collect --wait
+        env:
+          GitReference: ${{ inputs.custom_git_reference }}
       - uses: actions/upload-artifact@v3
         if: ${{ failure() }}
         with:
           name: testground-output
           path: |
             ~/testground/
+            ~/test-plans/result.tgz
             testground.*
             test-plans/*.out
