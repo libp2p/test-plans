@@ -1,5 +1,5 @@
-//go:build v0.17 || v0.19
-// +build v0.17 v0.19
+//go:build v0.17 || v0.19 || v0.20
+// +build v0.17 v0.19 v0.20
 
 package compat
 

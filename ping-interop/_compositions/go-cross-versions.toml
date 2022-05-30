@@ -4,7 +4,7 @@
 [global]
   plan = "libp2p/ping-interop/go"
   case = "ping"
-  total_instances = {{ if .Env.GitReference }}5{{ else }}4{{ end }}
+  total_instances = {{ if .Env.GitReference }}6{{ else }}5{{ end }}
   builder = "docker:go"
   runner = "local:docker"
 
@@ -45,11 +45,22 @@
     modfile = "go.v0.19.mod"
 
 [[groups]]
+  id = "v0.20"
+  instances = { count = 1 }
+
+  [groups.build]
+    selectors = ['v0.20']
+
+  [groups.build_config]
+    docker_build_image  = 'golang:1.17-buster'
+    modfile = "go.v0.20.mod"
+
+[[groups]]
   id = "master"
   instances = { count = 1 }
 
   [groups.build]
-    selectors = ['v0.19']
+    selectors = ['v0.20']
 
     [[groups.build.dependencies]]
       module = "github.com/libp2p/go-libp2p"
@@ -57,7 +68,7 @@
 
   [groups.build_config]
     docker_build_image  = 'golang:1.17-buster'
-    modfile = "go.v0.19.mod"
+    modfile = "go.v0.20.mod"
 
 {{ if .Env.GitReference }}
 [[groups]]
@@ -65,7 +76,7 @@
   instances = { count = 1 }
 
   [groups.build]
-    selectors = ['v0.19']
+    selectors = ['v0.20']
 
     [[groups.build.dependencies]]
       module = "github.com/libp2p/go-libp2p"
@@ -73,5 +84,5 @@
 
   [groups.build_config]
     docker_build_image  = 'golang:1.17-buster'
-    modfile = "go.v0.19.mod"
+    modfile = "go.v0.20.mod"
 {{ end }}
