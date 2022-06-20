@@ -12,11 +12,10 @@ enable_go_build_cache  = true # TODO: check impact
 build_base_image       = "golang:1.17-buster"
 
 [builders."docker:go".dockerfile_extensions]
-# TODO: when we rewrite dependencies, if the version is a git branch like `master`,
-#       - we need a `go mod download` to sync the version.
-#       - we could also change the docker_go.go in testground and make sure we don't overwrite the go.mod when we `COPY . /`.
+# TODO: Without this call, I get:
+# "missing go.sum entry for module providing package github.com/libp2p/go-libp2p (imported by github.com/libp2p/test-plans/ping-interop/go); to add..."
+# Which should not be required, since we already `go mod download` earlier.
 pre_build          = "RUN cd ${PLAN_DIR} && go mod download github.com/libp2p/go-libp2p"
-# pre_mod_download   = "RUN go clean -modcache" # I had a cache issue with fsnotify v1.5.3 for some reason, these might be a fix.
 
 [runners]
 "local:docker"  = { enabled = true }

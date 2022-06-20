@@ -8,8 +8,8 @@
   builder = "docker:go"
   runner = "local:docker"
 
-  [global.run_config]
-  keep_containers = true
+  [global.build_config]
+    enable_go_build_cache = false
 
 [[groups]]
   id = "v0.11"
@@ -19,7 +19,7 @@
     selectors = ['v0.11']
 
   [groups.build_config]
-    docker_build_image  = 'golang:1.14-buster'
+    build_base_image = 'golang:1.14-buster'
     modfile = "go.v0.11.mod"
 
 [[groups]]
@@ -30,7 +30,7 @@
     selectors = ['v0.17']
 
   [groups.build_config]
-    docker_build_image  = 'golang:1.16-buster'
+    build_base_image = 'golang:1.16-buster'
     modfile = "go.v0.17.mod"
 
 [[groups]]
@@ -41,7 +41,7 @@
     selectors = ['v0.19']
 
   [groups.build_config]
-    docker_build_image  = 'golang:1.17-buster'
+    build_base_image = 'golang:1.17-buster'
     modfile = "go.v0.19.mod"
 
 [[groups]]
@@ -52,7 +52,7 @@
     selectors = ['v0.20']
 
   [groups.build_config]
-    docker_build_image  = 'golang:1.17-buster'
+    build_base_image = 'golang:1.17-buster'
     modfile = "go.v0.20.mod"
 
 [[groups]]
@@ -67,7 +67,7 @@
       version = "master"
 
   [groups.build_config]
-    docker_build_image  = 'golang:1.17-buster'
+    build_base_image = 'golang:1.17-buster'
     modfile = "go.v0.20.mod"
 
 {{ if .Env.GitReference }}
@@ -83,6 +83,6 @@
       version = "{{ .Env.GitReference }}"
 
   [groups.build_config]
-    docker_build_image  = 'golang:1.17-buster'
+    build_base_image = 'golang:1.17-buster'
     modfile = "go.v0.20.mod"
 {{ end }}
