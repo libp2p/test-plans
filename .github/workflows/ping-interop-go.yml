@@ -1,0 +1,23 @@
+on:
+  workflow_dispatch:
+    inputs:
+      testground_endpoint:
+        type: string
+        required: false
+        description: testground endpoint
+      custom_git_reference:
+        type: string
+        required: false
+        description: go ref
+name: Testground ping-interop go test
+
+jobs:
+  run-libp2p-test-plans:
+    # If you intend to use this workflow from another repo,
+    # you need to pass the repo and the version:
+    # uses: "libp2p/test-plans/.github/workflows/test-compatibility.yml@master"
+    uses: "./.github/workflows/test-compatibility.yml"
+    with:
+      composition_file: "ping-interop/_compositions/go-cross-versions.toml"
+      custom_git_reference: ${{ github.event.inputs.custom_git_reference }}
+      testground_endpoint: ${{ github.event.inputs.testground_endpoint }}
