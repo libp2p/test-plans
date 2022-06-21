@@ -72,7 +72,7 @@
 
 {{ if .Env.GitReference }}
 [[groups]]
-  id = "current"
+  id = "{{ .Env.GitReference }}"
   instances = { count = 1 }
 
   [groups.build]
