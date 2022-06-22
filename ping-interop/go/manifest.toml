@@ -8,7 +8,6 @@ name = "ping"
 
 [builders."docker:go"]
 enabled                = true
-enable_go_build_cache  = true # TODO: check impact
 build_base_image       = "golang:1.17-buster"
 
 [builders."docker:go".dockerfile_extensions]

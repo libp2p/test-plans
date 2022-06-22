@@ -10,6 +10,8 @@
 
   [global.build_config]
     enable_go_build_cache = false
+    go_proxy_mode          = "remote"
+    go_proxy_url           = "https://proxy.golang.org"
 
 [[groups]]
   id = "v0.11"
