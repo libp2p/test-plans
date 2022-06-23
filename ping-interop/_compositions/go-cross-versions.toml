@@ -72,6 +72,10 @@
     build_base_image = 'golang:1.17-buster'
     modfile = "go.v0.20.mod"
 
+  [groups.build_config.dockerfile_extensions]
+    # deal with dependency changes in master until we create the new vx.y.z instance
+    pre_build          = "RUN cd ${PLAN_DIR} && go mod download github.com/libp2p/go-libp2p && go mod tidy"
+
 {{ if .Env.GitReference }}
 [[groups]]
   id = "{{ .Env.GitReference }}"
@@ -87,4 +91,8 @@
   [groups.build_config]
     build_base_image = 'golang:1.17-buster'
     modfile = "go.v0.20.mod"
+
+  [groups.build_config.dockerfile_extensions]
+    # deal with dependency changes in master until we create the new vx.y.z instance
+    pre_build          = "RUN cd ${PLAN_DIR} && go mod download github.com/libp2p/go-libp2p && go mod tidy"
 {{ end }}

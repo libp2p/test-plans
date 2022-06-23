@@ -10,12 +10,6 @@ name = "ping"
 enabled                = true
 build_base_image       = "golang:1.17-buster"
 
-[builders."docker:go".dockerfile_extensions]
-# TODO: Without this call, I get:
-# "missing go.sum entry for module providing package github.com/libp2p/go-libp2p (imported by github.com/libp2p/test-plans/ping-interop/go); to add..."
-# Which should not be required, since we already `go mod download` earlier.
-pre_build          = "RUN cd ${PLAN_DIR} && go mod download github.com/libp2p/go-libp2p"
-
 [runners]
 "local:docker"  = { enabled = true }
 "local:exec"    = { enabled = true }
