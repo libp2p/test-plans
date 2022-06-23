@@ -31,5 +31,11 @@ runs:
           endpoint = "${TESTGROUND_ENDPOINT}"
         EOF
         else
+          mkdir -p ~/testground/;
+          cat <<EOF >> ~/testground/.env.toml
+
+          [daemon.scheduler]
+          task_timeout_min          = 30
+        EOF
           testground daemon > testground.out 2> testground.err &
         fi;

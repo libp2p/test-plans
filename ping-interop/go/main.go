@@ -80,7 +80,7 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	// formatting strings.
 	runenv.RecordMessage("started test instance; params: secure_channel=%s, max_latency_ms=%d, iterations=%d", secureChannel, maxLatencyMs, iterations)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Minute)
 	defer cancel()
 
 	// 🐣  Wait until all instances in this test run have signalled.
