@@ -9,7 +9,8 @@
   runner = "local:docker"
 
   [global.build_config]
-    enable_go_build_cache = false
+    enable_go_build_cache  = false      # see https://github.com/testground/testground/issues/1361
+    # disable testground's goproxy which hangs on github runners.
     go_proxy_mode          = "remote"
     go_proxy_url           = "https://proxy.golang.org"
 
