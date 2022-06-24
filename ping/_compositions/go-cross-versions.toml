@@ -2,7 +2,7 @@
   name = "go-cross-versions {{ .Env.Reference }}"
 
 [global]
-  plan = "libp2p/ping-interop/go"
+  plan = "libp2p/ping/go"
   case = "ping"
   total_instances = {{ if .Env.GitReference }}6{{ else }}5{{ end }}
   builder = "docker:go"

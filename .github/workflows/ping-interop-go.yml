@@ -18,6 +18,6 @@ jobs:
     # uses: "libp2p/test-plans/.github/workflows/test-compatibility.yml@master"
     uses: "./.github/workflows/test-compatibility.yml"
     with:
-      composition_file: "ping-interop/_compositions/go-cross-versions.toml"
+      composition_file: "ping/_compositions/go-cross-versions.toml"
       custom_git_reference: ${{ github.event.inputs.custom_git_reference }}
       testground_endpoint: ${{ github.event.inputs.testground_endpoint }}
