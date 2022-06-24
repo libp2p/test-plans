@@ -78,7 +78,7 @@
 
 {{ if .Env.GitReference }}
 [[groups]]
-  id = "{{ .Env.GitReference }}"
+  id = "custom"
   instances = { count = 1 }
 
   [groups.build]
@@ -87,6 +87,9 @@
     [[groups.build.dependencies]]
       module = "github.com/libp2p/go-libp2p"
       version = "{{ .Env.GitReference }}"
+      {{ if .Env.GitTarget }}
+      target = "{{ .Env.GitTarget }}"
+      {{ end }}
 
   [groups.build_config]
     build_base_image = 'golang:1.17-buster'

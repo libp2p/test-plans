@@ -9,6 +9,9 @@ on:
       custom_git_reference:
         required: false
         type: string
+      custom_git_target:
+        required: false
+        type: string
       testground_endpoint:
         required: false
         type: string
@@ -19,8 +22,6 @@ jobs:
     env:
       TEST_PLAN_REPO: "libp2p/test-plans"
       TEST_PLAN_BRANCH: "master"
-      INPUT_COMPOSITION_FILE: ${{ inputs.composition_file }}
-      INPUT_CUSTOM_GIT_REFERENCE: ${{ inputs.custom_git_reference }}
       TESTGROUND_ENDPOINT: ${{ inputs.testground_endpoint }}
     defaults:
       run:
@@ -41,12 +42,14 @@ jobs:
       - name: Run the composition file
         working-directory: ./test-plans
         run: |
-          GitReference=${{ inputs.custom_git_reference }} testground run composition \
+          GitReference=${{ inputs.custom_git_reference }}     \
+          GitTarget=${{ inputs.custom_git_target }}        \
+            testground run composition                        \
             -f ${{ inputs.composition_file }}                 \
             --metadata-repo "${GITHUB_REPOSITORY}"            \
             --metadata-branch "${GITHUB_REF#refs/heads/}"     \
             --metadata-commit "${GITHUB_SHA}"                 \
-            --collect-file ./result.tgz            \
+            --collect-file ./result.tgz                       \
             --collect --wait
         env:
           GitReference: ${{ inputs.custom_git_reference }}
