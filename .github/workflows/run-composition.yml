@@ -1,4 +1,4 @@
-name: Test libp2p Compatibility
+name: Run composition file with a custom git reference
 
 on:
   workflow_call:
