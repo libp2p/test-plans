@@ -522,6 +522,8 @@ github.com/libp2p/go-flow-metrics v0.0.3 h1:8tAs/hSdNvUiLgtlSy3mxwxWP4I9y/jlkPFT
 github.com/libp2p/go-flow-metrics v0.0.3/go.mod h1:HeoSNUrOJVK1jEpDqVEiUOIXqhbnS27omG0uWU5slZs=
 github.com/libp2p/go-libp2p v0.20.0 h1:FpwrR9l3ZVsL9ArwgENHYn1I32OogiCAFS6abxdUVH4=
 github.com/libp2p/go-libp2p v0.20.0/go.mod h1:g0C5Fu+aXXbCXkusCzLycuBowEih3ElmDqtbo61Em7k=
+github.com/libp2p/go-libp2p v0.20.3 h1:tjjDNfp7FqdI/7v1rXtB/BtELaPlAThL2uzlj18kcrw=
+github.com/libp2p/go-libp2p v0.20.3/go.mod h1:I+vndVanE/p/SjFbnA+BEmmfAUEpWxrdXZeyQ1Dus5c=
 github.com/libp2p/go-libp2p-asn-util v0.2.0 h1:rg3+Os8jbnO5DxkC7K/Utdi+DkY3q/d1/1q+8WeNAsw=
 github.com/libp2p/go-libp2p-asn-util v0.2.0/go.mod h1:WoaWxbHKBymSN41hWSq/lGKJEca7TNm58+gGJi2WsLI=
 github.com/libp2p/go-libp2p-blankhost v0.2.0/go.mod h1:eduNKXGTioTuQAUcZ5epXi9vMl+t4d8ugUBRQ4SqaNQ=
@@ -588,6 +590,8 @@ github.com/libp2p/go-tcp-transport v0.5.0/go.mod h1:UPPL0DIjQqiWRwVAb+CEQlaAG0rp
 github.com/libp2p/go-yamux/v3 v3.0.1/go.mod h1:s2LsDhHbh+RfCsQoICSYt58U2f8ijtPANFD8BmE74Bo=
 github.com/libp2p/go-yamux/v3 v3.1.1 h1:X0qSVodCZciOu/f4KTp9V+O0LAqcqP2tdaUGB0+0lng=
 github.com/libp2p/go-yamux/v3 v3.1.1/go.mod h1:jeLEQgLXqE2YqX1ilAClIfCMDY+0uXQUKmmb/qp0gT4=
+github.com/libp2p/go-yamux/v3 v3.1.2 h1:lNEy28MBk1HavUAlzKgShp+F6mn/ea1nDYWftZhFW9Q=
+github.com/libp2p/go-yamux/v3 v3.1.2/go.mod h1:jeLEQgLXqE2YqX1ilAClIfCMDY+0uXQUKmmb/qp0gT4=
 github.com/libp2p/zeroconf/v2 v2.1.1/go.mod h1:fuJqLnUwZTshS3U/bMRJ3+ow/v9oid1n0DmyYyNO1Xs=
 github.com/lightstep/lightstep-tracer-common/golang/gogo v0.0.0-20190605223551-bc2310a04743/go.mod h1:qklhhLq1aX+mtWk9cPHPzaBjWImj5ULL6C7HFJtXQMM=
 github.com/lightstep/lightstep-tracer-go v0.18.1/go.mod h1:jlF1pusYV4pidLvZ+XD0UBX0ZE6WURAspgAczcDHrL4=
@@ -712,6 +716,8 @@ github.com/multiformats/go-multistream v0.1.1/go.mod h1:KmHZ40hzVxiaiwlj3MEbYgK9
 github.com/multiformats/go-multistream v0.2.1/go.mod h1:5GZPQZbkWOLOn3J2y4Y99vVW7vOfsAflxARk3x14o6k=
 github.com/multiformats/go-multistream v0.3.1 h1:GQM84yyQ5EZB9l0p5+5eDwFoQgwHI2tLmYGpaWlLF/U=
 github.com/multiformats/go-multistream v0.3.1/go.mod h1:ODRoqamLUsETKS9BNcII4gcRsJBU5VAwRIv7O39cEXg=
+github.com/multiformats/go-multistream v0.3.3 h1:d5PZpjwRgVlbwfdTDjife7XszfZd8KYWfROYFlGcR8o=
+github.com/multiformats/go-multistream v0.3.3/go.mod h1:ODRoqamLUsETKS9BNcII4gcRsJBU5VAwRIv7O39cEXg=
 github.com/multiformats/go-varint v0.0.1/go.mod h1:3Ls8CIEsrijN6+B7PbrXRPxHRPuXSrVKRY101jdMZYE=
 github.com/multiformats/go-varint v0.0.2/go.mod h1:3Ls8CIEsrijN6+B7PbrXRPxHRPuXSrVKRY101jdMZYE=
 github.com/multiformats/go-varint v0.0.5/go.mod h1:3Ls8CIEsrijN6+B7PbrXRPxHRPuXSrVKRY101jdMZYE=
