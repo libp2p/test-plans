@@ -13,9 +13,6 @@ import (
 
 	"github.com/libp2p/go-libp2p-core/peer"
 
-	noise "github.com/libp2p/go-libp2p-noise"
-	tls "github.com/libp2p/go-libp2p-tls"
-
 	"github.com/testground/sdk-go/network"
 	"github.com/testground/sdk-go/run"
 	"github.com/testground/sdk-go/runtime"
@@ -116,14 +113,7 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	// obtain it from the NetClient.
 	ip := initCtx.NetClient.MustGetDataNetworkIP()
 
-	var security libp2p.Option
-	switch secureChannel {
-	case "noise":
-		security = libp2p.Security(noise.ID, noise.New)
-	case "tls":
-		security = libp2p.Security(tls.ID, tls.New)
-		// TODO: check w/Marten this is fine: We fall into the lowest common denominator for parameters (here, no secio anymore even for legacy versions).
-	}
+	security := compat.GetSecurityByName(secureChannel)
 
 	// ☎️  Let's construct the libp2p node.
 	listenAddr := fmt.Sprintf("/ip4/%s/tcp/0", ip)

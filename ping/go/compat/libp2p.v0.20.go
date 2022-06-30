@@ -1,5 +1,5 @@
-//go:build v0.11
-// +build v0.11
+//go:build v0.20
+// +build v0.20
 
 package compat
 
@@ -11,13 +11,12 @@ import (
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p/config"
 
-	noise "github.com/libp2p/go-libp2p-noise"
-	tls "github.com/libp2p/go-libp2p-tls"
+	noise "github.com/libp2p/go-libp2p/p2p/security/noise"
+	tls "github.com/libp2p/go-libp2p/p2p/security/tls"
 )
 
 func NewLibp2(ctx context.Context, opts ...config.Option) (host.Host, error) {
 	return libp2p.New(
-		ctx,
 		opts...,
 	)
 }
