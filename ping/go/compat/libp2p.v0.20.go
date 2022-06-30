@@ -15,13 +15,15 @@ import (
 	tls "github.com/libp2p/go-libp2p/p2p/security/tls"
 )
 
-func NewLibp2(ctx context.Context, opts ...config.Option) (host.Host, error) {
+func NewLibp2(ctx context.Context, secureChannel string, opts ...config.Option) (host.Host, error) {
+	security := getSecurityByName(secureChannel)
+
 	return libp2p.New(
-		opts...,
+		append(opts, security)...,
 	)
 }
 
-func GetSecurityByName(secureChannel string) libp2p.Option {
+func getSecurityByName(secureChannel string) libp2p.Option {
 	switch secureChannel {
 	case "noise":
 		return libp2p.Security(noise.ID, noise.New)

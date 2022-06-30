@@ -113,12 +113,10 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	// obtain it from the NetClient.
 	ip := initCtx.NetClient.MustGetDataNetworkIP()
 
-	security := compat.GetSecurityByName(secureChannel)
-
 	// ☎️  Let's construct the libp2p node.
 	listenAddr := fmt.Sprintf("/ip4/%s/tcp/0", ip)
 	host, err := compat.NewLibp2(ctx,
-		security,
+		secureChannel,
 		libp2p.ListenAddrStrings(listenAddr),
 	)
 
