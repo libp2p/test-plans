@@ -1,0 +1,5 @@
+# we might ln -s these files to help during development,
+# but we don't want to commit these or the testground setup
+# will break (the mod file will overwrite the custom versions).
+/go.sum
+/go.mod

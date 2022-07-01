@@ -13,13 +13,12 @@ import (
 
 	"github.com/libp2p/go-libp2p-core/peer"
 
-	"github.com/libp2p/go-libp2p-noise"
-	tls "github.com/libp2p/go-libp2p-tls"
-
 	"github.com/testground/sdk-go/network"
 	"github.com/testground/sdk-go/run"
 	"github.com/testground/sdk-go/runtime"
 	"github.com/testground/sdk-go/sync"
+
+	compat "github.com/libp2p/test-plans/ping/go/compat"
 )
 
 var testcases = map[string]interface{}{
@@ -78,7 +77,7 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	// formatting strings.
 	runenv.RecordMessage("started test instance; params: secure_channel=%s, max_latency_ms=%d, iterations=%d", secureChannel, maxLatencyMs, iterations)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Minute)
 	defer cancel()
 
 	// 🐣  Wait until all instances in this test run have signalled.
@@ -114,23 +113,17 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	// obtain it from the NetClient.
 	ip := initCtx.NetClient.MustGetDataNetworkIP()
 
-	var security libp2p.Option
-	switch secureChannel {
-	case "noise":
-		security = libp2p.Security(noise.ID, noise.New)
-	case "tls":
-		security = libp2p.Security(tls.ID, tls.New)
-	}
-
 	// ☎️  Let's construct the libp2p node.
 	listenAddr := fmt.Sprintf("/ip4/%s/tcp/0", ip)
-	host, err := libp2p.New(ctx,
-		security,
+	host, err := compat.NewLibp2(ctx,
+		secureChannel,
 		libp2p.ListenAddrStrings(listenAddr),
 	)
+
 	if err != nil {
 		return fmt.Errorf("failed to instantiate libp2p instance: %w", err)
 	}
+	defer host.Close()
 
 	// 🚧  Now we instantiate the ping service.
 	//
@@ -144,14 +137,14 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	// Obtain our own address info, and use the sync service to publish it to a
 	// 'peersTopic' topic, where others will read from.
 	var (
-		id = host.ID()
-		ai = &peer.AddrInfo{ID: id, Addrs: host.Addrs()}
+		hostId = host.ID()
+		ai     = &peer.AddrInfo{ID: hostId, Addrs: host.Addrs()}
 
 		// the peers topic where all instances will advertise their AddrInfo.
 		peersTopic = sync.NewTopic("peers", new(peer.AddrInfo))
 
 		// initialize a slice to store the AddrInfos of all other peers in the run.
-		peers = make([]*peer.AddrInfo, 0, runenv.TestInstanceCount-1)
+		peers = make([]*peer.AddrInfo, 0, runenv.TestInstanceCount)
 	)
 
 	// Publish our own.
@@ -167,9 +160,6 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	for len(peers) < cap(peers) {
 		select {
 		case ai := <-peersCh:
-			if ai.ID == id {
-				continue // skip over ourselves.
-			}
 			peers = append(peers, ai)
 		case err := <-sub.Done():
 			return err
@@ -186,7 +176,12 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	pingPeers := func(tag string) error {
 		g, gctx := errgroup.WithContext(ctx)
 		for _, ai := range peers {
+			if ai.ID == hostId {
+				continue
+			}
+
 			id := ai.ID // capture the ID locally for safe use within the closure.
+
 			g.Go(func() error {
 				// a context for the continuous stream of pings.
 				pctx, cancel := context.WithCancel(gctx)
@@ -219,9 +214,10 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	//
 	// We can do this because sync service pubsub is ordered.
 	for _, ai := range peers {
-		if ai.ID == id {
+		if ai.ID == hostId {
 			break
 		}
+		runenv.RecordMessage("Dial peer: %s", ai.ID)
 		if err := host.Connect(ctx, *ai); err != nil {
 			return err
 		}
