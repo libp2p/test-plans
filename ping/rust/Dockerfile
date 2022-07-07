@@ -1,4 +1,4 @@
-FROM rust:1.57-bullseye as builder
+FROM rust:1.62-bullseye as builder
 WORKDIR /usr/src/testplan
 
 RUN apt-get update && apt-get install -y cmake
@@ -10,7 +10,10 @@ COPY ./plan/Cargo.lock ./plan/Cargo.toml ./plan/
 
 ARG CARGO_FEATURES=""
 ARG CARGO_PATCH=""
+ARG CARGO_REMOVE=""
 
+RUN echo "${CARGO_REMOVE}"
+RUN if [ ! -z "${CARGO_REMOVE}" ]; then sed -i "s/^${CARGO_REMOVE}.*//" ./plan/Cargo.toml; fi
 RUN echo "${CARGO_PATCH}" >> ./plan/Cargo.toml
 RUN cat ./plan/Cargo.toml
 

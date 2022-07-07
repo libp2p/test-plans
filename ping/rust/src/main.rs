@@ -4,6 +4,24 @@ use std::str::FromStr;
 use env_logger::Env;
 use futures::FutureExt;
 
+#[cfg(all(feature = "libp2pv0470",))]
+use libp2pv0470::futures::StreamExt;
+
+#[cfg(all(feature = "libp2pv0470",))]
+use libp2pv0470::swarm::{Swarm, SwarmEvent};
+
+#[cfg(all(feature = "libp2pv0470",))]
+use libp2pv0470::{identity, multiaddr::Protocol, ping, Multiaddr, PeerId, development_transport};
+
+#[cfg(all(feature = "libp2pv0460",))]
+use libp2pv0460::futures::StreamExt;
+
+#[cfg(all(feature = "libp2pv0460",))]
+use libp2pv0460::swarm::{Swarm, SwarmEvent};
+
+#[cfg(all(feature = "libp2pv0460",))]
+use libp2pv0460::{identity, multiaddr::Protocol, ping, Multiaddr, PeerId, development_transport};
+
 #[cfg(all(feature = "libp2pv0450",))]
 use libp2pv0450::futures::StreamExt;
 

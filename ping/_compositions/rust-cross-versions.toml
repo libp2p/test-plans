@@ -5,8 +5,7 @@
   plan = "libp2p/ping/rust"
   case = "ping"
   builder = "docker:generic"
-  # total_instances = {{ if .Env.GitReference }}4{{ else }}3{{ end }}
-  total_instances = 2
+  total_instances = {{ if .Env.GitReference }}5{{ else }}4{{ end }}
   runner = "local:docker"
 
 [[groups]]
@@ -23,38 +22,32 @@
   [groups.build_config.build_args]
     CARGO_FEATURES = 'v045'
 
+[[groups]]
+  id = "v0.46.0"
+  instances = { count = 1 }
 
-# [[groups]]
-#   id = "master"
-#   instances = { count = 2 }
-#   result = """
-#   warning: patch for `libp2p` uses the features mechanism. default-features and features will not take effect because the patch dependency does not support this mechanism
-#     Updating git repository `https://github.com/libp2p/rust-libp2p`
-# error: failed to resolve patches for `https://github.com/rust-lang/crates.io-index`
+  [groups.build_config.build_args]
+    CARGO_FEATURES = 'v046'
 
-# Caused by:
-#   patch for `libp2p` in `https://github.com/rust-lang/crates.io-index` failed to resolve
+[[groups]]
+  id = "master"
+  instances = { count = 1 }
 
-# Caused by:
-#   The patch location `https://github.com/libp2p/rust-libp2p` does not appear to contain any packages matching the name `libp2p`.
-# """
+  [groups.build_config.build_args]
+    CARGO_FEATURES = 'v047'
 
-#   [groups.build_config.build_args]
-#     CARGO_FEATURES = 'v045'
-#     CARGO_PATCH = """
-# [patch.crates-io]
-# libp2pv0450 = { package = "libp2p", git = "{{ or .Env.GitTarget "https://github.com/libp2p/rust-libp2p" }}", branch = "master" }
-# """
 
-# {{ if .Env.GitReference }}
-# [[groups]]
-#   id = "current"
-#   instances = { count = 1 }
+{{ if .Env.GitReference }}
+[[groups]]
+  # warning: patch for `libp2p` uses the features mechanism. default-features and features will not take effect because the patch dependency does not support this mechanism
+  # warning: Patch `libp2p v0.47.0 (https://github.com/libp2p/rust-libp2p?branch=master#d0da3a09)` was not used in the crate graph.
+  id = "current"
+  instances = { count = 1 }
 
-#   [groups.build_config.build_args]
-#     CARGO_FEATURES = 'v045'
-#     CARGO_PATCH = """
-# [patch.crates-io]
-# libp2pv0450 = { package = "libp2p", git = "{{ or .Env.GitTarget "https://github.com/libp2p/rust-libp2p" }}", branch = "{{ .Env.GitReference }}" }
-# """
-# {{ end }}
+  [groups.build_config.build_args]
+    CARGO_FEATURES = 'v047'
+    CARGO_REMOVE = 'libp2pv0470'
+    CARGO_PATCH = """
+libp2pv0470 = {package = "libp2p", git = "https://{{ or .Env.GitTarget "github.com/libp2p/rust-libp2p" }}", branch = "{{ .Env.GitReference }}", default_features = false, features = [ "websocket", "mplex", "yamux", "tcp-async-io", "ping", "noise", "dns-async-std" ], version = "0.47.0", optional = true}
+"""
+{{ end }}
