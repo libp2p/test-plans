@@ -4,41 +4,23 @@ use std::str::FromStr;
 use env_logger::Env;
 use futures::FutureExt;
 
-#[cfg(all(feature = "libp2pv0470",))]
-use libp2pv0470::futures::StreamExt;
+pub mod libp2p {
+    #[cfg(all(feature = "libp2pv0470",))]
+    pub use libp2pv0470::*;
 
-#[cfg(all(feature = "libp2pv0470",))]
-use libp2pv0470::swarm::{Swarm, SwarmEvent};
+    #[cfg(all(feature = "libp2pv0460",))]
+    pub use libp2pv0460::*;
 
-#[cfg(all(feature = "libp2pv0470",))]
-use libp2pv0470::{identity, multiaddr::Protocol, ping, Multiaddr, PeerId, development_transport};
+    #[cfg(all(feature = "libp2pv0450",))]
+    pub use libp2pv0450::*;
 
-#[cfg(all(feature = "libp2pv0460",))]
-use libp2pv0460::futures::StreamExt;
+    #[cfg(all(feature = "libp2pv0440",))]
+    pub use libp2pv0440::*;
+}
 
-#[cfg(all(feature = "libp2pv0460",))]
-use libp2pv0460::swarm::{Swarm, SwarmEvent};
-
-#[cfg(all(feature = "libp2pv0460",))]
-use libp2pv0460::{identity, multiaddr::Protocol, ping, Multiaddr, PeerId, development_transport};
-
-#[cfg(all(feature = "libp2pv0450",))]
-use libp2pv0450::futures::StreamExt;
-
-#[cfg(all(feature = "libp2pv0450",))]
-use libp2pv0450::swarm::{Swarm, SwarmEvent};
-
-#[cfg(all(feature = "libp2pv0450",))]
-use libp2pv0450::{identity, multiaddr::Protocol, ping, Multiaddr, PeerId, development_transport};
-
-#[cfg(all(feature = "libp2pv0440",))]
-use libp2pv0440::futures::StreamExt;
-
-#[cfg(all(feature = "libp2pv0440",))]
-use libp2pv0440::swarm::{Swarm, SwarmEvent};
-
-#[cfg(all(feature = "libp2pv0440",))]
-use libp2pv0440::{identity, multiaddr::Protocol, ping, Multiaddr, PeerId, development_transport};
+use libp2p::futures::StreamExt;
+use libp2p::swarm::{Swarm, SwarmEvent};
+use libp2p::{development_transport, identity, multiaddr::Protocol, ping, Multiaddr, PeerId};
 
 const LISTENING_PORT: u16 = 1234;
 
