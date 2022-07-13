@@ -30,42 +30,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let client = testground::client::Client::new_and_init().await?;
 
-    // let ip_addr = match client.run_parameters().test_subnet {
-    //     ipnetwork::IpNetwork::V4(network) => {
-    //         let mut octets = network.ip().octets();
-    //         octets[2] = ((seq >> 8) + 1) as u8;
-    //         octets[3] = seq as u8;
-    //         octets.into()
-    //     }
-    //     _ => unimplemented!(),
-    // };
-
-    // client
-    //     .configure_network(testground::network_conf::NetworkConfiguration {
-    //         network: "default".to_string(),
-    //         ipv4: Some(ipnetwork::Ipv4Network::new(ip_addr, 32).unwrap()),
-    //         ipv6: None,
-    //         enable: true,
-    //         default: testground::network_conf::LinkShape {
-    //             latency: 10000000,
-    //             jitter: 0,
-    //             bandwidth: 1048576,
-    //             filter: testground::network_conf::FilterAction::Accept,
-    //             loss: 0.0,
-    //             corrupt: 0.0,
-    //             corrupt_corr: 0.0,
-    //             reorder: 0.0,
-    //             reorder_corr: 0.0,
-    //             duplicate: 0.0,
-    //             duplicate_corr: 0.0,
-    //         },
-    //         rules: None,
-    //         callback_state: "network-configured".to_string(),
-    //         callback_target: None,
-    //         routing_policy: testground::network_conf::RoutingPolicyType::AllowAll,
-    //     })
-    //     .await?;
-
     let mut swarm = {
         let local_key = identity::Keypair::generate_ed25519();
         let local_peer_id = PeerId::from(local_key.public());
