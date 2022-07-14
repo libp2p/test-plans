@@ -18,6 +18,8 @@ RUN echo "${CARGO_PATCH}" >> ./plan/Cargo.toml
 RUN cat ./plan/Cargo.toml
 
 RUN cd ./plan/ && \
+        cargo update --dry-run
+RUN cd ./plan/ && \
         cargo build --release --features="${CARGO_FEATURES}"
 
 # Backup Cargo file to preserve patches.
