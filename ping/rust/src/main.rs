@@ -28,10 +28,7 @@ const LISTENING_PORT: u16 = 1234;
 
 #[async_std::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    env_logger::Builder::from_env(
-        Env::default().default_filter_or("info,testground=debug,libp2p_core=info"),
-    )
-    .init();
+    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
 
     let client = testground::client::Client::new_and_init().await?;
 
@@ -104,7 +101,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     drop(address_stream);
 
     info!("Wait to connect to each peer.");
-    // Drive the swarm until we have connected to each peer.
     let mut connected = HashSet::new();
     while connected.len() < num_other_instances {
         let event = swarm.next().await.unwrap();
@@ -118,7 +114,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "Signal and wait for \"connected\" from {:?}.",
         client.run_parameters().test_instance_count
     );
-
     let client_clone = client.clone();
     let mut connected_fut = client_clone
         .signal_and_wait("connected", client.run_parameters().test_instance_count)
@@ -136,7 +131,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     info!("Wait to receive ping from each peer.");
-    // Drive the swarm until we have received a ping from each test instance.
     let mut pinged = HashSet::new();
     while pinged.len() < num_other_instances {
         let event = swarm.next().await.unwrap();
@@ -151,7 +145,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     info!("Wait for all peers to signal being done with \"initial\" round.");
-    // Drive the swarm until all test instances signaled that they are done with the "initial" round.
     swarm
         .take_until(
             client
