@@ -1,8 +1,9 @@
 use std::collections::HashSet;
 use std::str::FromStr;
+use std::time::Duration;
 
 use env_logger::Env;
-use futures::FutureExt;
+use log::info;
 
 pub mod libp2p {
     #[cfg(all(feature = "libp2pv0470",))]
@@ -18,7 +19,8 @@ pub mod libp2p {
     pub use libp2pv0440::*;
 }
 
-use libp2p::futures::StreamExt;
+use libp2p::futures::future::ready;
+use libp2p::futures::{FutureExt, StreamExt};
 use libp2p::swarm::{Swarm, SwarmEvent};
 use libp2p::{development_transport, identity, multiaddr::Protocol, ping, Multiaddr, PeerId};
 
@@ -26,18 +28,27 @@ const LISTENING_PORT: u16 = 1234;
 
 #[async_std::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    env_logger::Builder::from_env(Env::default().default_filter_or("debug")).init();
+    env_logger::Builder::from_env(
+        Env::default().default_filter_or("info,testground=debug,libp2p_core=info"),
+    )
+    .init();
 
     let client = testground::client::Client::new_and_init().await?;
+
+    let num_other_instances = client.run_parameters().test_instance_count as usize - 1;
 
     let mut swarm = {
         let local_key = identity::Keypair::generate_ed25519();
         let local_peer_id = PeerId::from(local_key.public());
-        println!("Local peer id: {:?}", local_peer_id);
+        info!("Local peer id: {:?}", local_peer_id);
 
         Swarm::new(
             development_transport(local_key).await?,
-            ping::Behaviour::new(ping::Config::new().with_keep_alive(true)),
+            ping::Behaviour::new(
+                ping::Config::new()
+                    .with_interval(Duration::from_secs(10))
+                    .with_keep_alive(true),
+            ),
             local_peer_id,
         )
     };
@@ -60,20 +71,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .with(Protocol::Tcp(LISTENING_PORT))
     };
 
-    println!(
+    info!(
         "Test instance, listening for incoming connections on: {:?}.",
         local_addr
     );
     swarm.listen_on(local_addr.clone())?;
-
-    loop {
-        match swarm.select_next_some().await {
-            SwarmEvent::NewListenAddr { address, .. } => {
-                assert_eq!(address, local_addr);
-                break;
-            }
-            _ => unreachable!(),
-        }
+    match swarm.next().await.unwrap() {
+        SwarmEvent::NewListenAddr { address, .. } if address == local_addr => {}
+        e => panic!("Unexpected event {:?}", e),
     }
 
     let mut address_stream = client
@@ -86,7 +91,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // two peers dialling each other at the same time).
         //
         // We can do this because sync service pubsub is ordered.
-        .take_while(|a| futures::future::ready(a != &local_addr));
+        .take_while(|a| ready(a != &local_addr));
 
     client.publish("peers", local_addr.to_string()).await?;
 
@@ -94,58 +99,68 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         swarm.dial(addr).unwrap();
     }
 
+    // Otherwise the testground background task gets blocked sending
+    // subscription upgrades to the backpressured channel.
+    drop(address_stream);
+
+    info!("Wait to connect to each peer.");
+    // Drive the swarm until we have connected to each peer.
     let mut connected = HashSet::new();
-    loop {
-        match swarm.select_next_some().await {
-            SwarmEvent::ConnectionEstablished { peer_id, .. } => {
-                connected.insert(peer_id);
-                if connected.len() == client.run_parameters().test_instance_count as usize - 1 {
-                    break;
-                }
-            }
-            e => {
-                println!("Event: {:?}", e)
-            }
+    while connected.len() < num_other_instances {
+        let event = swarm.next().await.unwrap();
+        info!("Event: {:?}", event);
+        if let SwarmEvent::ConnectionEstablished { peer_id, .. } = event {
+            connected.insert(peer_id);
         }
     }
 
-    client
+    info!(
+        "Signal and wait for \"connected\" from {:?}.",
+        client.run_parameters().test_instance_count
+    );
+
+    let client_clone = client.clone();
+    let mut connected_fut = client_clone
         .signal_and_wait("connected", client.run_parameters().test_instance_count)
-        .await?;
-
-    let mut pinged = HashSet::new();
-
+        .boxed_local();
     loop {
-        match swarm.select_next_some().await {
-            SwarmEvent::Behaviour(ping::PingEvent {
-                peer,
-                result: Ok(ping::PingSuccess::Ping { .. }),
-            }) => {
-                pinged.insert(peer);
-                if pinged.len() == client.run_parameters().test_instance_count as usize - 1 {
-                    break;
-                }
+        match futures::future::select(&mut connected_fut, swarm.next()).await {
+            futures::future::Either::Left((Ok(_), _)) => break,
+            futures::future::Either::Left((Err(e), _)) => {
+                panic!("Failed to wait for \"conected\" barrier {:?}.", e)
             }
-            e => {
-                println!("Event: {:?}", e)
+            futures::future::Either::Right((event, _)) => {
+                info!("Event: {:?}", event);
             }
         }
     }
 
-    {
-        let all_instances_done = client
-            .signal_and_wait("initial", client.run_parameters().test_instance_count)
-            .boxed_local();
-        let mut stream = swarm.take_until(all_instances_done);
-        loop {
-            match stream.next().await {
-                Some(e) => {
-                    println!("Event: {:?}", e)
-                }
-                None => break,
-            }
+    info!("Wait to receive ping from each peer.");
+    // Drive the swarm until we have received a ping from each test instance.
+    let mut pinged = HashSet::new();
+    while pinged.len() < num_other_instances {
+        let event = swarm.next().await.unwrap();
+        info!("Event: {:?}", event);
+        if let SwarmEvent::Behaviour(ping::PingEvent {
+            peer,
+            result: Ok(ping::PingSuccess::Ping { .. }),
+        }) = event
+        {
+            pinged.insert(peer);
         }
     }
+
+    info!("Wait for all peers to signal being done with \"initial\" round.");
+    // Drive the swarm until all test instances signaled that they are done with the "initial" round.
+    swarm
+        .take_until(
+            client
+                .signal_and_wait("initial", client.run_parameters().test_instance_count)
+                .boxed_local(),
+        )
+        .map(|event| info!("Event: {:?}", event))
+        .collect::<Vec<()>>()
+        .await;
 
     client.record_success().await?;
 
