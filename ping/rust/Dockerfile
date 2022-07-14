@@ -30,10 +30,9 @@ COPY . .
 RUN mv /tmp/Cargo.toml /tmp/Cargo.lock ./plan
 
 RUN cd ./plan/ && \
-        cargo build --release --features="${CARGO_FEATURES}" && \
-        cargo install --features="${CARGO_FEATURES}" --path .
+        cargo build --release --features="${CARGO_FEATURES}"
 
 FROM debian:bullseye-slim
-COPY --from=builder /usr/local/cargo/bin/testplan /usr/local/bin/testplan
+COPY --from=builder /usr/src/testplan/plan/target/release/testplan /usr/local/bin/testplan
 EXPOSE 6060
 ENTRYPOINT ["testplan"]
