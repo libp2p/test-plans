@@ -32,12 +32,9 @@ const LISTENING_PORT: u16 = 1234;
 
 #[async_std::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    env_logger::Builder::from_env(Env::default().default_filter_or("info,libp2p_core=info")).init();
+    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
 
     let client = testground::client::Client::new_and_init().await?;
-
-    // TODO: Still needed?
-    let num_other_instances = client.run_parameters().test_instance_count as usize - 1;
 
     let mut swarm = {
         let local_key = identity::Keypair::generate_ed25519();
@@ -107,7 +104,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     info!("Wait to connect to each peer.");
     let mut connected = HashSet::new();
-    while connected.len() < num_other_instances {
+    while connected.len() < client.run_parameters().test_instance_count as usize - 1 {
         let event = swarm.next().await.unwrap();
         info!("Event: {:?}", event);
         if let SwarmEvent::ConnectionEstablished { peer_id, .. } = event {
@@ -115,25 +112,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    info!(
-        "Signal and wait for \"connected\" from {:?}.",
-        client.run_parameters().test_instance_count
-    );
-    let client_clone = client.clone();
-    let mut connected_fut = client_clone
-        .signal_and_wait("connected", client.run_parameters().test_instance_count)
-        .boxed_local();
-    loop {
-        match futures::future::select(&mut connected_fut, swarm.next()).await {
-            futures::future::Either::Left((Ok(_), _)) => break,
-            futures::future::Either::Left((Err(e), _)) => {
-                panic!("Failed to wait for \"conected\" barrier {:?}.", e)
-            }
-            futures::future::Either::Right((event, _)) => {
-                info!("Event: {:?}", event);
-            }
-        }
-    }
+    signal_wait_and_drive_swarm(&client, &mut swarm, "connected".to_string()).await?;
 
     ping(&client, &mut swarm, "initial".to_string()).await?;
 
@@ -213,8 +192,16 @@ async fn ping(
         }
     }
 
+    signal_wait_and_drive_swarm(client, swarm, tag).await
+}
+
+async fn signal_wait_and_drive_swarm(
+    client: &testground::client::Client,
+    swarm: &mut Swarm<ping::Behaviour>,
+    tag: String,
+) -> Result<(), Box<dyn std::error::Error>> {
     info!(
-        "Wait for all peers to signal being done with \"{}\" round.",
+        "Signal and wait for all peers to signal being done with \"{}\".",
         tag
     );
     swarm
