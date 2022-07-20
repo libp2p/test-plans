@@ -1,0 +1,38 @@
+[metadata]
+  name = "go-rust-cross-version"
+
+[global]
+  plan = "libp2p/ping"
+  case = "ping"
+  total_instances = 2
+  runner = "local:docker"
+
+  [global.build_config]
+    enable_go_build_cache  = false      # see https://github.com/testground/testground/issues/1361
+    # disable testground's goproxy which hangs on github runners.
+    go_proxy_mode          = "remote"
+    go_proxy_url           = "https://proxy.golang.org"
+
+[[groups]]
+  id = "go-v0.20"
+  builder = "docker:go"
+  instances = { count = 1 }
+
+  [groups.build]
+    selectors = ['v0.20']
+
+  [groups.build_config]
+    path = "./go/"
+    build_base_image = 'golang:1.17-buster'
+    modfile = "go.v0.20.mod"
+
+[[groups]]
+  id = "rust-v0.47.0"
+  builder = "docker:generic"
+  instances = { count = 1 }
+
+  [groups.build_config]
+    path = "./rust/"
+
+  [groups.build_config.build_args]
+    CARGO_FEATURES = 'v047'

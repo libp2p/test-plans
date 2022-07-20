@@ -3,10 +3,12 @@ WORKDIR /usr/src/testplan
 
 RUN apt-get update && apt-get install -y cmake
 
+ARG PLAN_PATH="./"
+
 # Cache dependencies between test runs, see testground examples.
 RUN mkdir -p ./plan/src/
 RUN echo "fn main() { println!(\"If you see this message, you may want to clean up the target directory or the Docker build cache.\") }" > ./plan/src/main.rs
-COPY ./plan/Cargo.lock ./plan/Cargo.toml ./plan/
+COPY ./plan/${PLAN_PATH}/Cargo.lock ./plan/${PLAN_PATH}/Cargo.toml ./plan/
 
 ARG CARGO_FEATURES=""
 ARG CARGO_PATCH=""
@@ -25,7 +27,7 @@ RUN cd ./plan/ && \
 # Backup Cargo file to preserve patches.
 RUN cp ./plan/Cargo.toml ./plan/Cargo.lock /tmp/
 
-COPY . .
+COPY ./plan/${PLAN_PATH} ./plan
 
 # This is in order to make sure `main.rs`s mtime timestamp is updated to avoid the dummy `main`
 # remaining in the release binary.
@@ -40,4 +42,5 @@ RUN cd ./plan/ && \
 FROM debian:bullseye-slim
 COPY --from=builder /usr/src/testplan/plan/target/release/testplan /usr/local/bin/testplan
 EXPOSE 6060
+ENV RUST_BACKTRACE=1
 ENTRYPOINT ["testplan"]
