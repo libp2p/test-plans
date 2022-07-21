@@ -5,7 +5,7 @@ RUN apt-get update && apt-get install -y cmake
 
 # Cache dependencies between test runs, see testground examples.
 RUN mkdir -p ./plan/src/
-RUN echo "fn main() {}" > ./plan/src/main.rs
+RUN echo "fn main() { println!(\"If you see this message, you may want to clean up the target directory or the Docker build cache.\") }" > ./plan/src/main.rs
 COPY ./plan/Cargo.lock ./plan/Cargo.toml ./plan/
 
 ARG CARGO_FEATURES=""
@@ -26,6 +26,11 @@ RUN cd ./plan/ && \
 RUN cp ./plan/Cargo.toml ./plan/Cargo.lock /tmp/
 
 COPY . .
+
+# This is in order to make sure `main.rs`s mtime timestamp is updated to avoid the dummy `main`
+# remaining in the release binary.
+# https://github.com/rust-lang/cargo/issues/9598
+RUN touch ./plan/src/main.rs
 
 RUN mv /tmp/Cargo.toml /tmp/Cargo.lock ./plan
 
