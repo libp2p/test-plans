@@ -8,7 +8,7 @@ name = "ping"
 
 [builders."docker:go"]
 enabled                = true
-build_base_image       = "golang:1.17-buster"
+build_base_image       = "golang:1.18-buster"
 
 [runners]
 "local:docker"  = { enabled = true }
