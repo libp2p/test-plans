@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::collections::HashSet;
 use std::str::FromStr;
 use std::time::Duration;
@@ -84,7 +85,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .subscribe("peers")
         .await
         .take(client.run_parameters().test_instance_count as usize)
-        .map(|a| Multiaddr::from_str(&a.unwrap()).unwrap())
+        .map(|a| {
+            let value = a.unwrap();
+            let addr = value["Addrs"][0].as_str().unwrap();
+            Multiaddr::from_str(addr).unwrap()
+        })
         // Note: we sidestep simultaneous connect issues by ONLY connecting to peers
         // who published their addresses before us (this is enough to dedup and avoid
         // two peers dialling each other at the same time).
@@ -92,7 +97,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // We can do this because sync service pubsub is ordered.
         .take_while(|a| ready(a != &local_addr));
 
-    client.publish("peers", local_addr.to_string()).await?;
+    let payload = serde_json::json!({
+        "ID": swarm.local_peer_id().to_string(),
+        "Addrs": [
+            local_addr.to_string(),
+        ],
+    });
+
+    client.publish("peers", Cow::Owned(payload)).await?;
 
     while let Some(addr) = address_stream.next().await {
         swarm.dial(addr).unwrap();
