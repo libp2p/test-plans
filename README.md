@@ -12,6 +12,7 @@ When a new version of libp2p is released, we want to make it permanent in the `p
 1. In the `ping/_compositions/go-cross-versions.toml` file,
     - Find the group for the latest version (`v0.20` for example) and copy it into a new group (`v0.21` for example).
     - Update the `selectors` (go tags) and `modfile` options. Update the `build_base_image` if needed.
+    - Increment the `total_instances` flag (near line 7).
 2. In the `ping/go` folder,
     - Add a new compatibility shim in `compat/` if needed, or add your new selector to the latest shim (see `compat/libp2p.v0.17.go` for example).
     - Create the new mod and sum files (`go.v0.21.mod` for example). Assuming you're updating from `v$A` to `v$B`, a simple way to do this is to:
@@ -19,7 +20,9 @@ When a new version of libp2p is released, we want to make it permanent in the `p
         - `ln -s go.v$B.mod go.mod; ln -s go.v$B.sum go.sum` (you may also use this for local development, these files are ignored by git)
         - update the `go-libp2p` version, go version, and update the code if needed.
         - then `go get -tags v$B && go mod tidy`
-
+3. Run the test on your machine
+    - Import the test-plans with `testground plan import ./ --name libp2p` (once, from the test-plans root)
+    - Run with `testground run composition -f ping/_compositions/go-cross-versions.toml --wait`
 
 ## License
 
