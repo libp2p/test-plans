@@ -143,7 +143,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .parse()
         .unwrap();
 
-    for i in 0..iterations {
+    for i in 1..iterations + 1 {
         client.record_message(format!("⚡️  ITERATION ROUND {}", i));
 
         let latency = Duration::from_millis(rand::thread_rng().gen_range(0..max_latency_ms))
