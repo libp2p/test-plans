@@ -1,0 +1,75 @@
+[metadata]
+  name = "go-rust-cross-version"
+
+[global]
+  plan = "libp2p/ping"
+  case = "ping"
+  total_instances = 10
+  runner = "local:docker"
+
+  [global.build_config]
+    enable_go_build_cache  = false      # see https://github.com/testground/testground/issues/1361
+    # disable testground's goproxy which hangs on github runners.
+    go_proxy_mode          = "remote"
+    go_proxy_url           = "https://proxy.golang.org"
+
+{{ range (split "v0.11,v0.17,v0.19,v0.20,v0.21")}}
+[[groups]]
+  id = "go-{{ . }}"
+  builder = "docker:go"
+  instances = { count = 1 }
+
+  [groups.build]
+    selectors = ['{{ . }}']
+
+  [groups.build_config]
+    path = "./go/"
+    modfile = "go.{{ . }}.mod"
+    {{ if (eq . "v0.11") }}
+    build_base_image = 'golang:1.14-buster'
+    {{ else if (eq . "v0.17") }}
+    build_base_image = 'golang:1.16-buster'
+    {{ else if (eq . "v0.19") }}
+    build_base_image = 'golang:1.17-buster'
+    {{ else if or (eq . "v0.20") (eq . "v0.21") }}
+    build_base_image = 'golang:1.18-buster'
+    {{ end }}
+{{ end }}
+
+[[groups]]
+  id = "go-master"
+  builder = "docker:go"
+  instances = { count = 1 }
+
+  [groups.build]
+    selectors = ['v0.21']
+
+    [[groups.build.dependencies]]
+      module = "github.com/libp2p/go-libp2p"
+      version = "master"
+
+  [groups.build_config]
+    path = "./go/"
+    build_base_image = 'golang:1.18-buster'
+    modfile = "go.v0.21.mod"
+
+  [groups.build_config.dockerfile_extensions]
+    # deal with dependency changes in master until we create the new vx.y.z instance
+    pre_build = """
+RUN cd ${PLAN_DIR} && \
+    go mod download github.com/libp2p/go-libp2p && \
+    go mod tidy -compat=1.18
+"""
+
+{{ range (split "v044,v045,v046,v047") }}
+[[groups]]
+  id = "rust-{{ . }}"
+  builder = "docker:generic"
+  instances = { count = 1 }
+
+  [groups.build_config]
+    path = "./rust/"
+
+  [groups.build_config.build_args]
+    CARGO_FEATURES = '{{ . }}'
+{{ end }}

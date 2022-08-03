@@ -1,0 +1,21 @@
+on:
+  workflow_dispatch:
+    inputs:
+      testground_endpoint:
+        type: string
+        required: false
+        description: testground endpoint
+
+name: libp2p ping - go and rust test with testground.
+
+jobs:
+  run-ping-latest:
+    uses: "./.github/workflows/run-composition.yml"
+    with:
+      composition_file: "ping/_compositions/go-rust-interop-latest.toml"
+      testground_endpoint: ${{ github.event.inputs.testground_endpoint }}
+  run-ping-all:
+    uses: "./.github/workflows/run-composition.yml"
+    with:
+      composition_file: "ping/_compositions/go-rust-interop.toml"
+      testground_endpoint: ${{ github.event.inputs.testground_endpoint }}
