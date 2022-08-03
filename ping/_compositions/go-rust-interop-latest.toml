@@ -14,17 +14,17 @@
     go_proxy_url           = "https://proxy.golang.org"
 
 [[groups]]
-  id = "go-v0.20"
+  id = "go-v0.21"
   builder = "docker:go"
   instances = { count = 1 }
 
   [groups.build]
-    selectors = ['v0.20']
+    selectors = ['v0.21']
 
   [groups.build_config]
     path = "./go/"
     build_base_image = 'golang:1.17-buster'
-    modfile = "go.v0.20.mod"
+    modfile = "go.v0.21.mod"
 
 [[groups]]
   id = "rust-v0.47.0"
