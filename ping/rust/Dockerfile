@@ -10,18 +10,17 @@ RUN mkdir -p ./plan/src/
 RUN echo "fn main() { println!(\"If you see this message, you may want to clean up the target directory or the Docker build cache.\") }" > ./plan/src/main.rs
 COPY ./plan/${PLAN_PATH}/Cargo.lock ./plan/${PLAN_PATH}/Cargo.toml ./plan/
 
-ARG CARGO_FEATURES=""
 ARG CARGO_PATCH=""
 ARG CARGO_REMOVE=""
 
-RUN echo "${CARGO_REMOVE}"
 RUN if [ ! -z "${CARGO_REMOVE}" ]; then sed -i "s/^${CARGO_REMOVE}.*//" ./plan/Cargo.toml; fi
 RUN echo "${CARGO_PATCH}" >> ./plan/Cargo.toml
 RUN cat ./plan/Cargo.toml
 
+ARG CARGO_FEATURES=""
+
 RUN cd ./plan/ && \
-        cargo update --dry-run
-RUN cd ./plan/ && \
+        cargo update --dry-run && \
         cargo build --release --features="${CARGO_FEATURES}"
 
 # Backup Cargo file to preserve patches.
