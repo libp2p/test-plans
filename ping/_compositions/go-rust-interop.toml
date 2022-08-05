@@ -61,7 +61,7 @@ RUN cd ${PLAN_DIR} && \
     go mod tidy -compat=1.18
 """
 
-{{ range (split "v044,v045,v046,v047") }}
+{{ range (split "libp2pv0440,libp2pv0450,libp2pv0460,libp2pv0470") }}
 [[groups]]
   id = "rust-{{ . }}"
   builder = "docker:generic"

@@ -35,4 +35,4 @@
     path = "./rust/"
 
   [groups.build_config.build_args]
-    CARGO_FEATURES = 'v047'
+    CARGO_FEATURES = 'libp2pv0470'

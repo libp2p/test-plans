@@ -3,12 +3,6 @@ edition = "2021"
 name = "testplan"
 version = "0.1.0"
 
-[features]
-v044 = ["libp2pv0440"]
-v045 = ["libp2pv0450"]
-v046 = ["libp2pv0460"]
-v047 = ["libp2pv0470"]
-
 [dependencies]
 async-std = {version = "1.10", features = ["attributes", "tokio1"]}
 env_logger = "0.9.0"
