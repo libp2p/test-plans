@@ -39,12 +39,18 @@ jobs:
         working-directory: ./test-plans
         run: |
           testground plan import --from ./ --name libp2p
+      - name: Resolve the git references
+        if: ${{ inputs.custom_git_reference && inputs.custom_git_target }}
+        id: resolve_reference
+        working-directory: ./test-plans
+        run: |
+          git fetch https://${{ inputs.custom_git_target }} ${{ inputs.custom_git_reference }}
+          SHA=`git log FETCH_HEAD -n 1 --pretty=format:"%H"`
+          echo "::set-output name=custom_git_sha::${SHA}"
       - name: Run the composition file
         working-directory: ./test-plans
         run: |
-          GitReference=${{ inputs.custom_git_reference }}     \
-          GitTarget=${{ inputs.custom_git_target }}        \
-            testground run composition                        \
+          testground run composition                          \
             -f ${{ inputs.composition_file }}                 \
             --metadata-repo "${GITHUB_REPOSITORY}"            \
             --metadata-branch "${GITHUB_REF#refs/heads/}"     \
@@ -52,7 +58,8 @@ jobs:
             --collect-file ./result.tgz                       \
             --collect --wait
         env:
-          GitReference: ${{ inputs.custom_git_reference }}
+          GitReference: ${{ steps.resolve_reference.outputs.custom_git_sha || inputs.custom_git_reference }}
+          GitTarget: ${{ inputs.custom_git_target }}
       - uses: actions/upload-artifact@v3
         if: ${{ failure() }}
         with:

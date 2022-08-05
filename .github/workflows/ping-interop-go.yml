@@ -26,5 +26,5 @@ jobs:
     with:
       composition_file: "ping/_compositions/go-cross-versions.toml"
       custom_git_target: ${{ github.event.inputs.custom_git_target }} # nothing or "some-fork/go-libp2p"
-      custom_git_reference: ${{ github.event.inputs.custom_git_reference }} # a git reference
+      custom_git_reference: ${{ github.event.inputs.custom_git_reference }} # a git branch
       testground_endpoint: ${{ github.event.inputs.testground_endpoint }}

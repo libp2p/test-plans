@@ -48,6 +48,6 @@
     CARGO_FEATURES = 'v047'
     CARGO_REMOVE = 'libp2pv0470'
     CARGO_PATCH = """
-libp2pv0470 = {package = "libp2p", git = "https://{{ or .Env.GitTarget "github.com/libp2p/rust-libp2p" }}", branch = "{{ .Env.GitReference }}", default_features = false, features = [ "websocket", "mplex", "yamux", "tcp-async-io", "ping", "noise", "dns-async-std" ], version = "0.47.0", optional = true}
+libp2pv0470 = {package = "libp2p", git = "https://{{ or .Env.GitTarget "github.com/libp2p/rust-libp2p" }}", rev = "{{ .Env.GitReference }}", default_features = false, features = [ "websocket", "mplex", "yamux", "tcp-async-io", "ping", "noise", "dns-async-std" ], version = "0.47.0", optional = true}
 """
 {{ end }}
