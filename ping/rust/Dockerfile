@@ -15,7 +15,6 @@ ARG CARGO_REMOVE=""
 
 RUN if [ ! -z "${CARGO_REMOVE}" ]; then sed -i "s/^${CARGO_REMOVE}.*//" ./plan/Cargo.toml; fi
 RUN echo "${CARGO_PATCH}" >> ./plan/Cargo.toml
-RUN cat ./plan/Cargo.toml
 
 ARG CARGO_FEATURES=""
 
