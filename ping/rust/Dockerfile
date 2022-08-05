@@ -16,11 +16,11 @@ ARG CARGO_REMOVE=""
 RUN if [ ! -z "${CARGO_REMOVE}" ]; then sed -i "s/^${CARGO_REMOVE}.*//" ./plan/Cargo.toml; fi
 RUN echo "${CARGO_PATCH}" >> ./plan/Cargo.toml
 
-ARG CARGO_FEATURES=""
-
 RUN cd ./plan/ && \
         cargo update --dry-run && \
-        cargo build --release --features="${CARGO_FEATURES}"
+        cargo fetch && \
+        # use a default feature to rely on docker caching.
+        cargo build --release --features "libp2pv0450"
 
 # Backup Cargo file to preserve patches.
 RUN cp ./plan/Cargo.toml ./plan/Cargo.lock /tmp/
@@ -33,6 +33,8 @@ COPY ./plan/${PLAN_PATH} ./plan
 RUN touch ./plan/src/main.rs
 
 RUN mv /tmp/Cargo.toml /tmp/Cargo.lock ./plan
+
+ARG CARGO_FEATURES=""
 
 RUN cd ./plan/ && \
         cargo build --release --features="${CARGO_FEATURES}"
