@@ -10,17 +10,17 @@ RUN mkdir -p ./plan/src/
 RUN echo "fn main() { println!(\"If you see this message, you may want to clean up the target directory or the Docker build cache.\") }" > ./plan/src/main.rs
 COPY ./plan/${PLAN_PATH}/Cargo.lock ./plan/${PLAN_PATH}/Cargo.toml ./plan/
 
-ARG CARGO_PATCH=""
-ARG CARGO_REMOVE=""
-
-RUN if [ ! -z "${CARGO_REMOVE}" ]; then sed -i "s/^${CARGO_REMOVE}.*//" ./plan/Cargo.toml; fi
-RUN echo "${CARGO_PATCH}" >> ./plan/Cargo.toml
-
 RUN cd ./plan/ && \
         cargo update --dry-run && \
         cargo fetch && \
         # use a default feature to rely on docker caching.
         cargo build --release --features "libp2pv0450"
+
+ARG CARGO_PATCH=""
+ARG CARGO_REMOVE=""
+
+RUN if [ ! -z "${CARGO_REMOVE}" ]; then sed -i "s/^${CARGO_REMOVE}.*//" ./plan/Cargo.toml; fi
+RUN echo "${CARGO_PATCH}" >> ./plan/Cargo.toml
 
 # Backup Cargo file to preserve patches.
 RUN cp ./plan/Cargo.toml ./plan/Cargo.lock /tmp/
