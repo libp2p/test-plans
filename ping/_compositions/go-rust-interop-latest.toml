@@ -6,6 +6,7 @@
   case = "ping"
   total_instances = 2
   runner = "local:docker"
+  concurrent_builds = 1
 
   [global.build_config]
     enable_go_build_cache  = false      # see https://github.com/testground/testground/issues/1361
