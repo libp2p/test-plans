@@ -47,6 +47,12 @@ jobs:
           git fetch https://${{ inputs.custom_git_target }} ${{ inputs.custom_git_reference }}
           SHA=`git log FETCH_HEAD -n 1 --pretty=format:"%H"`
           echo "::set-output name=custom_git_sha::${SHA}"
+      - name: Build the composition file
+        working-directory: ./test-plans
+        run: |
+          testground build composition                        \
+            -f ${{ inputs.composition_file }}                 \
+            --wait
       - name: Run the composition file
         working-directory: ./test-plans
         run: |
