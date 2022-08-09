@@ -4,7 +4,6 @@
 [global]
   plan = "libp2p/ping"
   case = "ping"
-  total_instances = 10
   runner = "local:docker"
   concurrent_builds = 1
 

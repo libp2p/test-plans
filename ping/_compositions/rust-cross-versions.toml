@@ -5,7 +5,6 @@
   plan = "libp2p/ping/rust"
   case = "ping"
   builder = "docker:generic"
-  total_instances = {{ if .Env.GitReference }}5{{ else }}4{{ end }}
   runner = "local:docker"
   concurrent_builds = 1
 

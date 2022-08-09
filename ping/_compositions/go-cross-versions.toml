@@ -4,7 +4,6 @@
 [global]
   plan = "libp2p/ping/go"
   case = "ping"
-  total_instances = {{ if .Env.GitReference }}7{{ else }}6{{ end }}
   builder = "docker:go"
   runner = "local:docker"
 
