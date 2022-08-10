@@ -36,3 +36,48 @@
 
   [groups.build_config.build_args]
     CARGO_FEATURES = 'libp2pv0470'
+
+{{ if .Env.GitReference }}
+  {{ if eq .Env.InteropTarget "go" }}
+    [[groups]]
+      id = "custom"
+      instances = { count = 1 }
+
+      [groups.build]
+        selectors = ['v0.20']
+
+        [[groups.build.dependencies]]
+          module = "github.com/libp2p/go-libp2p"
+          version = "{{ .Env.GitReference }}"
+          {{ if .Env.GitTarget }}
+          target = "{{ .Env.GitTarget }}"
+          {{ end }}
+
+      [groups.build_config]
+        build_base_image = 'golang:1.18-buster'
+        modfile = "go.v0.20.mod"
+
+      [groups.build_config.dockerfile_extensions]
+        # deal with dependency changes in master until we create the new vx.y.z instance
+        pre_build = """
+    RUN cd ${PLAN_DIR} && \
+        go mod download github.com/libp2p/go-libp2p && \
+        go mod tidy -compat=1.18
+    """
+  {{ end }}
+
+  {{ if eq .Env.InteropTarget "rust" }}
+    [[groups]]
+      # warning: patch for `libp2p` uses the features mechanism. default-features and features will not take effect because the patch dependency does not support this mechanism
+      # warning: Patch `libp2p v0.47.0 (https://github.com/libp2p/rust-libp2p?branch=master#d0da3a09)` was not used in the crate graph.
+      id = "current"
+      instances = { count = 1 }
+
+      [groups.build_config.build_args]
+        CARGO_FEATURES = 'libp2pv0470'
+        CARGO_REMOVE = 'libp2pv0470'
+        CARGO_PATCH = """
+    libp2pv0470 = {package = "libp2p", git = "https://{{ or .Env.GitTarget "github.com/libp2p/rust-libp2p" }}", rev = "{{ .Env.GitReference }}", default_features = false, features = [ "websocket", "mplex", "yamux", "tcp-async-io", "ping", "noise", "dns-async-std" ], version = "0.47.0", optional = true}
+    """
+  {{ end }}
+{{ end }}

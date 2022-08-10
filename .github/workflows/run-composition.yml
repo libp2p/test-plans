@@ -4,12 +4,19 @@ on:
   workflow_call:
     inputs:
       composition_file:
+        description: the workflow we're going to run
         required: true
         type: string
       custom_git_reference:
+        description: the git commit or branch we're going to use for the custom target
         required: false
         type: string
       custom_git_target:
+        description: the custom git fork url we're going to use for the custom target (github.com/some-fork/rust-libp2p)
+        required: false
+        type: string
+      custom_interop_target:
+        description: in the case of cross-implementation testing, the implementation target (go | rust | ...)
         required: false
         type: string
       testground_endpoint:
@@ -66,6 +73,7 @@ jobs:
         env:
           GitReference: ${{ steps.resolve_reference.outputs.custom_git_sha || inputs.custom_git_reference }}
           GitTarget: ${{ inputs.custom_git_target }}
+          InteropTarget: ${{ inputs.custom_git_target }}
       - uses: actions/upload-artifact@v3
         if: ${{ failure() }}
         with:
