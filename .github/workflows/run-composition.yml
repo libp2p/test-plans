@@ -66,6 +66,7 @@ jobs:
           InteropTarget: ${{ inputs.custom_interop_target }}
       - name: Run the composition file
         working-directory: ./test-plans
+        timeout-minutes: 10
         run: |
           testground run composition                          \
             -f ${{ inputs.composition_file }}                 \
