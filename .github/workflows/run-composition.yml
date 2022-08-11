@@ -60,6 +60,10 @@ jobs:
           testground build composition                        \
             -f ${{ inputs.composition_file }}                 \
             --wait
+        env:
+          GitReference: ${{ steps.resolve_reference.outputs.custom_git_sha || inputs.custom_git_reference }}
+          GitTarget: ${{ inputs.custom_git_target }}
+          InteropTarget: ${{ inputs.custom_interop_target }}
       - name: Run the composition file
         working-directory: ./test-plans
         run: |
@@ -73,7 +77,7 @@ jobs:
         env:
           GitReference: ${{ steps.resolve_reference.outputs.custom_git_sha || inputs.custom_git_reference }}
           GitTarget: ${{ inputs.custom_git_target }}
-          InteropTarget: ${{ inputs.custom_git_target }}
+          InteropTarget: ${{ inputs.custom_interop_target }}
       - uses: actions/upload-artifact@v3
         if: ${{ failure() }}
         with:
