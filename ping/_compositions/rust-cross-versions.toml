@@ -1,5 +1,5 @@
 [metadata]
-  name = "rust-cross-versions {{ .Env.GitReference }}"
+  name = "rust-cross-versions-{{ $.Env.GitReference }}"
 
 [global]
   plan = "libp2p/ping/rust"
@@ -8,46 +8,37 @@
   runner = "local:docker"
   concurrent_builds = 1
 
-[[groups]]
-  id = "v0.44.0"
-  instances = { count = 1 }
+{{ with (load_resource "./rust.toml" ) }}
+  {{ range .groups }}
+    [[groups]]
+    id = "{{ .Id }}"
+    instances = { count = 1 }
 
-  [groups.build_config.build_args]
-    CARGO_FEATURES = 'libp2pv0440'
+    [groups.build_config.build_args]
+      CARGO_FEATURES = '{{ .CargoFeatures }}'
+  {{ end }}
 
-[[groups]]
-  id = "v0.45.1"
-  instances = { count = 1 }
+  {{ with .master }}
+    [[groups]]
+    id = "master"
+    instances = { count = 1 }
 
-  [groups.build_config.build_args]
-    CARGO_FEATURES = 'libp2pv0450'
+    [groups.build_config.build_args]
+      CARGO_FEATURES = '{{ .CargoFeatures }}'
+  {{ end }}
 
-[[groups]]
-  id = "v0.46.0"
-  instances = { count = 1 }
+  {{ if $.Env.GitReference }}
+    {{ with .custom }}
+      [[groups]]
+      id = "custom"
+      instances = { count = 1 }
 
-  [groups.build_config.build_args]
-    CARGO_FEATURES = 'libp2pv0460'
-
-[[groups]]
-  id = "master"
-  instances = { count = 1 }
-
-  [groups.build_config.build_args]
-    CARGO_FEATURES = 'libp2pv0470'
-
-
-{{ if .Env.GitReference }}
-[[groups]]
-  # warning: patch for `libp2p` uses the features mechanism. default-features and features will not take effect because the patch dependency does not support this mechanism
-  # warning: Patch `libp2p v0.47.0 (https://github.com/libp2p/rust-libp2p?branch=master#d0da3a09)` was not used in the crate graph.
-  id = "current"
-  instances = { count = 1 }
-
-  [groups.build_config.build_args]
-    CARGO_FEATURES = 'libp2pv0470'
-    CARGO_REMOVE = 'libp2pv0470'
-    CARGO_PATCH = """
-libp2pv0470 = {package = "libp2p", git = "https://{{ or .Env.GitTarget "github.com/libp2p/rust-libp2p" }}", rev = "{{ .Env.GitReference }}", default_features = false, features = [ "websocket", "mplex", "yamux", "tcp-async-io", "ping", "noise", "dns-async-std" ], version = "0.47.0", optional = true}
-"""
+      [groups.build_config.build_args]
+        CARGO_FEATURES = '{{ .CargoFeatures }}'
+        CARGO_REMOVE = '{{ .CargoFeatures }}'
+        CARGO_PATCH = """
+          {{ .CargoFeatures }} = {package = "libp2p", git = "https://{{ or $.Env.GitTarget "github.com/libp2p/rust-libp2p" }}", rev = "{{ $.Env.GitReference }}", default_features = false, features = [ "websocket", "mplex", "yamux", "tcp-async-io", "ping", "noise", "dns-async-std" ], version = "0.47.0", optional = true}
+          """
+    {{ end }}
+  {{ end }}
 {{ end }}

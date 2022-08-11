@@ -13,71 +13,101 @@
     go_proxy_mode          = "remote"
     go_proxy_url           = "https://proxy.golang.org"
 
-[[groups]]
-  id = "go-v0.21"
-  builder = "docker:go"
-  instances = { count = 1 }
-
-  [groups.build]
-    selectors = ['v0.21']
-
-  [groups.build_config]
-    path = "./go/"
-    build_base_image = 'golang:1.17-buster'
-    modfile = "go.v0.21.mod"
-
-[[groups]]
-  id = "rust-v0.47.0"
-  builder = "docker:generic"
-  instances = { count = 1 }
-
-  [groups.build_config]
-    path = "./rust/"
-
-  [groups.build_config.build_args]
-    CARGO_FEATURES = 'libp2pv0470'
-
-{{ if .Env.GitReference }}
-  {{ if eq .Env.InteropTarget "go" }}
+{{ with (load_resource "./go.toml") }}
+  {{ with .master }}
     [[groups]]
-      id = "custom"
+    id = "go-master"
+    instances = { count = 1 }
+    builder = "docker:go"
+
+    [groups.build]
+      selectors = ['{{ .Selector }}']
+
+      [[groups.build.dependencies]]
+        module = "github.com/libp2p/go-libp2p"
+        version = "master"
+
+    [groups.build_config]
+      path = "./go/"
+      build_base_image = 'golang:{{ .GoVersion }}-buster'
+      modfile = "{{ .Modfile }}"
+
+    [groups.build_config.dockerfile_extensions]
+      # deal with dependency changes in master until we create the new vx.y.z instance
+      pre_build = """
+        RUN cd ${PLAN_DIR} && \
+            go mod download github.com/libp2p/go-libp2p && \
+            go mod tidy -compat={{ .GoVersion }}
+        """
+  {{ end }}
+
+  {{ if eq $.Env.InteropTarget "go" }}
+  {{ if $.Env.GitReference }}
+  {{ with .custom }}
+      [[groups]]
+      id = "custom-go"
       instances = { count = 1 }
+      builder = "docker:go"
 
       [groups.build]
-        selectors = ['v0.20']
+        selectors = ['{{ .Selector }}']
 
-        [[groups.build.dependencies]]
-          module = "github.com/libp2p/go-libp2p"
-          version = "{{ .Env.GitReference }}"
-          {{ if .Env.GitTarget }}
-          target = "{{ .Env.GitTarget }}"
-          {{ end }}
+      [[groups.build.dependencies]]
+        module = "github.com/libp2p/go-libp2p"
+        version = "{{ $.Env.GitReference }}"
+        {{ if $.Env.GitTarget }}
+        target = "{{ $.Env.GitTarget }}"
+        {{ end }}
 
       [groups.build_config]
-        build_base_image = 'golang:1.18-buster'
-        modfile = "go.v0.20.mod"
+        path = "./go/"
+        build_base_image = 'golang:{{ .GoVersion }}-buster'
+        modfile = "{{ .Modfile }}"
 
       [groups.build_config.dockerfile_extensions]
         # deal with dependency changes in master until we create the new vx.y.z instance
         pre_build = """
-    RUN cd ${PLAN_DIR} && \
-        go mod download github.com/libp2p/go-libp2p && \
-        go mod tidy -compat=1.18
-    """
+          RUN cd ${PLAN_DIR} && \
+              go mod download github.com/libp2p/go-libp2p && \
+              go mod tidy -compat={{ .GoVersion }}
+          """
+  {{ end }}
+  {{ end }}
+  {{ end }}
+{{ end }}
+
+{{ with (load_resource "./rust.toml") }}
+  {{ with .master }}
+    [[groups]]
+    id = "rust-master"
+    instances = { count = 1 }
+    builder = "docker:generic"
+
+    [groups.build_config]
+      path = "./rust/"
+      
+    [groups.build_config.build_args]
+      CARGO_FEATURES = '{{ .CargoFeatures }}'
   {{ end }}
 
-  {{ if eq .Env.InteropTarget "rust" }}
-    [[groups]]
-      # warning: patch for `libp2p` uses the features mechanism. default-features and features will not take effect because the patch dependency does not support this mechanism
-      # warning: Patch `libp2p v0.47.0 (https://github.com/libp2p/rust-libp2p?branch=master#d0da3a09)` was not used in the crate graph.
-      id = "current"
+  {{ if eq $.Env.InteropTarget "rust" }}
+  {{ if $.Env.GitReference }}
+  {{ with .custom }}
+      [[groups]]
+      id = "custom-rust"
       instances = { count = 1 }
+      builder = "docker:generic"
+
+      [groups.build_config]
+        path = "./rust/"
 
       [groups.build_config.build_args]
-        CARGO_FEATURES = 'libp2pv0470'
-        CARGO_REMOVE = 'libp2pv0470'
+        CARGO_FEATURES = '{{ .CargoFeatures }}'
+        CARGO_REMOVE = '{{ .CargoFeatures }}'
         CARGO_PATCH = """
-    libp2pv0470 = {package = "libp2p", git = "https://{{ or .Env.GitTarget "github.com/libp2p/rust-libp2p" }}", rev = "{{ .Env.GitReference }}", default_features = false, features = [ "websocket", "mplex", "yamux", "tcp-async-io", "ping", "noise", "dns-async-std" ], version = "0.47.0", optional = true}
-    """
+          {{ .CargoFeatures }} = {package = "libp2p", git = "https://{{ or $.Env.GitTarget "github.com/libp2p/rust-libp2p" }}", rev = "{{ $.Env.GitReference }}", default_features = false, features = [ "websocket", "mplex", "yamux", "tcp-async-io", "ping", "noise", "dns-async-std" ], version = "0.47.0", optional = true}
+          """
+  {{ end }}
+  {{ end }}
   {{ end }}
 {{ end }}
