@@ -1,7 +1,7 @@
 FROM rust:1.62-bullseye as builder
 WORKDIR /usr/src/testplan
 
-RUN apt-get update && apt-get install -y cmake
+RUN apt-get update && apt-get install -y cmake protobuf-compiler
 
 ARG PLAN_PATH="./"
 
