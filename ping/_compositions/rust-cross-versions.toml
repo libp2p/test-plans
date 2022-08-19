@@ -16,6 +16,7 @@
 
     [groups.build_config.build_args]
       CARGO_FEATURES = '{{ .CargoFeatures }}'
+      RUN_ID = '{{ or $.Env.RunId "-" }}'
   {{ end }}
 
   {{ with .master }}
@@ -25,6 +26,7 @@
 
     [groups.build_config.build_args]
       CARGO_FEATURES = '{{ .CargoFeatures }}'
+      RUN_ID = '{{ or $.Env.RunId "-" }}'
   {{ end }}
 
   {{ if $.Env.GitReference }}
@@ -39,6 +41,7 @@
         CARGO_PATCH = """
           {{ .CargoFeatures }} = {package = "libp2p", git = "https://{{ or $.Env.GitTarget "github.com/libp2p/rust-libp2p" }}", rev = "{{ $.Env.GitReference }}", default_features = false, features = [ "websocket", "mplex", "yamux", "tcp-async-io", "ping", "noise", "dns-async-std" ], version = "{{ .Version }}", optional = true}
           """
+        RUN_ID = '{{ or $.Env.RunId "-" }}'
     {{ end }}
   {{ end }}
 {{ end }}

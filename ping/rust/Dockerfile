@@ -39,8 +39,23 @@ ARG CARGO_FEATURES=""
 RUN cd ./plan/ && \
         cargo build --release --features="${CARGO_FEATURES}"
 
+LABEL testground.image.type="test"
+LABEL testground.test.lifecycle="build"
+LABEL testground.test.lang="rust"
+LABEL testground.test.test="ping"
+ARG RUN_ID="-"
+LABEL testground.run_id="${RUN_ID}"
+
+
 FROM debian:bullseye-slim
 COPY --from=builder /usr/src/testplan/plan/target/release/testplan /usr/local/bin/testplan
 EXPOSE 6060
 ENV RUST_BACKTRACE=1
 ENTRYPOINT ["testplan"]
+
+LABEL testground.image.type="test"
+LABEL testground.test.lifecycle="run"
+LABEL testground.test.lang="rust"
+LABEL testground.test.test="ping"
+ARG RUN_ID="-"
+LABEL testground.run_id="${RUN_ID}"

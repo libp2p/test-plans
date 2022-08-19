@@ -39,6 +39,20 @@
             go mod download github.com/libp2p/go-libp2p && \
             go mod tidy -compat={{ .GoVersion }}
         """
+      post_build = """
+LABEL testground.image.type="test"
+LABEL testground.test.lifecycle="build"
+LABEL testground.test.lang="go"
+LABEL testground.test.test="ping"
+LABEL testground.run_id="{{ or $.Env.RunId "-" }}"
+      """
+      post_runtime_copy = """
+LABEL testground.image.type="test"
+LABEL testground.test.lifecycle="run"
+LABEL testground.test.lang="go"
+LABEL testground.test.test="ping"
+LABEL testground.run_id="{{ or $.Env.RunId "-" }}"
+      """
   {{ end }}
 
   {{ if eq $.Env.InteropTarget "go" }}
@@ -65,6 +79,20 @@
         modfile = "{{ .Modfile }}"
 
       [groups.build_config.dockerfile_extensions]
+        post_build = """
+LABEL testground.image.type="test"
+LABEL testground.test.lifecycle="build"
+LABEL testground.test.lang="go"
+LABEL testground.test.test="ping"
+LABEL testground.run_id="{{ or $.Env.RunId "-" }}"
+        """
+        post_runtime_copy = """
+LABEL testground.image.type="test"
+LABEL testground.test.lifecycle="run"
+LABEL testground.test.lang="go"
+LABEL testground.test.test="ping"
+LABEL testground.run_id="{{ or $.Env.RunId "-" }}"
+        """
         # deal with dependency changes in master until we create the new vx.y.z instance
         pre_build = """
           RUN cd ${PLAN_DIR} && \
@@ -88,6 +116,7 @@
       
     [groups.build_config.build_args]
       CARGO_FEATURES = '{{ .CargoFeatures }}'
+      RUN_ID = '{{ or $.Env.RunId "-" }}'
   {{ end }}
 
   {{ if eq $.Env.InteropTarget "rust" }}
@@ -107,6 +136,7 @@
         CARGO_PATCH = """
           {{ .CargoFeatures }} = {package = "libp2p", git = "https://{{ or $.Env.GitTarget "github.com/libp2p/rust-libp2p" }}", rev = "{{ $.Env.GitReference }}", default_features = false, features = [ "websocket", "mplex", "yamux", "tcp-async-io", "ping", "noise", "dns-async-std" ], version = "{{ .Version }}", optional = true}
           """
+        RUN_ID = '{{ or $.Env.RunId "-" }}'
   {{ end }}
   {{ end }}
   {{ end }}

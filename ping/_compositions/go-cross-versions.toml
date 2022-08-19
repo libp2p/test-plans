@@ -25,6 +25,22 @@
     [groups.build_config]
       build_base_image = 'golang:{{ .GoVersion }}-buster'
       modfile = "{{ .Modfile }}"
+
+    [groups.build_config.dockerfile_extensions]
+      post_build = """
+LABEL testground.image.type="test"
+LABEL testground.test.lifecycle="build"
+LABEL testground.test.lang="go"
+LABEL testground.test.test="ping"
+LABEL testground.run_id="{{ or $.Env.RunId "-" }}"
+        """
+      post_runtime_copy = """
+LABEL testground.image.type="test"
+LABEL testground.test.lifecycle="run"
+LABEL testground.test.lang="go"
+LABEL testground.test.test="ping"
+LABEL testground.run_id="{{ or $.Env.RunId "-" }}"
+        """
   {{ end }}
 
   {{ with .master }}
@@ -49,6 +65,20 @@
         RUN cd ${PLAN_DIR} && \
             go mod download github.com/libp2p/go-libp2p && \
             go mod tidy -compat={{ .GoVersion }}
+        """
+      post_build = """
+LABEL testground.image.type="test"
+LABEL testground.test.lifecycle="build"
+LABEL testground.test.lang="go"
+LABEL testground.test.test="ping"
+LABEL testground.run_id="{{ or $.Env.RunId "-" }}"
+        """
+      post_runtime_copy = """
+LABEL testground.image.type="test"
+LABEL testground.test.lifecycle="run"
+LABEL testground.test.lang="go"
+LABEL testground.test.test="ping"
+LABEL testground.run_id="{{ or $.Env.RunId "-" }}"
         """
   {{ end }}
 
@@ -78,6 +108,20 @@
           RUN cd ${PLAN_DIR} && \
               go mod download github.com/libp2p/go-libp2p && \
               go mod tidy -compat={{ .GoVersion }}
+          """
+        post_build = """
+LABEL testground.image.type="test"
+LABEL testground.test.lifecycle="build"
+LABEL testground.test.lang="go"
+LABEL testground.test.test="ping"
+LABEL testground.run_id="{{ or $.Env.RunId "-" }}"
+          """
+        post_runtime_copy = """
+LABEL testground.image.type="test"
+LABEL testground.test.lifecycle="run"
+LABEL testground.test.lang="go"
+LABEL testground.test.test="ping"
+LABEL testground.run_id="{{ or $.Env.RunId "-" }}"
           """
     {{ end }}
   {{ end }}
