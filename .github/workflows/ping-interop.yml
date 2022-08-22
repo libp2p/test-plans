@@ -1,0 +1,39 @@
+on:
+  workflow_dispatch:
+    inputs:
+      testground_endpoint:
+        type: string
+        required: false
+        description: testground endpoint
+      custom_git_reference:
+        description: the git commit or branch we're going to use for the custom target
+        required: false
+        type: string
+      custom_git_target:
+        description: the custom git fork url we're going to use for the custom target (github.com/some-fork/rust-libp2p)
+        required: false
+        type: string
+      custom_interop_target:
+        description: in the case of cross-implementation testing, the implementation target (go | rust | ...)
+        required: false
+        type: string
+
+name: libp2p ping - go and rust test with testground.
+
+jobs:
+  run-ping-latest:
+    uses: "./.github/workflows/run-composition.yml"
+    with:
+      composition_file: "ping/_compositions/go-rust-interop-latest.toml"
+      custom_git_target: ${{ github.event.inputs.custom_git_target }} # nothing or "some-fork/go-libp2p"
+      custom_git_reference: ${{ github.event.inputs.custom_git_reference }} # a git reference
+      custom_interop_target: ${{ github.event.inputs.custom_interop_target }} # go | rust
+      testground_endpoint: ${{ github.event.inputs.testground_endpoint }}
+  run-ping-all:
+    uses: "./.github/workflows/run-composition.yml"
+    with:
+      composition_file: "ping/_compositions/go-rust-interop.toml"
+      custom_git_target: ${{ github.event.inputs.custom_git_target }} # nothing or "some-fork/go-libp2p"
+      custom_git_reference: ${{ github.event.inputs.custom_git_reference }} # a git reference
+      custom_interop_target: ${{ github.event.inputs.custom_interop_target }} # go | rust
+      testground_endpoint: ${{ github.event.inputs.testground_endpoint }}

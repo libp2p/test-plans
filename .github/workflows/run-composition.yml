@@ -4,12 +4,19 @@ on:
   workflow_call:
     inputs:
       composition_file:
+        description: the workflow we're going to run
         required: true
         type: string
       custom_git_reference:
+        description: the git commit or branch we're going to use for the custom target
         required: false
         type: string
       custom_git_target:
+        description: the custom git fork url we're going to use for the custom target (github.com/some-fork/rust-libp2p)
+        required: false
+        type: string
+      custom_interop_target:
+        description: in the case of cross-implementation testing, the implementation target (go | rust | ...)
         required: false
         type: string
       testground_endpoint:
@@ -39,12 +46,29 @@ jobs:
         working-directory: ./test-plans
         run: |
           testground plan import --from ./ --name libp2p
-      - name: Run the composition file
+      - name: Resolve the git references
+        if: ${{ inputs.custom_git_reference && inputs.custom_git_target }}
+        id: resolve_reference
         working-directory: ./test-plans
         run: |
-          GitReference=${{ inputs.custom_git_reference }}     \
-          GitTarget=${{ inputs.custom_git_target }}        \
-            testground run composition                        \
+          git fetch https://${{ inputs.custom_git_target }} ${{ inputs.custom_git_reference }}
+          SHA=`git log FETCH_HEAD -n 1 --pretty=format:"%H"`
+          echo "::set-output name=custom_git_sha::${SHA}"
+      - name: Build the composition file
+        working-directory: ./test-plans
+        run: |
+          testground build composition                        \
+            -f ${{ inputs.composition_file }}                 \
+            --wait
+        env:
+          GitReference: ${{ steps.resolve_reference.outputs.custom_git_sha || inputs.custom_git_reference }}
+          GitTarget: ${{ inputs.custom_git_target }}
+          InteropTarget: ${{ inputs.custom_interop_target }}
+      - name: Run the composition file
+        working-directory: ./test-plans
+        timeout-minutes: 10
+        run: |
+          testground run composition                          \
             -f ${{ inputs.composition_file }}                 \
             --metadata-repo "${GITHUB_REPOSITORY}"            \
             --metadata-branch "${GITHUB_REF#refs/heads/}"     \
@@ -52,7 +76,9 @@ jobs:
             --collect-file ./result.tgz                       \
             --collect --wait
         env:
-          GitReference: ${{ inputs.custom_git_reference }}
+          GitReference: ${{ steps.resolve_reference.outputs.custom_git_sha || inputs.custom_git_reference }}
+          GitTarget: ${{ inputs.custom_git_target }}
+          InteropTarget: ${{ inputs.custom_interop_target }}
       - uses: actions/upload-artifact@v3
         if: ${{ failure() }}
         with:

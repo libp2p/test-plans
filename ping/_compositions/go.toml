@@ -1,0 +1,39 @@
+[master]
+GoVersion = '1.18'
+Modfile = "go.v0.21.mod"
+Selector = 'v0.21'
+
+[custom]
+GoVersion = '1.18'
+Modfile = "go.v0.21.mod"
+Selector = 'v0.21'
+
+[[groups]]
+Id = "v0.11"
+GoVersion = '1.14'
+Modfile = "go.v0.11.mod"
+Selector = 'v0.11'
+
+[[groups]]
+Id = "v0.17"
+GoVersion = '1.16'
+Modfile = "go.v0.17.mod"
+Selector = 'v0.17'
+
+[[groups]]
+Id = "v0.19"
+GoVersion = '1.17'
+Modfile = "go.v0.19.mod"
+Selector = 'v0.19'
+
+[[groups]]
+Id = "v0.20"
+GoVersion = '1.18'
+Modfile = "go.v0.20.mod"
+Selector = 'v0.20'
+
+[[groups]]
+Id = "v0.21"
+GoVersion = '1.18'
+Modfile = "go.v0.21.mod"
+Selector = 'v0.21'

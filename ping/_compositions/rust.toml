@@ -1,0 +1,17 @@
+[[groups]]
+Id = "v0.44.0"
+CargoFeatures = 'libp2pv0440'
+
+[[groups]]
+Id = "v0.45.1"
+CargoFeatures = 'libp2pv0450'
+
+[[groups]]
+Id = "v0.46.0"
+CargoFeatures = 'libp2pv0460'
+
+[master]
+CargoFeatures = 'libp2pv0470'
+
+[custom]
+CargoFeatures = 'libp2pv0470'

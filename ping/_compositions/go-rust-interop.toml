@@ -1,11 +1,11 @@
 [metadata]
-  name = "go-cross-versions {{ .Env.GitReference }}"
+  name = "go-rust-cross-version"
 
 [global]
-  plan = "libp2p/ping/go"
+  plan = "libp2p/ping"
   case = "ping"
-  builder = "docker:go"
   runner = "local:docker"
+  concurrent_builds = 1
 
   [global.build_config]
     enable_go_build_cache  = false      # see https://github.com/testground/testground/issues/1361
@@ -13,16 +13,18 @@
     go_proxy_mode          = "remote"
     go_proxy_url           = "https://proxy.golang.org"
 
-{{ with (load_resource "./go.toml" ) }}
+{{ with (load_resource "./go.toml") }}
   {{ range .groups }}
     [[groups]]
     id = "{{ .Id }}"
     instances = { count = 1 }
+    builder = "docker:go"
 
     [groups.build]
       selectors = ['{{ .Selector }}']
 
     [groups.build_config]
+      path = "./go/"
       build_base_image = 'golang:{{ .GoVersion }}-buster'
       modfile = "{{ .Modfile }}"
   {{ end }}
@@ -31,6 +33,7 @@
     [[groups]]
     id = "master"
     instances = { count = 1 }
+    builder = "docker:go"
 
     [groups.build]
       selectors = ['{{ .Selector }}']
@@ -40,6 +43,7 @@
         version = "master"
 
     [groups.build_config]
+      path = "./go/"
       build_base_image = 'golang:{{ .GoVersion }}-buster'
       modfile = "{{ .Modfile }}"
 
@@ -52,11 +56,13 @@
         """
   {{ end }}
 
+  {{ if eq $.Env.InteropTarget "go" }}
   {{ if $.Env.GitReference }}
-    {{ with .custom }}
+  {{ with .custom }}
       [[groups]]
-      id = "custom"
+      id = "custom-go"
       instances = { count = 1 }
+      builder = "docker:go"
 
       [groups.build]
         selectors = ['{{ .Selector }}']
@@ -69,6 +75,7 @@
         {{ end }}
 
       [groups.build_config]
+        path = "./go/"
         build_base_image = 'golang:{{ .GoVersion }}-buster'
         modfile = "{{ .Modfile }}"
 
@@ -79,6 +86,56 @@
               go mod download github.com/libp2p/go-libp2p && \
               go mod tidy -compat={{ .GoVersion }}
           """
-    {{ end }}
+  {{ end }}
+  {{ end }}
+  {{ end }}
+{{ end }}
+
+{{ with (load_resource "./rust.toml") }}
+  {{ range .groups }}
+    [[groups]]
+    id = "rust-{{ .Id }}"
+    instances = { count = 1 }
+    builder = "docker:generic"
+
+    [groups.build_config]
+      path = "./rust/"
+
+    [groups.build_config.build_args]
+      CARGO_FEATURES = '{{ .CargoFeatures }}'
+  {{ end }}
+
+  {{ with .master }}
+    [[groups]]
+    id = "rust-master"
+    instances = { count = 1 }
+    builder = "docker:generic"
+
+    [groups.build_config]
+      path = "./rust/"
+      
+    [groups.build_config.build_args]
+      CARGO_FEATURES = '{{ .CargoFeatures }}'
+  {{ end }}
+
+  {{ if eq $.Env.InteropTarget "rust" }}
+  {{ if $.Env.GitReference }}
+  {{ with .custom }}
+      [[groups]]
+      id = "custom-rust"
+      instances = { count = 1 }
+      builder = "docker:generic"
+
+      [groups.build_config]
+        path = "./rust/"
+
+      [groups.build_config.build_args]
+        CARGO_FEATURES = '{{ .CargoFeatures }}'
+        CARGO_REMOVE = '{{ .CargoFeatures }}'
+        CARGO_PATCH = """
+          {{ .CargoFeatures }} = {package = "libp2p", git = "https://{{ or $.Env.GitTarget "github.com/libp2p/rust-libp2p" }}", rev = "{{ $.Env.GitReference }}", default_features = false, features = [ "websocket", "mplex", "yamux", "tcp-async-io", "ping", "noise", "dns-async-std" ], version = "0.47.0", optional = true}
+          """
+  {{ end }}
+  {{ end }}
   {{ end }}
 {{ end }}

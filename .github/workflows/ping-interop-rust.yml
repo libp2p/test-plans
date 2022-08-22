@@ -8,14 +8,14 @@ on:
       custom_git_reference:
         type: string
         required: false
-        description: go ref
+        description: rust ref
       custom_git_target:
         type: string
         required: false
         description: repository to use as replace target
-        default: github.com/libp2p/go-libp2p
+        default: github.com/libp2p/rust-libp2p
 
-name: go-libp2p ping - go test with testground.
+name: rust-libp2p ping - rust test with testground.
 
 jobs:
   run-libp2p-test-plans:
@@ -24,7 +24,7 @@ jobs:
     # uses: "libp2p/test-plans/.github/workflows/run-composition.yml@master"
     uses: "./.github/workflows/run-composition.yml"
     with:
-      composition_file: "ping/_compositions/go-cross-versions.toml"
+      composition_file: "ping/_compositions/rust-cross-versions.toml"
       custom_git_target: ${{ github.event.inputs.custom_git_target }} # nothing or "some-fork/go-libp2p"
-      custom_git_reference: ${{ github.event.inputs.custom_git_reference }} # a git branch
+      custom_git_reference: ${{ github.event.inputs.custom_git_reference }} # a git reference
       testground_endpoint: ${{ github.event.inputs.testground_endpoint }}

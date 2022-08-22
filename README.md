@@ -9,10 +9,9 @@ This repository contains Testground test plans for libp2p components.
 
 When a new version of libp2p is released, we want to make it permanent in the `ping/go` test folder.
 
-1. In the `ping/_compositions/go-cross-versions.toml` file,
-    - Find the group for the latest version (`v0.20` for example) and copy it into a new group (`v0.21` for example).
-    - Update the `selectors` (go tags) and `modfile` options. Update the `build_base_image` if needed.
-    - Increment the `total_instances` flag (near line 7).
+1. In the `ping/_compositions/go.toml` file,
+    - copy the `[master]` section and turn it into a `[[groups]]` item
+    - update the `[master]` section with the future version
 2. In the `ping/go` folder,
     - Add a new compatibility shim in `compat/` if needed, or add your new selector to the latest shim (see `compat/libp2p.v0.17.go` for example).
     - Create the new mod and sum files (`go.v0.21.mod` for example). Assuming you're updating from `v$A` to `v$B`, a simple way to do this is to:
@@ -21,8 +20,23 @@ When a new version of libp2p is released, we want to make it permanent in the `p
         - update the `go-libp2p` version, go version, and update the code if needed.
         - then `go get -tags v$B && go mod tidy`
 3. Run the test on your machine
-    - Import the test-plans with `testground plan import ./ --name libp2p` (once, from the test-plans root)
-    - Run with `testground run composition -f ping/_compositions/go-cross-versions.toml --wait`
+    - Do once, from the test-plans root: import the test-plans with `testground plan import ./ --name libp2p`
+    - Run the test with `testground run composition -f ping/_compositions/go-cross-versions.toml --wait`
+
+## How to add a new version to ping/rust
+
+When a new version of libp2p is released, we want to make it permanent in the `ping/rust` test folder.
+
+1. In the `ping/_compositions/rust.toml` file,
+    - Copy the `[master]` section and turn it into a item in the `[[groups]]` array
+    - Update the `[master]` section with the new master version
+2. In the `ping/rust` folder,
+    - `Cargo.toml`: update the feature flags `libp2pvxxx` to fix the released version and add the new `master`
+    - `src/main.rs`: Update the `mod libp2p` definition with the new master
+    - Run `cargo update` if needed. Try to build with `cargo build --features libp2pvxxx`
+3. Run the test on your machine
+    - Do once, from the test-plans root: import the test-plans with `testground plan import ./ --name libp2p`
+    - Run the test with `testground run composition -f ping/_compositions/rust-cross-versions.toml --wait`
 
 ## License
 
