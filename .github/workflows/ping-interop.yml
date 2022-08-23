@@ -17,6 +17,8 @@ on:
         description: in the case of cross-implementation testing, the implementation target (go | rust | ...)
         required: false
         type: string
+  push:
+  pull_request:
 
 name: libp2p ping - go and rust test with testground.
 
