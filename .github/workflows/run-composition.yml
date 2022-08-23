@@ -57,9 +57,13 @@ jobs:
       - name: Build the composition file
         working-directory: ./test-plans
         run: |
-          testground build composition                        \
-            -f ${{ inputs.composition_file }}                 \
-            --wait
+          for i in 1 2 3; do
+            testground build composition                        \
+              -f ${{ inputs.composition_file }}                 \
+              --wait && exit 0 || sleep 1;
+            echo "=== Retrying ==="
+          done
+          exit 1
         env:
           GitReference: ${{ steps.resolve_reference.outputs.custom_git_sha || inputs.custom_git_reference }}
           GitTarget: ${{ inputs.custom_git_target }}
