@@ -62,12 +62,14 @@ jobs:
           echo "::set-output name=custom_git_sha::${SHA}"
       - name: Build the composition file
         working-directory: ./test-plans
+        timeout-minutes: 30
         run: |
           for i in 1 2 3; do
+            echo "=== Attempt $i ==="
             testground build composition                        \
               -f ${{ inputs.composition_file }}                 \
-              --wait && exit 0 || sleep 1;
-            echo "=== Retrying ==="
+              --wait && exit 0;
+            sleep 10
           done
           exit 1
         env:
