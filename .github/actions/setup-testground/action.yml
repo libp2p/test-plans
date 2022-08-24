@@ -39,3 +39,13 @@ runs:
         EOF
           testground daemon > testground.out 2> testground.err &
         fi;
+
+    - name: Check testground daemon health
+      run:
+        echo "Waiting for Testground to launch on 8042...";
+        while ! nc -z localhost 8042; do
+          sleep 1;
+        done;
+        echo "Testground launched";
+        testground healthcheck --runner local:docker --fix;
+      shell: bash
