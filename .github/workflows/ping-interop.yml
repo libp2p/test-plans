@@ -31,6 +31,8 @@ jobs:
       custom_git_reference: ${{ github.event.inputs.custom_git_reference }} # a git reference
       custom_interop_target: ${{ github.event.inputs.custom_interop_target }} # go | rust
       testground_endpoint: ${{ github.event.inputs.testground_endpoint }}
+      test_repository: ${{ (github.event.inputs && '') || github.repository }}
+      test_ref: ${{ (github.event.inputs && '') || github.event.pull_request.head.sha || github.sha }}
   run-ping-all:
     uses: "./.github/workflows/run-composition.yml"
     with:
@@ -39,3 +41,5 @@ jobs:
       custom_git_reference: ${{ github.event.inputs.custom_git_reference }} # a git reference
       custom_interop_target: ${{ github.event.inputs.custom_interop_target }} # go | rust
       testground_endpoint: ${{ github.event.inputs.testground_endpoint }}
+      test_repository: ${{ (github.event.inputs && '') || github.repository }}
+      test_ref: ${{ (github.event.inputs && '') || github.event.pull_request.head.sha || github.sha }}

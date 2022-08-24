@@ -30,3 +30,5 @@ jobs:
       custom_git_target: ${{ github.event.inputs.custom_git_target }} # nothing or "some-fork/go-libp2p"
       custom_git_reference: ${{ github.event.inputs.custom_git_reference }} # a git reference
       testground_endpoint: ${{ github.event.inputs.testground_endpoint }}
+      test_repository: ${{ (github.event.inputs && '') || github.repository }}
+      test_ref: ${{ (github.event.inputs && '') || github.event.pull_request.head.sha || github.sha }}
