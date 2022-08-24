@@ -32,16 +32,16 @@ var testcases = map[string]interface{}{
 //
 // Other key objects are:
 //
-//  * sync.Client (https://pkg.go.dev/github.com/testground/sdk-go/sync):
-//    used to coordinate instances with one another via synchronisations
-//    primitives like signals, barriers, pubsub. In the future, we plan to
-//    support more sophisticated patterns like locks, semaphores, etc.
-//  * network.Client (https://pkg.go.dev/github.com/testground/sdk-go/network):
-//    used to manipulate network configurations. The network.Client uses the
-//    sync service to communicate with the sidecar containers that manage
-//    the network configurations "from the outside". In other words, network
-//    configuration is NOT managed locally by the SDK. Rather, the SDK sends
-//    commands to the sidecar, and awaits until those commands are applied.
+//   - sync.Client (https://pkg.go.dev/github.com/testground/sdk-go/sync):
+//     used to coordinate instances with one another via synchronisations
+//     primitives like signals, barriers, pubsub. In the future, we plan to
+//     support more sophisticated patterns like locks, semaphores, etc.
+//   - network.Client (https://pkg.go.dev/github.com/testground/sdk-go/network):
+//     used to manipulate network configurations. The network.Client uses the
+//     sync service to communicate with the sidecar containers that manage
+//     the network configurations "from the outside". In other words, network
+//     configuration is NOT managed locally by the SDK. Rather, the SDK sends
+//     commands to the sidecar, and awaits until those commands are applied.
 func main() {
 
 	// Delegate this run to the SDK. InvokeMap takes a map of test case names
