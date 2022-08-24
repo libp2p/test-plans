@@ -16,7 +16,7 @@ runs:
         go-version: "1.16.x"
 
     - name: Install testground
-      run: make install
+      run: make install || make install || make install || make install
       working-directory: testground
       shell: bash
 
