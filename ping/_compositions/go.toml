@@ -1,9 +1,21 @@
 [master]
 GoVersion = '1.18'
-Modfile = "go.v0.21.mod"
-Selector = 'v0.21'
+Modfile = "go.v0.22.mod"
+Selector = 'v0.22'
 
 [custom]
+GoVersion = '1.18'
+Modfile = "go.v0.22.mod"
+Selector = 'v0.22'
+
+[[groups]]
+Id = "v0.22"
+GoVersion = '1.18'
+Modfile = "go.v0.22.mod"
+Selector = 'v0.22'
+
+[[groups]]
+Id = "v0.21"
 GoVersion = '1.18'
 Modfile = "go.v0.21.mod"
 Selector = 'v0.21'
