@@ -1,27 +1,53 @@
 name: start testground
 description: setup a local testground instance
+inputs:
+  testground_endpoint:
+    required: false
+    default: ''
+  testground_repository:
+    required: false
+    default: 'testground/testground'
+  testground_ref:
+    required: false
+    default: 'edge'
 
 runs:
   using: "composite"
   steps:
+    # Default setup when we use the testground_ref == edge.
+    - name: Load testground
+      if: ${{ inputs.testground_ref == 'edge' }}
+      shell: bash
+      run: |
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/testground/testground/master/install.sh)"
+
+    # Custom setup (slower) when we use a different testground_ref
     - name: Checkout testground
+      if: ${{ inputs.testground_ref != 'edge' }}
       uses: actions/checkout@v2
       with:
         path: testground
-        repository: testground/testground
+        repository: ${{ inputs.testground_repository }}
+        ref: ${{ inputs.testground_ref }}
 
     - name: Setup Go
-      uses: actions/setup-go@v2
+      if: ${{ inputs.testground_ref != 'edge' }}
+      uses: actions/setup-go@v3
       with:
-        go-version: "1.16.x"
+        cache: true
+        go-version-file: 'testground/go.mod'
+        cache-dependency-path: testground/go.sum
 
     - name: Install testground
-      run: make install || make install || make install || make install
+      if: ${{ inputs.testground_ref != 'edge' }}
+      run: make install || make install || make install # 3 retries in case of network drops.
       working-directory: testground
       shell: bash
 
     - name: Run the daemon or configure the client
       shell: bash
+      env:
+        TESTGROUND_ENDPOINT: ${{ inputs.testground_endpoint }}
       run: |
         if [[ ! -z "${TESTGROUND_ENDPOINT}" ]]; then
           mkdir -p ~/testground/;
