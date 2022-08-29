@@ -1,5 +1,5 @@
-//go:build v0.17 || v0.19
-// +build v0.17 v0.19
+//go:build v0.22
+// +build v0.22
 
 package compat
 
@@ -8,12 +8,12 @@ import (
 	"fmt"
 
 	"github.com/libp2p/go-libp2p"
-	"github.com/libp2p/go-libp2p-core/host"
-	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p/config"
+	"github.com/libp2p/go-libp2p/core/host"
+	"github.com/libp2p/go-libp2p/core/peer"
 
-	noise "github.com/libp2p/go-libp2p-noise"
-	tls "github.com/libp2p/go-libp2p-tls"
+	noise "github.com/libp2p/go-libp2p/p2p/security/noise"
+	tls "github.com/libp2p/go-libp2p/p2p/security/tls"
 )
 
 type PeerAddrInfo = peer.AddrInfo

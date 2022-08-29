@@ -11,6 +11,9 @@ use testground::network_conf::{
 };
 
 pub mod libp2p {
+    #[cfg(all(feature = "libp2pv0480",))]
+    pub use libp2pv0480::*;
+
     #[cfg(all(feature = "libp2pv0470",))]
     pub use libp2pv0470::*;
 

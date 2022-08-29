@@ -11,8 +11,6 @@ import (
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p/p2p/protocol/ping"
 
-	"github.com/libp2p/go-libp2p-core/peer"
-
 	"github.com/testground/sdk-go/network"
 	"github.com/testground/sdk-go/run"
 	"github.com/testground/sdk-go/runtime"
@@ -34,16 +32,16 @@ var testcases = map[string]interface{}{
 //
 // Other key objects are:
 //
-//  * sync.Client (https://pkg.go.dev/github.com/testground/sdk-go/sync):
-//    used to coordinate instances with one another via synchronisations
-//    primitives like signals, barriers, pubsub. In the future, we plan to
-//    support more sophisticated patterns like locks, semaphores, etc.
-//  * network.Client (https://pkg.go.dev/github.com/testground/sdk-go/network):
-//    used to manipulate network configurations. The network.Client uses the
-//    sync service to communicate with the sidecar containers that manage
-//    the network configurations "from the outside". In other words, network
-//    configuration is NOT managed locally by the SDK. Rather, the SDK sends
-//    commands to the sidecar, and awaits until those commands are applied.
+//   - sync.Client (https://pkg.go.dev/github.com/testground/sdk-go/sync):
+//     used to coordinate instances with one another via synchronisations
+//     primitives like signals, barriers, pubsub. In the future, we plan to
+//     support more sophisticated patterns like locks, semaphores, etc.
+//   - network.Client (https://pkg.go.dev/github.com/testground/sdk-go/network):
+//     used to manipulate network configurations. The network.Client uses the
+//     sync service to communicate with the sidecar containers that manage
+//     the network configurations "from the outside". In other words, network
+//     configuration is NOT managed locally by the SDK. Rather, the SDK sends
+//     commands to the sidecar, and awaits until those commands are applied.
 func main() {
 
 	// Delegate this run to the SDK. InvokeMap takes a map of test case names
@@ -138,13 +136,13 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	// 'peersTopic' topic, where others will read from.
 	var (
 		hostId = host.ID()
-		ai     = &peer.AddrInfo{ID: hostId, Addrs: host.Addrs()}
+		ai     = &compat.PeerAddrInfo{ID: hostId, Addrs: host.Addrs()}
 
 		// the peers topic where all instances will advertise their AddrInfo.
-		peersTopic = sync.NewTopic("peers", new(peer.AddrInfo))
+		peersTopic = sync.NewTopic("peers", new(compat.PeerAddrInfo))
 
 		// initialize a slice to store the AddrInfos of all other peers in the run.
-		peers = make([]*peer.AddrInfo, 0, runenv.TestInstanceCount)
+		peers = make([]*compat.PeerAddrInfo, 0, runenv.TestInstanceCount)
 	)
 
 	// Publish our own.
@@ -152,7 +150,7 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 
 	// Now subscribe to the peers topic and consume all addresses, storing them
 	// in the peers slice.
-	peersCh := make(chan *peer.AddrInfo)
+	peersCh := make(chan *compat.PeerAddrInfo)
 	sctx, scancel := context.WithCancel(ctx)
 	sub := initCtx.SyncClient.MustSubscribe(sctx, peersTopic, peersCh)
 

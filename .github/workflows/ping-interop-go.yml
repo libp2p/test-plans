@@ -14,6 +14,8 @@ on:
         required: false
         description: repository to use as replace target
         default: github.com/libp2p/go-libp2p
+  push:
+  pull_request:
 
 name: go-libp2p ping - go test with testground.
 
@@ -28,3 +30,5 @@ jobs:
       custom_git_target: ${{ github.event.inputs.custom_git_target }} # nothing or "some-fork/go-libp2p"
       custom_git_reference: ${{ github.event.inputs.custom_git_reference }} # a git branch
       testground_endpoint: ${{ github.event.inputs.testground_endpoint }}
+      test_repository: ${{ (github.event.inputs && '') || github.repository }}
+      test_ref: ${{ (github.event.inputs && '') || github.event.pull_request.head.sha || github.sha }}

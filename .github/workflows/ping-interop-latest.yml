@@ -6,29 +6,30 @@ on:
         required: false
         description: testground endpoint
       custom_git_reference:
-        type: string
+        description: the git commit or branch we're going to use for the custom target
         required: false
-        description: rust ref
+        type: string
       custom_git_target:
-        type: string
+        description: the custom git fork url we're going to use for the custom target (github.com/some-fork/rust-libp2p)
         required: false
-        description: repository to use as replace target
-        default: github.com/libp2p/rust-libp2p
+        type: string
+      custom_interop_target:
+        description: in the case of cross-implementation testing, the implementation target (go | rust | ...)
+        required: false
+        type: string
   push:
   pull_request:
 
-name: rust-libp2p ping - rust test with testground.
+name: libp2p ping - go + rust test (latest) with testground.
 
 jobs:
-  run-libp2p-test-plans:
-    # If you intend to use this workflow from another repo,
-    # you need to pass the repo and the version:
-    # uses: "libp2p/test-plans/.github/workflows/run-composition.yml@master"
+  run-ping-latest:
     uses: "./.github/workflows/run-composition.yml"
     with:
-      composition_file: "ping/_compositions/rust-cross-versions.toml"
+      composition_file: "ping/_compositions/go-rust-interop-latest.toml"
       custom_git_target: ${{ github.event.inputs.custom_git_target }} # nothing or "some-fork/go-libp2p"
       custom_git_reference: ${{ github.event.inputs.custom_git_reference }} # a git reference
+      custom_interop_target: ${{ github.event.inputs.custom_interop_target }} # go | rust
       testground_endpoint: ${{ github.event.inputs.testground_endpoint }}
       test_repository: ${{ (github.event.inputs && '') || github.repository }}
       test_ref: ${{ (github.event.inputs && '') || github.event.pull_request.head.sha || github.sha }}

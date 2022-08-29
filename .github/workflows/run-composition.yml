@@ -22,13 +22,19 @@ on:
       testground_endpoint:
         required: false
         type: string
+      test_repository:
+        required: false
+        type: string
+      test_ref:
+        required: false
+        type: string
 jobs:
   run_test:
     name: Run a test with different versions
     runs-on: ubuntu-latest
     env:
-      TEST_PLAN_REPO: "libp2p/test-plans"
-      TEST_PLAN_BRANCH: "master"
+      TEST_PLAN_REPO: ${{ inputs.test_repository || 'libp2p/test-plans' }}
+      TEST_PLAN_BRANCH: ${{ inputs.test_ref || 'master' }}
       TESTGROUND_ENDPOINT: ${{ inputs.testground_endpoint }}
     defaults:
       run:
@@ -56,17 +62,23 @@ jobs:
           echo "::set-output name=custom_git_sha::${SHA}"
       - name: Build the composition file
         working-directory: ./test-plans
+        timeout-minutes: 30
         run: |
-          testground build composition                        \
-            -f ${{ inputs.composition_file }}                 \
-            --wait
+          for i in 1 2 3; do
+            echo "=== Attempt $i ==="
+            testground build composition                        \
+              -f ${{ inputs.composition_file }}                 \
+              --wait && exit 0;
+            sleep 10
+          done
+          exit 1
         env:
           GitReference: ${{ steps.resolve_reference.outputs.custom_git_sha || inputs.custom_git_reference }}
           GitTarget: ${{ inputs.custom_git_target }}
           InteropTarget: ${{ inputs.custom_interop_target }}
       - name: Run the composition file
         working-directory: ./test-plans
-        timeout-minutes: 10
+        timeout-minutes: 6
         run: |
           testground run composition                          \
             -f ${{ inputs.composition_file }}                 \
