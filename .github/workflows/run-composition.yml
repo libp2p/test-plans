@@ -40,6 +40,7 @@ jobs:
       CUSTOM_GIT_TARGET: ${{ inputs.custom_git_target }}
       CUSTOM_GIT_REFERENCE: ${{ inputs.custom_git_reference }}
       CUSTOM_INTEROP_TARGET: ${{ inputs.custom_interop_target }}
+      GITHUB_RUN_ID: ${{ github.run_id }}
     defaults:
       run:
         shell: bash
@@ -60,12 +61,32 @@ jobs:
           path: test-plans
           repository: ${{ env.TEST_PLAN_REPO }}
           ref: ${{ env.TEST_PLAN_BRANCH }}
+
       - name: setup testground
         uses: ./test-plans/.github/actions/setup-testground
+
       - name: Import the plan
         working-directory: ./test-plans
         run: |
           testground plan import --from ./ --name libp2p
+
+      - name: Cache Docker Images
+        id: cache-images
+        uses: actions/cache@v3
+        with:
+          path: ~/images/
+          key: images-${{ env.COMPOSITION_FILE }}-${{ env.CUSTOM_GIT_REFERENCE }}
+          restore-keys:
+            images-${{ env.COMPOSITION_FILE }}
+
+
+      - name: Restore Testground Images
+        run: |
+          mkdir -p ~/images/
+          if [[ -f ~/images/save.tar.gz ]]; then
+            docker load < ~/images/save.tar.gz
+          fi
+
       - name: Resolve the git references
         if: ${{ env.CUSTOM_GIT_REFERENCE && env.CUSTOM_GIT_TARGET }}
         id: resolve_reference
@@ -74,6 +95,7 @@ jobs:
           git fetch https://${CUSTOM_GIT_TARGET} ${CUSTOM_GIT_REFERENCE}
           SHA=`git log FETCH_HEAD -n 1 --pretty=format:"%H"`
           echo "::set-output name=custom_git_sha::${SHA}"
+
       - name: Build the composition file
         working-directory: ./test-plans
         timeout-minutes: 30
@@ -91,6 +113,7 @@ jobs:
           GitTarget: ${{ inputs.custom_git_target }}
           InteropTarget: ${{ inputs.custom_interop_target }}
           RunId: ${{ github.run_id }}
+
       - name: Run the composition file
         working-directory: ./test-plans
         timeout-minutes: 6
@@ -107,6 +130,15 @@ jobs:
           GitTarget: ${{ inputs.custom_git_target }}
           InteropTarget: ${{ inputs.custom_interop_target }}
           RunId: ${{ github.run_id }}
+
+      - name: Save images
+        working-directory: ./test-plans
+        run: |
+          echo "backing up testground.run_id=${GITHUB_RUN_ID}"
+          ./list-images.sh "testground.run_id=${GITHUB_RUN_ID}" > /tmp/saved-images
+          docker save $( cat /tmp/saved-images | tr '\n' ' ' ) | gzip -c > ~/images/save.tar.gz
+          echo "We backup'd $(du -hs ~/images/save.tar.gz) worth of docker images"
+
       - uses: actions/upload-artifact@v3
         if: ${{ failure() }}
         with:
