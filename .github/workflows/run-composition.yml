@@ -76,6 +76,7 @@ jobs:
           GitReference: ${{ steps.resolve_reference.outputs.custom_git_sha || inputs.custom_git_reference }}
           GitTarget: ${{ inputs.custom_git_target }}
           InteropTarget: ${{ inputs.custom_interop_target }}
+          RunId: ${{ github.run_id }}
       - name: Run the composition file
         working-directory: ./test-plans
         timeout-minutes: 6
@@ -91,6 +92,7 @@ jobs:
           GitReference: ${{ steps.resolve_reference.outputs.custom_git_sha || inputs.custom_git_reference }}
           GitTarget: ${{ inputs.custom_git_target }}
           InteropTarget: ${{ inputs.custom_interop_target }}
+          RunId: ${{ github.run_id }}
       - uses: actions/upload-artifact@v3
         if: ${{ failure() }}
         with:
