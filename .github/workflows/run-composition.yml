@@ -30,7 +30,7 @@ on:
         type: string
 jobs:
   run_test:
-    name: Run a test with different versions
+    name: "Run Interop: ${{ inputs.composition_file }} (${{ inputs.custom_interop_target }}, ${{ inputs.custom_git_reference }})"
     runs-on: ubuntu-latest
     env:
       TEST_PLAN_REPO: ${{ inputs.test_repository || 'libp2p/test-plans' }}
