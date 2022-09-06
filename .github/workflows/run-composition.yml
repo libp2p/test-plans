@@ -96,6 +96,18 @@ jobs:
           SHA=`git log FETCH_HEAD -n 1 --pretty=format:"%H"`
           echo "::set-output name=custom_git_sha::${SHA}"
 
+      - name: Resolve the libraries git references
+        id: resolve_static_references
+        working-directory: ./test-plans
+        run: |
+          git fetch https://github.com/libp2p/go-libp2p master
+          SHA=`git log FETCH_HEAD -n 1 --pretty=format:"%H"`
+          echo "::set-output name=go_libp2p_master::${SHA}"
+
+          git fetch https://github.com/libp2p/rust-libp2p master
+          SHA=`git log FETCH_HEAD -n 1 --pretty=format:"%H"`
+          echo "::set-output name=rust_libp2p_master::${SHA}"
+
       - name: Build the composition file
         working-directory: ./test-plans
         timeout-minutes: 30
@@ -113,6 +125,8 @@ jobs:
           GitTarget: ${{ inputs.custom_git_target }}
           InteropTarget: ${{ inputs.custom_interop_target }}
           RunId: ${{ github.run_id }}
+          GoLibp2pMasterSha: ${{ steps.resolve_static_references.outputs.go_libp2p_master }}
+          RustLibp2pMasterSha: ${{ steps.resolve_static_references.outputs.rust_libp2p_master }}
 
       - name: Run the composition file
         working-directory: ./test-plans
@@ -130,6 +144,8 @@ jobs:
           GitTarget: ${{ inputs.custom_git_target }}
           InteropTarget: ${{ inputs.custom_interop_target }}
           RunId: ${{ github.run_id }}
+          GoLibp2pMasterSha: ${{ steps.resolve_static_references.outputs.go_libp2p_master }}
+          RustLibp2pMasterSha: ${{ steps.resolve_static_references.outputs.rust_libp2p_master }}
 
       - name: Save images
         working-directory: ./test-plans

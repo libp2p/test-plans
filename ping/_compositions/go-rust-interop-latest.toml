@@ -25,7 +25,7 @@
 
       [[groups.build.dependencies]]
         module = "github.com/libp2p/go-libp2p"
-        version = "master"
+        version = "{{ or $.Env.GoLibp2pMasterSha "master" }}"
 
     [groups.build_config]
       path = "./go/"
@@ -117,6 +117,7 @@ LABEL testground.run_id="{{ or $.Env.RunId "-" }}"
     [groups.build_config.build_args]
       CARGO_FEATURES = '{{ .CargoFeatures }}'
       RUN_ID = '{{ or $.Env.RunId "-" }}'
+      RUST_LIBP2P_MASTER_SHA = '{{ or $.Env.RustLibp2pMasterSha "-" }}'
   {{ end }}
 
   {{ if eq $.Env.InteropTarget "rust" }}
@@ -137,6 +138,7 @@ LABEL testground.run_id="{{ or $.Env.RunId "-" }}"
           {{ .CargoFeatures }} = {package = "libp2p", git = "https://{{ or $.Env.GitTarget "github.com/libp2p/rust-libp2p" }}", rev = "{{ $.Env.GitReference }}", default_features = false, features = [ "websocket", "mplex", "yamux", "tcp-async-io", "ping", "noise", "dns-async-std" ], version = "{{ .Version }}", optional = true}
           """
         RUN_ID = '{{ or $.Env.RunId "-" }}'
+        RUST_LIBP2P_MASTER_SHA = '{{ or $.Env.RustLibp2pMasterSha "-" }}'
   {{ end }}
   {{ end }}
   {{ end }}

@@ -53,7 +53,7 @@ LABEL testground.run_id="{{ or $.Env.RunId "-" }}"
 
       [[groups.build.dependencies]]
         module = "github.com/libp2p/go-libp2p"
-        version = "master"
+        version = "{{ or $.Env.GoLibp2pMasterSha "master" }}"
 
     [groups.build_config]
       build_base_image = 'golang:{{ .GoVersion }}-buster'

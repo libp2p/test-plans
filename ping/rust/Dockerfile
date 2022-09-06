@@ -18,6 +18,14 @@ RUN cd ./plan/ && \
         # use a default feature to rely on docker caching.
         cargo build --release --features "libp2pv0450"
 
+# this arg will trigger a re-run and bump the master cache when needed
+ARG RUST_LIBP2P_MASTER_SHA=""
+RUN cd ./plan/ && \
+        cargo update --dry-run && \
+        cargo fetch && \
+        # use a default feature to rely on docker caching.
+        cargo build --release --features "libp2pv0450"
+
 ARG CARGO_PATCH=""
 ARG CARGO_REMOVE=""
 
