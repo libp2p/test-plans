@@ -1,5 +1,5 @@
 [metadata]
-  name = "go-rust-cross-version"
+  name = "go-rust-cross-version-{{ or $.Env.InteropTarget "-" }}-{{ or $.Env.GitReference "" }}"
 
 [global]
   plan = "libp2p/ping"
@@ -14,38 +14,26 @@
     go_proxy_url           = "https://proxy.golang.org"
 
 {{ with (load_resource "./go.toml") }}
-  {{ with .master }}
+  {{ with (index .groups 0) }}
     [[groups]]
-    id = "go-master"
+    id = "go-latest-{{ .Id }}"
     instances = { count = 1 }
     builder = "docker:go"
 
     [groups.build]
       selectors = ['{{ .Selector }}']
 
-      [[groups.build.dependencies]]
-        module = "github.com/libp2p/go-libp2p"
-        version = "master"
-
     [groups.build_config]
       path = "./go/"
       build_base_image = 'golang:{{ .GoVersion }}-buster'
       modfile = "{{ .Modfile }}"
-
-    [groups.build_config.dockerfile_extensions]
-      # deal with dependency changes in master until we create the new vx.y.z instance
-      pre_build = """
-        RUN cd ${PLAN_DIR} && \
-            go mod download github.com/libp2p/go-libp2p && \
-            go mod tidy -compat={{ .GoVersion }}
-        """
   {{ end }}
 
   {{ if eq $.Env.InteropTarget "go" }}
   {{ if $.Env.GitReference }}
   {{ with .custom }}
       [[groups]]
-      id = "custom-go"
+      id = "go-custom-{{ $.Env.GitReference }}"
       instances = { count = 1 }
       builder = "docker:go"
 
@@ -77,9 +65,9 @@
 {{ end }}
 
 {{ with (load_resource "./rust.toml") }}
-  {{ with .master }}
+  {{ with (index .groups 0) }}
     [[groups]]
-    id = "rust-master"
+    id = "rust-latest-{{ .Id }}"
     instances = { count = 1 }
     builder = "docker:generic"
 
@@ -94,7 +82,7 @@
   {{ if $.Env.GitReference }}
   {{ with .custom }}
       [[groups]]
-      id = "custom-rust"
+      id = "rust-custom-{{ $.Env.GitReference }}"
       instances = { count = 1 }
       builder = "docker:generic"
 
