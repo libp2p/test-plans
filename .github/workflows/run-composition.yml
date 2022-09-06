@@ -44,6 +44,16 @@ jobs:
       run:
         shell: bash
     steps:
+      - name: Setup tmate session
+        uses: pl-strflt/action-tmate@circleci
+        if: runner.debug == '1'
+        with:
+          check-num-clients: true
+          limit-access-to-actor: true
+          wait: false
+          wait-in-post: true
+          wait-interval: '60000'
+
       - name: Checkout sources
         uses: actions/checkout@v2
         with:
