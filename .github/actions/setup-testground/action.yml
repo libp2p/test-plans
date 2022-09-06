@@ -6,7 +6,7 @@ inputs:
     default: ''
   testground_repository:
     required: false
-    default: ''
+    default: 'testground/testground'
   testground_ref:
     required: false
     default: 'edge'
