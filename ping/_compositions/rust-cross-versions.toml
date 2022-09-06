@@ -2,11 +2,14 @@
   name = "rust-cross-versions-{{ $.Env.GitReference }}"
 
 [global]
-  plan = "libp2p/ping/rust"
+  plan = "libp2p/ping"
   case = "ping"
   builder = "docker:generic"
   runner = "local:docker"
   concurrent_builds = 1
+
+  [global.build_config]
+    path = "./rust/"
 
 {{ with (load_resource "./rust.toml" ) }}
   {{ range .groups }}

@@ -2,7 +2,7 @@
   name = "go-cross-versions {{ .Env.GitReference }}"
 
 [global]
-  plan = "libp2p/ping/go"
+  plan = "libp2p/ping"
   case = "ping"
   builder = "docker:go"
   runner = "local:docker"
@@ -12,6 +12,7 @@
     # disable testground's goproxy which hangs on github runners.
     go_proxy_mode          = "remote"
     go_proxy_url           = "https://proxy.golang.org"
+    path = "./go/"
 
 {{ with (load_resource "./go.toml" ) }}
   {{ range .groups }}
