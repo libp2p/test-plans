@@ -20,19 +20,9 @@ on:
   push:
   pull_request:
 
-name: libp2p ping - go and rust test (all) with testground.
+name: libp2p ping - go + rust test (all) with testground.
 
 jobs:
-  run-ping-latest:
-    uses: "./.github/workflows/run-composition.yml"
-    with:
-      composition_file: "ping/_compositions/go-rust-interop-latest.toml"
-      custom_git_target: ${{ github.event.inputs.custom_git_target }} # nothing or "some-fork/go-libp2p"
-      custom_git_reference: ${{ github.event.inputs.custom_git_reference }} # a git reference
-      custom_interop_target: ${{ github.event.inputs.custom_interop_target }} # go | rust
-      testground_endpoint: ${{ github.event.inputs.testground_endpoint }}
-      test_repository: ${{ (github.event.inputs && '') || github.repository }}
-      test_ref: ${{ (github.event.inputs && '') || github.event.pull_request.head.sha || github.sha }}
   run-ping-all:
     uses: "./.github/workflows/run-composition.yml"
     with:
@@ -43,3 +33,4 @@ jobs:
       testground_endpoint: ${{ github.event.inputs.testground_endpoint }}
       test_repository: ${{ (github.event.inputs && '') || github.repository }}
       test_ref: ${{ (github.event.inputs && '') || github.event.pull_request.head.sha || github.sha }}
+      update_cache: ${{ (github.events.inputs && github.events.update_cache ) || false }}

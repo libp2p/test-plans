@@ -14,10 +14,14 @@ on:
         required: false
         description: repository to use as replace target
         default: github.com/libp2p/rust-libp2p
+      update_cache:
+        type: boolean
+        required: false
+        default: false
   push:
   pull_request:
 
-name: rust-libp2p ping - rust test with testground.
+name: libp2p ping - rust test (all) with testground.
 
 jobs:
   run-libp2p-test-plans:
@@ -32,3 +36,4 @@ jobs:
       testground_endpoint: ${{ github.event.inputs.testground_endpoint }}
       test_repository: ${{ (github.event.inputs && '') || github.repository }}
       test_ref: ${{ (github.event.inputs && '') || github.event.pull_request.head.sha || github.sha }}
+      update_cache: ${{ (github.events.inputs && github.events.update_cache ) || true }}

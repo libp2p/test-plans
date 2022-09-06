@@ -28,6 +28,10 @@ on:
       test_ref:
         required: false
         type: string
+      update_cache:
+        default: true
+        required: false
+        type: boolean
 jobs:
   run_test:
     name: "Run Interop: ${{ inputs.composition_file }} (${{ inputs.custom_interop_target }}, ${{ inputs.custom_git_reference }})"
@@ -75,9 +79,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/images/
-          key: images-${{ env.COMPOSITION_FILE }}-${{ env.CUSTOM_GIT_REFERENCE }}
-          restore-keys:
-            images-${{ env.COMPOSITION_FILE }}
+          key: images-${{ env.COMPOSITION_FILE }}
 
       - name: Restore Testground Images
         run: |
@@ -148,6 +150,7 @@ jobs:
           RustLibp2pMasterSha: ${{ steps.resolve_static_references.outputs.rust_libp2p_master }}
 
       - name: Save images
+        if: ${{ inputs.update_cache }}
         working-directory: ./test-plans
         run: |
           echo "backing up testground.run_id=${GITHUB_RUN_ID}"

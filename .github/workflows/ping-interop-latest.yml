@@ -33,3 +33,4 @@ jobs:
       testground_endpoint: ${{ github.event.inputs.testground_endpoint }}
       test_repository: ${{ (github.event.inputs && '') || github.repository }}
       test_ref: ${{ (github.event.inputs && '') || github.event.pull_request.head.sha || github.sha }}
+      update_cache: ${{ (github.events.inputs && github.events.update_cache ) || true }}
