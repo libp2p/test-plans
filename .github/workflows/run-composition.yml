@@ -36,6 +36,10 @@ jobs:
       TEST_PLAN_REPO: ${{ inputs.test_repository || 'libp2p/test-plans' }}
       TEST_PLAN_BRANCH: ${{ inputs.test_ref || 'master' }}
       TESTGROUND_ENDPOINT: ${{ inputs.testground_endpoint }}
+      COMPOSITION_FILE: ${{ inputs.composition_file }}
+      CUSTOM_GIT_TARGET: ${{ inputs.custom_git_target }}
+      CUSTOM_GIT_REFERENCE: ${{ inputs.custom_git_reference }}
+      CUSTOM_INTEROP_TARGET: ${{ inputs.custom_interop_target }}
     defaults:
       run:
         shell: bash
@@ -53,11 +57,11 @@ jobs:
         run: |
           testground plan import --from ./ --name libp2p
       - name: Resolve the git references
-        if: ${{ inputs.custom_git_reference && inputs.custom_git_target }}
+        if: ${{ env.CUSTOM_GIT_REFERENCE && env.CUSTOM_GIT_TARGET }}
         id: resolve_reference
         working-directory: ./test-plans
         run: |
-          git fetch https://${{ inputs.custom_git_target }} ${{ inputs.custom_git_reference }}
+          git fetch https://${CUSTOM_GIT_TARGET} ${CUSTOM_GIT_REFERENCE}
           SHA=`git log FETCH_HEAD -n 1 --pretty=format:"%H"`
           echo "::set-output name=custom_git_sha::${SHA}"
       - name: Build the composition file
@@ -67,7 +71,7 @@ jobs:
           for i in 1 2 3; do
             echo "=== Attempt $i ==="
             testground build composition                        \
-              -f ${{ inputs.composition_file }}                 \
+              --file "${COMPOSITION_FILE}"                      \
               --wait && exit 0;
             sleep 10
           done
@@ -82,7 +86,7 @@ jobs:
         timeout-minutes: 6
         run: |
           testground run composition                          \
-            -f ${{ inputs.composition_file }}                 \
+            --file "${COMPOSITION_FILE}"                      \
             --metadata-repo "${GITHUB_REPOSITORY}"            \
             --metadata-branch "${GITHUB_REF#refs/heads/}"     \
             --metadata-commit "${GITHUB_SHA}"                 \
