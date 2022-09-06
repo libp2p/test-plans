@@ -1,5 +1,5 @@
 [metadata]
-  name = "go-cross-versions {{ .Env.GitReference }}"
+  name = "go-cross-versions {{ or .Env.GitReference "-" }}"
 
 [global]
   plan = "libp2p/ping"

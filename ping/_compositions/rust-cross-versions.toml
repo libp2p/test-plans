@@ -1,5 +1,5 @@
 [metadata]
-  name = "rust-cross-versions-{{ $.Env.GitReference }}"
+  name = "rust-cross-versions-{{ or $.Env.GitReference "-" }}"
 
 [global]
   plan = "libp2p/ping"
