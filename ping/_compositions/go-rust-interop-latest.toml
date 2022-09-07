@@ -13,6 +13,9 @@
     go_proxy_mode          = "remote"
     go_proxy_url           = "https://proxy.golang.org"
 
+    [global.build_config.build_args]
+      RUN_ID = '{{ or $.Env.RunId "-" }}'
+
 {{ with (load_resource "./go.toml") }}
   {{ with .master }}
     [[groups]]
@@ -40,18 +43,12 @@
             go mod tidy -compat={{ .GoVersion }}
         """
       post_build = """
-LABEL testground.image.type="test"
-LABEL testground.test.lifecycle="build"
-LABEL testground.test.lang="go"
-LABEL testground.test.test="ping"
-LABEL testground.run_id="{{ or $.Env.RunId "-" }}"
+ARG RUN_ID="-"
+LABEL testground.run_id="${RUN_ID}"
       """
       post_runtime_copy = """
-LABEL testground.image.type="test"
-LABEL testground.test.lifecycle="run"
-LABEL testground.test.lang="go"
-LABEL testground.test.test="ping"
-LABEL testground.run_id="{{ or $.Env.RunId "-" }}"
+ARG RUN_ID="-"
+LABEL testground.run_id="${RUN_ID}"
       """
   {{ end }}
 
@@ -80,18 +77,12 @@ LABEL testground.run_id="{{ or $.Env.RunId "-" }}"
 
       [groups.build_config.dockerfile_extensions]
         post_build = """
-LABEL testground.image.type="test"
-LABEL testground.test.lifecycle="build"
-LABEL testground.test.lang="go"
-LABEL testground.test.test="ping"
-LABEL testground.run_id="{{ or $.Env.RunId "-" }}"
+ARG RUN_ID="-"
+LABEL testground.run_id="${RUN_ID}"
         """
         post_runtime_copy = """
-LABEL testground.image.type="test"
-LABEL testground.test.lifecycle="run"
-LABEL testground.test.lang="go"
-LABEL testground.test.test="ping"
-LABEL testground.run_id="{{ or $.Env.RunId "-" }}"
+ARG RUN_ID="-"
+LABEL testground.run_id="${RUN_ID}"
         """
         # deal with dependency changes in master until we create the new vx.y.z instance
         pre_build = """
