@@ -36,6 +36,7 @@ jobs:
       TEST_PLAN_REPO: ${{ inputs.test_repository || 'libp2p/test-plans' }}
       TEST_PLAN_BRANCH: ${{ inputs.test_ref || 'master' }}
       TESTGROUND_ENDPOINT: ${{ inputs.testground_endpoint }}
+      COMPOSITION_FILE: ${{ inputs.composition_file }}
     defaults:
       run:
         shell: bash
@@ -67,7 +68,8 @@ jobs:
           for i in 1 2 3; do
             echo "=== Attempt $i ==="
             testground build composition                        \
-              -f ${{ inputs.composition_file }}                 \
+              -f "${COMPOSITION_FILE}"                          \
+              --write-artifacts                                 \
               --wait && exit 0;
             sleep 10
           done
@@ -81,7 +83,7 @@ jobs:
         timeout-minutes: 6
         run: |
           testground run composition                          \
-            -f ${{ inputs.composition_file }}                 \
+            -f "${COMPOSITION_FILE}"                          \
             --metadata-repo "${GITHUB_REPOSITORY}"            \
             --metadata-branch "${GITHUB_REF#refs/heads/}"     \
             --metadata-commit "${GITHUB_SHA}"                 \
@@ -98,5 +100,6 @@ jobs:
           path: |
             ~/testground/
             ~/test-plans/result.tgz
+            ${{env.COMPOSITION_FILE}}
             testground.*
             test-plans/*.out
