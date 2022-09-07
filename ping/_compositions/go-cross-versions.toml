@@ -14,6 +14,9 @@
     go_proxy_url           = "https://proxy.golang.org"
     path = "./go/"
 
+  [global.build_config.build_args]
+    RUN_ID = '{{ or $.Env.RunId "-" }}'
+
 {{ with (load_resource "./go.toml" ) }}
   {{ range .groups }}
     [[groups]]
@@ -30,17 +33,13 @@
     [groups.build_config.dockerfile_extensions]
       post_build = """
 LABEL testground.image.type="test"
-LABEL testground.test.lifecycle="build"
-LABEL testground.test.lang="go"
-LABEL testground.test.test="ping"
-LABEL testground.run_id="{{ or $.Env.RunId "-" }}"
+ARG RUN_ID="-"
+LABEL testground.run_id="${RUN_ID}"
         """
       post_runtime_copy = """
 LABEL testground.image.type="test"
-LABEL testground.test.lifecycle="run"
-LABEL testground.test.lang="go"
-LABEL testground.test.test="ping"
-LABEL testground.run_id="{{ or $.Env.RunId "-" }}"
+ARG RUN_ID="-"
+LABEL testground.run_id="${RUN_ID}"
         """
   {{ end }}
 
@@ -69,17 +68,13 @@ LABEL testground.run_id="{{ or $.Env.RunId "-" }}"
         """
       post_build = """
 LABEL testground.image.type="test"
-LABEL testground.test.lifecycle="build"
-LABEL testground.test.lang="go"
-LABEL testground.test.test="ping"
-LABEL testground.run_id="{{ or $.Env.RunId "-" }}"
+ARG RUN_ID="-"
+LABEL testground.run_id="${RUN_ID}"
         """
       post_runtime_copy = """
 LABEL testground.image.type="test"
-LABEL testground.test.lifecycle="run"
-LABEL testground.test.lang="go"
-LABEL testground.test.test="ping"
-LABEL testground.run_id="{{ or $.Env.RunId "-" }}"
+ARG RUN_ID="-"
+LABEL testground.run_id="${RUN_ID}"
         """
   {{ end }}
 
@@ -112,17 +107,13 @@ LABEL testground.run_id="{{ or $.Env.RunId "-" }}"
           """
         post_build = """
 LABEL testground.image.type="test"
-LABEL testground.test.lifecycle="build"
-LABEL testground.test.lang="go"
-LABEL testground.test.test="ping"
-LABEL testground.run_id="{{ or $.Env.RunId "-" }}"
+ARG RUN_ID="-"
+LABEL testground.run_id="${RUN_ID}"
           """
         post_runtime_copy = """
 LABEL testground.image.type="test"
-LABEL testground.test.lifecycle="run"
-LABEL testground.test.lang="go"
-LABEL testground.test.test="ping"
-LABEL testground.run_id="{{ or $.Env.RunId "-" }}"
+ARG RUN_ID="-"
+LABEL testground.run_id="${RUN_ID}"
           """
     {{ end }}
   {{ end }}
