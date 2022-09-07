@@ -68,6 +68,8 @@ jobs:
 
       - name: setup testground
         uses: ./test-plans/.github/actions/setup-testground
+        with:
+          testground_ref: feat/issue-tbd-args-to-go
 
       - name: Import the plan
         working-directory: ./test-plans
