@@ -1,0 +1,4 @@
+/rust/target
+/_compositions
+manifest.toml
+.gitignore
