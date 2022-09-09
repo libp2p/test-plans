@@ -63,7 +63,7 @@ jobs:
           echo "::set-output name=custom_git_sha::${SHA}"
       - name: Build the composition file
         working-directory: ./test-plans
-        timeout-minutes: 30
+        timeout-minutes: 40
         run: |
           for i in 1 2 3; do
             echo "=== Attempt $i ==="
