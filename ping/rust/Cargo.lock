@@ -1193,15 +1193,6 @@ checksum = "879d54834c8c76457ef4293a689b2a8c59b076067ad77b15efafbb05f92a592b"
 
 [[package]]
 name = "ipnetwork"
-version = "0.19.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1f84f1612606f3753f205a4e9a2efd6fe5b4c573a6269b2cc6c3003d44a0d127"
-dependencies = [
- "serde",
-]
-
-[[package]]
-name = "ipnetwork"
 version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bf466541e9d546596ee94f9f69590f89473455f88372423e0008fc1a7daf100e"
@@ -3905,7 +3896,7 @@ dependencies = [
  "futures",
  "if-addrs",
  "influxdb",
- "ipnetwork 0.20.0",
+ "ipnetwork",
  "log",
  "serde",
  "serde_json",
@@ -3924,9 +3915,7 @@ version = "0.1.0"
 dependencies = [
  "async-std",
  "env_logger",
- "futures",
  "if-addrs",
- "ipnetwork 0.19.0",
  "libp2p 0.44.0",
  "libp2p 0.45.1",
  "libp2p 0.46.1",
@@ -3935,14 +3924,8 @@ dependencies = [
  "libp2p 0.49.0",
  "log",
  "rand 0.8.5",
- "serde",
  "serde_json",
- "soketto",
  "testground",
- "thiserror",
- "tokio",
- "tokio-stream",
- "tokio-util",
 ]
 
 [[package]]
