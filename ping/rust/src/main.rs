@@ -88,7 +88,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let mut address_stream = client
-        .subscribe("peers")
+        .subscribe("peers", 1)
         .await
         .take(client.run_parameters().test_instance_count as usize)
         .map(|a| {
