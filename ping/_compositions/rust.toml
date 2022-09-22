@@ -1,10 +1,8 @@
 [master]
-Version = '0.48.0'
-CargoFeatures = 'libp2pv0480'
+CargoFeatures = 'libp2pmaster'
 
 [custom]
-Version = '0.48.0'
-CargoFeatures = 'libp2pv0480'
+CargoFeatures = 'libp2pmaster'
 
 [[groups]]
 Id = "v0.47.0"
