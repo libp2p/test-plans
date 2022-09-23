@@ -13,7 +13,7 @@ rand = "0.8"
 serde = {version = "1", features = ["derive"]}
 serde_json = "1"
 soketto = "0.7.1"
-testground = {git = "https://github.com/testground/sdk-rust", branch = "master", version = "0.4.0"}
+testground = {git = "https://github.com/testground/sdk-rust", rev = "94a9a72796f94cc7ca786a5f019d07f328c76d4b", version = "0.4.0"}
 thiserror = "1"
 tokio = { version = "1", default-features = false, features = ["sync", "rt-multi-thread", "macros", "net"] }
 tokio-stream = { version = "0.1", default-features = false, features = [] }
@@ -24,4 +24,5 @@ libp2pv0440 = {package = "libp2p", default_features = false, features = [ "webso
 libp2pv0450 = {package = "libp2p", default_features = false, features = [ "websocket", "mplex", "yamux", "tcp-async-io", "ping", "noise", "dns-async-std" ], version = "0.45.0", optional = true}
 libp2pv0460 = {package = "libp2p", default_features = false, features = [ "websocket", "mplex", "yamux", "tcp-async-io", "ping", "noise", "dns-async-std" ], version = "0.46.0", optional = true}
 libp2pv0470 = {package = "libp2p", default_features = false, features = [ "websocket", "mplex", "yamux", "tcp-async-io", "ping", "noise", "dns-async-std" ], version = "0.47.0", optional = true}
-libp2pv0480 = {package = "libp2p", git = "https://github.com/libp2p/rust-libp2p", branch = "master", default_features = false, features = [ "websocket", "mplex", "yamux", "tcp-async-io", "ping", "noise", "dns-async-std" ], version = "0.48.0", optional = true}
+
+libp2pmaster = {package = "libp2p", git = "https://github.com/libp2p/rust-libp2p", branch = "master", default_features = false, features = [ "websocket", "mplex", "yamux", "tcp-async-io", "ping", "noise", "dns-async-std" ], optional = true}
