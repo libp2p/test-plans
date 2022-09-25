@@ -24,6 +24,6 @@ libp2pv0440 = {package = "libp2p", default_features = false, features = [ "webso
 libp2pv0450 = {package = "libp2p", default_features = false, features = [ "websocket", "mplex", "yamux", "tcp-async-io", "ping", "noise", "dns-async-std" ], version = "0.45.0", optional = true}
 libp2pv0460 = {package = "libp2p", default_features = false, features = [ "websocket", "mplex", "yamux", "tcp-async-io", "ping", "noise", "dns-async-std" ], version = "0.46.0", optional = true}
 libp2pv0470 = {package = "libp2p", default_features = false, features = [ "websocket", "mplex", "yamux", "tcp-async-io", "ping", "noise", "dns-async-std" ], version = "0.47.0", optional = true}
-libp2pv0480 = {package = "libp2p", default_features = false, features = [ "websocket", "mplex", "yamux", "tcp-async-io", "ping", "noise", "dns-async-std" ], version = "0.48.0", optional = true}
+libp2pv0480 = {package = "libp2p", default_features = false, features = [ "websocket", "mplex", "yamux", "tcp-async-io", "ping", "noise", "dns-async-std", "rsa" ], version = "0.48.0", optional = true}
 
-libp2pmaster = {package = "libp2p", git = "https://github.com/libp2p/rust-libp2p", branch = "master", default_features = false, features = [ "websocket", "mplex", "yamux", "tcp-async-io", "ping", "noise", "dns-async-std" ], optional = true}
+libp2pmaster = {package = "libp2p", git = "https://github.com/libp2p/rust-libp2p", branch = "master", default_features = false, features = [ "websocket", "mplex", "yamux", "tcp-async-io", "ping", "noise", "dns-async-std", "rsa" ], optional = true}
