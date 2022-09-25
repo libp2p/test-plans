@@ -52,7 +52,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             development_transport(local_key).await?,
             ping::Behaviour::new(
                 ping::Config::new()
-                    .with_interval(Duration::from_secs(10))
+                    .with_interval(Duration::from_secs(1))
                     .with_keep_alive(true),
             ),
             local_peer_id,
