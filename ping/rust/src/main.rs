@@ -123,10 +123,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("Wait to connect to each peer.");
     let mut connected = HashSet::new();
     while connected.len() < client.run_parameters().test_instance_count as usize - 1 {
-        let event = swarm.next().await.unwrap();
-        info!("Event: {:?}", event);
-        if let SwarmEvent::ConnectionEstablished { peer_id, .. } = event {
-            connected.insert(peer_id);
+        if let SwarmEvent::ConnectionEstablished { peer_id, .. } = swarm.next().await.unwrap() {
+            if connected.insert(peer_id) {
+                info!("Connected,peer={peer_id}");
+            }
         }
     }
 
@@ -199,14 +199,14 @@ async fn ping(
     info!("Wait to receive ping from each peer.");
     let mut pinged = HashSet::new();
     while pinged.len() < client.run_parameters().test_instance_count as usize - 1 {
-        let event = swarm.next().await.unwrap();
-        info!("Event: {:?}", event);
         if let SwarmEvent::Behaviour(ping::PingEvent {
             peer,
             result: Ok(ping::PingSuccess::Ping { .. }),
-        }) = event
+        }) = swarm.next().await.unwrap()
         {
-            pinged.insert(peer);
+            if pinged.insert(peer) {
+                info!("ping-result,round={tag},peer={peer}");
+            }
         }
     }
 
@@ -228,8 +228,7 @@ async fn signal_wait_and_drive_swarm(
                 .signal_and_wait(tag, client.run_parameters().test_instance_count)
                 .boxed_local(),
         )
-        .map(|event| info!("Event: {:?}", event))
-        .collect::<Vec<()>>()
+        .collect::<Vec<_>>()
         .await;
 
     Ok(())
