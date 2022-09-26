@@ -1,8 +1,6 @@
 # libp2p testing story
 
-| Status        | Draft         |
-| Created       | 2022-09-09    |
-| Approved      | Pending…      |
+- Status: Draft
 
 ---
 
