@@ -41,18 +41,21 @@
 	- The design is documented in
 	- The design is used by the team when we add new features
 	- There are clear path when it comes to testing new features. This might mean testing multiple `master` against each other.
-- We have a more stable build process that don't risk breaking 
-	- We generate artifacts for old versions during merges to the libp2p repositories https://github.com/libp2p/test-plans/issues/35#issuecomment-1254991985
 
 
 # Long Term
 
 ## EPICs
 
+- The Libp2p Team is using remote runners for benchmarking
 - Libp2p interop covers essential features and implementations
-	- NAT Traversal
+	- NAT Traversal / Hole Punching
+    - Custom Topologies
+    - MTU Fixes
 - Libp2p interop is used to test new features
 	- The design process is clear and well defined
 - Libp2p interop and libp2p test-plans are working together
 	- Either merged as one
 	- or "sync'd"
+- We have a more stable build process that don't risk breaking
+	- We generate artifacts for old versions during merges to the libp2p repositories https://github.com/libp2p/test-plans/issues/35#issuecomment-1254991985
