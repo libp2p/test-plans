@@ -134,8 +134,6 @@ It might be enabled in a nightly job too.
 
 ## Refs
 
-detrimental
-
 - [https://docs.libp2p.io/concepts/protocols/](https://docs.libp2p.io/concepts/protocols/)
 - libp2p interop in [Interop Repository](https://github.com/libp2p/interop)
 - [libp2p interop issue](https://github.com/libp2p/interop/issues/70)
