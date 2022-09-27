@@ -27,17 +27,17 @@ This document describes our process for testing interoperability & backward comp
 
 |                                   | go-libp2p | rust-libp2p | js-libp2p (node) | js-libp2p (browser) | jvm-libp2p | nim-libp2p |
 | ---                               | ---       | ---         | ---              | ---                 | ---        | ---        |
-| Simple PING [#35][issue-35]       | ✅ | ✅ | 🍎 | 🔥 |  |  |
-| Circuit Relay                     |  |  |  |  |  |  |
-| WebTransport Transport            | 🔥 | 🔥 | 🔥 | 🔥 |  |  |
-| WebRTC Transport                  | 🔥 | 🔥 | 🔥 | 🔥 |  |  |
-| NAT Traversal                     |  |  |  |  |  |  |
-| Hole Punching (STUN)              |  |  |  |  |  |  |
-| Identify Protocol                 |  |  |  |  |  |  |
-| AutoNAT                           |  |  |  |  |  |  |
-| DHT                               |  |  |  |  |  |  |
-| QUIC                              |  |  |  |  |  |  |
-| Benchmarking?                     |  |  |  |  |  |  |
+| Simple PING [#35][issue-35]       | ✅        | ✅          | 🍎               | 🔥                  |            |            |
+| Circuit Relay                     |           |             |                  |                     |            |            |
+| WebTransport Transport            | 🔥        | 🔥          | 🔥               | 🔥                  | 🔥         | 🔥         |
+| WebRTC Transport                  | 🔥        | 🔥          | 🔥               | 🔥                  | 🔥         | 🔥         |
+| NAT Traversal                     |           |             |                  |                     |            |            |
+| Hole Punching (STUN)              |           |             |                  |                     |            |            |
+| Identify Protocol                 |           |             |                  |                     |            |            |
+| AutoNAT                           |           |             |                  |                     |            |            |
+| DHT                               |           |             |                  |                     |            |            |
+| QUIC                              |           |             |                  |                     |            |            |
+| Benchmarking?                     |           |             |                  |                     |            |            |
 
 **Dependencies**
 
