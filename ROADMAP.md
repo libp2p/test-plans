@@ -15,17 +15,17 @@
     - Create a page that tells me which implementations are supported by our interop infrastructure,
     - This page signal the status of each test  (not implemented / implemented / broken / passing)
     - This page is generated automatically, nightly
-- The `lip2p/interop` test suite covers essential features for the demonstration
+- The `lip2p/test-plans` test suite covers essential features for the demonstration
     - browserjs
     - nodejs
     - webtransport
     - webrtc
-- The full `libp2p/interop` test suite is used before releasing any new versions
+- The full `libp2p/test-plans` test suite is used before releasing any new versions
     - Go + Rust + JS libp2p release processes contain a call to this workflow
     - Maintainers might enable this workflow for nightly runs
-- The light `libp2p/interop` test suite is used with every new Pull Request
+- The light `libp2p/test-plans` test suite is used with every new Pull Request
     - This makes sure we keep the test green 
-- We fixed every known stability issue with the `libp2p/interop` test suite
+- We fixed every known stability issue with the `libp2p/test-plans` test suite
     - [Issue 36](https://github.com/libp2p/test-plans/issues/36)
 
 
@@ -41,6 +41,9 @@
     - The design is documented in `./ROADMAP.md`,
     - The design is followed by the team when we add new features,
     - There is a clear path when it comes to testing new features. This might mean testing multiple `masters` against each other.
+- We have ported the tests from `libpp2/interop`
+	- This repository implement tests `connect`, `dht`, `pubsub`, `steam` ([ref](https://github.com/libp2p/interop/blob/ce0aa3749c9c53cf5ad53009b273847b94106d40/src/index.ts#L32-L35))
+	- At of writing (2022-09-27), it is disabled in `go-libp2p` ([ref](https://github.com/libp2p/go-libp2p/actions/workflows/interop.yml)), and it is used in `js-libp2p` ([ref](https://github.com/libp2p/js-libp2p/actions/runs/3111413168/jobs/5050929689)).
 
 # Long Term
 
