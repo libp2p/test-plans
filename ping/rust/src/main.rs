@@ -87,10 +87,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         e => panic!("Unexpected event {:?}", e),
     }
 
+    let test_instance_count = client.run_parameters().test_instance_count as usize;
     let mut address_stream = client
-        .subscribe("peers", 1)
+        .subscribe("peers", test_instance_count)
         .await
-        .take(client.run_parameters().test_instance_count as usize)
+        .take(test_instance_count)
         .map(|a| {
             let value = a.unwrap();
             let addr = value["Addrs"][0].as_str().unwrap();
