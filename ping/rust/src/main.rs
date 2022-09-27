@@ -87,6 +87,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         e => panic!("Unexpected event {:?}", e),
     }
 
+    let payload = serde_json::json!({
+        "ID": swarm.local_peer_id().to_string(),
+        "Addrs": [
+            local_addr.to_string(),
+        ],
+    });
+
+    client.publish("peers", Cow::Owned(payload)).await?;
+
     let test_instance_count = client.run_parameters().test_instance_count as usize;
     let mut address_stream = client
         .subscribe("peers", test_instance_count)
@@ -103,15 +112,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         //
         // We can do this because sync service pubsub is ordered.
         .take_while(|a| ready(a != &local_addr));
-
-    let payload = serde_json::json!({
-        "ID": swarm.local_peer_id().to_string(),
-        "Addrs": [
-            local_addr.to_string(),
-        ],
-    });
-
-    client.publish("peers", Cow::Owned(payload)).await?;
 
     while let Some(addr) = address_stream.next().await {
         swarm.dial(addr).unwrap();
