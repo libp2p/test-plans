@@ -14,7 +14,7 @@ RUN cd ./plan/ && \
         cargo update --dry-run && \
         cargo fetch && \
         # use a default feature to rely on docker caching.
-        cargo build --release --features "libp2pv0450"
+        cargo build --release --features="${CARGO_FEATURES}"
 
 ARG CARGO_PATCH=""
 ARG CARGO_REMOVE=""
