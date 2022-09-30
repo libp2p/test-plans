@@ -200,9 +200,9 @@ async fn ping(
     info!("Wait to receive ping from each peer.");
     let mut pinged = HashSet::new();
     while pinged.len() < client.run_parameters().test_instance_count as usize - 1 {
-        if let SwarmEvent::Behaviour(ping::PingEvent {
+        if let SwarmEvent::Behaviour(ping::Event {
             peer,
-            result: Ok(ping::PingSuccess::Ping { .. }),
+            result: Ok(ping::Success::Ping { .. }),
         }) = swarm.next().await.unwrap()
         {
             if pinged.insert(peer) {
