@@ -11,7 +11,7 @@ log = "0.4"
 rand = "0.8"
 serde_json = "1"
 soketto = "0.7.1"
-testground = {git = "https://github.com/testground/sdk-rust", branch = "master", version = "0.4.0"}
+testground = "0.4.0"
 thiserror = "1"
 tokio = { version = "1", default-features = false, features = ["sync", "rt-multi-thread", "macros", "net"] }
 tokio-stream = { version = "0.1", default-features = false, features = [] }
