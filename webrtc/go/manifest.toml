@@ -9,8 +9,6 @@ build_base_image       = "golang:1.19-bullseye"
 
 [runners]
 "local:docker"  = { enabled = true }
-"local:exec"    = { enabled = true }
-"cluster:k8s"   = { enabled = true }
 
 [[testcases]]
 name = "ping"

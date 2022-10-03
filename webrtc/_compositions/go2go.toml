@@ -1,5 +1,5 @@
 [metadata]
-  name = "go2go {{ .Env.GitReference }}"
+  name = "go2go"
 
 [global]
   plan = "libp2p/webrtc"
@@ -24,9 +24,6 @@
     build_args = { image = "golang:1.19-bullseye" }
     modfile = "go.orig.mod"
 
-  [groups.run.test_params]
-    expected_implementation = "go"
-
   [groups.build_config.dockerfile_extensions]
     pre_build = '''
 RUN cd ${PLAN_DIR} && go get github.com/minio/sha256-simd@v1.0.0
@@ -48,9 +45,6 @@ RUN git clone --single-branch --branch ckousik/webrtc https://github.com/ckousik
     build_base_image = 'golang:1.19-buster'
     build_args = { image = "golang:1.19-bullseye" }
     modfile = "go.orig.mod"
-
-  [groups.run.test_params]
-    expected_implementation = "go"
 
   [groups.build_config.dockerfile_extensions]
     pre_build = '''
