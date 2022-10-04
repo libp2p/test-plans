@@ -20,7 +20,7 @@ When a new version of libp2p is released, we want to make it permanent in the `p
         - update the `go-libp2p` version, go version, and update the code if needed.
         - then `go get -tags v$B && go mod tidy`
 3. Run the test on your machine
-    - Do once, from the test-plans root: import the test-plans with `testground plan import ./ --name libp2p`
+    - Do once, from the test-plans root: import the test-plans with `testground plan import --from ./ --name libp2p`
     - Run the test with `testground run composition -f ping/_compositions/go-cross-versions.toml --wait`
 
 ## How to add a new version to ping/rust

@@ -87,10 +87,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         e => panic!("Unexpected event {:?}", e),
     }
 
+    let test_instance_count = client.run_parameters().test_instance_count as usize;
     let mut address_stream = client
-        .subscribe("peers")
+        .subscribe("peers", test_instance_count)
         .await
-        .take(client.run_parameters().test_instance_count as usize)
+        .take(test_instance_count)
         .map(|a| {
             let value = a.unwrap();
             let addr = value["Addrs"][0].as_str().unwrap();
@@ -199,9 +200,9 @@ async fn ping(
     info!("Wait to receive ping from each peer.");
     let mut pinged = HashSet::new();
     while pinged.len() < client.run_parameters().test_instance_count as usize - 1 {
-        if let SwarmEvent::Behaviour(ping::PingEvent {
+        if let SwarmEvent::Behaviour(ping::Event {
             peer,
-            result: Ok(ping::PingSuccess::Ping { .. }),
+            result: Ok(ping::Success::Ping { .. }),
         }) = swarm.next().await.unwrap()
         {
             if pinged.insert(peer) {
