@@ -1,0 +1,16 @@
+[master]
+GoVersion = '1.19'
+Modfile = "go.ckousik.mod"
+Selector = 'ckousik'
+
+[custom]
+GoVersion = '1.19'
+Modfile = "go.ckousik.mod"
+Selector = 'ckousik'
+
+[[groups]]
+Id = "ckousik"
+GoVersion = '1.19'
+Modfile = "go.ckousik.mod"
+Selector = 'ckousik'
+

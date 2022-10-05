@@ -10,7 +10,6 @@ import (
 
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p/p2p/protocol/ping"
-
 	"github.com/testground/sdk-go/network"
 	"github.com/testground/sdk-go/run"
 	"github.com/testground/sdk-go/runtime"
@@ -69,8 +68,14 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 		secureChannel = runenv.StringParam("secure_channel")
 		maxLatencyMs  = runenv.IntParam("max_latency_ms")
 		iterations    = runenv.IntParam("iterations")
+		transport     = runenv.StringParam("transport")
 	)
-
+	// transport := "tcp"
+	// if runenv.IsParamSet("transport") {
+	// 	transport = runenv.StringParam("transport")
+	// } else {
+	// 	runenv.RecordMessage("parameter 'transport' is not set, defaulting to TCP")
+	// }
 	// We can record messages anytime; RecordMessage supports fmt-style
 	// formatting strings.
 	runenv.RecordMessage("started test instance; params: secure_channel=%s, max_latency_ms=%d, iterations=%d", secureChannel, maxLatencyMs, iterations)
@@ -110,9 +115,14 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	// We need to listen on (and advertise) our data network IP address, so we
 	// obtain it from the NetClient.
 	ip := initCtx.NetClient.MustGetDataNetworkIP()
-
+	var pattern string
+	if transport == "webrtc" {
+		pattern = "/ip4/%s/udp/0/webrtc"
+	} else {
+		pattern = "/ip4/%s/tcp/0"
+	}
 	// ☎️  Let's construct the libp2p node.
-	listenAddr := fmt.Sprintf("/ip4/%s/tcp/0", ip)
+	listenAddr := fmt.Sprintf(pattern, ip)
 	host, err := compat.NewLibp2(ctx,
 		secureChannel,
 		libp2p.ListenAddrStrings(listenAddr),

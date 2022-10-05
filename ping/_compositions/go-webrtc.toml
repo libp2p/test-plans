@@ -1,0 +1,104 @@
+[metadata]
+  name = "go-webrtc {{ .Env.GitReference }}"
+
+[global]
+  plan = "libp2p/ping/go"
+  case = "ping"
+  builder = "docker:go"
+  runner = "local:docker"
+
+  [global.build_config]
+    enable_go_build_cache  = false      # see https://github.com/testground/testground/issues/1361
+    # disable testground's goproxy which hangs on github runners.
+    go_proxy_mode          = "remote"
+    go_proxy_url           = "https://proxy.golang.org"
+
+{{ with (load_resource "./recent-go.toml" ) }}
+  {{ range .groups }}
+    [[groups]]
+    id = "{{ .Id }}"
+    instances = { count = 1 }
+
+    [groups.build]
+      selectors = ['{{ .Selector }}']
+
+    [groups.build_config]
+      build_base_image = 'golang:{{ .GoVersion }}-buster'
+      modfile = "{{ .Modfile }}"
+      #TODO this violates the whole idea of going cross-version. Also, should be done, in the long run, with go get not git clone.
+      pre_mod_download = '''
+RUN git clone --single-branch --branch ckousik/webrtc https://github.com/ckousik/go-libp2p.git /go-libp2p/
+'''
+      pre_build = """
+        RUN ls -lrth /go-libp2p/ && cd ${PLAN_DIR} && go mod edit -replace github.com/libp2p/go-libp2p=/go-libp2p
+        RUN cd ${PLAN_DIR} && echo {{ .Id }} && go get -v github.com/libp2p/go-libp2p/p2p/transport/webrtc
+        RUN cd ${PLAN_DIR} && go mod tidy -compat={{ .GoVersion }}
+        """
+    [groups.run.test_params]
+        transport = "webrtc"
+  {{ end }}
+
+  {{ with .master }}
+    [[groups]]
+    id = "master"
+    instances = { count = 1 }
+
+    [groups.build]
+      selectors = ['{{ .Selector }}']
+
+      [[groups.build.dependencies]]
+        module = "github.com/libp2p/go-libp2p"
+        version = "master"
+
+    [groups.build_config]
+      build_base_image = 'golang:{{ .GoVersion }}-buster'
+      modfile = "{{ .Modfile }}"
+
+    [groups.build_config.dockerfile_extensions]
+      pre_mod_download = '''
+RUN git clone --single-branch --branch ckousik/webrtc https://github.com/ckousik/go-libp2p.git /go-libp2p/
+'''
+      pre_build = """
+        RUN ls -lrth /go-libp2p/ && cd ${PLAN_DIR} && go mod edit -replace github.com/libp2p/go-libp2p=/go-libp2p
+        RUN cd ${PLAN_DIR} && echo master && go get -v github.com/libp2p/go-libp2p/p2p/transport/webrtc
+        RUN cd ${PLAN_DIR} && go mod tidy -compat={{ .GoVersion }}
+        """
+    [groups.run.test_params]
+        transport = "webrtc"
+
+  {{ end }}
+
+  {{ if $.Env.GitReference }}
+    {{ with .custom }}
+      [[groups]]
+      id = "custom"
+      instances = { count = 1 }
+
+      [groups.build]
+        selectors = ['{{ .Selector }}']
+
+      [[groups.build.dependencies]]
+        module = "github.com/libp2p/go-libp2p"
+        version = "{{ $.Env.GitReference }}"
+        {{ if $.Env.GitTarget }}
+        target = "{{ $.Env.GitTarget }}"
+        {{ end }}
+
+      [groups.build_config]
+        build_base_image = 'golang:{{ .GoVersion }}-buster'
+        modfile = "{{ .Modfile }}"
+
+      [groups.build_config.dockerfile_extensions]
+        pre_mod_download = '''
+RUN git clone --single-branch --branch ckousik/webrtc https://github.com/ckousik/go-libp2p.git /go-libp2p/
+'''
+        pre_build = """
+        RUN ls -lrth /go-libp2p/ && cd ${PLAN_DIR} && go mod edit -replace github.com/libp2p/go-libp2p=/go-libp2p
+        RUN cd ${PLAN_DIR} && echo custom && go get -v github.com/libp2p/go-libp2p/p2p/transport/webrtc
+        RUN cd ${PLAN_DIR} && go mod tidy -compat={{ .GoVersion }}
+"""
+      [groups.run.test_params]
+        transport = "webrtc"
+    {{ end }}
+  {{ end }}
+{{ end }}
