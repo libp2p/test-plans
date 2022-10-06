@@ -86,7 +86,7 @@ func putIPNSRecord(ctx context.Context, ri *DHTRunInfo, fpOpts findProvsParams, 
 		g := errgroup.Group{}
 		for index, privKey := range emitRecords {
 			i := index
-			record, err := ipns.Create(privKey, []byte(fmt.Sprintf("/path/to/stuff/%d", recNum)), uint64(recNum), time.Now().Add(time.Hour))
+			record, err := ipns.Create(privKey, []byte(fmt.Sprintf("/path/to/stuff/%d", recNum)), uint64(recNum), time.Now().Add(time.Hour), time.Hour)
 			if err != nil {
 				return err
 			}

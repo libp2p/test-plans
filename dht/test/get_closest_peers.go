@@ -82,7 +82,7 @@ func TestGetClosestPeers(ctx context.Context, ri *DHTRunInfo) error {
 				cancel()
 
 				peers := make([]peer.ID, 0, node.info.Properties.BucketSize)
-				for p := range pids {
+				for _, p := range pids {
 					peers = append(peers, p)
 				}
 

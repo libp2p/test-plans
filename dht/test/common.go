@@ -29,9 +29,10 @@ import (
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
 	kaddht "github.com/libp2p/go-libp2p-kad-dht"
-	swarm "github.com/libp2p/go-libp2p-swarm"
-	tptu "github.com/libp2p/go-libp2p-transport-upgrader"
-	tcp "github.com/libp2p/go-tcp-transport"
+	"github.com/libp2p/go-libp2p/core/transport"
+	swarm "github.com/libp2p/go-libp2p/p2p/net/swarm"
+	// /tptu "github.com/libp2p/go-libp2p/p2p/net/upgrader"
+	tcp "github.com/libp2p/go-libp2p/p2p/transport/tcp"
 	"github.com/multiformats/go-multiaddr"
 	"github.com/multiformats/go-multiaddr-net"
 
@@ -126,7 +127,7 @@ var ConnManagerGracePeriod = 1 * time.Second
 
 // NewDHTNode creates a libp2p Host, and a DHT instance on top of it.
 func NewDHTNode(ctx context.Context, runenv *runtime.RunEnv, opts *SetupOpts, idKey crypto.PrivKey, info *DHTNodeInfo) (host.Host, *kaddht.IpfsDHT, error) {
-	swarm.DialTimeoutLocal = opts.Timeout
+	//swarm.DialTimeoutLocal = opts.Timeout
 	var min, max int
 
 	if info.Properties.Bootstrapper {
@@ -157,16 +158,23 @@ func NewDHTNode(ctx context.Context, runenv *runtime.RunEnv, opts *SetupOpts, id
 		return nil, nil, err
 	}
 
+	cm, err := connmgr.NewConnManager(min, max, connmgr.WithGracePeriod(ConnManagerGracePeriod))
+	if err != nil {
+		return nil, nil, err
+	}
+
 	libp2pOpts := []libp2p.Option{
 		libp2p.Identity(idKey),
 		// Use only the TCP transport without reuseport.
-		libp2p.Transport(func(u *tptu.Upgrader) *tcp.TcpTransport {
-			tpt := tcp.NewTCPTransport(u)
-			tpt.DisableReuseport = true
+		libp2p.Transport(func(u transport.Upgrader) *tcp.TcpTransport {
+			tpt, err := tcp.NewTCPTransport(u, nil, tcp.DisableReuseport())
+			if err != nil {
+				panic(err)
+			}
 			return tpt
 		}),
 		// Setup the connection manager to trim to
-		libp2p.ConnectionManager(connmgr.NewConnManager(min, max, ConnManagerGracePeriod)),
+		libp2p.ConnectionManager(cm),
 	}
 
 	if info.Properties.Undialable {
@@ -213,7 +221,7 @@ func NewDHTNode(ctx context.Context, runenv *runtime.RunEnv, opts *SetupOpts, id
 
 	libp2pOpts = append(libp2pOpts, getTaggedLibp2pOpts(opts, info)...)
 
-	node, err := libp2p.New(ctx, libp2pOpts...)
+	node, err := libp2p.New(libp2pOpts...)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -570,15 +578,15 @@ func getBootstrapAddrs(plist []*DHTNodeInfo, nodeInfo *DHTNodeInfo, targetSize i
 
 // Bootstrap brings the network into a completely bootstrapped and ready state.
 //
-// 1. Connect:
-//   a. If any bootstrappers are defined, it connects them together and connects all other peers to one of the bootstrappers (deterministically).
-//   b. Otherwise, every peer is connected to the next peer (in lexicographical peer ID order).
-// 2. Routing: Refresh all the routing tables.
-// 3. Trim: Wait out the grace period then invoke the connection manager to simulate a running network with connection churn.
-// 4. Forget & Reconnect:
-//   a. Forget the addresses of all peers we've disconnected from. Otherwise, FindPeer is useless.
-//   b. Re-connect to at least one node if we've disconnected from _all_ nodes.
-//      We may want to make this an error in the future?
+//  1. Connect:
+//     a. If any bootstrappers are defined, it connects them together and connects all other peers to one of the bootstrappers (deterministically).
+//     b. Otherwise, every peer is connected to the next peer (in lexicographical peer ID order).
+//  2. Routing: Refresh all the routing tables.
+//  3. Trim: Wait out the grace period then invoke the connection manager to simulate a running network with connection churn.
+//  4. Forget & Reconnect:
+//     a. Forget the addresses of all peers we've disconnected from. Otherwise, FindPeer is useless.
+//     b. Re-connect to at least one node if we've disconnected from _all_ nodes.
+//     We may want to make this an error in the future?
 func Bootstrap(ctx context.Context, ri *DHTRunInfo, bootstrapNodes []peer.AddrInfo) error {
 	runenv := ri.RunEnv
 

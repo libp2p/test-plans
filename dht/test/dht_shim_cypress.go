@@ -1,3 +1,4 @@
+//go:build cypress
 // +build cypress
 
 package test
@@ -27,7 +28,7 @@ import (
 func createDHT(ctx context.Context, h host.Host, ds datastore.Batching, opts *SetupOpts, info *DHTNodeInfo) (*kaddht.IpfsDHT, error) {
 	dhtOptions := []kaddht.Option{
 		kaddht.ProtocolPrefix("/testground"),
-		kaddht.V1CompatibleMode(false),
+		//kaddht.V1CompatibleMode(false),
 		kaddht.Datastore(ds),
 		kaddht.BucketSize(opts.BucketSize),
 		kaddht.RoutingTableRefreshQueryTimeout(opts.Timeout),
@@ -54,11 +55,11 @@ func createDHT(ctx context.Context, h host.Host, ds datastore.Batching, opts *Se
 }
 
 func getTaggedLibp2pOpts(opts *SetupOpts, info *DHTNodeInfo) []libp2p.Option {
-	if info.Properties.Bootstrapper {
-		return []libp2p.Option{libp2p.EnableNATService(), libp2p.WithReachability(true)}
-	} else {
-		return []libp2p.Option{libp2p.EnableNATService()}
-	}
+	// if info.Properties.Bootstrapper {
+	// 	return []libp2p.Option{libp2p.EnableNATService(), libp2p.WithReachability(true)}
+	// } else {
+	return []libp2p.Option{libp2p.EnableNATService()}
+	//}
 }
 
 func getAllProvRecordsNum() int { return 0 }
@@ -84,10 +85,10 @@ func specializedTraceQuery(ctx context.Context, runenv *runtime.RunEnv, tag stri
 	})
 
 	ectx, events := kaddht.RegisterForLookupEvents(ctx)
-	ectx, rtEvts := kaddht.RegisterForRoutingTableEvents(ectx)
+	//ectx, rtEvts := kaddht.RegisterForRoutingTableEvents(ectx)
 
 	lookupLogger := sqlogger.With("tag", tag)
-	routingTableLogger := rtlogger.With("tag", tag)
+	//routingTableLogger := rtlogger.With("tag", tag)
 
 	go func() {
 		for e := range events {
@@ -95,11 +96,11 @@ func specializedTraceQuery(ctx context.Context, runenv *runtime.RunEnv, tag stri
 		}
 	}()
 
-	go func() {
-		for e := range rtEvts {
-			routingTableLogger.Infow("rt event", "info", e)
-		}
-	}()
+	// go func() {
+	// 	for e := range rtEvts {
+	// 		routingTableLogger.Infow("rt event", "info", e)
+	// 	}
+	// }()
 
 	return ectx
 }

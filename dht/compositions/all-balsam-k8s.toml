@@ -6,20 +6,38 @@
   plan = "dht"
   case = "all"
   total_instances = 1000
+  concurrent_builds = 0
   builder = "docker:go"
   runner = "cluster:k8s"
+  disable_metrics = false
   [global.build_config]
+    enabled = true
+    exec_pkg = "."
+    go_version = "1.13"
+    module_path = "github.com/libp2p/test-plans/dht"
     push_registry = true
     registry_type = "aws"
 
 [[groups]]
   id = "balsam-undialable-provider-small"
+  builder = "docker:go"
+  [groups.resources]
+    memory = ""
+    cpu = ""
   [groups.instances]
     count = 5
     percentage = 0.0
+  [groups.build_config]
+    enabled = true
+    exec_pkg = "."
+    go_version = "1.13"
+    module_path = "github.com/libp2p/test-plans/dht"
+    push_registry = true
+    registry_type = "aws"
   [groups.build]
     selectors = ["balsam"]
   [groups.run]
+    artifact = ""
     [groups.run.test_params]
       bs_strategy = "6"
       bucket_size = "10"
@@ -29,12 +47,24 @@
 
 [[groups]]
   id = "balsam-undialable-provider-medium"
+  builder = "docker:go"
+  [groups.resources]
+    memory = ""
+    cpu = ""
   [groups.instances]
     count = 15
     percentage = 0.0
+  [groups.build_config]
+    enabled = true
+    exec_pkg = "."
+    go_version = "1.13"
+    module_path = "github.com/libp2p/test-plans/dht"
+    push_registry = true
+    registry_type = "aws"
   [groups.build]
     selectors = ["balsam"]
   [groups.run]
+    artifact = ""
     [groups.run.test_params]
       bs_strategy = "6"
       bucket_size = "10"
@@ -44,12 +74,24 @@
 
 [[groups]]
   id = "balsam-undialable-provider-large"
+  builder = "docker:go"
+  [groups.resources]
+    memory = ""
+    cpu = ""
   [groups.instances]
     count = 100
     percentage = 0.0
+  [groups.build_config]
+    enabled = true
+    exec_pkg = "."
+    go_version = "1.13"
+    module_path = "github.com/libp2p/test-plans/dht"
+    push_registry = true
+    registry_type = "aws"
   [groups.build]
     selectors = ["balsam"]
   [groups.run]
+    artifact = ""
     [groups.run.test_params]
       bs_strategy = "6"
       bucket_size = "10"
@@ -59,12 +101,24 @@
 
 [[groups]]
   id = "balsam-dialable-provider-small"
+  builder = "docker:go"
+  [groups.resources]
+    memory = ""
+    cpu = ""
   [groups.instances]
     count = 5
     percentage = 0.0
+  [groups.build_config]
+    enabled = true
+    exec_pkg = "."
+    go_version = "1.13"
+    module_path = "github.com/libp2p/test-plans/dht"
+    push_registry = true
+    registry_type = "aws"
   [groups.build]
     selectors = ["balsam"]
   [groups.run]
+    artifact = ""
     [groups.run.test_params]
       bs_strategy = "6"
       bucket_size = "10"
@@ -73,12 +127,24 @@
 
 [[groups]]
   id = "balsam-dialable-provider-medium"
+  builder = "docker:go"
+  [groups.resources]
+    memory = ""
+    cpu = ""
   [groups.instances]
     count = 15
     percentage = 0.0
+  [groups.build_config]
+    enabled = true
+    exec_pkg = "."
+    go_version = "1.13"
+    module_path = "github.com/libp2p/test-plans/dht"
+    push_registry = true
+    registry_type = "aws"
   [groups.build]
     selectors = ["balsam"]
   [groups.run]
+    artifact = ""
     [groups.run.test_params]
       bs_strategy = "6"
       bucket_size = "10"
@@ -87,12 +153,24 @@
 
 [[groups]]
   id = "balsam-dialable-provider-large"
+  builder = "docker:go"
+  [groups.resources]
+    memory = ""
+    cpu = ""
   [groups.instances]
     count = 100
     percentage = 0.0
+  [groups.build_config]
+    enabled = true
+    exec_pkg = "."
+    go_version = "1.13"
+    module_path = "github.com/libp2p/test-plans/dht"
+    push_registry = true
+    registry_type = "aws"
   [groups.build]
     selectors = ["balsam"]
   [groups.run]
+    artifact = ""
     [groups.run.test_params]
       bs_strategy = "6"
       bucket_size = "10"
@@ -101,12 +179,24 @@
 
 [[groups]]
   id = "balsam-undialable-searcher"
+  builder = "docker:go"
+  [groups.resources]
+    memory = ""
+    cpu = ""
   [groups.instances]
     count = 5
     percentage = 0.0
+  [groups.build_config]
+    enabled = true
+    exec_pkg = "."
+    go_version = "1.13"
+    module_path = "github.com/libp2p/test-plans/dht"
+    push_registry = true
+    registry_type = "aws"
   [groups.build]
     selectors = ["balsam"]
   [groups.run]
+    artifact = ""
     [groups.run.test_params]
       bs_strategy = "6"
       bucket_size = "10"
@@ -116,12 +206,24 @@
 
 [[groups]]
   id = "balsam-dialable-searcher"
+  builder = "docker:go"
+  [groups.resources]
+    memory = ""
+    cpu = ""
   [groups.instances]
     count = 5
     percentage = 0.0
+  [groups.build_config]
+    enabled = true
+    exec_pkg = "."
+    go_version = "1.13"
+    module_path = "github.com/libp2p/test-plans/dht"
+    push_registry = true
+    registry_type = "aws"
   [groups.build]
     selectors = ["balsam"]
   [groups.run]
+    artifact = ""
     [groups.run.test_params]
       bs_strategy = "6"
       bucket_size = "10"
@@ -130,12 +232,24 @@
 
 [[groups]]
   id = "balsam-undialable-passive"
+  builder = "docker:go"
+  [groups.resources]
+    memory = ""
+    cpu = ""
   [groups.instances]
     count = 495
     percentage = 0.0
+  [groups.build_config]
+    enabled = true
+    exec_pkg = "."
+    go_version = "1.13"
+    module_path = "github.com/libp2p/test-plans/dht"
+    push_registry = true
+    registry_type = "aws"
   [groups.build]
     selectors = ["balsam"]
   [groups.run]
+    artifact = ""
     [groups.run.test_params]
       bs_strategy = "6"
       bucket_size = "10"
@@ -144,12 +258,24 @@
 
 [[groups]]
   id = "balsam-dialable-passive"
+  builder = "docker:go"
+  [groups.resources]
+    memory = ""
+    cpu = ""
   [groups.instances]
     count = 250
     percentage = 0.0
+  [groups.build_config]
+    enabled = true
+    exec_pkg = "."
+    go_version = "1.13"
+    module_path = "github.com/libp2p/test-plans/dht"
+    push_registry = true
+    registry_type = "aws"
   [groups.build]
     selectors = ["balsam"]
   [groups.run]
+    artifact = ""
     [groups.run.test_params]
       bs_strategy = "6"
       bucket_size = "10"
@@ -157,12 +283,24 @@
 
 [[groups]]
   id = "balsam-bs"
+  builder = "docker:go"
+  [groups.resources]
+    memory = ""
+    cpu = ""
   [groups.instances]
     count = 5
     percentage = 0.0
+  [groups.build_config]
+    enabled = true
+    exec_pkg = "."
+    go_version = "1.13"
+    module_path = "github.com/libp2p/test-plans/dht"
+    push_registry = true
+    registry_type = "aws"
   [groups.build]
     selectors = ["balsam"]
   [groups.run]
+    artifact = ""
     [groups.run.test_params]
       bootstrapper = "true"
       bs_strategy = "6"
