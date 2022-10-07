@@ -1,9 +1,9 @@
-module blah
+module github.com/libp2p/test-plans/ping/go
 
-replace github.com/libp2p/go-libp2p => /go-libp2p
+replace github.com/libp2p/go-libp2p => /code/go-libp2p
 
 require (
-	github.com/libp2p/go-libp2p v1.0.5
+	github.com/libp2p/go-libp2p v1.2.7
 	github.com/libp2p/go-libp2p-core v0.20.1
 	github.com/testground/sdk-go v0.3.0
 	golang.org/x/sync v0.0.0-20220819030929-7fc1605a5dde

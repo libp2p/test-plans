@@ -25,13 +25,15 @@
     [groups.build_config]
       build_base_image = 'golang:{{ .GoVersion }}-buster'
       modfile = "{{ .Modfile }}"
-      #TODO this violates the whole idea of going cross-version. Also, should be done, in the long run, with go get not git clone.
+
+    [groups.build_config.dockerfile_extensions]
+      #TODO this violates the whole idea of going cross-version. Also, should be done, in the long run, with go.mod not git clone.
       pre_mod_download = '''
-RUN git clone --single-branch --branch ckousik/webrtc https://github.com/ckousik/go-libp2p.git /go-libp2p/
+RUN git clone --single-branch --branch ckousik/webrtc https://github.com/ckousik/go-libp2p.git /code/go-libp2p/
+RUN cd /code/go-libp2p/ && git checkout ckousik/webrtc && git tag v1.2.7 && git branch master
 '''
       pre_build = """
-        RUN ls -lrth /go-libp2p/ && cd ${PLAN_DIR} && go mod edit -replace github.com/libp2p/go-libp2p=/go-libp2p
-        RUN cd ${PLAN_DIR} && echo {{ .Id }} && go get -v github.com/libp2p/go-libp2p/p2p/transport/webrtc
+        RUN cd ${PLAN_DIR} && go mod edit -replace github.com/libp2p/go-libp2p=/code/go-libp2p/
         RUN cd ${PLAN_DIR} && go mod tidy -compat={{ .GoVersion }}
         """
     [groups.run.test_params]
@@ -56,11 +58,11 @@ RUN git clone --single-branch --branch ckousik/webrtc https://github.com/ckousik
 
     [groups.build_config.dockerfile_extensions]
       pre_mod_download = '''
-RUN git clone --single-branch --branch ckousik/webrtc https://github.com/ckousik/go-libp2p.git /go-libp2p/
+RUN git clone --single-branch --branch ckousik/webrtc https://github.com/ckousik/go-libp2p.git /code/go-libp2p/
+RUN cd /code/go-libp2p/ && git checkout ckousik/webrtc && git tag v1.2.7 && git branch master
 '''
       pre_build = """
-        RUN ls -lrth /go-libp2p/ && cd ${PLAN_DIR} && go mod edit -replace github.com/libp2p/go-libp2p=/go-libp2p
-        RUN cd ${PLAN_DIR} && echo master && go get -v github.com/libp2p/go-libp2p/p2p/transport/webrtc
+        RUN cd ${PLAN_DIR} && go mod edit -replace github.com/libp2p/go-libp2p=/code/go-libp2p/
         RUN cd ${PLAN_DIR} && go mod tidy -compat={{ .GoVersion }}
         """
     [groups.run.test_params]
@@ -90,11 +92,11 @@ RUN git clone --single-branch --branch ckousik/webrtc https://github.com/ckousik
 
       [groups.build_config.dockerfile_extensions]
         pre_mod_download = '''
-RUN git clone --single-branch --branch ckousik/webrtc https://github.com/ckousik/go-libp2p.git /go-libp2p/
+RUN git clone --single-branch --branch ckousik/webrtc https://github.com/ckousik/go-libp2p.git /code/go-libp2p/
+RUN cd /code/go-libp2p/ && git checkout ckousik/webrtc && git tag v1.2.7 && git branch master
 '''
         pre_build = """
-        RUN ls -lrth /go-libp2p/ && cd ${PLAN_DIR} && go mod edit -replace github.com/libp2p/go-libp2p=/go-libp2p
-        RUN cd ${PLAN_DIR} && echo custom && go get -v github.com/libp2p/go-libp2p/p2p/transport/webrtc
+        RUN cd ${PLAN_DIR} && go mod edit -replace github.com/libp2p/go-libp2p=/code/go-libp2p/
         RUN cd ${PLAN_DIR} && go mod tidy -compat={{ .GoVersion }}
 """
       [groups.run.test_params]

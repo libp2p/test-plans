@@ -1,5 +1,5 @@
-//go:build v0.22
-// +build v0.22
+//go:build ckousik
+// +build ckousik
 
 package compat
 
@@ -14,6 +14,7 @@ import (
 
 	noise "github.com/libp2p/go-libp2p/p2p/security/noise"
 	tls "github.com/libp2p/go-libp2p/p2p/security/tls"
+	webrtc "github.com/libp2p/go-libp2p/p2p/transport/webrtc"
 )
 
 type PeerAddrInfo = peer.AddrInfo
