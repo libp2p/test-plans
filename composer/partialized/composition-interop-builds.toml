@@ -1,0 +1,96 @@
+{{ define "go" }}
+[[groups]]
+    id = "{{ .Id }}"
+    instances = { count = 1 }
+    builder = "docker:go"
+
+    [groups.run.test_params]
+      iterations = "1"
+
+    [groups.build]
+        selectors = ['{{ .Selector }}']
+
+    [groups.build_config]
+        path = "./go/"
+        build_base_image = 'golang:{{ .GoVersion }}-buster'
+        modfile = "{{ .Modfile }}"
+
+        {{ if .IsMaster }}
+        [[groups.build.dependencies]]
+            module = "github.com/libp2p/go-libp2p"
+            version = "{{ $.Env.GoLibp2pMasterSha }}"
+        {{ end }}
+
+        {{ if .IsCustom }}
+        [[groups.build.dependencies]]
+            module = "github.com/libp2p/go-libp2p"
+            version = "{{ $.Env.CustomGoGitReference }}"
+            {{ if $.Env.CustomGoGitReference }}
+            target = "{{ $.Env.CustomGoGitReference }}"
+            {{ end }}
+        {{ end }}
+
+        {{ if (or .IsCustom .IsMaster) }}
+        [groups.build_config.dockerfile_extensions]
+          # deal with dependency changes in master until we create the new vx.y.z instance
+          pre_build = """
+RUN cd ${PLAN_DIR} && \
+    go mod download github.com/libp2p/go-libp2p && \
+    go mod tidy -compat={{ .GoVersion }}
+        """
+        {{ end }}
+{{ end }}
+
+
+{{ define "rust"}}
+[[groups]]
+    id = "{{ .Id }}"
+    instances = { count = 1 }
+    builder = "docker:generic"
+
+    [groups.run.test_params]
+      iterations = "1"
+
+    [groups.build_config]
+        path = "./rust/"
+
+    [groups.build_config.build_args]
+        CARGO_FEATURES = '{{ .CargoFeatures }}'
+        RUN_ID = '{{ or $.Env.RunId "-" }}'
+        RUST_LIBP2P_MASTER_SHA = '{{ or $.Env.RustLibp2pMasterSha "-" }}'
+        
+        {{ if .IsCustom }}
+        CARGO_REMOVE = '{{ .CargoFeatures }}'
+        CARGO_PATCH = """
+{{ .CargoFeatures }} = {package = "libp2p", git = "https://{{ or $.Env.CustomRustGitTarget "github.com/libp2p/rust-libp2p" }}", rev = "{{ $.Env.CustomRustGitReference }}", default_features = false, features = [ "websocket", "mplex", "yamux", "tcp-async-io", "ping", "noise", "dns-async-std" ], version = "{{ .Version }}", optional = true}
+        """
+        {{ end }}
+{{ end }}
+
+
+{{ with (load_resource "./combinations.toml")}}
+[metadata]
+  name = "test-interop-{{ $.Env.RunId }}"
+
+[global]
+  plan = "libp2p/ping"
+  case = "ping"
+  runner = "local:docker"
+  concurrent_builds = 1
+
+  [global.build_config]
+    enable_go_build_cache  = false      # see https://github.com/testground/testground/issues/1361
+    # disable testground's goproxy which hangs on github runners.
+    go_proxy_mode          = "remote"
+    go_proxy_url           = "https://proxy.golang.org"
+
+  {{ range .TestVersions }}
+    {{ if (eq .Implementation "go") }}
+      {{ template "go" (withEnv .) }}
+    {{ end }}
+    {{ if (eq .Implementation "rust") }}
+      {{ template "rust" (withEnv .) }}
+    {{ end }}
+  {{ end }}
+
+{{ end }}

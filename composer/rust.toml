@@ -1,0 +1,33 @@
+[master]
+Id = "rust-master"
+Version = '0.48.0'
+IsMaster = true
+Implementation = "rust"
+CargoFeatures = 'libp2pmaster'
+
+# [custom]
+# Id = "rust-custom"
+# Version = '0.48.0'
+# IsCustom = true
+# Implementation = "rust"
+# CargoFeatures = 'libp2pmaster'
+
+[[groups]]
+Id = "rust-v0.47.0"
+Implementation = "rust"
+CargoFeatures = 'libp2pv0470'
+
+[[groups]]
+Id = "rust-v0.46.0"
+Implementation = "rust"
+CargoFeatures = 'libp2pv0460'
+
+[[groups]]
+Id = "rust-v0.45.1"
+Implementation = "rust"
+CargoFeatures = 'libp2pv0450'
+
+[[groups]]
+Id = "rust-v0.44.0"
+Implementation = "rust"
+CargoFeatures = 'libp2pv0440'

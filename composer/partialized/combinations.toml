@@ -1,0 +1,145 @@
+TestRuns = [
+  [ { Id = "rust-master" }, { Id = "rust-v0.47.0" } ],
+  [ { Id = "rust-master" }, { Id = "rust-v0.46.0" } ],
+  [ { Id = "rust-master" }, { Id = "rust-v0.45.1" } ],
+  [ { Id = "rust-master" }, { Id = "rust-v0.44.0" } ],
+  [ { Id = "rust-master" }, { Id = "go-master" } ],
+  [ { Id = "rust-master" }, { Id = "go-v0.22" } ],
+  [ { Id = "rust-master" }, { Id = "go-v0.21" } ],
+  [ { Id = "rust-master" }, { Id = "go-v0.20" } ],
+  [ { Id = "rust-master" }, { Id = "go-v0.19" } ],
+  [ { Id = "rust-master" }, { Id = "go-v0.17" } ],
+  [ { Id = "rust-master" }, { Id = "go-v0.11" } ],
+  [ { Id = "rust-v0.47.0" }, { Id = "rust-v0.46.0" } ],
+  [ { Id = "rust-v0.47.0" }, { Id = "rust-v0.45.1" } ],
+  [ { Id = "rust-v0.47.0" }, { Id = "rust-v0.44.0" } ],
+  [ { Id = "rust-v0.47.0" }, { Id = "go-master" } ],
+  [ { Id = "rust-v0.47.0" }, { Id = "go-v0.22" } ],
+  [ { Id = "rust-v0.47.0" }, { Id = "go-v0.21" } ],
+  [ { Id = "rust-v0.47.0" }, { Id = "go-v0.20" } ],
+  [ { Id = "rust-v0.47.0" }, { Id = "go-v0.19" } ],
+  [ { Id = "rust-v0.47.0" }, { Id = "go-v0.17" } ],
+  [ { Id = "rust-v0.47.0" }, { Id = "go-v0.11" } ],
+  [ { Id = "rust-v0.46.0" }, { Id = "rust-v0.45.1" } ],
+  [ { Id = "rust-v0.46.0" }, { Id = "rust-v0.44.0" } ],
+  [ { Id = "rust-v0.46.0" }, { Id = "go-master" } ],
+  [ { Id = "rust-v0.46.0" }, { Id = "go-v0.22" } ],
+  [ { Id = "rust-v0.46.0" }, { Id = "go-v0.21" } ],
+  [ { Id = "rust-v0.46.0" }, { Id = "go-v0.20" } ],
+  [ { Id = "rust-v0.46.0" }, { Id = "go-v0.19" } ],
+  [ { Id = "rust-v0.46.0" }, { Id = "go-v0.17" } ],
+  [ { Id = "rust-v0.46.0" }, { Id = "go-v0.11" } ],
+  [ { Id = "rust-v0.45.1" }, { Id = "rust-v0.44.0" } ],
+  [ { Id = "rust-v0.45.1" }, { Id = "go-master" } ],
+  [ { Id = "rust-v0.45.1" }, { Id = "go-v0.22" } ],
+  [ { Id = "rust-v0.45.1" }, { Id = "go-v0.21" } ],
+  [ { Id = "rust-v0.45.1" }, { Id = "go-v0.20" } ],
+  [ { Id = "rust-v0.45.1" }, { Id = "go-v0.19" } ],
+  [ { Id = "rust-v0.45.1" }, { Id = "go-v0.17" } ],
+  [ { Id = "rust-v0.45.1" }, { Id = "go-v0.11" } ],
+  [ { Id = "rust-v0.44.0" }, { Id = "go-master" } ],
+  [ { Id = "rust-v0.44.0" }, { Id = "go-v0.22" } ],
+  [ { Id = "rust-v0.44.0" }, { Id = "go-v0.21" } ],
+  [ { Id = "rust-v0.44.0" }, { Id = "go-v0.20" } ],
+  [ { Id = "rust-v0.44.0" }, { Id = "go-v0.19" } ],
+  [ { Id = "rust-v0.44.0" }, { Id = "go-v0.17" } ],
+  [ { Id = "rust-v0.44.0" }, { Id = "go-v0.11" } ],
+  [ { Id = "go-master" }, { Id = "go-v0.22" } ],
+  [ { Id = "go-master" }, { Id = "go-v0.21" } ],
+  [ { Id = "go-master" }, { Id = "go-v0.20" } ],
+  [ { Id = "go-master" }, { Id = "go-v0.19" } ],
+  [ { Id = "go-master" }, { Id = "go-v0.17" } ],
+  [ { Id = "go-master" }, { Id = "go-v0.11" } ],
+  [ { Id = "go-v0.22" }, { Id = "go-v0.21" } ],
+  [ { Id = "go-v0.22" }, { Id = "go-v0.20" } ],
+  [ { Id = "go-v0.22" }, { Id = "go-v0.19" } ],
+  [ { Id = "go-v0.22" }, { Id = "go-v0.17" } ],
+  [ { Id = "go-v0.22" }, { Id = "go-v0.11" } ],
+  [ { Id = "go-v0.21" }, { Id = "go-v0.20" } ],
+  [ { Id = "go-v0.21" }, { Id = "go-v0.19" } ],
+  [ { Id = "go-v0.21" }, { Id = "go-v0.17" } ],
+  [ { Id = "go-v0.21" }, { Id = "go-v0.11" } ],
+  [ { Id = "go-v0.20" }, { Id = "go-v0.19" } ],
+  [ { Id = "go-v0.20" }, { Id = "go-v0.17" } ],
+  [ { Id = "go-v0.20" }, { Id = "go-v0.11" } ],
+  [ { Id = "go-v0.19" }, { Id = "go-v0.17" } ],
+  [ { Id = "go-v0.19" }, { Id = "go-v0.11" } ],
+  [ { Id = "go-v0.17" }, { Id = "go-v0.11" } ]
+]
+
+[[TestVersions]]
+Id = "rust-master"
+Version = "0.48.0"
+IsMaster = true
+Implementation = "rust"
+CargoFeatures = "libp2pmaster"
+
+[[TestVersions]]
+Id = "rust-v0.47.0"
+Implementation = "rust"
+CargoFeatures = "libp2pv0470"
+
+[[TestVersions]]
+Id = "rust-v0.46.0"
+Implementation = "rust"
+CargoFeatures = "libp2pv0460"
+
+[[TestVersions]]
+Id = "rust-v0.45.1"
+Implementation = "rust"
+CargoFeatures = "libp2pv0450"
+
+[[TestVersions]]
+Id = "rust-v0.44.0"
+Implementation = "rust"
+CargoFeatures = "libp2pv0440"
+
+[[TestVersions]]
+Id = "go-master"
+GoVersion = "1.18"
+IsMaster = true
+Modfile = "go.v0.22.mod"
+Implementation = "go"
+Selector = "v0.22"
+
+[[TestVersions]]
+Id = "go-v0.22"
+GoVersion = "1.18"
+Modfile = "go.v0.22.mod"
+Implementation = "go"
+Selector = "v0.22"
+
+[[TestVersions]]
+Id = "go-v0.21"
+GoVersion = "1.18"
+Modfile = "go.v0.21.mod"
+Implementation = "go"
+Selector = "v0.21"
+
+[[TestVersions]]
+Id = "go-v0.20"
+GoVersion = "1.18"
+Modfile = "go.v0.20.mod"
+Implementation = "go"
+Selector = "v0.20"
+
+[[TestVersions]]
+Id = "go-v0.19"
+GoVersion = "1.17"
+Modfile = "go.v0.19.mod"
+Implementation = "go"
+Selector = "v0.19"
+
+[[TestVersions]]
+Id = "go-v0.17"
+GoVersion = "1.16"
+Modfile = "go.v0.17.mod"
+Implementation = "go"
+Selector = "v0.17"
+
+[[TestVersions]]
+Id = "go-v0.11"
+GoVersion = "1.14"
+Modfile = "go.v0.11.mod"
+Implementation = "go"
+Selector = "v0.11"
