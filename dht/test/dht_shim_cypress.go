@@ -1,3 +1,4 @@
+//go:build cypress
 // +build cypress
 
 package test
