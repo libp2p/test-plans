@@ -36,7 +36,7 @@ jobs:
           testground plan import --from ./ --name libp2p
       - name: Prepare the composer
         working-directory: ./test-plans/composer
-        run: npm run ci
+        run: npm ci
       - name: Generate the results
         working-directory: ./test-plans/composer
         run: |
