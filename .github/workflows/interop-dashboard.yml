@@ -5,7 +5,7 @@ on:
   pull_request:
 jobs:
   run_test:
-    name: Run a test with different versions
+    name: Run the composer script
     runs-on: ubuntu-latest
     defaults:
       run:
