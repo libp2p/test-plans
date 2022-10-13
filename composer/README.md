@@ -85,7 +85,19 @@ Script used to mimick testground support for compositions that contain multiple 
 
 ## Questions:
 
-- What should the CLI look like?
+### What should the output look like?
+
+I don't think testground can and should accomodate the use case:
+
+> When I run my tests, the output should be an n-dimensional matrix.
+
+I believe it should "just" output the `run-id;status`.
+
+Much like the user implement their own test generation function (`composer combine`),
+the user implement their own `run-id => point in N-D matrix` as a
+(configurable) script.
+
+### What should the CLI look like?
 
 Proposition:
 
@@ -102,7 +114,7 @@ testground run composition --file=./composition-interop.toml ... --result ./resu
 # :warning: only support pass / fail
 ```
 
-- Are we happy with current templates?
+### Are we happy with current templates?
 
 Templating is a very useful scripting engine we integrate into testground.
 For "simple" use case like parametrization (custom go version, generating large tests, etc) it
@@ -111,7 +123,7 @@ makes a lot of sense.
 Are we happy with this approach? Another approach could be: the user generates toml files with their
 own scripting engine (js, go, etc).
 
-- Proposition: make template reusables with `partial`
+### Proposition: make template reusables with `partial`
 
 ```toml
 (partial "./groups-go.toml" .) 
