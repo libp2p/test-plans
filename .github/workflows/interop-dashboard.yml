@@ -1,0 +1,50 @@
+name: Run composition file with a custom git reference
+
+on:
+  push:
+  pull_request:
+jobs:
+  run_test:
+    name: Run a test with different versions
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+        with:
+          path: test-plans
+          repository: ${{ env.TEST_PLAN_REPO }}
+          ref: ${{ env.TEST_PLAN_BRANCH }}
+      - name: setup testground
+        uses: ./test-plans/.github/actions/setup-testground
+        with:
+          testground_ref: 'feat/support-interop-matrix'
+      - name: Import the plan
+        working-directory: ./test-plans
+        run: |
+          testground plan import --from ./ --name libp2p
+      - name: Prepare the composer
+        working-directory: ./composer
+        run: npm run ci
+      - name: Generate the results
+        working-directory: ./composer
+        run: |
+          make ./demo/results.csv
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: interop-result
+          path: |
+            ~/test-plans/composer/demo/results.csv
+      - uses: actions/upload-artifact@v3
+        if: ${{ failure() }}
+        with:
+          name: testground-output
+          path: |
+            ~/testground/
+            ~/test-plans/result.tgz
+            ${{env.COMPOSITION_FILE}}
+            testground.*
+            test-plans/*.out
