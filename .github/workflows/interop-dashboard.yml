@@ -35,10 +35,10 @@ jobs:
         run: |
           testground plan import --from ./ --name libp2p
       - name: Prepare the composer
-        working-directory: ./composer
+        working-directory: ./test-plans/composer
         run: npm run ci
       - name: Generate the results
-        working-directory: ./composer
+        working-directory: ./test-plans/composer
         run: |
           make ./demo/results.csv
       - uses: actions/upload-artifact@v3
