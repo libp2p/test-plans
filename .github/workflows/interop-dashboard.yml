@@ -40,7 +40,12 @@ jobs:
       - name: Generate the results
         working-directory: ./test-plans/composer
         run: |
-          make ./demo/results.csv
+          for i in 1 2 3; do
+            echo "=== Attempt $i ==="
+            make ./demo/results.csv && exit 0
+            sleep 1
+          done
+          exit 1
       - uses: actions/upload-artifact@v3
         if: always()
         with:
