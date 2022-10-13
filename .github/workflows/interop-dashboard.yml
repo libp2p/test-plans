@@ -1,4 +1,4 @@
-name: Run composition file with a custom git reference
+name: Interop Dashboard
 
 on:
   push:
