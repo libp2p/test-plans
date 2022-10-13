@@ -1,0 +1,3 @@
+run_index;run_id;status;
+0;rust-master x rust-v0.47.0;pass;
+1;rust-master x rust-v0.46.0;pass;

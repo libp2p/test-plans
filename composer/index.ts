@@ -24,16 +24,25 @@ interface ICompositionFile {
     groups: ICompositionGroup[]
 }
 
-interface IRunParams {
+
+interface IRunInfo {
     Id: string;
+    instances: { count: number };
+    test_params?: { [key: string]: (string | number) };
+}
+
+interface IRun {
+    Id: string;
+    test_params?: { [key: string]: (string | number) };
+    groups: IRunInfo[]
 }
 
 interface IRunsFile {
-    TestRuns: IRunParams[][];
-    TestVersions: IVersionInfo[];
+    runs: IRun[];
+    instances: IVersionInfo[];
 }
 
-const allVersions = (content: IVersionFile): IVersionInfo[] => {
+const listAllVersions = (content: IVersionFile): IVersionInfo[] => {
     return [content.custom, content.master, ...content.groups].filter(x => !!x);
 }
 
@@ -96,15 +105,30 @@ const callTestground = (testRunId: number, raw_args: string[]): Promise<void> =>
     });
 }
 
-const combinations = (versions: IVersionInfo[]): IRunParams[][] => {
-    const result: IVersionInfo[][] = [];
+const combinations = (versions: IVersionInfo[]): IRun[] => {
+    const result: IRun[] = [];
 
     for (let i = 0; i < versions.length; i++) {
         for (let j = i + 1; j < versions.length; j++) {
 
             const p1 = versions[i];
             const p2 = versions[j];
-            result.push([{ Id: p1.Id }, { Id: p2.Id }]);
+
+            const run: IRun = {
+                Id: `${p1.Id} x ${p2.Id}`,
+                groups: [
+                    {
+                        Id: p1.Id,
+                        instances: { count: 1 }
+                    },
+                    {
+                        Id: p2.Id,
+                        instances: { count: 1 }
+                    }
+                ]
+            }
+
+            result.push(run);
         }
     }
     return result;
@@ -113,23 +137,25 @@ const combinations = (versions: IVersionInfo[]): IRunParams[][] => {
 const main = async () => {
     const args = process.argv.slice(2);
     const [command, ...rest] = args;
-    const combinationsPath = './partialized/combinations.toml'
-    const buildArtifactsPath = './partialized/builds-artifacts.toml'
-    const artifactsPath = './partialized/artifacts.toml'
+    const combinationsPath = './demo/combinations.toml'
 
     if (command === 'combine') {
-        const rust = allVersions(load<IVersionFile>('./rust.toml'))
-        const go = allVersions(load<IVersionFile>('./go.toml'))
+        const [outputPath, ...inputs] = rest;
 
-        const versions = [...rust, ...go]
+        const resources = inputs.map(x => listAllVersions(load<IVersionFile>(x)));
+        const allVersions = resources.flat()
 
-        const runs = combinations([...rust, ...go]);
-        const content: IRunsFile = { TestRuns: runs, TestVersions: versions };
-        save(combinationsPath, content);
-        console.log(`Generated ${runs.length} runs saved to ${combinationsPath}`);
+        const runs = combinations(allVersions);
+
+        const content: IRunsFile = { runs, instances: allVersions };
+        save(outputPath, content);
+
+        console.log(`Loaded ${allVersions.length} versions and generated ${runs.length} runs saved to ${outputPath}`);
     }
-    else if (command === 'gather-artifacts') {
-        const composition = load<ICompositionFile>(buildArtifactsPath)
+    else if (command === 'extract-artifacts') {
+        const [outputPath, input] = rest;
+
+        const composition = load<ICompositionFile>(input)
         const artifacts: { [key: string]: string } = {};
         composition.groups.forEach(group => {
             const artifact = group?.run?.artifact
@@ -138,20 +164,24 @@ const main = async () => {
                 artifacts[group.id] = artifact
             }
         })
-        save(artifactsPath, artifacts);
+        save(outputPath, artifacts);
     }
     else if (command === 'foreach') {
-        const runs = load<IRunsFile>(combinationsPath).TestRuns;
-        const outputPath = './results.txt'
-        fs.writeFileSync(outputPath, 'run_id;status;\n');
+        const [outputPath, ...tgArgs] = rest;
 
+        const runs = load<IRunsFile>(combinationsPath).runs;
+
+        // TODO: what is the output we want for this matrix?
+        fs.writeFileSync(outputPath, 'run_index;run_id;status;\n');
         for (let i = 0; i < runs.length; i++) {
             // We WANT sequential run here.
+            const run = runs[i];
+
             try {
-                await callTestground(i, rest);
-                fs.appendFileSync(outputPath, `${i};pass;\n`)
+                await callTestground(i, tgArgs);
+                fs.appendFileSync(outputPath, `${i};${run.Id};pass;\n`)
             } catch (error) {
-                fs.appendFileSync(outputPath, `${i};fail;\n`)
+                fs.appendFileSync(outputPath, `${i};${run.Id};fail;\n`)
             }
         }
     } else {

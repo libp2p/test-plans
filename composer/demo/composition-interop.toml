@@ -67,7 +67,6 @@ RUN cd ${PLAN_DIR} && \
         {{ end }}
 {{ end }}
 
-
 {{ with (load_resource "./combinations.toml")}}
 [metadata]
   name = "test-interop-{{ $.Env.RunId }}"
@@ -84,7 +83,8 @@ RUN cd ${PLAN_DIR} && \
     go_proxy_mode          = "remote"
     go_proxy_url           = "https://proxy.golang.org"
 
-  {{ range .TestVersions }}
+  # generate every groups / test instances
+  {{ range .instances }}
     {{ if (eq .Implementation "go") }}
       {{ template "go" (withEnv .) }}
     {{ end }}
@@ -93,4 +93,6 @@ RUN cd ${PLAN_DIR} && \
     {{ end }}
   {{ end }}
 
+  # load all the pre-configured runs
+  {{ (pick . "runs") | toml }}
 {{ end }}
