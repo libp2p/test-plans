@@ -11,6 +11,15 @@ jobs:
       run:
         shell: bash
     steps:
+      - name: Setup tmate session
+        uses: pl-strflt/action-tmate@circleci
+        if: runner.debug == '1'
+        with:
+          check-num-clients: true
+          limit-access-to-actor: true # requires registered public SSH key(s)
+          wait: false
+          wait-in-post: true
+          wait-interval: '600000' # 10 minutes
       - name: Checkout sources
         uses: actions/checkout@v2
         with:
