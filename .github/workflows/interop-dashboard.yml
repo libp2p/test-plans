@@ -60,7 +60,7 @@ jobs:
         with:
           name: interop-result
           path: |
-            ~/test-plans/composer/demo/results.csv
+            test-plans/composer/demo/results.csv
       - uses: actions/upload-artifact@v3
         if: ${{ failure() }}
         with:
