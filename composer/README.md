@@ -130,3 +130,34 @@ own scripting engine (js, go, etc).
 # loads a template from another file and execute it
 # identical to a `{{ define "groups-go" }}` but can be reused accross files.
 ```
+
+## Follow-ups
+
+We have the list of artifacts at the end of the build,
+
+```toml
+rust-master = "892a93f7e73a"
+"rust-v0.47.0" = "08198ea8a3ee"
+"rust-v0.46.0" = "3e84da3a0e77"
+"rust-v0.45.1" = "256c6805b1c2"
+"rust-v0.44.0" = "5caac365e837"
+go-master = "9dd68e54e1d1"
+"go-v0.22" = "f41142781293"
+"go-v0.21" = "31870c04b0db"
+"go-v0.20" = "a1a9f7b142ab"
+"go-v0.19" = "b0b301b81cef"
+"go-v0.17" = "2bfde640aa3f"
+"go-v0.11" = "c337c37e7977"
+```
+
+(related: [libp2p/test-plans/issues/31](https://github.com/libp2p/test-plans/issues/31))
+
+- We could backup this list on every push to `libp2p/test-plans`
+  - without master.
+  - We tag and push to a registry, we pull before build.
+  - With this: the test-plans never rebuild legacy code.
+  - requires: secrets to a registry (dockerhub), but can live in the `libp2p/test-plans` repo.
+- We could backup the build history for master
+  - We cache this, "somewhere" (probably in the ci cache)
+  - With this: the test-plans never rebuilds master from scratch.
+  - requires: no secrets if we use the github ci cache.
