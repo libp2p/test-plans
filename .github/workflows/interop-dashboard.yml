@@ -51,7 +51,7 @@ jobs:
         run: |
           for i in 1 2 3; do
             echo "=== Attempt $i ==="
-            make ./demo/results.csv && exit 0
+            make && exit 0
             sleep 1
           done
           exit 1
@@ -60,7 +60,7 @@ jobs:
         with:
           name: interop-result
           path: |
-            test-plans/composer/demo/results.csv
+            test-plans/composer/demo/results.*
       - uses: actions/upload-artifact@v3
         if: ${{ failure() }}
         with:

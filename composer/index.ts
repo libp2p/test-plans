@@ -2,6 +2,9 @@ import fs from 'fs';
 import process from 'process';
 import toml from '@iarna/toml';
 import { spawn } from 'child_process';
+import * as csv from 'csv-parse/sync';
+
+type ResultFile = [{ run_index: number, run_id: string, status: string }]
 
 interface InstancesFile {
     custom?: InstanceDefinition
@@ -53,19 +56,44 @@ const load = <T>(path: string): T => {
         return JSON.parse(fs.readFileSync(path, 'utf8'));
     } else if (path.endsWith('.toml')) {
         return toml.parse(fs.readFileSync(path, 'utf8')) as any;
+    } else if (path.endsWith('.csv')) {
+        return csv.parse(fs.readFileSync(path, 'utf8'), {
+            columns: true, skip_empty_lines: true, delimiter: ';'
+        }) as any;
     } else {
         throw new Error(`Unknown file type: ${path}`);
     }
 }
 
 const save = (path: string, content: any) => {
-    if (path.endsWith('.json')) {
+    if (path.endsWith('.md')) {
+        fs.writeFileSync(path, content);
+    }
+    else if (path.endsWith('.json')) {
         return fs.writeFileSync(path, JSON.stringify(content, null, 2));
     } else if (path.endsWith('.toml')) {
         return fs.writeFileSync(path, toml.stringify(content));
     } else {
         throw new Error(`Unknown file type: ${path}`);
     }
+}
+
+function markdownTable(table: string[][]): string {
+    return table.map((row, id) => {
+        const r = '| ' + row.map(x => {
+            return x.replace('|', '\\|')
+        }).join(' | ') + ' |'
+
+        if (id === 0) {
+            return r + '\n' + '| ' + row.map(x => {
+                return x.replace(/./g, '-')
+            }).join(' | ') + ' |'
+        } else {
+            return r
+        }
+
+
+    }).join('\n')
 }
 
 const listAllVersions = (content: InstancesFile): InstanceDefinition[] => {
@@ -139,6 +167,41 @@ const combinations = (versions: InstanceDefinition[]): RunDefinition[] => {
     return result;
 }
 
+function generateTable(results: ResultFile, combinations: CombinationFile): string[][] {
+    const instanceIds = combinations.instances.map(x => x.Id)
+
+    const runIdToInstances = combinations.runs.reduce((acc, x) => {
+        return { ...acc, [x.Id]: x.groups.map(g => g.Id) }
+    }, {} as { [key: string]: string[] });
+
+    const header = [" ", ...instanceIds];
+    const table = [header, ...instanceIds.map(instanceId => {
+        const row = instanceIds.map(otherInstanceId => {
+            return ':white_circle:';
+        });
+        return [instanceId, ...row];
+    })]
+
+    for (const result of results) {
+        const runId = result.run_id;
+        const instances = runIdToInstances[runId];
+
+        const [instance1, instance2] = instances;
+        const index = instanceIds.indexOf(instance1);
+        const otherIndex = instanceIds.indexOf(instance2);
+
+        const url = encodeURIComponent(runId);
+
+        const outcome = result.status === 'pass' ? ':green_circle:' : ':red_circle:';
+        const cell = `[${outcome}](#${url})`
+
+        table[index + 1][otherIndex + 1] = cell;
+        table[otherIndex + 1][index + 1] = cell;
+    }
+
+    return table;
+}
+
 const main = async () => {
     const args: string[] = process.argv.slice(2);
     const [command, ...rest] = args;
@@ -162,6 +225,19 @@ const main = async () => {
 
         console.log(`Loaded ${allVersions.length} versions and generated ${runs.length} runs saved to ${outputPath}`);
     }
+    else if (command === 'export-results') {
+        // libp2p maintainers provide this
+
+        // go templates + html might be a better approach here.
+        const [inputPath, outputPath] = rest;
+
+        const results = load<ResultFile>(inputPath);
+        const combinations = load<CombinationFile>(combinationsPath);
+
+        const table = generateTable(results, combinations)
+        const content = markdownTable(table);
+        save(outputPath, content);
+    }
     else if (command === 'extract-artifacts') {
         // testground might provide this function
         const [outputPath, input] = rest;
@@ -184,7 +260,7 @@ const main = async () => {
         const runs = load<CombinationFile>(combinationsPath).runs;
 
         // TODO: what is the output we want for this matrix?
-        fs.writeFileSync(outputPath, 'run_index;run_id;status;\n');
+        fs.writeFileSync(outputPath, 'run_index;run_id;status\n');
 
         for (let i = 0; i < runs.length; i++) {
             // We WANT sequential run here.
@@ -192,9 +268,9 @@ const main = async () => {
 
             try {
                 await callTestground(i, tgArgs);
-                fs.appendFileSync(outputPath, `${i};${run.Id};pass;\n`)
+                fs.appendFileSync(outputPath, `${i};${run.Id};pass\n`)
             } catch (error) {
-                fs.appendFileSync(outputPath, `${i};${run.Id};fail;\n`)
+                fs.appendFileSync(outputPath, `${i};${run.Id};fail\n`)
             }
         }
     } else {

@@ -1,4 +1,4 @@
-all: ./demo/results.csv
+all: ./demo/results.csv ./demo/results.md
 
 # combine versions into a list of combinations + the list of build targets
 ./demo/combinations.toml: ./index.ts ./demo/rust.toml ./demo/go.toml
@@ -15,6 +15,9 @@ all: ./demo/results.csv
 # call all the runs
 ./demo/results.csv: ./index.ts ./demo/composition-interop-runner.toml ./demo/artifacts.toml ./demo/combinations.toml
 	make run-all
+
+./demo/results.md: ./index.ts ./demo/results.csv
+	./node_modules/.bin/ts-node index.ts export-results ./demo/results.csv ./demo/results.md
 
 build-all:
 	rm -rf /tmp/demo/
