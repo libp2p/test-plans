@@ -37,7 +37,16 @@ jobs:
       - name: Prepare the composer
         working-directory: ./test-plans/composer
         run: npm ci
-      - name: Generate the results
+      - name: Build
+        working-directory: ./test-plans/composer
+        run: |
+          for i in 1 2 3; do
+            echo "=== Attempt $i ==="
+            make /tmp/builds-artifacts.toml && exit 0
+            sleep 1
+          done
+          exit 1
+      - name: Run & Generate the results
         working-directory: ./test-plans/composer
         run: |
           for i in 1 2 3; do
