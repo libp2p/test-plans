@@ -114,6 +114,12 @@ testground run composition --file=./composition-interop.toml ... --result ./resu
 # :warning: only support pass / fail
 ```
 
+- How to deal with build & run failures:
+  - If I try to run N tests for K different versions, and the build for 2 versions is failing:
+  - Should Testground keep building, and run the tests for the builds that succeeded?
+  - Proposal:
+    - `testground run composition .... --continue-on-build-error`
+
 ### Are we happy with current templates?
 
 Templating is a very useful scripting engine we integrate into testground.
