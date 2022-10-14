@@ -3,47 +3,48 @@ import process from 'process';
 import toml from '@iarna/toml';
 import { spawn } from 'child_process';
 
-interface IVersionInfo {
+interface InstancesFile {
+    custom?: InstanceDefinition
+    master?: InstanceDefinition
+    groups?: InstanceDefinition[]
+}
+
+interface InstanceDefinition {
     Id: string;
+    [key: string]: unknown;
 }
 
-interface IVersionFile {
-    custom: IVersionInfo
-    master: IVersionInfo
-    groups: IVersionInfo[]
+interface CompositionFile {
+    groups: CompositionGroup[]
 }
 
-interface ICompositionGroup {
+interface CompositionGroup {
     id: string;
     run?: {
         artifact?: string
     }
 }
 
-interface ICompositionFile {
-    groups: ICompositionGroup[]
+interface CombinationFile {
+    runs: RunDefinition[];
+    instances: InstanceDefinition[];
+}
+
+interface RunDefinition {
+    Id: string;
+    test_params?: { [key: string]: (string | number) };
+    groups: RunInstanceDefintion[]
 }
 
 
-interface IRunInfo {
+interface RunInstanceDefintion {
     Id: string;
     instances: { count: number };
     test_params?: { [key: string]: (string | number) };
 }
 
-interface IRun {
-    Id: string;
-    test_params?: { [key: string]: (string | number) };
-    groups: IRunInfo[]
-}
-
-interface IRunsFile {
-    runs: IRun[];
-    instances: IVersionInfo[];
-}
-
-const listAllVersions = (content: IVersionFile): IVersionInfo[] => {
-    return [content.custom, content.master, ...content.groups].filter(x => !!x);
+const is = <T>(x: undefined | T): x is T => {
+    return x !== undefined;
 }
 
 const load = <T>(path: string): T => {
@@ -65,6 +66,10 @@ const save = (path: string, content: any) => {
     } else {
         throw new Error(`Unknown file type: ${path}`);
     }
+}
+
+const listAllVersions = (content: InstancesFile): InstanceDefinition[] => {
+    return [content.custom, content.master, ...(content.groups || [])].filter(is);
 }
 
 const callTestground = (testRunId: number, raw_args: string[]): Promise<void> => {
@@ -105,8 +110,8 @@ const callTestground = (testRunId: number, raw_args: string[]): Promise<void> =>
     });
 }
 
-const combinations = (versions: IVersionInfo[]): IRun[] => {
-    const result: IRun[] = [];
+const combinations = (versions: InstanceDefinition[]): RunDefinition[] => {
+    const result: RunDefinition[] = [];
 
     for (let i = 0; i < versions.length; i++) {
         for (let j = i + 1; j < versions.length; j++) {
@@ -114,7 +119,7 @@ const combinations = (versions: IVersionInfo[]): IRun[] => {
             const p1 = versions[i];
             const p2 = versions[j];
 
-            const run: IRun = {
+            const run: RunDefinition = {
                 Id: `${p1.Id} x ${p2.Id}`,
                 groups: [
                     {
@@ -135,27 +140,33 @@ const combinations = (versions: IVersionInfo[]): IRun[] => {
 }
 
 const main = async () => {
-    const args = process.argv.slice(2);
+    const args: string[] = process.argv.slice(2);
     const [command, ...rest] = args;
+
     const combinationsPath = './demo/combinations.toml'
 
     if (command === 'combine') {
+        // libp2p maintainers provide this
+
+        // go templates might be enough to implement this function, but we'd
+        // rather write code that we can extend (e.g. add more parameters, add rtts computation).
         const [outputPath, ...inputs] = rest;
 
-        const resources = inputs.map(x => listAllVersions(load<IVersionFile>(x)));
+        const resources = inputs.map(x => listAllVersions(load<InstancesFile>(x)));
         const allVersions = resources.flat()
 
         const runs = combinations(allVersions);
 
-        const content: IRunsFile = { runs, instances: allVersions };
+        const content: CombinationFile = { runs, instances: allVersions };
         save(outputPath, content);
 
         console.log(`Loaded ${allVersions.length} versions and generated ${runs.length} runs saved to ${outputPath}`);
     }
     else if (command === 'extract-artifacts') {
+        // testground might provide this function
         const [outputPath, input] = rest;
 
-        const composition = load<ICompositionFile>(input)
+        const composition = load<CompositionFile>(input)
         const artifacts: { [key: string]: string } = {};
         composition.groups.forEach(group => {
             const artifact = group?.run?.artifact
@@ -167,12 +178,14 @@ const main = async () => {
         save(outputPath, artifacts);
     }
     else if (command === 'foreach') {
+        // testground should provide an equivalent to this function (see the README)
         const [outputPath, ...tgArgs] = rest;
 
-        const runs = load<IRunsFile>(combinationsPath).runs;
+        const runs = load<CombinationFile>(combinationsPath).runs;
 
         // TODO: what is the output we want for this matrix?
         fs.writeFileSync(outputPath, 'run_index;run_id;status;\n');
+
         for (let i = 0; i < runs.length; i++) {
             // We WANT sequential run here.
             const run = runs[i];
