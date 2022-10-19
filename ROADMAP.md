@@ -1,10 +1,10 @@
 # test-plans roadmap Q4’22/Q1’23 <!-- omit in toc -->
 
 ```
-Date: 2022-10-07
+Date: 2022-10-18
 Status: In Progress
 Notes: This document is still in review will may be heavily modified based on stakeholder feedback. Please add any feedback or questions in:
-https://github.com/libp2p/go-libp2p/issues/1806
+<Tracking Issue - perhaps this is not necessary for this round>
 ```
 
 ## Table of Contents <!-- omit in toc -->
@@ -53,10 +53,10 @@ The tenets of the libp2p team are:
 - Performance
   - We aim to make libp2p as performant as possible and strive to ensure comparable performance to widely used protocols on the Internet. We avoid regressions and performance degradations in new releases.
 
-This roadmap is complementary to that of [go-libp2p](https://github.com/libp2p/go-libp2p/blob/master/ROADMAP.md), [rust-libp2p](https://github.com/libp2p/rust-libp2p/pull/2997), and [js-libp2p](https://github.com/libp2p/js-libp2p/pull/1412).
+This roadmap is complementary to those of [go-libp2p](https://github.com/libp2p/go-libp2p/blob/master/ROADMAP.md), [rust-libp2p](https://github.com/libp2p/rust-libp2p/pull/2997), and [js-libp2p](https://github.com/libp2p/js-libp2p/pull/1412).
 
 It aims to encompass the **stability** and **performance** tenets of the libp2p team.
-Projects outlined here are a shared priorities of the different implementations.
+Projects outlined here are shared priorities of the different implementations.
 
 ### Sections
 This document consists of two sections: [Milestones](#️-milestones) and the [Appendix](#-appendix)
@@ -79,7 +79,7 @@ Each Appendix header is linked to a GitHub Epic. Latest information on progress 
 
 #### Mid Q4 (November)
 - [A.2 Interop tests for all existing/developing features](#2-interop-tests-for-all-existingdeveloping-features)
-- [A.3 Rock solid libp2pr releases](#3-rock-solid-libp2p-releases)
+- [A.3 Rock solid libp2p releases](#3-rock-solid-libp2p-releases)
 - [C.1 Benchmarking using nix-builders](#1-benchmarking-using-nix-builders)
 
 #### End of Q4 (December)
@@ -107,7 +107,7 @@ Each Appendix header is linked to a GitHub Epic. Latest information on progress 
 ### A. [Multi-dimensional Testing/Interop Visibility](https://github.com/libp2p/test-plans/issues/53)
 **Why:** libp2p supports a variety of protocols (multiple transports, muxers, & security protocols) across implementations in different languages. Until we actually test them together, we can't guarantee implementation interoperability. We need to ensure and demonstrate that: interoperable features work with each other as expected and we don't introduce degradations that break interoperability in new releases.
 
-**Goal:** libp2p implementers run tests across permutations of libp2p implementations, versions, and supported protocols. Implementers and users can reference a single website with a dashboard to view the Pass/Fail/Implemented/Not Implemented results all multi-dimensional tests.
+**Goal:** libp2p implementers run tests across permutations of libp2p implementations, versions, and supported protocols. Implementers and users can reference a single website with a dashboard to view the Pass/Fail/Implemented/Not Implemented results of multi-dimensional tests.
 
 **How:**
 #### 1. [User configured interop tests & dashboard](https://github.com/libp2p/test-plans/issues/55)
@@ -126,7 +126,7 @@ Test suites are run in libp2p/test-plans CI.
 
 #### 3. Rock solid libp2p releases
 <!-- TODO: Create issue -->
-The full `libp2p/test-plans` test suite is run before releasing any new versions of go-libp2p,  rust-libp2p, and js-libp2p.
+The full `libp2p/test-plans` test suite is run before releasing a version of go-libp2p,  rust-libp2p, and js-libp2p.
 A GitHub workflow is added so that these suites run for any PR against master and run against the `master` branch on a nightly basis (updating the status check.)
 
 #### 4. Canonical interop tests & dashboard
@@ -144,14 +144,14 @@ An enhancement of A.1 to make it easier for users and implementers to see the fu
 `libp2p/test-plans` maintainers have a straightforward way to track the test suite stability and performances
 - We can track the status of every test combination stability from the interop project itself
 - We can easily measure the consequence (improvements) of a pull request to the libp2p/interop repository
-- We are alerted when an interop test starts failing on one of our client repositories, and we can dispatch the alert to repo maintainers,
+- We are alerted when an interop test starts failing on one of our client repositories, and we can dispatch the alert to repo maintainers.
 
 #### 2. Design process for adding new tests
 <!-- TODO: Assign a quarter -->
 <!-- TODO: Create issue -->
 We have an explicit, working, Design Process for adding new tests
-- The design is documented in `./DESIGN.md`,
-- The design is followed by the team when we add new features,
+- The design is documented in `./DESIGN.md`.
+- The design is followed by the team when we add new features.
 - There is a clear path when it comes to testing new features. This might mean testing multiple `masters` against each other.
 
 #### 3. Be the home for all interop tests
@@ -183,9 +183,9 @@ Benchmarking using first class support for remote runners (using `remote:exec`) 
 **Why:** Having interoperability tests with lots of transports, encryption mechanisms, and stream muxers is great. However, we need to stay backwards-compatible with legacy libp2p releases, with other libp2p implementations, and less advanced libp2p stacks.
 
 **Goal:** We have expansive test coverage that covers all protocols.
+<!-- TODO: List all major protocol test backlog items here.
+Decide as a team which ones to prioritize and then assign to quarters.-->
 #### 1. AutoNat
 #### 2. Hole Punching
 #### 3. Custom topologies
 #### 4. MTU Fixes
-<!-- TODO: List all major protocol test backlog items here.
-Decide as a team which ones to prioritize and then assign to quarters.-->

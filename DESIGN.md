@@ -1,25 +1,28 @@
 # libp2p testing story
 
-- Status: Draft
+```
+Date: 2022-10-18
+Status: In Progress
+```
 
 ---
 
 ## Overview
 
-This document describes our process for testing interoperability & backward compatibility in libp2p.
+This document describes our process for testing interoperability & backward compatibility across libp2p implementations.
 
-**Why care about this:**
+**Why:**
 
-- Interoperability is a shared problem
-    - we don’t have a single blessed reference implementation that we use for conformance testing.
-    - No single maintainer (whether libp2p or ipdx) will succeed without everyone's involvement.
+- Interoperability is a shared concern.
+- There is no single blessed libp2p reference implementation that we use for conformance testing.
+- No single maintainer (go|rust|js-libp2p or IPDX) will succeed without everyone's involvement.
 - We want to share a Testing Story with the world that shows we care about quality & interop.
 - We want to encourage other implementations to join the testing party.
 
-**Context:**
+**Historical Context:**
 
-- We completed a “PING” interop test with Testground. It is running in go and rust-libp2p CIs.
-- It means we “proved” that we can write and run interop tests between versions AND implementation.
+- We completed a “PING” interop test with Testground. It is running in the go-libp2p and rust-libp2p CI pipeline.
+- It means we “proved” that we can write and run interop tests between versions AND implementations.
 
 # Libp2p Testing Matrix
 
@@ -57,6 +60,11 @@ This document describes our process for testing interoperability & backward comp
 - 🧊 Lowest priority
 
 # How do we test libp2p interop at ProtocolLabs?
+
+---
+
+---
+
 
 *(this is pretty much what happen with the go|rust-libp2p ping tests)*
 
