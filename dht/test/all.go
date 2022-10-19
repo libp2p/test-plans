@@ -16,18 +16,18 @@ func All(runenv *runtime.RunEnv) error {
 		return err
 	}
 
-	if err := TestFindPeers(ctx, ri); err != nil {
-		return err
-	}
-	if err := TestGetClosestPeers(ctx, ri); err != nil {
-		return err
-	}
+	// if err := TestFindPeers(ctx, ri); err != nil {
+	// 	return err
+	// }
+	// if err := TestGetClosestPeers(ctx, ri); err != nil {
+	// 	return err
+	// }
 	if err := TestProviderRecords(ctx, ri); err != nil {
 		return err
 	}
-	if err := TestIPNSRecords(ctx, ri); err != nil {
-		return err
-	}
+	// if err := TestIPNSRecords(ctx, ri); err != nil {
+	// 	return err
+	// }
 
 	Teardown(ctx, ri.RunInfo)
 	return nil
