@@ -2,8 +2,8 @@
 
 ```
 Date: 2022-10-18
-Status: In Progress
-Notes: This document is still in review will may be heavily modified based on stakeholder feedback. Please add any feedback or questions in:
+Status: Accepted
+Notes: Internal test-plans stakeholders have aligned on this roadmap. Please add any feedback or questions in:
 https://github.com/libp2p/test-plans/issues/58
 ```
 
@@ -46,7 +46,7 @@ https://github.com/libp2p/test-plans/issues/58
 ### Vision
 We, the maintainers, are committed to upholding libp2p's shared core tenets and ensuring libp2p implementations are: [**Secure, Stable, Specified, and Performant.**](https://github.com/libp2p/specs/blob/master/ROADMAP.md#core-tenets)
 
-This roadmap is complementary to those of [go-libp2p](https://github.com/libp2p/go-libp2p/blob/master/ROADMAP.md), [rust-libp2p](https://github.com/libp2p/rust-libp2p/pull/2997), and [js-libp2p](https://github.com/libp2p/js-libp2p/pull/1412).
+This roadmap is complementary to those of [go-libp2p](https://github.com/libp2p/go-libp2p/blob/master/ROADMAP.md), [rust-libp2p](https://github.com/libp2p/rust-libp2p/blob/master/ROADMAP.md), and [js-libp2p](https://github.com/libp2p/js-libp2p/blob/master/ROADMAP.md).
 
 It aims to encompass the **stability** and **performance** tenets of the libp2p team.
 Projects outlined here are shared priorities of the different implementations.
@@ -92,7 +92,7 @@ Each Appendix header is linked to a GitHub Epic. Latest information on progress 
 
 **Projects are listed in descending priority.**
 
-### A. [Multi-dimensional Testing/Interop Visibility](https://github.com/libp2p/test-plans/issues/53)
+### [A. Multi-dimensional Testing/Interop Visibility](https://github.com/libp2p/test-plans/issues/53)
 **Why:** libp2p supports a variety of transport protocols, muxers, & security protocols across implementations in different languages. Until we actually test them together, we can't guarantee implementation interoperability. We need to ensure and demonstrate that: interoperable features work with each other as expected and we don't introduce degradations that break interoperability in new releases.
 
 **Goal:** libp2p implementers run tests across permutations of libp2p implementations, versions, and supported transports, muxers, and security protocols. Implementers and users can reference a single website with a dashboard to view the Pass/Fail/Implemented/Not Implemented results of multi-dimensional tests.
@@ -100,12 +100,11 @@ Each Appendix header is linked to a GitHub Epic. Latest information on progress 
 This effort depends on [Testground Milestone 1](https://github.com/testground/testground/blob/master/ROADMAP.md#1-bootstrap-libp2ps-interoperability-testing-story)
 
 **How:**
-#### 1. [User configured interop tests & dashboard](https://github.com/libp2p/test-plans/issues/55)
+#### [1. User configured interop tests & dashboard](https://github.com/libp2p/test-plans/issues/55)
 Enable test-plans maintainers to define a configuration (of libp2p impls, versions, transports, expected RTT), run Testground tests per configuration, and retrieve resulting data in a standard format.
 The test case results can be formatted as a "dashboard" (simple Markdown table of Pass/Fail results.)
 
-#### 2. Interop test plans for all existing/developing libp2p transports
-<!-- TODO: Create issue -->
+#### [2. Interop test plans for all existing/developing libp2p transports](https://github.com/libp2p/test-plans/issues/61)
 Using tooling from A.1, all features of go-libp2p, rust-libp2p, and js-libp2p that should be interoperable are tested (i.e. transports (TCP, QUIC, WebRTC, WebTransport), multiplexers (mplex, yamux), secure channels (TLS, Noise), etc.) across versions.
 
 Features currently in development across implementations (like WebRTC in go-libp2p and rust-libp2p, or QUIC & TLS in rust-libp2p) are not merged without at least manually running these test suites.
@@ -116,8 +115,7 @@ Test suites are run in `libp2p/test-plans` CI and before releasing a version of 
 - Dependency on [C.1](#1-benchmarking-using-nix-builders) to run node.js-libp2p in Testground.
 - Dependency on [testground/Investigate browser test support](https://github.com/testground/testground/issues/1386) to run interoperability test for js-libp2p WebRTC against Go and Rust.
 
-#### 3. Canonical interop tests & dashboard
-<!-- TODO: Create issue -->
+#### [3. Canonical interop tests & dashboard](https://github.com/libp2p/test-plans/issues/62)
 A comprehensive and canonical dashboard is generated and hosted in a publicly discoverable site that displays latest test suite results (Pass/Fail/Implemented/Not Implemented/Unimplementable) from a nightly CI run.
 All permutations of libp2p implementations, versions, and supported transports, muxers, & security protocols should be visible.
 
@@ -149,22 +147,19 @@ We have ported the tests from `libp2p/interop`
 - At of writing (2022-09-27), it is disabled in `go-libp2p` ([ref](https://github.com/libp2p/go-libp2p/actions/workflows/interop.yml)), and it is used in `js-libp2p` ([ref](https://github.com/libp2p/js-libp2p/actions/runs/3111413168/jobs/5050929689)).
 
 
-### [C. Future-proof Benchmarking](https://github.com/libp2p/go-libp2p/issues/1810)
+### [C. Future-proof Benchmarking](https://github.com/libp2p/test-plans/issues/63)
 **Why**: For libp2p to be competitive, it needs to delivers comparable performance to widely used protocols on the internet, namely HTTP/2 and HTTP/3.
 
 **Goal**: We have a test suite that runs libp2p transfers between nodes located at different locations all over the world, proving that libp2p is able to achieve performance on par with HTTP. The test suite is run on a continuous basis and results are published to a public performance dashboard.
 
-#### 1. [Benchmarking using nix-builders](https://github.com/testground/testground/pull/1425)
-- Benchmark go-libp2p, rust-libp2p, and go-libp2p
-- Specifically add [js-libp2p-transfer-performance](https://github.com/ipfs-shipyard/js-libp2p-transfer-performance) as a test-plan and CI job to benchmark transfer times across releases to catch issues like [#1342](https://github.com/libp2p/js-libp2p/issues/1342)
+#### [1. Benchmarking using nix-builders](https://github.com/testground/testground/pull/1425)
+- [Benchmark go-libp2p, rust-libp2p, and go-libp2p](https://github.com/libp2p/test-plans/issues/27)
+- [Specifically add js-libp2p-transfer-performance as a test-plan and CI job to benchmark transfer times across releases](https://github.com/libp2p/test-plans/issues/65) to catch issues like [#1342](https://github.com/libp2p/js-libp2p/issues/1342)
 - (Dependency: remote machines need Nix installed)
-#### 2. Benchmarking using remote runners
+#### [2. Benchmarking using remote runners](https://github.com/testground/testground/issues/1392)
 Benchmarking using first class support for remote runners (using `remote:exec`) in Testground
 
-
-### D. Expansive protocol test coverage
-<!-- TODO: Assign a quarter -->
-<!-- TODO: Create issue -->
+### [D. Expansive protocol test coverage](https://github.com/libp2p/test-plans/issues/64)
 **Why:** Having interoperability tests with lots of transports, encryption mechanisms, and stream muxers is great. However, we need to stay backwards-compatible with legacy libp2p releases, with other libp2p implementations, and less advanced libp2p stacks.
 
 **Goal:** Expand beyond unit tests and have expansive test-plan coverage that covers all protocols.
