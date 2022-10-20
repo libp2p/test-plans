@@ -30,7 +30,6 @@ https://github.com/libp2p/test-plans/issues/58
     - [1. Track test suite stability](#1-track-test-suite-stability)
     - [2. Design process for adding new tests](#2-design-process-for-adding-new-tests)
     - [3. Be the home for all interop tests](#3-be-the-home-for-all-interop-tests)
-    - [4. Stable build process](#4-stable-build-process)
   - [C. Future-proof Benchmarking](#c-future-proof-benchmarking)
     - [1. Benchmarking using nix-builders](#1-benchmarking-using-nix-builders)
     - [2. Benchmarking using remote runners](#2-benchmarking-using-remote-runners)
@@ -149,11 +148,6 @@ We have ported the tests from `libp2p/interop`
 - This repository implement tests `connect`, `dht`, `pubsub` ([ref](https://github.com/libp2p/interop/blob/ce0aa3749c9c53cf5ad53009b273847b94106d40/src/index.ts#L32-L35))
 - At of writing (2022-09-27), it is disabled in `go-libp2p` ([ref](https://github.com/libp2p/go-libp2p/actions/workflows/interop.yml)), and it is used in `js-libp2p` ([ref](https://github.com/libp2p/js-libp2p/actions/runs/3111413168/jobs/5050929689)).
 
-#### 4. Stable build process
-<!-- TODO: Assign a quarter -->
-<!-- TODO: Create issue -->
-We have a more stable build process that doesn't risk breaking
-- We generate artifacts for old versions during merges to the libp2p repositories https://github.com/libp2p/test-plans/issues/35#issuecomment-1254991985
 
 ### [C. Future-proof Benchmarking](https://github.com/libp2p/go-libp2p/issues/1810)
 **Why**: For libp2p to be competitive, it needs to delivers comparable performance to widely used protocols on the internet, namely HTTP/2 and HTTP/3.
