@@ -31,7 +31,6 @@ import (
 	kaddht "github.com/libp2p/go-libp2p-kad-dht"
 	"github.com/libp2p/go-libp2p/core/transport"
 	swarm "github.com/libp2p/go-libp2p/p2p/net/swarm"
-	// /tptu "github.com/libp2p/go-libp2p/p2p/net/upgrader"
 	tcp "github.com/libp2p/go-libp2p/p2p/transport/tcp"
 	"github.com/multiformats/go-multiaddr"
 	"github.com/multiformats/go-multiaddr-net"

@@ -12,13 +12,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 	kaddht "github.com/libp2p/go-libp2p-kad-dht"
-// <<<<<<< HEAD
 	"github.com/testground/sdk-go/runtime"
-	//dhtopts "github.com/libp2p/go-libp2p-kad-dht/opts"
-// =======
-// 	dhtopts "github.com/libp2p/go-libp2p-kad-dht/opts"
-// 	"github.com/testground/sdk-go/runtime"
-// >>>>>>> balsam-working
 )
 
 func createDHT(ctx context.Context, h host.Host, ds datastore.Batching, opts *SetupOpts, info *DHTNodeInfo) (*kaddht.IpfsDHT, error) {
