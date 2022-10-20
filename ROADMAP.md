@@ -4,7 +4,7 @@
 Date: 2022-10-18
 Status: In Progress
 Notes: This document is still in review will may be heavily modified based on stakeholder feedback. Please add any feedback or questions in:
-<Tracking Issue - perhaps this is not necessary for this round>
+https://github.com/libp2p/test-plans/issues/58
 ```
 
 ## Table of Contents <!-- omit in toc -->
@@ -19,15 +19,13 @@ Notes: This document is still in review will may be heavily modified based on st
     - [End of Q4 (December)](#end-of-q4-december)
   - [2023](#2023)
     - [Early Q1 (January)](#early-q1-january)
-    - [Mid Q1 (February)](#mid-q1-february)
     - [End of Q1 (March)](#end-of-q1-march)
   - [Up Next](#up-next)
 - [📖 Appendix](#-appendix)
   - [A. Multi-dimensional Testing/Interop Visibility](#a-multi-dimensional-testinginterop-visibility)
     - [1. User configured interop tests & dashboard](#1-user-configured-interop-tests--dashboard)
-    - [2. Interop test plans for all existing/developing features](#2-interop-test-plans-for-all-existingdeveloping-features)
-    - [3. Rock solid libp2p releases](#3-rock-solid-libp2p-releases)
-    - [4. Canonical interop tests & dashboard](#4-canonical-interop-tests--dashboard)
+    - [2. Interop test plans for all existing/developing libp2p transports](#2-interop-test-plans-for-all-existingdeveloping-libp2p-transports)
+    - [3. Canonical interop tests & dashboard](#3-canonical-interop-tests--dashboard)
   - [B. Hardening test infrastructure](#b-hardening-test-infrastructure)
     - [1. Track test suite stability](#1-track-test-suite-stability)
     - [2. Design process for adding new tests](#2-design-process-for-adding-new-tests)
@@ -37,21 +35,17 @@ Notes: This document is still in review will may be heavily modified based on st
     - [1. Benchmarking using nix-builders](#1-benchmarking-using-nix-builders)
     - [2. Benchmarking using remote runners](#2-benchmarking-using-remote-runners)
   - [D. Expansive protocol test coverage](#d-expansive-protocol-test-coverage)
-    - [1. AutoNat](#1-autonat)
-    - [2. Hole Punching](#2-hole-punching)
-    - [3. Custom topologies](#3-custom-topologies)
-    - [4. MTU Fixes](#4-mtu-fixes)
+    - [1. DHT server mode scale test](#1-dht-server-mode-scale-test)
+    - [2. AutoNat](#2-autonat)
+    - [3. Hole Punching](#3-hole-punching)
+    - [4. AutoRelay](#4-autorelay)
+    - [5. Custom topologies](#5-custom-topologies)
+    - [6. MTU Fixes](#6-mtu-fixes)
 
 ## About the Roadmap
 
 ### Vision
-The tenets of the libp2p team are:
-- Security
-  - We strive to ensure that libp2p is reliable & secure for users & applications. We seek to minimize vulnerabilities and act quickly to address issues.
-- Stability
-  - We do not break deployed features and maintain cross version compatibility across libp2p releases.
-- Performance
-  - We aim to make libp2p as performant as possible and strive to ensure comparable performance to widely used protocols on the Internet. We avoid regressions and performance degradations in new releases.
+We, the maintainers, are committed to upholding libp2p's shared core tenets and ensuring libp2p implementations are: [**Secure, Stable, Specified, and Performant.**](https://github.com/libp2p/specs/blob/master/ROADMAP.md#core-tenets)
 
 This roadmap is complementary to those of [go-libp2p](https://github.com/libp2p/go-libp2p/blob/master/ROADMAP.md), [rust-libp2p](https://github.com/libp2p/rust-libp2p/pull/2997), and [js-libp2p](https://github.com/libp2p/js-libp2p/pull/1412).
 
@@ -78,22 +72,17 @@ Each Appendix header is linked to a GitHub Epic. Latest information on progress 
 - [A.1 User Configured Interop Tests & Dashboard](#1-user-configured-interop-tests--dashboard)
 
 #### Mid Q4 (November)
-- [A.2 Interop tests for all existing/developing features](#2-interop-tests-for-all-existingdeveloping-features)
-- [A.3 Rock solid libp2p releases](#3-rock-solid-libp2p-releases)
+- [A.2 Interop tests for all existing/developing libp2p transports](#2-interop-test-plans-for-all-existingdeveloping-libp2p-transports)
 - [C.1 Benchmarking using nix-builders](#1-benchmarking-using-nix-builders)
 
 #### End of Q4 (December)
-- [A.4 Canonical Interop Tests & Dashboard](#4-canonical-interop-tests--dashboard)
+- [A.3 Canonical Interop Tests & Dashboard](#3-canonical-interop-tests--dashboard)
 
 ### 2023
 
 #### Early Q1 (January)
 
-- add here
-
-#### Mid Q1 (February)
-
-- add here
+- [D.1 DHT Server Mode Scale Test](#1-dht-server-mode-scale-test)
 
 #### End of Q1 (March)
 - [C.2 Benchmarking using remote runners](#2-benchmarking-using-remote-runners)
@@ -105,34 +94,31 @@ Each Appendix header is linked to a GitHub Epic. Latest information on progress 
 **Projects are listed in descending priority.**
 
 ### A. [Multi-dimensional Testing/Interop Visibility](https://github.com/libp2p/test-plans/issues/53)
-**Why:** libp2p supports a variety of protocols (multiple transports, muxers, & security protocols) across implementations in different languages. Until we actually test them together, we can't guarantee implementation interoperability. We need to ensure and demonstrate that: interoperable features work with each other as expected and we don't introduce degradations that break interoperability in new releases.
+**Why:** libp2p supports a variety of transport protocols, muxers, & security protocols across implementations in different languages. Until we actually test them together, we can't guarantee implementation interoperability. We need to ensure and demonstrate that: interoperable features work with each other as expected and we don't introduce degradations that break interoperability in new releases.
 
-**Goal:** libp2p implementers run tests across permutations of libp2p implementations, versions, and supported protocols. Implementers and users can reference a single website with a dashboard to view the Pass/Fail/Implemented/Not Implemented results of multi-dimensional tests.
+**Goal:** libp2p implementers run tests across permutations of libp2p implementations, versions, and supported transports, muxers, and security protocols. Implementers and users can reference a single website with a dashboard to view the Pass/Fail/Implemented/Not Implemented results of multi-dimensional tests.
+
+This effort depends on [Testground Milestone 1](https://github.com/testground/testground/blob/master/ROADMAP.md#1-bootstrap-libp2ps-interoperability-testing-story)
 
 **How:**
 #### 1. [User configured interop tests & dashboard](https://github.com/libp2p/test-plans/issues/55)
-Enable test-plans maintainers to define a configuration (of libp2p impls, versions, protocols, expected RTT), run Testground tests per configuration, and retrieve resulting data in a standard format.
+Enable test-plans maintainers to define a configuration (of libp2p impls, versions, transports, expected RTT), run Testground tests per configuration, and retrieve resulting data in a standard format.
 The test case results can be formatted as a "dashboard" (simple Markdown table of Pass/Fail results.)
 
-#### 2. Interop test plans for all existing/developing features
+#### 2. Interop test plans for all existing/developing libp2p transports
 <!-- TODO: Create issue -->
-Using tooling from A.1, all features of go-libp2p and rust-libp2p that should be interoperable are tested (i.e. transports (TCP, QUIC, WebRTC, WebTransport), multiplexers (mplex, yamux), secure channels (TLS, Noise), etc.) across versions.
+Using tooling from A.1, all features of go-libp2p, rust-libp2p, and js-libp2p that should be interoperable are tested (i.e. transports (TCP, QUIC, WebRTC, WebTransport), multiplexers (mplex, yamux), secure channels (TLS, Noise), etc.) across versions.
 
-Features currently in development across implementations (like WebRTC in go-libp2p and rust-libp2, or QUIC & TLS in rust-libp2p) are not merged without at least manually running these test suites.
+Features currently in development across implementations (like WebRTC in go-libp2p and rust-libp2p, or QUIC & TLS in rust-libp2p) are not merged without at least manually running these test suites.
 
-Test suites are run in libp2p/test-plans CI.
+Test suites are run in `libp2p/test-plans` CI and before releasing a version of go-libp2p,  rust-libp2p, and js-libp2p (GitHub workflow added so that these suites run for any PR against master and run against the `master` branch on a nightly basis (updating the status check.))
 
-**Note:** node.js-libp2p is not listed here since it does not have support in Testground yet.
+**Note:** Dependency on [C.1](#1-benchmarking-using-nix-builders) to run js-libp2p in Testground.
 
-#### 3. Rock solid libp2p releases
-<!-- TODO: Create issue -->
-The full `libp2p/test-plans` test suite is run before releasing a version of go-libp2p,  rust-libp2p, and js-libp2p.
-A GitHub workflow is added so that these suites run for any PR against master and run against the `master` branch on a nightly basis (updating the status check.)
-
-#### 4. Canonical interop tests & dashboard
+#### 3. Canonical interop tests & dashboard
 <!-- TODO: Create issue -->
 A comprehensive and canonical dashboard is generated and hosted in a publicly discoverable site that displays latest test suite results (Pass/Fail/Implemented/Not Implemented/Unimplementable) from a nightly CI run.
-All permutations of libp2p implementations, protocols, and versions should be visible.
+All permutations of libp2p implementations, versions, and supported transports, muxers, & security protocols should be visible.
 
 An enhancement of A.1 to make it easier for users and implementers to see the full state of libp2p interoperability.
 
@@ -141,7 +127,7 @@ An enhancement of A.1 to make it easier for users and implementers to see the fu
 #### 1. Track test suite stability
 <!-- TODO: Assign a quarter -->
 <!-- TODO: Create issue -->
-`libp2p/test-plans` maintainers have a straightforward way to track the test suite stability and performances
+`libp2p/test-plans` maintainers have a straightforward way to track the test suite stability and performance.
 - We can track the status of every test combination stability from the interop project itself
 - We can easily measure the consequence (improvements) of a pull request to the libp2p/interop repository
 - We are alerted when an interop test starts failing on one of our client repositories, and we can dispatch the alert to repo maintainers.
@@ -158,7 +144,7 @@ We have an explicit, working, Design Process for adding new tests
 <!-- TODO: Assign a quarter -->
 <!-- TODO: Create issue -->
 We have ported the tests from `libp2p/interop`
-- This repository implement tests `connect`, `dht`, `pubsub`, `steam` ([ref](https://github.com/libp2p/interop/blob/ce0aa3749c9c53cf5ad53009b273847b94106d40/src/index.ts#L32-L35))
+- This repository implement tests `connect`, `dht`, `pubsub` ([ref](https://github.com/libp2p/interop/blob/ce0aa3749c9c53cf5ad53009b273847b94106d40/src/index.ts#L32-L35))
 - At of writing (2022-09-27), it is disabled in `go-libp2p` ([ref](https://github.com/libp2p/go-libp2p/actions/workflows/interop.yml)), and it is used in `js-libp2p` ([ref](https://github.com/libp2p/js-libp2p/actions/runs/3111413168/jobs/5050929689)).
 
 #### 4. Stable build process
@@ -173,19 +159,33 @@ We have a more stable build process that doesn't risk breaking
 **Goal**: We have a test suite that runs libp2p transfers between nodes located at different locations all over the world, proving that libp2p is able to achieve performance on par with HTTP. The test suite is run on a continuous basis and results are published to a public performance dashboard.
 
 #### 1. [Benchmarking using nix-builders](https://github.com/testground/testground/pull/1425)
+- Benchmark go-libp2p, rust-libp2p, and go-libp2p
+- Specifically add [js-libp2p-transfer-performance](https://github.com/ipfs-shipyard/js-libp2p-transfer-performance) as a test-plan and CI job to benchmark transfer times across releases to catch issues like [#1342](https://github.com/libp2p/js-libp2p/issues/1342)
 - (Dependency: remote machines need Nix installed)
 #### 2. Benchmarking using remote runners
 Benchmarking using first class support for remote runners (using `remote:exec`) in Testground
+
 
 ### D. Expansive protocol test coverage
 <!-- TODO: Assign a quarter -->
 <!-- TODO: Create issue -->
 **Why:** Having interoperability tests with lots of transports, encryption mechanisms, and stream muxers is great. However, we need to stay backwards-compatible with legacy libp2p releases, with other libp2p implementations, and less advanced libp2p stacks.
 
-**Goal:** We have expansive test coverage that covers all protocols.
+**Goal:** Expand beyond unit tests and have expansive test-plan coverage that covers all protocols.
+
+This effort depends on [Testground Milestone 6](https://github.com/testground/testground/blob/master/ROADMAP.md#6-support-libp2ps-interoperability-testing-story-and-probelabs-work-as-a-way-to-drive-critical-testground-improvements)
+
 <!-- TODO: List all major protocol test backlog items here.
 Decide as a team which ones to prioritize and then assign to quarters.-->
-#### 1. AutoNat
-#### 2. Hole Punching
-#### 3. Custom topologies
-#### 4. MTU Fixes
+#### 1. DHT server mode scale test
+Test js-libp2p DHT Server Mode at scale (testbed of at least >20 nodes; ideally 100/1000+) in Testground
+Depends on [C.1](#1-benchmarking-using-nix-builders)
+Relates to [Testground Milestone 4 (for large scale tests.)](https://github.com/testground/testground/blob/master/ROADMAP.md#4-provide-a-testground-as-a-service-cluster-used-by-libp2p--ipfs-teams)
+#### 2. AutoNat
+Depends on [testground/NAT and/or firewall support](https://github.com/testground/testground/issues/1299)
+#### 3. Hole Punching
+Depends on [testground/NAT and/or firewall support](https://github.com/testground/testground/issues/1299)
+#### 4. AutoRelay
+#### 5. Custom topologies
+#### 6. MTU Fixes
+Depends on [testground/Network Simulation Fixes](https://github.com/testground/testground/issues/1492)
