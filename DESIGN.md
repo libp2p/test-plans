@@ -32,8 +32,8 @@ This document describes our process for testing interoperability & backward comp
 | ---                               | ---       | ---         | ---              | ---                 | ---        | ---        |
 | Simple PING [#35][issue-35]       | ✅        | ✅          | 🍎               | 🔥                  |            |            |
 | Circuit Relay                     |           |             |                  |                     |            |            |
-| WebTransport Transport            | 🔥        | 🔥          | 🔥               | 🔥                  | 🔥         | 🔥         |
-| WebRTC Transport                  | 🔥        | 🔥          | 🔥               | 🔥                  | 🔥         | 🔥         |
+| WebTransport Transport            | 🔥        |           | 🔥 (depends on https://github.com/libp2p/js-libp2p-webtransport/issues/1)               | 🔥 (depends on https://github.com/libp2p/js-libp2p-webtransport/issues/1)                  |          |          |
+| WebRTC Transport                  | 🔥 (depends on working implementation)        | 🔥 (depends on working implementation)          | 🔥 (depends on working implementation)               | 🔥 (depends on working implementation)                  |          |          |
 | NAT Traversal                     |           |             |                  |                     |            |            |
 | Hole Punching (STUN)              |           |             |                  |                     |            |            |
 | Identify Protocol                 |           |             |                  |                     |            |            |
@@ -59,19 +59,23 @@ This document describes our process for testing interoperability & backward comp
 - 🍎 Low-hanging fruit
 - 🧊 Lowest priority
 
-# How do we test libp2p interop at ProtocolLabs?
+# How does libp2p test interoperability?
 
 ---
 
 ---
 
 
-*(this is pretty much what happen with the go|rust-libp2p ping tests)*
+## Background
+The approach outlined below is pretty much what happen with the go|rust-libp2p ping tests in 2022Q3.
 
-I (laurent) haven’t had time to look at [libp2p/interop](https://github.com/libp2p/interop/actions/runs/3021456724) yet. Some information may be missing.
+libp2p implementations aren't forced to adopt this approach, but it is the approach that has been taken by some of the longer-lived implementations (go, JS, and rust).  
 
+I (@laurent) haven’t had time to look at [libp2p/interop](https://github.com/libp2p/interop/actions/runs/3021456724) yet. Some information may be missing.
+
+## 202210 Proposal
 <aside>
-1️⃣ *Before working on a new feature, the libp2p maintainers come together and agree on a description of the new test plan.*
+1️⃣ Before working on a new feature, the libp2p maintainers come together and agree on a description of the new test plan.*
 
 </aside>
 
@@ -128,7 +132,7 @@ It might be enabled in a nightly job too.
 
 - TODO: add the `full` interop test to `go-libp2p` + update their release documentation.
 
-## Questions
+## Open Questions
 
 - When do we revisit this scenario to improve and gather feedback?
     - How do we evaluate progress & success?
