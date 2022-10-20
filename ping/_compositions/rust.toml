@@ -5,6 +5,10 @@ CargoFeatures = 'libp2pmaster'
 CargoFeatures = 'libp2pmaster'
 
 [[groups]]
+Id = '0.49.0'
+CargoFeatures = 'libp2pv0490'
+
+[[groups]]
 Id = '0.48.0'
 CargoFeatures = 'libp2pv0480'
 
