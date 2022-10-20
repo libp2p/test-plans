@@ -113,7 +113,9 @@ Features currently in development across implementations (like WebRTC in go-libp
 
 Test suites are run in `libp2p/test-plans` CI and before releasing a version of go-libp2p,  rust-libp2p, and js-libp2p (GitHub workflow added so that these suites run against the `master` branch on a nightly basis (updating the status check.))
 
-**Note:** Dependency on [C.1](#1-benchmarking-using-nix-builders) to run js-libp2p in Testground.
+**Note:**
+- Dependency on [C.1](#1-benchmarking-using-nix-builders) to run node.js-libp2p in Testground.
+- Dependency on [testground/Investigate browser test support](https://github.com/testground/testground/issues/1386) to run interoperability test for js-libp2p WebRTC against Go and Rust.
 
 #### 3. Canonical interop tests & dashboard
 <!-- TODO: Create issue -->
