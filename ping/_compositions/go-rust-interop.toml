@@ -133,7 +133,7 @@
         CARGO_FEATURES = '{{ .CargoFeatures }}'
         CARGO_REMOVE = '{{ .CargoFeatures }}'
         CARGO_PATCH = """
-          {{ .CargoFeatures }} = {package = "libp2p", git = "https://{{ or $.Env.GitTarget "github.com/libp2p/rust-libp2p" }}", rev = "{{ $.Env.GitReference }}", default_features = false, features = [ "websocket", "mplex", "yamux", "ping", "noise", "rsa" ], optional = true}
+          {{ .CargoFeatures }} = {package = "libp2p", git = "https://{{ or $.Env.GitTarget "github.com/libp2p/rust-libp2p" }}", rev = "{{ $.Env.GitReference }}", default_features = false, features = [ "websocket", "mplex", "yamux", "tcp", "ping", "noise", "dns", "async-std", "rsa" ], optional = true}
           """
   {{ end }}
   {{ end }}
