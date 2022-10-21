@@ -1,9 +1,9 @@
 # test-plans roadmap Q4’22/Q1’23 <!-- omit in toc -->
 
 ```
-Date: 2022-10-18
+Date: 2022-10-20
 Status: Accepted
-Notes: Internal test-plans stakeholders have aligned on this roadmap. Please add any feedback or questions in:
+Notes: Internal test-plans maintainers stakeholders have aligned on this roadmap. Please add any feedback or questions in:
 https://github.com/libp2p/test-plans/issues/58
 ```
 
@@ -174,7 +174,7 @@ Depends on [C.1](#1-benchmarking-using-nix-builders)
 Relates to [Testground Milestone 4 (for large scale tests.)](https://github.com/testground/testground/blob/master/ROADMAP.md#4-provide-a-testground-as-a-service-cluster-used-by-libp2p--ipfs-teams)
 #### 2. AutoNat
 Depends on [testground/NAT and/or firewall support](https://github.com/testground/testground/issues/1299)
-#### 3. Hole Punching
+#### [3. Hole Punching](https://github.com/libp2p/test-plans/issues/21)
 Depends on [testground/NAT and/or firewall support](https://github.com/testground/testground/issues/1299)
 #### 4. AutoRelay
 #### 5. Custom topologies
