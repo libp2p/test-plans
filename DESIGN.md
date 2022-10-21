@@ -46,6 +46,8 @@ This document describes our process for testing interoperability & backward comp
 
 - Anything `js-libp2p` related requires the `ping` test to start
 - Benchmarking must relate to [Remote Runners][remote-runners]
+  - https://github.com/testground/testground/pull/1425
+  - https://github.com/testground/testground/issues/1392
 
 **Questions**
 
