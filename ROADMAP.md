@@ -3,7 +3,7 @@
 ```
 Date: 2022-10-20
 Status: Accepted
-Notes: Internal test-plans maintainers stakeholders have aligned on this roadmap. Please add any feedback or questions in:
+Notes: Internal test-plans stakeholders have aligned on this roadmap. Please add any feedback or questions in:
 https://github.com/libp2p/test-plans/issues/58
 ```
 
