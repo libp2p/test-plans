@@ -5,6 +5,13 @@
 
 This repository contains Testground test plans for libp2p components.
 
+## Roadmap
+
+Our roadmap for test-plans can be found here: https://github.com/libp2p/test-plans/blob/master/ROADMAP.md
+
+It represents current projects the test-plans maintainers are focused on and provides an estimation of completion targets.
+It is complementary to those of [go-libp2p](https://github.com/libp2p/go-libp2p/blob/master/ROADMAP.md), [rust-libp2p](https://github.com/libp2p/rust-libp2p/blob/master/ROADMAP.md), [js-libp2p](https://github.com/libp2p/js-libp2p/blob/master/ROADMAP.md), and the [overarching libp2p project roadmap](https://github.com/libp2p/specs/blob/master/ROADMAP.md).
+
 ## How to add a new version to ping/go
 
 When a new version of libp2p is released, we want to make it permanent in the `ping/go` test folder.
@@ -20,7 +27,7 @@ When a new version of libp2p is released, we want to make it permanent in the `p
         - update the `go-libp2p` version, go version, and update the code if needed.
         - then `go get -tags v$B && go mod tidy`
 3. Run the test on your machine
-    - Do once, from the test-plans root: import the test-plans with `testground plan import ./ --name libp2p`
+    - Do once, from the test-plans root: import the test-plans with `testground plan import --from ./ --name libp2p`
     - Run the test with `testground run composition -f ping/_compositions/go-cross-versions.toml --wait`
 
 ## How to add a new version to ping/rust
