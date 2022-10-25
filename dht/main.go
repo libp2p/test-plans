@@ -6,13 +6,13 @@ import (
 )
 
 var testCases = map[string]runtime.TestCaseFn{
-	"find-peers": test.FindPeers,
-	"find-providers": test.FindProviders,
-	"provide-stress": test.ProvideStress,
-	"store-get-value": test.StoreGetValue,
+	"find-peers":        test.FindPeers,
+	"find-providers":    test.FindProviders,
+	"provide-stress":    test.ProvideStress,
+	"store-get-value":   test.StoreGetValue,
 	"get-closest-peers": test.GetClosestPeers,
 	"bootstrap-network": test.BootstrapNetwork,
-	"all": test.All,
+	"all":               test.All,
 }
 
 func main() {

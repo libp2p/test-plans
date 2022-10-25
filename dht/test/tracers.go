@@ -4,10 +4,10 @@ import (
 	"context"
 	"sync"
 
-	"github.com/testground/sdk-go/runtime"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/network"
 	routing "github.com/libp2p/go-libp2p-core/routing"
+	"github.com/testground/sdk-go/runtime"
 	"go.uber.org/zap"
 )
 
