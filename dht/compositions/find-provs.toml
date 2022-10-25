@@ -6,38 +6,16 @@
   plan = "dht"
   case = "find-providers"
   total_instances = 150
-  concurrent_builds = 0
   builder = "docker:go"
   runner = "local:docker"
-  disable_metrics = false
 
 [[groups]]
   id = "balsam"
-  builder = "docker:go"
-  [groups.resources]
-    memory = ""
-    cpu = ""
   [groups.instances]
     count = 0
     percentage = 0.0
-  [groups.build_config]
-    enabled = true
-    exec_pkg = "."
-    go_version = "1.19"
-    module_path = "github.com/libp2p/test-plans/dht"
   [groups.build]
-
-    [[groups.build.dependencies]]
-      module = "github.com/libp2p/go-libp2p-kad-dht"
-      target = ""
-      version = "v0.18.0"
-
-    [[groups.build.dependencies]]
-      module = "github.com/ipfs/go-cid"
-      target = ""
-      version = "v0.3.2"
   [groups.run]
-    artifact = ""
     [groups.run.test_params]
       bucket_size = "4"
       client_mode = "false"
@@ -50,31 +28,19 @@
 
 [[groups]]
   id = "cypress"
-  builder = "docker:go"
-  [groups.resources]
-    memory = ""
-    cpu = ""
   [groups.instances]
     count = 0
     percentage = 1.0
-  [groups.build_config]
-    enabled = true
-    exec_pkg = "."
-    go_version = "1.19"
-    module_path = "github.com/libp2p/test-plans/dht"
   [groups.build]
 
     [[groups.build.dependencies]]
       module = "github.com/libp2p/go-libp2p-kad-dht"
-      target = ""
-      version = "v0.18.0"
+      version = "v0.4.2-0.20200204202258-35d3e4a5d43e"
 
     [[groups.build.dependencies]]
-      module = "github.com/ipfs/go-cid"
-      target = ""
-      version = "v0.3.2"
+      module = "github.com/libp2p/go-libp2p-autonat"
+      version = "v0.1.2-0.20200204200147-902af8cb7b6a"
   [groups.run]
-    artifact = ""
     [groups.run.test_params]
       bucket_size = "4"
       client_mode = "false"
