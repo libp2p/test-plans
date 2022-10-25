@@ -15,7 +15,7 @@
     selectors = ["balsam"]
 
   [groups.instances]
-    count = 5
+    count = 16
 
 #   [groups.build]
 #     selectors = ["balsam"]
@@ -96,14 +96,14 @@
 #       timeout_secs = "600"
 #       undialable = "false"
 
-[[groups]]
-   id = "cypress-passive"
+# [[groups]]
+#   id = "cypress-passive"
 
-   [groups.instances]
-     count = 35
+#   [groups.instances]
+#     count = 35
 
-   [groups.build]
-     selectors = ["cypress"]
+#   [groups.build]
+#     selectors = ["cypress"]
 
 #     [[groups.build.dependencies]]
 #       module = "github.com/libp2p/go-libp2p-kad-dht"
