@@ -29,7 +29,6 @@ import (
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
 	kaddht "github.com/libp2p/go-libp2p-kad-dht"
-	"github.com/libp2p/go-libp2p/core/transport"
 	swarm "github.com/libp2p/go-libp2p/p2p/net/swarm"
 	tcp "github.com/libp2p/go-libp2p/p2p/transport/tcp"
 	"github.com/multiformats/go-multiaddr"
@@ -165,13 +164,7 @@ func NewDHTNode(ctx context.Context, runenv *runtime.RunEnv, opts *SetupOpts, id
 	libp2pOpts := []libp2p.Option{
 		libp2p.Identity(idKey),
 		// Use only the TCP transport without reuseport.
-		libp2p.Transport(func(u transport.Upgrader) *tcp.TcpTransport {
-			tpt, err := tcp.NewTCPTransport(u, nil, tcp.DisableReuseport())
-			if err != nil {
-				panic(err)
-			}
-			return tpt
-		}),
+		libp2p.Transport(tcp.NewTCPTransport),
 		// Setup the connection manager to trim to
 		libp2p.ConnectionManager(cm),
 	}
