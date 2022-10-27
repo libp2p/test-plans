@@ -37,6 +37,7 @@ RUN mv /tmp/Cargo.toml /tmp/Cargo.lock ./plan
 ARG CARGO_FEATURES=""
 
 RUN cd ./plan/ && \
+        cargo update && \
         cargo build --release --features="${CARGO_FEATURES}"
 
 FROM debian:bullseye-slim
