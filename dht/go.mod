@@ -10,7 +10,6 @@ require (
 	github.com/ipfs/go-ipfs-util v0.0.2
 	github.com/ipfs/go-ipns v0.2.0
 	github.com/libp2p/go-libp2p v0.23.2
-	github.com/libp2p/go-libp2p-connmgr v0.3.1
 	github.com/libp2p/go-libp2p-core v0.20.0
 	github.com/libp2p/go-libp2p-kad-dht v0.18.0
 	github.com/libp2p/go-libp2p-kbucket v0.4.7
