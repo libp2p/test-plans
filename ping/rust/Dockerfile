@@ -14,7 +14,7 @@ RUN cd ./plan/ && \
         cargo update --dry-run && \
         cargo fetch && \
         # use a default feature to rely on docker caching.
-        cargo build --release --features "libp2pv0450"
+        cargo build --features "libp2pv0450"
 
 ARG CARGO_PATCH=""
 ARG CARGO_REMOVE=""
@@ -28,7 +28,7 @@ RUN cp ./plan/Cargo.toml ./plan/Cargo.lock /tmp/
 COPY ./plan/${PLAN_PATH} ./plan
 
 # This is in order to make sure `main.rs`s mtime timestamp is updated to avoid the dummy `main`
-# remaining in the release binary.
+# remaining in the binary.
 # https://github.com/rust-lang/cargo/issues/9598
 RUN touch ./plan/src/main.rs
 
@@ -37,10 +37,10 @@ RUN mv /tmp/Cargo.toml /tmp/Cargo.lock ./plan
 ARG CARGO_FEATURES=""
 
 RUN cd ./plan/ && \
-        cargo build --release --features="${CARGO_FEATURES}"
+        cargo build --features="${CARGO_FEATURES}"
 
 FROM debian:bullseye-slim
-COPY --from=builder /usr/src/testplan/plan/target/release/testplan /usr/local/bin/testplan
+COPY --from=builder /usr/src/testplan/plan/target/debug/testplan /usr/local/bin/testplan
 EXPOSE 6060
 ENV RUST_BACKTRACE=1
 ENTRYPOINT ["testplan"]
