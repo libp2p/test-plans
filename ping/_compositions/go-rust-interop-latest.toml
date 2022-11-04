@@ -75,7 +75,7 @@
       path = "./rust/"
 
     [groups.build_config.build_args]
-      CARGO_FEATURES = '{{ .CargoFeatures }}'
+      BINARY_NAME = '{{ .BinaryName }}'
   {{ end }}
 
   {{ if eq $.Env.InteropTarget "rust" }}
@@ -90,11 +90,9 @@
         path = "./rust/"
 
       [groups.build_config.build_args]
-        CARGO_FEATURES = '{{ .CargoFeatures }}'
-        CARGO_REMOVE = '{{ .CargoFeatures }}'
-        CARGO_PATCH = """
-          {{ .CargoFeatures }} = {package = "libp2p", git = "https://{{ or $.Env.GitTarget "github.com/libp2p/rust-libp2p" }}", rev = "{{ $.Env.GitReference }}", default_features = false, features = [ "websocket", "mplex", "yamux", "tcp", "ping", "noise", "dns", "async-std", "rsa" ], optional = true}
-          """
+        BINARY_NAME = '{{ .BinaryName }}'
+        GIT_TARGET = '$.Env.GitTarget'
+        UPDATE_CMD = '{{ .UpdateCmd }} --precise {{ $.Env.GitReference }}'
   {{ end }}
   {{ end }}
   {{ end }}

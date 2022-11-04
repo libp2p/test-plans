@@ -15,7 +15,7 @@
     instances = { count = 1 }
 
     [groups.build_config.build_args]
-      CARGO_FEATURES = '{{ .CargoFeatures }}'
+      BINARY_NAME = '{{ .BinaryName }}'
   {{ end }}
 
   {{ with .master }}

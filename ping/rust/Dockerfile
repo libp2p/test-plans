@@ -11,16 +11,15 @@ RUN echo "fn main() { println!(\"If you see this message, you may want to clean 
 COPY ./plan/${PLAN_PATH}/Cargo.lock ./plan/${PLAN_PATH}/Cargo.toml ./plan/
 
 RUN cd ./plan/ && \
-        cargo update --dry-run && \
         cargo fetch && \
         # use a default feature to rely on docker caching.
-        cargo build --release --features "libp2pv0450"
+        cargo build --release
 
-ARG CARGO_PATCH=""
-ARG CARGO_REMOVE=""
+ARG GIT_TARGET=""
+ARG UPDATE_CMD=""
 
-RUN if [ ! -z "${CARGO_REMOVE}" ]; then sed -i "s/^${CARGO_REMOVE}.*//" ./plan/Cargo.toml; fi
-RUN echo "${CARGO_PATCH}" >> ./plan/Cargo.toml
+RUN if [ ! -z "${GIT_TARGET}" ]; then sed -i "s/https:\/\/github.com\/libp2p\/rust-libp2p/${GIT_TARGET}/" ./plan/Cargo.toml; fi
+RUN if [ ! -z "${UPDATE_CMD}" ]; then ${UPDATE_CMD}; fi
 
 # Backup Cargo file to preserve patches.
 RUN cp ./plan/Cargo.toml ./plan/Cargo.lock /tmp/
@@ -34,13 +33,13 @@ RUN touch ./plan/src/main.rs
 
 RUN mv /tmp/Cargo.toml /tmp/Cargo.lock ./plan
 
-ARG CARGO_FEATURES=""
+ARG BINARY_NAME
 
 RUN cd ./plan/ && \
-        cargo build --release --features="${CARGO_FEATURES}"
+        cargo build --release --bin="${BINARY_NAME}"
 
 FROM debian:bullseye-slim
-COPY --from=builder /usr/src/testplan/plan/target/release/testplan /usr/local/bin/testplan
+COPY --from=builder /usr/src/testplan/plan/target/release/"${BINARY_NAME}" /usr/local/bin/testplan
 EXPOSE 6060
 ENV RUST_BACKTRACE=1
 ENTRYPOINT ["testplan"]
