@@ -5,19 +5,29 @@ import sequtils
 
 type
   PeerData = object
-    id: string
-    addrs: seq[string]
+    id {.serializedFieldName: "ID".}: string
+    addrs {.serializedFieldName: "Addrs".}: seq[string]
 
 testground(client):
   let addresses = getInterfaces().filterIt(it.name == "eth1").mapIt(it.addresses)
   if addresses.len < 1 or addresses[0].len < 1:
     quit "Can't find local ip!"
 
+  discard await client.signal("initialized_global")
+
   let
     maxLatency = client.param(int, "max_latency_ms")
     rng = libp2p.newRng()
     address = addresses[0][0].host
-    switch = newStandardSwitch(addrs = MultiAddress.init(address).tryGet(), rng = rng)
+    switch =
+      SwitchBuilder
+        .new()
+        .withAddress(MultiAddress.init(address).tryGet())
+        .withRng(rng)
+        .withYamux()
+        .withTcpTransport()
+        .withNoise()
+        .build()
     pingProtocol = Ping.new(rng = rng)
 
   switch.mount(pingProtocol)

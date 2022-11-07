@@ -1,0 +1,109 @@
+[metadata]
+  name = "go-rust-cross-version-{{ or $.Env.InteropTarget "-" }}-{{ or $.Env.GitReference "" }}"
+
+[global]
+  plan = "libp2p/ping"
+  case = "ping"
+  runner = "local:docker"
+  concurrent_builds = 1
+
+  [global.build_config]
+    enable_go_build_cache  = false      # see https://github.com/testground/testground/issues/1361
+    # disable testground's goproxy which hangs on github runners.
+    go_proxy_mode          = "remote"
+    go_proxy_url           = "https://proxy.golang.org"
+
+{{ with (load_resource "./go.toml") }}
+  {{ with (index .groups 0) }}
+    [[groups]]
+    id = "go-latest-{{ .Id }}"
+    instances = { count = 1 }
+    builder = "docker:go"
+
+    [groups.build]
+      selectors = ['{{ .Selector }}']
+
+    [groups.build_config]
+      path = "./go/"
+      build_base_image = 'golang:{{ .GoVersion }}-buster'
+      modfile = "{{ .Modfile }}"
+  {{ end }}
+
+  {{ if eq $.Env.InteropTarget "go" }}
+  {{ if $.Env.GitReference }}
+  {{ with .custom }}
+      [[groups]]
+      id = "go-custom-{{ $.Env.GitReference }}"
+      instances = { count = 1 }
+      builder = "docker:go"
+
+      [groups.build]
+        selectors = ['{{ .Selector }}']
+
+      [[groups.build.dependencies]]
+        module = "github.com/libp2p/go-libp2p"
+        version = "{{ $.Env.GitReference }}"
+        {{ if $.Env.GitTarget }}
+        target = "{{ $.Env.GitTarget }}"
+        {{ end }}
+
+      [groups.build_config]
+        path = "./go/"
+        build_base_image = 'golang:{{ .GoVersion }}-buster'
+        modfile = "{{ .Modfile }}"
+
+      [groups.build_config.dockerfile_extensions]
+        # deal with dependency changes in master until we create the new vx.y.z instance
+        pre_build = """
+          RUN cd ${PLAN_DIR} && \
+              go mod download github.com/libp2p/go-libp2p && \
+              go mod tidy -compat={{ .GoVersion }}
+          """
+  {{ end }}
+  {{ end }}
+  {{ end }}
+{{ end }}
+
+{{ with (load_resource "./rust.toml") }}
+  {{ with (index .groups 0) }}
+    [[groups]]
+    id = "rust-latest-{{ .Id }}"
+    instances = { count = 1 }
+    builder = "docker:generic"
+
+    [groups.build_config]
+      path = "./rust/"
+
+    [groups.build_config.build_args]
+      CARGO_FEATURES = '{{ .CargoFeatures }}'
+  {{ end }}
+
+  {{ if eq $.Env.InteropTarget "rust" }}
+  {{ if $.Env.GitReference }}
+  {{ with .custom }}
+      [[groups]]
+      id = "rust-custom-{{ $.Env.GitReference }}"
+      instances = { count = 1 }
+      builder = "docker:generic"
+
+      [groups.build_config]
+        path = "./rust/"
+
+      [groups.build_config.build_args]
+        CARGO_FEATURES = '{{ .CargoFeatures }}'
+        CARGO_REMOVE = '{{ .CargoFeatures }}'
+        CARGO_PATCH = """
+          {{ .CargoFeatures }} = {package = "libp2p", git = "https://{{ or $.Env.GitTarget "github.com/libp2p/rust-libp2p" }}", rev = "{{ $.Env.GitReference }}", default_features = false, features = [ "websocket", "mplex", "yamux", "tcp", "ping", "noise", "dns", "async-std", "rsa" ], optional = true}
+          """
+  {{ end }}
+  {{ end }}
+  {{ end }}
+{{ end }}
+
+[[groups]]
+id = "nim-latest"
+instances = { count = 1 }
+builder = "docker:generic"
+
+[groups.build_config]
+  path = "./nim/"
