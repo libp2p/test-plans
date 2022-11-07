@@ -116,6 +116,8 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	switch transport {
 	case "quic":
 		listenPattern = "/ip4/%s/udp/0/quic"
+	case "webrtc":
+		listenPattern = "/ip4/%s/udp/0/webrtc"
 	}
 	runenv.RecordMessage("my listen pattern: %v", listenPattern)
 	// ☎️  Let's construct the libp2p node.
