@@ -1,5 +1,5 @@
 [metadata]
-  name = "all-latest-{{ or $.Env.InteropTarget "-" }}-{{ or $.Env.GitReference "" }}"
+  name = "all-cross-version"
 
 [global]
   plan = "libp2p/ping"
@@ -14,9 +14,9 @@
     go_proxy_url           = "https://proxy.golang.org"
 
 {{ with (load_resource "./go.toml") }}
-  {{ with (index .groups 0) }}
+  {{ range .groups }}
     [[groups]]
-    id = "go-latest-{{ .Id }}"
+    id = "{{ .Id }}"
     instances = { count = 1 }
     builder = "docker:go"
 
@@ -29,11 +29,38 @@
       modfile = "{{ .Modfile }}"
   {{ end }}
 
+  {{ with .master }}
+    [[groups]]
+    id = "master"
+    instances = { count = 1 }
+    builder = "docker:go"
+
+    [groups.build]
+      selectors = ['{{ .Selector }}']
+
+      [[groups.build.dependencies]]
+        module = "github.com/libp2p/go-libp2p"
+        version = "master"
+
+    [groups.build_config]
+      path = "./go/"
+      build_base_image = 'golang:{{ .GoVersion }}-buster'
+      modfile = "{{ .Modfile }}"
+
+    [groups.build_config.dockerfile_extensions]
+      # deal with dependency changes in master until we create the new vx.y.z instance
+      pre_build = """
+        RUN cd ${PLAN_DIR} && \
+            go mod download github.com/libp2p/go-libp2p && \
+            go mod tidy -compat={{ .GoVersion }}
+        """
+  {{ end }}
+
   {{ if eq $.Env.InteropTarget "go" }}
   {{ if $.Env.GitReference }}
   {{ with .custom }}
       [[groups]]
-      id = "go-custom-{{ $.Env.GitReference }}"
+      id = "custom-go"
       instances = { count = 1 }
       builder = "docker:go"
 
@@ -65,9 +92,9 @@
 {{ end }}
 
 {{ with (load_resource "./rust.toml") }}
-  {{ with (index .groups 0) }}
+  {{ range .groups }}
     [[groups]]
-    id = "rust-latest-{{ .Id }}"
+    id = "rust-{{ .Id }}"
     instances = { count = 1 }
     builder = "docker:generic"
 
@@ -78,11 +105,24 @@
       CARGO_FEATURES = '{{ .CargoFeatures }}'
   {{ end }}
 
+  {{ with .master }}
+    [[groups]]
+    id = "rust-master"
+    instances = { count = 1 }
+    builder = "docker:generic"
+
+    [groups.build_config]
+      path = "./rust/"
+      
+    [groups.build_config.build_args]
+      CARGO_FEATURES = '{{ .CargoFeatures }}'
+  {{ end }}
+
   {{ if eq $.Env.InteropTarget "rust" }}
   {{ if $.Env.GitReference }}
   {{ with .custom }}
       [[groups]]
-      id = "rust-custom-{{ $.Env.GitReference }}"
+      id = "custom-rust"
       instances = { count = 1 }
       builder = "docker:generic"
 
@@ -101,7 +141,7 @@
 {{ end }}
 
 {{ with (load_resource "./nim.toml") }}
-  {{ with (index .groups 0) }}
+  {{ range .groups }}
     [[groups]]
     id = "nim-latest-{{ .Id }}"
     instances = { count = 1 }
@@ -112,6 +152,19 @@
     [groups.build_config.build_args]
       Libp2pVersion = '{{ .Id }}'
       NimVersion = '{{ .NimVersion }}'
+  {{ end }}
+
+  {{ with .custom }}
+      [[groups]]
+      id = "nim-unstable"
+      instances = { count = 1 }
+      builder = "docker:generic"
+
+      [groups.build_config]
+        path = "./nim/"
+      [groups.build_config.build_args]
+        Libp2pVersion = '#unstable'
+        NimVersion = '{{ .NimVersion }}'
   {{ end }}
 
   {{ if eq $.Env.InteropTarget "nim" }}
