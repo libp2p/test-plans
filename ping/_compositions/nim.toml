@@ -1,0 +1,6 @@
+[custom]
+NimVersion = "1.6.8"
+
+[[groups]]
+Id = "1.0.0"
+NimVersion = "1.6.8"

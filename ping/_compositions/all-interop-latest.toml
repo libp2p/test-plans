@@ -100,10 +100,34 @@
   {{ end }}
 {{ end }}
 
-[[groups]]
-id = "nim-latest"
-instances = { count = 1 }
-builder = "docker:generic"
+{{ with (load_resource "./nim.toml") }}
+  {{ with (index .groups 0) }}
+    [[groups]]
+    id = "nim-latest-{{ .Id }}"
+    instances = { count = 1 }
+    builder = "docker:generic"
 
-[groups.build_config]
-  path = "./nim/"
+    [groups.build_config]
+      path = "./nim/"
+    [groups.build_config.build_args]
+      Libp2pVersion = '{{ .Id }}'
+      NimVersion = '{{ .NimVersion }}'
+  {{ end }}
+
+  {{ if eq $.Env.InteropTarget "nim" }}
+  {{ if $.Env.GitReference }}
+  {{ with .custom }}
+      [[groups]]
+      id = "nim-custom-{{ $.Env.GitReference }}"
+      instances = { count = 1 }
+      builder = "docker:generic"
+
+      [groups.build_config]
+        path = "./nim/"
+      [groups.build_config.build_args]
+        Libp2pVersion = '#{{ $.Env.GitReference }}'
+        NimVersion = '{{ .NimVersion }}'
+  {{ end }}
+  {{ end }}
+  {{ end }}
+{{ end }}
