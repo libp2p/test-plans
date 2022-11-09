@@ -20,7 +20,7 @@ on:
   push:
   pull_request:
 
-name: libp2p ping - go and rust test (all) with testground.
+name: libp2p ping - all tests with testground.
 
 jobs:
   run-all-ping-latest:
