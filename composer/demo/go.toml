@@ -5,7 +5,7 @@ IsMaster = true
 Modfile = "go.v0.22.mod"
 Implementation = "go"
 Selector = 'v0.22'
-SupportedTransports = ["quic"]
+SupportedTransports = ["tcp"]
 
 # [custom]
 # Id = "go-custom"
@@ -22,7 +22,7 @@ GoVersion = '1.18'
 Modfile = "go.v0.22.mod"
 Implementation = "go"
 Selector = 'v0.22'
-SupportedTransports = ["quic"]
+SupportedTransports = ["tcp"]
 
 [[groups]]
 Id = "go-ckousik"
