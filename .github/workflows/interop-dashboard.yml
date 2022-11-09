@@ -42,7 +42,7 @@ jobs:
         run: |
           for i in 1 2 3; do
             echo "=== Attempt $i ==="
-            make /tmp/builds-artifacts.toml && exit 0
+            make build-all && exit 0
             sleep 1
           done
           exit 1
