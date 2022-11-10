@@ -50,9 +50,9 @@
     [groups.build_config.dockerfile_extensions]
       # deal with dependency changes in master until we create the new vx.y.z instance
       pre_build = """
-        RUN cd ${PLAN_DIR} && \
-            go mod download github.com/libp2p/go-libp2p && \
-            go mod tidy -compat={{ .GoVersion }}
+        RUN cd ${PLAN_DIR} && go mod download github.com/libp2p/go-libp2p
+        RUN for g in ${PLAN_DIR}/go/compat/libp2p.*.go ; do if [ "${g}" = '/plan/go/compat/libp2p.{{ .Selector }}.go' ] ; then echo We have our selector. Good. ; else rm -v "${g}" || exit 42 ; fi ; done
+        RUN cd ${PLAN_DIR} && go mod tidy -compat={{ .GoVersion }}
         """
   {{ end }}
 
@@ -82,9 +82,9 @@
       [groups.build_config.dockerfile_extensions]
         # deal with dependency changes in master until we create the new vx.y.z instance
         pre_build = """
-          RUN cd ${PLAN_DIR} && \
-              go mod download github.com/libp2p/go-libp2p && \
-              go mod tidy -compat={{ .GoVersion }}
+            RUN cd ${PLAN_DIR} && go mod download github.com/libp2p/go-libp2p
+            RUN for g in ${PLAN_DIR}/go/compat/libp2p.*.go ; do if [ "${g}" = '/plan/go/compat/libp2p.{{ .Selector }}.go' ] ; then echo We have our selector. Good. ; else rm -v "${g}" || exit 42 ; fi ; done
+            RUN cd ${PLAN_DIR} && go mod tidy -compat={{ .GoVersion }}
           """
   {{ end }}
   {{ end }}
