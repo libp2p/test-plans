@@ -48,7 +48,7 @@
       pre_build = """
           RUN cd ${PLAN_DIR} && go mod download github.com/libp2p/go-libp2p
           RUN find "${PLAN_DIR}" -type f -name '*.go'
-          RUN for g in ${PLAN_DIR}/compat/libp2p.*.go ; do if [ "${g}" = '${PLAN_DIR}/compat/libp2p.{{ .Selector }}.go' ] ; then echo We have our selector. Good. ; else rm -v "${g}" ; fi ; done
+          RUN for g in ${PLAN_DIR}/compat/libp2p.*.go ; do if [ "${g}" = "${PLAN_DIR}/compat/libp2p.{{ .Selector }}.go" ] ; then echo We have our selector. Good. ; else rm -v "${g}" ; fi ; done
           RUN cd ${PLAN_DIR} && go mod tidy -compat={{ .GoVersion }}
         """
   {{ end }}
@@ -78,7 +78,7 @@
         pre_build = """
             RUN cd ${PLAN_DIR} && go mod download github.com/libp2p/go-libp2p
             RUN find "${PLAN_DIR}" -type f -name '*.go'
-            RUN for g in ${PLAN_DIR}/compat/libp2p.*.go ; do if [ "${g}" = '${PLAN_DIR}/compat/libp2p.{{ .Selector }}.go' ] ; then echo We have our selector. Good. ; else rm -v "${g}" ; fi ; done
+            RUN for g in ${PLAN_DIR}/compat/libp2p.*.go ; do if [ "${g}" = "${PLAN_DIR}/compat/libp2p.{{ .Selector }}.go" ] ; then echo We have our selector. Good. ; else rm -v "${g}" ; fi ; done
             RUN cd ${PLAN_DIR} && go mod tidy -compat={{ .GoVersion }}
           """
     {{ end }}
