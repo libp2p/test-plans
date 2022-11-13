@@ -1,0 +1,30 @@
+name = "compatibility-js"
+
+[defaults]
+builder = "docker:node"
+runner = "local:docker"
+
+[builders."docker:node"]
+enabled = true
+
+[builders."docker:generic"]
+enabled = true
+
+[builders."docker:generic".build_args]
+TEST_BROWSER_KIND = "chromium"
+TEST_BROWSER_DEBUG_PORT = "5321"
+TEST_KEEP_OPENED_BROWSERS = "false"
+
+[runners."local:docker"]
+enabled = true
+
+[runners."local:docker".exposed_ports]
+CHROME_DEBUG = "5321"
+
+[[testcases]]
+name = "ping"
+instances = { min = 2, max = 10000, default = 5 }
+
+  [testcases.params]
+  max_latency_ms    = { type = "int", desc = "maximum value for random local link latency", unit = "ms", default = 1000 }
+  iterations        = { type = "int", desc = "number of ping iterations we'll run against each peer", unit = "count", default = 5 }

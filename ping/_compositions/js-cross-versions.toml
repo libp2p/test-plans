@@ -1,0 +1,30 @@
+[metadata]
+  name = "js-cross-versions-{{ $.Env.GitReference }}"
+
+[global]
+  plan = "libp2p/ping/js"
+  case = "ping"
+  builder = "docker:generic"
+  runner = "local:docker"
+  concurrent_builds = 1
+
+{{ with (load_resource "./js.toml" ) }}
+  {{ range .groups }}
+    [[groups]]
+    id = "{{ .Id }}"
+    instances = { count = 1 }
+
+    [groups.run_config.run_args]
+      TEST_BROWSER_KIND = '{{ .Browser }}'
+  {{ end }}
+
+  {{ with .master }}
+    [[groups]]
+    id = "master"
+    instances = { count = 1 }
+
+    [groups.run_config.run_args]
+      TEST_BROWSER_KIND = '{{ .Browser }}'
+  {{ end }}
+
+{{ end }}
