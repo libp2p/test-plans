@@ -15,7 +15,8 @@ async fn main() -> Result<()> {
     let swarm = OrphanRuleWorkaround(Swarm::new(
         development_transport(local_key).await?,
         ping::Behaviour::new(
-            #[allow(deprecated)] // TODO: Fixing this deprecation requires https://github.com/libp2p/rust-libp2p/pull/3055.
+            #[allow(deprecated)]
+            // TODO: Fixing this deprecation requires https://github.com/libp2p/rust-libp2p/pull/3055.
             ping::Config::new()
                 .with_interval(Duration::from_secs(1))
                 .with_keep_alive(true),
@@ -67,9 +68,9 @@ impl PingSwarm for OrphanRuleWorkaround {
 
         while received_pings.len() < number {
             if let Some(SwarmEvent::Behaviour(ping::Event {
-                                                  peer,
-                                                  result: Ok(ping::Success::Ping { .. }),
-                                              })) = self.0.next().await
+                peer,
+                result: Ok(ping::Success::Ping { .. }),
+            })) = self.0.next().await
             {
                 received_pings.insert(peer);
             }

@@ -1,7 +1,7 @@
 use anyhow::Result;
 use async_trait::async_trait;
 use futures::StreamExt;
-use libp2pv0500::swarm::SwarmEvent;
+use libp2pv0500::swarm::{keep_alive, NetworkBehaviour, SwarmEvent};
 use libp2pv0500::*;
 use std::collections::HashSet;
 use std::time::Duration;
@@ -14,12 +14,10 @@ async fn main() -> Result<()> {
 
     let swarm = OrphanRuleWorkaround(Swarm::new(
         development_transport(local_key).await?,
-        ping::Behaviour::new(
-            #[allow(deprecated)] // TODO: Fixing this deprecation requires https://github.com/libp2p/rust-libp2p/pull/3055.
-            ping::Config::new()
-                .with_interval(Duration::from_secs(1))
-                .with_keep_alive(true),
-        ),
+        Behaviour {
+            keep_alive: keep_alive::Behaviour,
+            ping: ping::Behaviour::new(ping::Config::new().with_interval(Duration::from_secs(1))),
+        },
         local_peer_id,
     ));
 
@@ -28,7 +26,14 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-struct OrphanRuleWorkaround(Swarm<ping::Behaviour>);
+#[derive(NetworkBehaviour)]
+#[behaviour(prelude = "libp2pv0500::swarm::derive_prelude")]
+struct Behaviour {
+    keep_alive: keep_alive::Behaviour,
+    ping: ping::Behaviour,
+}
+
+struct OrphanRuleWorkaround(Swarm<Behaviour>);
 
 #[async_trait]
 impl PingSwarm for OrphanRuleWorkaround {
@@ -66,10 +71,10 @@ impl PingSwarm for OrphanRuleWorkaround {
         let mut received_pings = HashSet::with_capacity(number);
 
         while received_pings.len() < number {
-            if let Some(SwarmEvent::Behaviour(ping::Event {
-                                                  peer,
-                                                  result: Ok(ping::Success::Ping { .. }),
-                                              })) = self.0.next().await
+            if let Some(SwarmEvent::Behaviour(BehaviourEvent::Ping(ping::Event {
+                peer,
+                result: Ok(ping::Success::Ping { .. }),
+            }))) = self.0.next().await
             {
                 received_pings.insert(peer);
             }

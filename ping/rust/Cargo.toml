@@ -28,4 +28,4 @@ libp2pv0480 = { package = "libp2p", version = "0.48.0", default_features = false
 libp2pv0490 = { package = "libp2p", version = "0.49.0", features = ["websocket", "mplex", "yamux", "tcp", "async-std", "ping", "noise", "dns", "rsa"] }
 
 # Next release
-libp2pv0500 = { package = "libp2p", git = "https://github.com/libp2p/rust-libp2p", features = ["websocket", "mplex", "yamux", "tcp", "ping", "noise", "dns", "async-std", "rsa"] }
+libp2pv0500 = { package = "libp2p", git = "https://github.com/libp2p/rust-libp2p", features = ["websocket", "mplex", "yamux", "tcp", "ping", "noise", "dns", "async-std", "rsa", "macros"] }
