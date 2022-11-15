@@ -116,7 +116,7 @@
       
     [groups.build_config.build_args]
       BINARY_NAME = '{{ .BinaryName }}'
-      UPDATE_CMD = '{{ .UpdateCmd }}'
+      GIT_REV = '{{ $.Env.GitReference }}'
   {{ end }}
 
   {{ if eq $.Env.InteropTarget "rust" }}
@@ -133,7 +133,7 @@
       [groups.build_config.build_args]
         BINARY_NAME = '{{ .BinaryName }}'
         GIT_TARGET = '$.Env.GitTarget'
-        UPDATE_CMD = '{{ .UpdateCmd }} --precise {{ $.Env.GitReference }}'
+        GIT_REV = '{{ $.Env.GitReference }}'
   {{ end }}
   {{ end }}
   {{ end }}

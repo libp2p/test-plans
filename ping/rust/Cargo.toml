@@ -28,4 +28,8 @@ libp2pv0480 = { package = "libp2p", version = "0.48.0", default_features = false
 libp2pv0490 = { package = "libp2p", version = "0.49.0", features = ["websocket", "mplex", "yamux", "tcp", "async-std", "ping", "noise", "dns", "rsa"] }
 
 # Next release
-libp2pv0500 = { package = "libp2p", git = "https://github.com/libp2p/rust-libp2p", features = ["websocket", "mplex", "yamux", "tcp", "ping", "noise", "dns", "async-std", "rsa", "macros"] }
+[dependencies."libp2pv0500"] # If you update this, also update the dependency name in the Dockerfile.
+package = "libp2p"
+git = "https://github.com/libp2p/rust-libp2p"
+rev = "368705a1465c4322948d14ee46d42475c472ca1e" # If you update this, don't forget to also update the reference in the Dockerfile.
+features = ["websocket", "mplex", "yamux", "tcp", "ping", "noise", "dns", "async-std", "rsa", "macros"]
