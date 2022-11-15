@@ -17,7 +17,7 @@ ARG BINARY_NAME
 RUN cd ./plan/ && cargo build --bin="${BINARY_NAME}" # Cargo will update lockfile on changed manifest (i.e. if one of the above `sed`s patched it)
 
 FROM debian:bullseye-slim
-COPY --from=builder /usr/src/testplan/plan/target/debug/"${BINARY_NAME}" /usr/local/bin/testplan
+COPY --from=builder "/usr/src/testplan/plan/target/debug/${BINARY_NAME}" /usr/local/bin/testplan
 EXPOSE 6060
 ENV RUST_BACKTRACE=1
 ENTRYPOINT ["testplan"]

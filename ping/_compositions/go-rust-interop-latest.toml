@@ -91,8 +91,8 @@
 
       [groups.build_config.build_args]
         BINARY_NAME = '{{ .BinaryName }}'
-        GIT_TARGET = '$.Env.GitTarget'
-        GIT_REF = '$.Env.GitTarget'
+        GIT_TARGET = '{{ $.Env.GitTarget }}'
+        GIT_REF = '{{ $.Env.GitTarget }}'
   {{ end }}
   {{ end }}
   {{ end }}
