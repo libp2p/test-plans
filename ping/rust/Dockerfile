@@ -5,7 +5,7 @@ RUN apt-get update && apt-get install -y cmake protobuf-compiler
 
 ARG PLAN_PATH="./"
 COPY ./plan/${PLAN_PATH} ./plan
-RUN cd ./plan/ && cargo build
+RUN cd ./plan/ && cargo build  # Initial build acts as a cache.
 
 ARG GIT_TARGET=""
 RUN if [ ! -z "${GIT_TARGET}" ]; then \
