@@ -11,10 +11,10 @@ COPY ./ ./plan
 RUN cd ./plan/ && cargo build
 
 ARG GIT_TARGET=""
-RUN if [ ! -z "${GIT_TARGET}" ]; then sed -i "s/https:\/\/github.com\/libp2p\/rust-libp2p/${GIT_TARGET}/" ./plan/Cargo.toml; fi
+RUN if [ ! -z "${GIT_TARGET}" ]; then sed -i "s/^git.*/git = \"${GIT_TARGET}\"/" ./plan/Cargo.toml; fi
 
 ARG GIT_REF=""
-RUN if [ ! -z "${GIT_REF}" ]; then sed -i 's/^rev.*/rev = "${GIT_REF}"/' ./plan/Cargo.toml; fi
+RUN if [ ! -z "${GIT_REF}" ]; then sed -i "s/^rev.*/rev = \"${GIT_REF}\"/" ./plan/Cargo.toml; fi
 
 ARG BINARY_NAME
 RUN cd ./plan/ && cargo build --bin="${BINARY_NAME}"
