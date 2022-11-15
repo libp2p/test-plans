@@ -4,10 +4,7 @@ WORKDIR /usr/src/testplan
 RUN apt-get update && apt-get install -y cmake protobuf-compiler
 
 ARG PLAN_PATH="./"
-
-# COPY ./plan/${PLAN_PATH} ./plan
-COPY ./ ./plan
-
+COPY ./plan/${PLAN_PATH} ./plan
 RUN cd ./plan/ && cargo build
 
 ARG GIT_TARGET=""
