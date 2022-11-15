@@ -8,7 +8,7 @@ COPY ./plan/${PLAN_PATH} ./plan
 RUN cd ./plan/ && cargo build  # Initial build acts as a cache.
 
 ARG GIT_TARGET=""
-RUN if [ ! -z "${GIT_TARGET}" ]; then export ESCAPED_GIT_TARGET="$(printf '%s' "${GIT_TARGET}" | sed -e 's/[\/]/\\&/g')"; sed -i "s/^git.*/git = \"https:\/\/${ESCAPED_GIT_TARGET}\"/" ./plan/Cargo.toml; fi # URLs contain forward slashes that need to be escaped for `sed` to work correctly.
+RUN if [ ! -z "${GIT_TARGET}" ]; then sed -i "s,^git.*,git = \"https://${GIT_TARGET}\"," ./plan/Cargo.toml; fi
 
 ARG GIT_REF=""
 RUN if [ ! -z "${GIT_REF}" ]; then sed -i "s/^rev.*/rev = \"${GIT_REF}\"/" ./plan/Cargo.toml; fi
