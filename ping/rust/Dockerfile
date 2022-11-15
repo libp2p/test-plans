@@ -20,4 +20,4 @@ FROM debian:bullseye-slim
 COPY --from=builder "/usr/src/testplan/plan/target/debug/${BINARY_NAME}" /usr/local/bin/testplan
 EXPOSE 6060
 ENV RUST_BACKTRACE=1
-ENTRYPOINT ["testplan"]
+ENTRYPOINT ["/usr/local/bin/testplan"]
