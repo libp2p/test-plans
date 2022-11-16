@@ -13,9 +13,10 @@ RUN if [ ! -z "${GIT_TARGET}" ]; then sed -i "s,^git.*,git = \"https://${GIT_TAR
 ARG GIT_REF=""
 RUN if [ ! -z "${GIT_REF}" ]; then sed -i "s/^rev.*/rev = \"${GIT_REF}\"/" ./plan/Cargo.toml; fi
 
+# Build the requested binary: Cargo will update lockfile on changed manifest (i.e. if one of the above `sed`s patched it).
 ARG BINARY_NAME
 RUN cd ./plan/ \
-    && cargo build --bin=${BINARY_NAME} # Cargo will update lockfile on changed manifest (i.e. if one of the above `sed`s patched it) \
+    && cargo build --bin=${BINARY_NAME} \
     && mv /usr/src/testplan/plan/target/debug/${BINARY_NAME} /usr/src/testplan/plan/target/debug/testplan
 RUN echo ${BINARY_NAME}
 
