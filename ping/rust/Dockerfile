@@ -19,8 +19,8 @@ RUN ls -la /usr/src/testplan/plan/target/debug/
 RUN echo ${BINARY_NAME}
 
 FROM debian:bullseye-slim
-COPY --from=builder /usr/src/testplan/plan/target/debug/${BINARY_NAME} /usr/local/bin/
-RUN mv /usr/local/bin/${BINARY_NAME} /usr/local/bin/testplan
+ARG BINARY_NAME
+COPY --from=builder /usr/src/testplan/plan/target/debug/${BINARY_NAME} /usr/local/bin/${BINARY_NAME}
 EXPOSE 6060
 ENV RUST_BACKTRACE=1
 ENTRYPOINT ["testplan"]
