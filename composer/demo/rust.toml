@@ -20,17 +20,21 @@ Implementation = "rust"
 CargoFeatures = 'libp2pv0470'
 SupportedTransports = ["tcp"]
 
-[[groups]]
-Id = "rust-v0.46.0"
-Implementation = "rust"
-CargoFeatures = 'libp2pv0460'
+# [[groups]]
+# Id = "rust-v0.46.0"
+# Version = '0.46.0'
+# Implementation = "rust"
+# CargoFeatures = 'libp2pv0460'
+# SupportedTransports = ["tcp"]
 
-[[groups]]
-Id = "rust-v0.45.1"
-Implementation = "rust"
-CargoFeatures = 'libp2pv0450'
-
-[[groups]]
-Id = "rust-v0.44.0"
-Implementation = "rust"
-CargoFeatures = 'libp2pv0440'
+# [[groups]]
+# Id = "rust-v0.45.1"
+# Implementation = "rust"
+# CargoFeatures = 'libp2pv0450'
+# SupportedTransports = ["tcp"]
+#
+# [[groups]]
+# Id = "rust-v0.44.0"
+# Implementation = "rust"
+# CargoFeatures = 'libp2pv0440'
+# SupportedTransports = ["tcp"]
