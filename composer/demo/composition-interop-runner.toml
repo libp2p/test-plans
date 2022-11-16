@@ -31,7 +31,11 @@
     go_proxy_mode          = "remote"
     go_proxy_url           = "https://proxy.golang.org"
 
+    #  $x := (set . "transport" (index $combinations .transport)) }}
   {{ range ( index $combinations.runs (atoi $.Env.TestRunId) ).groups }}
     {{ $v := (set . "Artifact" (index $artifacts .Id)) }}
     {{ template "go" (withEnv $v) }}
   {{ end }}
+
+
+

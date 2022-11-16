@@ -14,6 +14,7 @@ interface InstancesFile {
 
 interface InstanceDefinition {
     Id: string;
+    SupportedTransports: string[];
     [key: string]: unknown;
 }
 
@@ -35,6 +36,7 @@ interface CombinationFile {
 
 interface RunDefinition {
     Id: string;
+    transport: string,
     test_params?: { [key: string]: (string | number) };
     groups: RunInstanceDefintion[]
 }
@@ -66,7 +68,7 @@ const load = <T>(path: string): T => {
 }
 
 const save = (path: string, content: any) => {
-    if (path.endsWith('.md')) {
+    if (path.endsWith('.md') || path.endsWith('.html')) {
         fs.writeFileSync(path, content);
     }
     else if (path.endsWith('.json')) {
@@ -94,6 +96,87 @@ function markdownTable(table: string[][]): string {
 
 
     }).join('\n')
+}
+
+function versionString(instance: InstanceDefinition): string {
+    for ( let k of ['Version', 'Selector', 'Id'] ) {
+        console.log('looking for version as',k);
+        console.log(instance,instance[k]);
+        if (instance[k]) {
+            return instance[k] as string;
+        }
+    }
+    return instance.Id;
+}
+
+function htmlTable(results: ResultFile, combinations: CombinationFile): string {
+    const runIdToInstanceIds = combinations.runs.reduce((acc, x) => {
+            return { ...acc, [x.Id]: x.groups.map(g => g.Id) }
+        }, {} as { [key: string]: string[] });
+    const instanceIdToInstance = new Map(combinations.instances.map(x => [x.Id, x]));
+    let html = `<html>
+<body>
+<table border=1>
+    <tbody>
+        <tr>
+            <td>Test case</td>
+            <td colspan="3"><strong>Source Host</strong></td>
+            <td rowspan="2">Run <p dir="auto">Test</p></td>
+            <td colspan="3"><strong>Destination Host</strong></td>
+            <td>Expected Res</td>
+        </tr>
+        <tr>
+            <td></td>
+            <td>Imp</td>
+            <td>Ver</td>
+            <td>Trans</td>
+            <td>Imp</td>
+            <td>Ver</td>
+            <td>Trans</td>
+            <td>RTT</td>
+            <td>Status</td>
+        </tr>
+`;
+    for ( const i in results ) {
+        const one_based = parseInt(i) + 1;
+        const result = results[parseInt(i)];
+        const runId = result.run_id;
+        let runParts = runId.split(':');
+        console.log('runId',runId,'->',runParts);
+        const transport = runParts.pop();
+        console.log(transport);
+        const [instanceLeft,instanceRight] = runIdToInstanceIds[runId];
+        const l = instanceIdToInstance.get(instanceLeft );
+        const r = instanceIdToInstance.get(instanceRight);
+        if ( l && r ) {
+            const lv = versionString(l);
+            console.log('lv=',lv);
+            const rv = versionString(r);
+            console.log('rv=',rv);
+            html += `
+            <tr>
+                <td>${one_based}</td>
+                <td>${l.Implementation}</td>
+                <td>${lv}</td>
+                <td>${transport}</td>
+                <td>X</td>
+                <td>${r.Implementation}</td>
+                <td>${rv}</td>
+                <td>${transport}</td>
+                <td>rtt</td>
+                <td>${result.status}</td>
+            </tr>
+            `;
+        } else {
+            html += '<tr><td colspan=9>error</td></tr>';
+        }
+    }
+    html += `
+    </tbody>
+</table>
+</body>
+</html>`;
+    return html;
 }
 
 const listAllVersions = (content: InstancesFile): InstanceDefinition[] => {
@@ -147,34 +230,43 @@ const combinations = (versions: InstanceDefinition[]): RunDefinition[] => {
             const p1 = versions[i];
             const p2 = versions[j];
 
-            const run: RunDefinition = {
-                Id: `${p1.Id} x ${p2.Id}`,
-                groups: [
-                    {
-                        Id: p1.Id,
-                        instances: { count: 1 }
-                    },
-                    {
-                        Id: p2.Id,
-                        instances: { count: 1 }
-                    }
-                ]
-            }
+            for (let transport of p1.SupportedTransports ) {
+                if ( !p2.SupportedTransports.includes(transport) ) {
+                    continue;
+                }
+                const run: RunDefinition = {
+                    Id: `${p1.Id} x ${p2.Id} : ${transport}`,
+                    transport: transport,
+                    groups: [
+                        {
+                            Id: p1.Id,
+                            instances: { count: 1 },
+                            test_params: {transport: transport},
+                        },
+                        {
+                            Id: p2.Id,
+                            instances: { count: 1 },
+                            test_params: {transport: transport},
+                        }
+                    ]
+                }
 
-            result.push(run);
+                result.push(run);
+            }
         }
     }
     return result;
 }
 
 function generateTable(results: ResultFile, combinations: CombinationFile): string[][] {
+    const instanceId_Transport_combos = combinations.instances.map(x => x.SupportedTransports.map(t => `${x.Id}/${t}`)).flat()
     const instanceIds = combinations.instances.map(x => x.Id)
 
     const runIdToInstances = combinations.runs.reduce((acc, x) => {
         return { ...acc, [x.Id]: x.groups.map(g => g.Id) }
     }, {} as { [key: string]: string[] });
 
-    const header = [" ", ...instanceIds];
+    const header = [" ", ...instanceId_Transport_combos];
     const table = [header, ...instanceIds.map(instanceId => {
         const row = instanceIds.map(otherInstanceId => {
             return ':white_circle:';
@@ -188,7 +280,7 @@ function generateTable(results: ResultFile, combinations: CombinationFile): stri
 
         const [instance1, instance2] = instances;
         const index = instanceIds.indexOf(instance1);
-        const otherIndex = instanceIds.indexOf(instance2);
+        const otherIndex = instanceId_Transport_combos.indexOf(instance2);
 
         const url = encodeURIComponent(runId);
 
@@ -234,8 +326,9 @@ const main = async () => {
         const results = load<ResultFile>(inputPath);
         const combinations = load<CombinationFile>(combinationsPath);
 
-        const table = generateTable(results, combinations)
-        const content = markdownTable(table);
+        // const table = generateTable(results, combinations)
+        // const content = markdownTable(table);
+        const content = htmlTable(results, combinations);
         save(outputPath, content);
     }
     else if (command === 'extract-artifacts') {
