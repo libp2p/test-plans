@@ -15,6 +15,8 @@ RUN if [ ! -z "${GIT_REF}" ]; then sed -i "s/^rev.*/rev = \"${GIT_REF}\"/" ./pla
 
 ARG BINARY_NAME
 RUN cd ./plan/ && cargo build --bin=${BINARY_NAME} # Cargo will update lockfile on changed manifest (i.e. if one of the above `sed`s patched it)
+RUN ls /usr/src/testplan/plan/target
+RUN echo ${BINARY_NAME}
 
 FROM debian:bullseye-slim
 COPY --from=builder /usr/src/testplan/plan/target/debug/${BINARY_NAME} /usr/local/bin/testplan
