@@ -4,6 +4,7 @@ Version = '0.48.0'
 IsMaster = true
 Implementation = "rust"
 CargoFeatures = 'libp2pmaster'
+SupportedTransports = ["tcp"]
 
 # [custom]
 # Id = "rust-custom"
@@ -14,8 +15,10 @@ CargoFeatures = 'libp2pmaster'
 
 [[groups]]
 Id = "rust-v0.47.0"
+Version = '0.47.0'
 Implementation = "rust"
 CargoFeatures = 'libp2pv0470'
+SupportedTransports = ["tcp"]
 
 [[groups]]
 Id = "rust-v0.46.0"

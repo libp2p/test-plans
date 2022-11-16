@@ -100,8 +100,8 @@ function markdownTable(table: string[][]): string {
 
 function versionString(instance: InstanceDefinition): string {
     for ( let k of ['Version', 'Selector', 'Id'] ) {
-        console.log('looking for version as',k);
-        console.log(instance,instance[k]);
+        // console.log('looking for version as',k);
+        // console.log(instance,instance[k]);
         if (instance[k]) {
             return instance[k] as string;
         }
