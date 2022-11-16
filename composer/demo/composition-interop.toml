@@ -6,6 +6,7 @@
 
     [groups.run.test_params]
       iterations = "1"
+      transport = "{{ .transport }}"
 
     [groups.build]
         selectors = ['{{ .Selector }}']
@@ -50,6 +51,7 @@ RUN cd ${PLAN_DIR} && \
 
     [groups.run.test_params]
       iterations = "1"
+      transport = "{{ .transport }}"
 
     [groups.build_config]
         path = "./rust/"

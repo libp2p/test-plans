@@ -3,6 +3,7 @@
     id = "{{ .Id }}"
     instances = { count = 1 }
     builder = "docker:go"
+    transport = "{{ .transport }}"
 
     {{ with .Artifact }}
     [groups.run]
@@ -11,6 +12,10 @@
 
     [groups.run.test_params]
       iterations = "1"
+      {{with .test_params }}
+      transport = "{{ .transport }}"
+      {{ end }}
+
 {{ end }}
 
 {{ $combinations := (load_resource "./combinations.toml") }}
@@ -34,8 +39,6 @@
     #  $x := (set . "transport" (index $combinations .transport)) }}
   {{ range ( index $combinations.runs (atoi $.Env.TestRunId) ).groups }}
     {{ $v := (set . "Artifact" (index $artifacts .Id)) }}
-    {{ template "go" (withEnv $v) }}
+    {{ template "go" (withEnv .) }}
   {{ end }}
-
-
 

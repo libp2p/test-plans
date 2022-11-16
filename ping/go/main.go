@@ -69,11 +69,12 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 		secureChannel = runenv.StringParam("secure_channel")
 		maxLatencyMs  = runenv.IntParam("max_latency_ms")
 		iterations    = runenv.IntParam("iterations")
+		transport     = runenv.StringParam("transport")
 	)
 
 	// We can record messages anytime; RecordMessage supports fmt-style
 	// formatting strings.
-	runenv.RecordMessage("started test instance; params: secure_channel=%s, max_latency_ms=%d, iterations=%d", secureChannel, maxLatencyMs, iterations)
+	runenv.RecordMessage("started test instance; params: secure_channel=%s, max_latency_ms=%d, iterations=%d, transport=%s",  secureChannel, maxLatencyMs, iterations, transport)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Minute)
 	defer cancel()
@@ -111,8 +112,14 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	// obtain it from the NetClient.
 	ip := initCtx.NetClient.MustGetDataNetworkIP()
 
+	listenPattern := "/ip4/%s/tcp/0"
+	switch transport {
+	case "quic":
+		listenPattern = "/ip4/%s/udp/0/quic"
+	}
+	runenv.RecordMessage("my listen pattern: %v", listenPattern)
 	// ☎️  Let's construct the libp2p node.
-	listenAddr := fmt.Sprintf("/ip4/%s/tcp/0", ip)
+	listenAddr := fmt.Sprintf(listenPattern, ip)
 	host, err := compat.NewLibp2(ctx,
 		secureChannel,
 		libp2p.ListenAddrStrings(listenAddr),

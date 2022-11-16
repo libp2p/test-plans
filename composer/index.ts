@@ -80,6 +80,21 @@ const save = (path: string, content: any) => {
     }
 }
 
+function crossMulTransport(base_id: InstanceDefinition): InstanceDefinition[] {
+    const oned : InstanceDefinition[] = base_id.SupportedTransports.map((t: String) => {
+            return {
+                ...base_id,
+                'Id': `${base_id.Id}.${t}`,
+                'transport': t,
+            };
+        }
+    );
+    return oned;
+}
+function crossMulTransports(base_ids: InstanceDefinition[]): InstanceDefinition[] {
+    return base_ids.map(crossMulTransport).flat();
+}
+
 function markdownTable(table: string[][]): string {
     return table.map((row, id) => {
         const r = '| ' + row.map(x => {
@@ -143,7 +158,11 @@ function htmlTable(results: ResultFile, combinations: CombinationFile): string {
         const runId = result.run_id;
         let runParts = runId.split(':');
         console.log('runId',runId,'->',runParts);
-        const transport = runParts.pop();
+        let transport = runParts.pop();
+        if (!transport) {
+            continue;
+        }
+        transport = transport.trim();
         console.log(transport);
         const [instanceLeft,instanceRight] = runIdToInstanceIds[runId];
         const l = instanceIdToInstance.get(instanceLeft );
@@ -239,12 +258,12 @@ const combinations = (versions: InstanceDefinition[]): RunDefinition[] => {
                     transport: transport,
                     groups: [
                         {
-                            Id: p1.Id,
+                            Id: `${p1.Id}.${transport}`,
                             instances: { count: 1 },
                             test_params: {transport: transport},
                         },
                         {
-                            Id: p2.Id,
+                            Id: `${p2.Id}.${transport}`,
                             instances: { count: 1 },
                             test_params: {transport: transport},
                         }
@@ -294,6 +313,7 @@ function generateTable(results: ResultFile, combinations: CombinationFile): stri
     return table;
 }
 
+
 const main = async () => {
     const args: string[] = process.argv.slice(2);
     const [command, ...rest] = args;
@@ -312,7 +332,7 @@ const main = async () => {
 
         const runs = combinations(allVersions);
 
-        const content: CombinationFile = { runs, instances: allVersions };
+        const content: CombinationFile = { runs, instances: crossMulTransports(allVersions) };
         save(outputPath, content);
 
         console.log(`Loaded ${allVersions.length} versions and generated ${runs.length} runs saved to ${outputPath}`);
