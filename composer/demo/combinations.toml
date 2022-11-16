@@ -1,1066 +1,211 @@
 [[runs]]
-Id = "rust-master x rust-v0.47.0"
+Id = "rust-master x rust-v0.47.0 : tcp"
+transport = "tcp"
 
   [[runs.groups]]
-  Id = "rust-master"
+  Id = "rust-master.tcp"
 
     [runs.groups.instances]
     count = 1
 
-  [[runs.groups]]
-  Id = "rust-v0.47.0"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "rust-master x rust-v0.46.0"
-
-  [[runs.groups]]
-  Id = "rust-master"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "rust-v0.46.0"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "rust-master x rust-v0.45.1"
-
-  [[runs.groups]]
-  Id = "rust-master"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "rust-v0.45.1"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "rust-master x rust-v0.44.0"
-
-  [[runs.groups]]
-  Id = "rust-master"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "rust-v0.44.0"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "rust-master x go-master"
-
-  [[runs.groups]]
-  Id = "rust-master"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "go-master"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "rust-master x go-v0.22"
-
-  [[runs.groups]]
-  Id = "rust-master"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "go-v0.22"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "rust-master x go-v0.21"
-
-  [[runs.groups]]
-  Id = "rust-master"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "go-v0.21"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "rust-master x go-v0.20"
-
-  [[runs.groups]]
-  Id = "rust-master"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "go-v0.20"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "rust-master x go-v0.19"
-
-  [[runs.groups]]
-  Id = "rust-master"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "go-v0.19"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "rust-master x go-v0.17"
-
-  [[runs.groups]]
-  Id = "rust-master"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "go-v0.17"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "rust-master x go-v0.11"
-
-  [[runs.groups]]
-  Id = "rust-master"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "go-v0.11"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "rust-v0.47.0 x rust-v0.46.0"
-
-  [[runs.groups]]
-  Id = "rust-v0.47.0"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "rust-v0.46.0"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "rust-v0.47.0 x rust-v0.45.1"
-
-  [[runs.groups]]
-  Id = "rust-v0.47.0"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "rust-v0.45.1"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "rust-v0.47.0 x rust-v0.44.0"
-
-  [[runs.groups]]
-  Id = "rust-v0.47.0"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "rust-v0.44.0"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "rust-v0.47.0 x go-master"
-
-  [[runs.groups]]
-  Id = "rust-v0.47.0"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "go-master"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "rust-v0.47.0 x go-v0.22"
-
-  [[runs.groups]]
-  Id = "rust-v0.47.0"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "go-v0.22"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "rust-v0.47.0 x go-v0.21"
-
-  [[runs.groups]]
-  Id = "rust-v0.47.0"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "go-v0.21"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "rust-v0.47.0 x go-v0.20"
-
-  [[runs.groups]]
-  Id = "rust-v0.47.0"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "go-v0.20"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "rust-v0.47.0 x go-v0.19"
-
-  [[runs.groups]]
-  Id = "rust-v0.47.0"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "go-v0.19"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "rust-v0.47.0 x go-v0.17"
-
-  [[runs.groups]]
-  Id = "rust-v0.47.0"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "go-v0.17"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "rust-v0.47.0 x go-v0.11"
-
-  [[runs.groups]]
-  Id = "rust-v0.47.0"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "go-v0.11"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "rust-v0.46.0 x rust-v0.45.1"
-
-  [[runs.groups]]
-  Id = "rust-v0.46.0"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "rust-v0.45.1"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "rust-v0.46.0 x rust-v0.44.0"
-
-  [[runs.groups]]
-  Id = "rust-v0.46.0"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "rust-v0.44.0"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "rust-v0.46.0 x go-master"
-
-  [[runs.groups]]
-  Id = "rust-v0.46.0"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "go-master"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "rust-v0.46.0 x go-v0.22"
-
-  [[runs.groups]]
-  Id = "rust-v0.46.0"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "go-v0.22"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "rust-v0.46.0 x go-v0.21"
-
-  [[runs.groups]]
-  Id = "rust-v0.46.0"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "go-v0.21"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "rust-v0.46.0 x go-v0.20"
-
-  [[runs.groups]]
-  Id = "rust-v0.46.0"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "go-v0.20"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "rust-v0.46.0 x go-v0.19"
-
-  [[runs.groups]]
-  Id = "rust-v0.46.0"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "go-v0.19"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "rust-v0.46.0 x go-v0.17"
-
-  [[runs.groups]]
-  Id = "rust-v0.46.0"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "go-v0.17"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "rust-v0.46.0 x go-v0.11"
-
-  [[runs.groups]]
-  Id = "rust-v0.46.0"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "go-v0.11"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "rust-v0.45.1 x rust-v0.44.0"
-
-  [[runs.groups]]
-  Id = "rust-v0.45.1"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "rust-v0.44.0"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "rust-v0.45.1 x go-master"
-
-  [[runs.groups]]
-  Id = "rust-v0.45.1"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "go-master"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "rust-v0.45.1 x go-v0.22"
-
-  [[runs.groups]]
-  Id = "rust-v0.45.1"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "go-v0.22"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "rust-v0.45.1 x go-v0.21"
-
-  [[runs.groups]]
-  Id = "rust-v0.45.1"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "go-v0.21"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "rust-v0.45.1 x go-v0.20"
-
-  [[runs.groups]]
-  Id = "rust-v0.45.1"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "go-v0.20"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "rust-v0.45.1 x go-v0.19"
-
-  [[runs.groups]]
-  Id = "rust-v0.45.1"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "go-v0.19"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "rust-v0.45.1 x go-v0.17"
-
-  [[runs.groups]]
-  Id = "rust-v0.45.1"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "go-v0.17"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "rust-v0.45.1 x go-v0.11"
-
-  [[runs.groups]]
-  Id = "rust-v0.45.1"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "go-v0.11"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "rust-v0.44.0 x go-master"
-
-  [[runs.groups]]
-  Id = "rust-v0.44.0"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "go-master"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "rust-v0.44.0 x go-v0.22"
-
-  [[runs.groups]]
-  Id = "rust-v0.44.0"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "go-v0.22"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "rust-v0.44.0 x go-v0.21"
-
-  [[runs.groups]]
-  Id = "rust-v0.44.0"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "go-v0.21"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "rust-v0.44.0 x go-v0.20"
-
-  [[runs.groups]]
-  Id = "rust-v0.44.0"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "go-v0.20"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "rust-v0.44.0 x go-v0.19"
-
-  [[runs.groups]]
-  Id = "rust-v0.44.0"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "go-v0.19"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "rust-v0.44.0 x go-v0.17"
-
-  [[runs.groups]]
-  Id = "rust-v0.44.0"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "go-v0.17"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "rust-v0.44.0 x go-v0.11"
-
-  [[runs.groups]]
-  Id = "rust-v0.44.0"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "go-v0.11"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "go-master x go-v0.22"
-
-  [[runs.groups]]
-  Id = "go-master"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "go-v0.22"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "go-master x go-v0.21"
-
-  [[runs.groups]]
-  Id = "go-master"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "go-v0.21"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "go-master x go-v0.20"
-
-  [[runs.groups]]
-  Id = "go-master"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "go-v0.20"
+    [runs.groups.test_params]
+    transport = "tcp"
 
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "go-master x go-v0.19"
-
-  [[runs.groups]]
-  Id = "go-master"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "go-v0.19"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "go-master x go-v0.17"
-
-  [[runs.groups]]
-  Id = "go-master"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "go-v0.17"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "go-master x go-v0.11"
-
-  [[runs.groups]]
-  Id = "go-master"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "go-v0.11"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "go-v0.22 x go-v0.21"
-
-  [[runs.groups]]
-  Id = "go-v0.22"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "go-v0.21"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "go-v0.22 x go-v0.20"
-
-  [[runs.groups]]
-  Id = "go-v0.22"
-
-    [runs.groups.instances]
-    count = 1
-
-  [[runs.groups]]
-  Id = "go-v0.20"
-
-    [runs.groups.instances]
-    count = 1
-
-[[runs]]
-Id = "go-v0.22 x go-v0.19"
-
   [[runs.groups]]
-  Id = "go-v0.22"
+  Id = "rust-v0.47.0.tcp"
 
     [runs.groups.instances]
     count = 1
-
-  [[runs.groups]]
-  Id = "go-v0.19"
 
-    [runs.groups.instances]
-    count = 1
+    [runs.groups.test_params]
+    transport = "tcp"
 
 [[runs]]
-Id = "go-v0.22 x go-v0.17"
-
-  [[runs.groups]]
-  Id = "go-v0.22"
-
-    [runs.groups.instances]
-    count = 1
+Id = "rust-master x go-master : tcp"
+transport = "tcp"
 
   [[runs.groups]]
-  Id = "go-v0.17"
+  Id = "rust-master.tcp"
 
     [runs.groups.instances]
     count = 1
 
-[[runs]]
-Id = "go-v0.22 x go-v0.11"
+    [runs.groups.test_params]
+    transport = "tcp"
 
   [[runs.groups]]
-  Id = "go-v0.22"
+  Id = "go-master.tcp"
 
     [runs.groups.instances]
     count = 1
-
-  [[runs.groups]]
-  Id = "go-v0.11"
 
-    [runs.groups.instances]
-    count = 1
+    [runs.groups.test_params]
+    transport = "tcp"
 
 [[runs]]
-Id = "go-v0.21 x go-v0.20"
-
-  [[runs.groups]]
-  Id = "go-v0.21"
-
-    [runs.groups.instances]
-    count = 1
+Id = "rust-master x go-v0.22 : tcp"
+transport = "tcp"
 
   [[runs.groups]]
-  Id = "go-v0.20"
+  Id = "rust-master.tcp"
 
     [runs.groups.instances]
     count = 1
 
-[[runs]]
-Id = "go-v0.21 x go-v0.19"
+    [runs.groups.test_params]
+    transport = "tcp"
 
   [[runs.groups]]
-  Id = "go-v0.21"
+  Id = "go-v0.22.tcp"
 
     [runs.groups.instances]
     count = 1
-
-  [[runs.groups]]
-  Id = "go-v0.19"
 
-    [runs.groups.instances]
-    count = 1
+    [runs.groups.test_params]
+    transport = "tcp"
 
 [[runs]]
-Id = "go-v0.21 x go-v0.17"
-
-  [[runs.groups]]
-  Id = "go-v0.21"
-
-    [runs.groups.instances]
-    count = 1
+Id = "rust-v0.47.0 x go-master : tcp"
+transport = "tcp"
 
   [[runs.groups]]
-  Id = "go-v0.17"
+  Id = "rust-v0.47.0.tcp"
 
     [runs.groups.instances]
     count = 1
 
-[[runs]]
-Id = "go-v0.21 x go-v0.11"
+    [runs.groups.test_params]
+    transport = "tcp"
 
   [[runs.groups]]
-  Id = "go-v0.21"
+  Id = "go-master.tcp"
 
     [runs.groups.instances]
     count = 1
-
-  [[runs.groups]]
-  Id = "go-v0.11"
 
-    [runs.groups.instances]
-    count = 1
+    [runs.groups.test_params]
+    transport = "tcp"
 
 [[runs]]
-Id = "go-v0.20 x go-v0.19"
-
-  [[runs.groups]]
-  Id = "go-v0.20"
-
-    [runs.groups.instances]
-    count = 1
+Id = "rust-v0.47.0 x go-v0.22 : tcp"
+transport = "tcp"
 
   [[runs.groups]]
-  Id = "go-v0.19"
+  Id = "rust-v0.47.0.tcp"
 
     [runs.groups.instances]
     count = 1
 
-[[runs]]
-Id = "go-v0.20 x go-v0.17"
+    [runs.groups.test_params]
+    transport = "tcp"
 
   [[runs.groups]]
-  Id = "go-v0.20"
+  Id = "go-v0.22.tcp"
 
     [runs.groups.instances]
     count = 1
-
-  [[runs.groups]]
-  Id = "go-v0.17"
 
-    [runs.groups.instances]
-    count = 1
+    [runs.groups.test_params]
+    transport = "tcp"
 
 [[runs]]
-Id = "go-v0.20 x go-v0.11"
-
-  [[runs.groups]]
-  Id = "go-v0.20"
-
-    [runs.groups.instances]
-    count = 1
+Id = "go-master x go-v0.22 : tcp"
+transport = "tcp"
 
   [[runs.groups]]
-  Id = "go-v0.11"
+  Id = "go-master.tcp"
 
     [runs.groups.instances]
     count = 1
 
-[[runs]]
-Id = "go-v0.19 x go-v0.17"
+    [runs.groups.test_params]
+    transport = "tcp"
 
   [[runs.groups]]
-  Id = "go-v0.19"
+  Id = "go-v0.22.tcp"
 
     [runs.groups.instances]
     count = 1
-
-  [[runs.groups]]
-  Id = "go-v0.17"
 
-    [runs.groups.instances]
-    count = 1
+    [runs.groups.test_params]
+    transport = "tcp"
 
 [[runs]]
-Id = "go-v0.19 x go-v0.11"
-
-  [[runs.groups]]
-  Id = "go-v0.19"
-
-    [runs.groups.instances]
-    count = 1
+Id = "go-ckousik x anotherwebrtc : webrtc"
+transport = "webrtc"
 
   [[runs.groups]]
-  Id = "go-v0.11"
+  Id = "go-ckousik.webrtc"
 
     [runs.groups.instances]
     count = 1
 
-[[runs]]
-Id = "go-v0.17 x go-v0.11"
+    [runs.groups.test_params]
+    transport = "webrtc"
 
   [[runs.groups]]
-  Id = "go-v0.17"
+  Id = "anotherwebrtc.webrtc"
 
     [runs.groups.instances]
     count = 1
-
-  [[runs.groups]]
-  Id = "go-v0.11"
 
-    [runs.groups.instances]
-    count = 1
+    [runs.groups.test_params]
+    transport = "webrtc"
 
 [[instances]]
-Id = "rust-master"
+Id = "rust-master.tcp"
 Version = "0.48.0"
 IsMaster = true
 Implementation = "rust"
 CargoFeatures = "libp2pmaster"
+SupportedTransports = [ "tcp" ]
+transport = "tcp"
 
 [[instances]]
-Id = "rust-v0.47.0"
+Id = "rust-v0.47.0.tcp"
+Version = "0.47.0"
 Implementation = "rust"
 CargoFeatures = "libp2pv0470"
+SupportedTransports = [ "tcp" ]
+transport = "tcp"
 
 [[instances]]
-Id = "rust-v0.46.0"
-Implementation = "rust"
-CargoFeatures = "libp2pv0460"
-
-[[instances]]
-Id = "rust-v0.45.1"
-Implementation = "rust"
-CargoFeatures = "libp2pv0450"
-
-[[instances]]
-Id = "rust-v0.44.0"
-Implementation = "rust"
-CargoFeatures = "libp2pv0440"
-
-[[instances]]
-Id = "go-master"
+Id = "go-master.tcp"
 GoVersion = "1.18"
 IsMaster = true
 Modfile = "go.v0.22.mod"
 Implementation = "go"
 Selector = "v0.22"
+SupportedTransports = [ "tcp" ]
+transport = "tcp"
 
 [[instances]]
-Id = "go-v0.22"
+Id = "go-v0.22.tcp"
 GoVersion = "1.18"
 Modfile = "go.v0.22.mod"
 Implementation = "go"
 Selector = "v0.22"
+SupportedTransports = [ "tcp" ]
+transport = "tcp"
 
 [[instances]]
-Id = "go-v0.21"
+Id = "go-ckousik.webrtc"
 GoVersion = "1.18"
-Modfile = "go.v0.21.mod"
+Modfile = "go.ckousik.mod"
 Implementation = "go"
-Selector = "v0.21"
+Repository = "https://github.com/ckousik/go-libp2p.git"
+Branch = "ckousik/webrtc"
+Selector = "ckousik"
+SupportedTransports = [ "webrtc" ]
+transport = "webrtc"
 
 [[instances]]
-Id = "go-v0.20"
+Id = "anotherwebrtc.webrtc"
 GoVersion = "1.18"
-Modfile = "go.v0.20.mod"
+Modfile = "go.ckousik.mod"
 Implementation = "go"
-Selector = "v0.20"
-
-[[instances]]
-Id = "go-v0.19"
-GoVersion = "1.17"
-Modfile = "go.v0.19.mod"
-Implementation = "go"
-Selector = "v0.19"
-
-[[instances]]
-Id = "go-v0.17"
-GoVersion = "1.16"
-Modfile = "go.v0.17.mod"
-Implementation = "go"
-Selector = "v0.17"
-
-[[instances]]
-Id = "go-v0.11"
-GoVersion = "1.14"
-Modfile = "go.v0.11.mod"
-Implementation = "go"
-Selector = "v0.11"
+Repository = "https://github.com/ckousik/go-libp2p.git"
+Branch = "ckousik/webrtc"
+Selector = "ckousik"
+SupportedTransports = [ "webrtc" ]
+transport = "webrtc"
