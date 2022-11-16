@@ -5,6 +5,7 @@ IsMaster = true
 Modfile = "go.v0.22.mod"
 Implementation = "go"
 Selector = 'v0.22'
+SupportedTransports = ["tcp", "quic"]
 
 # [custom]
 # Id = "go-custom"
@@ -13,6 +14,7 @@ Selector = 'v0.22'
 # Modfile = "go.v0.22.mod"
 # Implementation = "go"
 # Selector = 'v0.22'
+# SupportedTransports = ["tcp", "quic"]
 
 [[groups]]
 Id = "go-v0.22"
@@ -20,38 +22,55 @@ GoVersion = '1.18'
 Modfile = "go.v0.22.mod"
 Implementation = "go"
 Selector = 'v0.22'
+SupportedTransports = ["tcp", "quic"]
 
 [[groups]]
-Id = "go-v0.21"
+Id = "go-ckousik"
 GoVersion = '1.18'
-Modfile = "go.v0.21.mod"
+Modfile = "go.ckousik.mod"
 Implementation = "go"
-Selector = 'v0.21'
+Repository = 'https://github.com/ckousik/go-libp2p.git'
+Branch = 'ckousik/webrtc'
+Selector = 'ckousik'
+SupportedTransports = ["tcp", "quic", "webrtc"]
 
-[[groups]]
-Id = "go-v0.20"
-GoVersion = '1.18'
-Modfile = "go.v0.20.mod"
-Implementation = "go"
-Selector = 'v0.20'
+# [[groups]]
+# Id = "go-v0.21"
+# GoVersion = '1.18'
+# Modfile = "go.v0.21.mod"
+# Implementation = "go"
+# Selector = 'v0.21'
+# SupportedTransports = ["tcp", "quic"]
 
-[[groups]]
-Id = "go-v0.19"
-GoVersion = '1.17'
-Modfile = "go.v0.19.mod"
-Implementation = "go"
-Selector = 'v0.19'
-
-[[groups]]
-Id = "go-v0.17"
-GoVersion = '1.16'
-Modfile = "go.v0.17.mod"
-Implementation = "go"
-Selector = 'v0.17'
-
-[[groups]]
-Id = "go-v0.11"
-GoVersion = '1.14'
-Modfile = "go.v0.11.mod"
-Implementation = "go"
-Selector = 'v0.11'
+# [[groups]]
+# Id = "go-v0.20"
+# GoVersion = '1.18'
+# Modfile = "go.v0.20.mod"
+# Implementation = "go"
+# Selector = 'v0.20'
+# SupportedTransports = ["tcp", "quic"]
+#
+# [[groups]]
+# Id = "go-v0.19"
+# GoVersion = '1.17'
+# Modfile = "go.v0.19.mod"
+# Implementation = "go"
+# Selector = 'v0.19'
+# SupportedTransports = ["tcp", "quic"]
+#
+#
+# [[groups]]
+# Id = "go-v0.17"
+# GoVersion = '1.16'
+# Modfile = "go.v0.17.mod"
+# Implementation = "go"
+# Selector = 'v0.17'
+# SupportedTransports = ["tcp", "quic"]
+#
+# [[groups]]
+# Id = "go-v0.11"
+# GoVersion = '1.14'
+# Modfile = "go.v0.11.mod"
+# Implementation = "go"
+# Selector = 'v0.11'
+# SupportedTransports = ["tcp", "quic"]

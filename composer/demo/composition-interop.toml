@@ -31,15 +31,28 @@
             {{ end }}
         {{ end }}
 
-        {{ if (or .IsCustom .IsMaster) }}
         [groups.build_config.dockerfile_extensions]
+        {{ if (or .IsCustom .IsMaster) }}
           # deal with dependency changes in master until we create the new vx.y.z instance
           pre_build = """
-RUN cd ${PLAN_DIR} && \
-    go mod download github.com/libp2p/go-libp2p && \
-    go mod tidy -compat={{ .GoVersion }}
-        """
+              RUN echo 'Selector={{ .Selector }} IsCustom={{ .IsCustom }} IsMaster={{ .IsMaster }} Repository={{ .Repository }}'
+              RUN for g in /plan/go/compat/libp2p.*.go ; do if [ "${g}" = '/plan/go/compat/libp2p.{{ .Selector }}.go' ] ; then echo We have our selector. Good. ; else rm -v "${g}" || exit 42 ; fi ; done
+              RUN cd ${PLAN_DIR} && go mod download github.com/libp2p/go-libp2p
+              RUN cd ${PLAN_DIR} && go mod tidy -compat={{ .GoVersion }}
+            """
         {{ end }}
+          {{ if .Repository }}
+            pre_mod_download = '''
+                RUN git clone --single-branch --branch '{{ .Branch }}' '{{ .Repository }}' /code/go-libp2p/
+                RUN cd /code/go-libp2p/ && git checkout '{{ .Branch }}' && git tag v1.2.7 && git branch master
+              '''
+          pre_build = """
+              RUN echo 'Selector={{ .Selector }} IsCustom={{ .IsCustom }} IsMaster={{ .IsMaster }} Repository={{ .Repository }}'
+              RUN if [ '{{ .Repository }}' = '<no value>' ] ; then echo using standard go build stuff with normal repo ; else cd ${PLAN_DIR} && go mod edit -replace github.com/libp2p/go-libp2p=/code/go-libp2p/ ; fi
+              RUN for g in /plan/go/compat/libp2p.*.go ; do if [ "${g}" = '/plan/go/compat/libp2p.{{ .Selector }}.go' ] ; then echo We have our selector. Good. ; else rm -v "${g}" || exit 42 ; fi ; done
+              RUN cd ${PLAN_DIR} && go mod tidy -compat={{ .GoVersion }}
+            """
+          {{ end }}
 {{ end }}
 
 
