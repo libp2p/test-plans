@@ -21,7 +21,7 @@ RUN echo ${BINARY_NAME}
 FROM debian:bullseye-slim
 COPY --from=builder /usr/src/testplan/plan/target/debug/${BINARY_NAME} /usr/local/bin/testplan
 RUN chmod +x /usr/local/bin/testplan
-RUN ls- la /usr/local/bin/
+RUN ls -la /usr/local/bin/
 EXPOSE 6060
 ENV RUST_BACKTRACE=1
 ENTRYPOINT ["/usr/local/bin/testplan"]
