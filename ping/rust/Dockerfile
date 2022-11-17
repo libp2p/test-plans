@@ -17,11 +17,10 @@ RUN if [ ! -z "${GIT_REF}" ]; then sed -i "s/^rev.*/rev = \"${GIT_REF}\"/" ./pla
 ARG BINARY_NAME
 RUN cd ./plan/ \
     && cargo build --bin=${BINARY_NAME} \
-    && mv /usr/src/testplan/plan/target/debug/${BINARY_NAME} /usr/src/testplan/plan/target/debug/testplan
-RUN echo ${BINARY_NAME}
+    && mv /usr/src/testplan/plan/target/debug/${BINARY_NAME} /usr/local/bin/testplan
 
 FROM debian:bullseye-slim
-COPY --from=builder /usr/src/testplan/plan/target/debug/testplan /usr/local/bin/testplan
+COPY --from=builder /usr/local/bin/testplan /usr/local/bin/testplan
 EXPOSE 6060
 ENV RUST_BACKTRACE=1
 ENTRYPOINT ["testplan"]
