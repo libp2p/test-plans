@@ -1,29 +1,29 @@
 [master]
-CargoFeatures = 'libp2pmaster'
+BinaryName = 'testplan_0500'
 
 [custom]
-CargoFeatures = 'libp2pmaster'
+BinaryName = 'testplan_0500'
 
 [[groups]]
 Id = '0.49.0'
-CargoFeatures = 'libp2pv0490'
+BinaryName = 'testplan_0490'
 
 [[groups]]
 Id = '0.48.0'
-CargoFeatures = 'libp2pv0480'
+BinaryName = 'testplan_0480'
 
 [[groups]]
 Id = "v0.47.0"
-CargoFeatures = 'libp2pv0470'
+BinaryName = 'testplan_0470'
 
 [[groups]]
 Id = "v0.46.0"
-CargoFeatures = 'libp2pv0460'
+BinaryName = 'testplan_0460'
 
 [[groups]]
 Id = "v0.45.1"
-CargoFeatures = 'libp2pv0450'
+BinaryName = 'testplan_0450'
 
 [[groups]]
 Id = "v0.44.0"
-CargoFeatures = 'libp2pv0440'
+BinaryName = 'testplan_0440'
