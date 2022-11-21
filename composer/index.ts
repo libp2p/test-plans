@@ -1,10 +1,9 @@
+import toml from '@iarna/toml';
+import * as csv from 'csv-parse/sync';
 import fs from 'fs';
 import process from 'process';
-import toml from '@iarna/toml';
-import { spawn } from 'child_process';
-import * as csv from 'csv-parse/sync';
 
-type ResultFile = [{ run_index: number, run_id: string, status: string }]
+type ResultFile = [{ task_id: string, run_id: string, outcome: string, error: string }]
 
 interface InstancesFile {
     custom?: InstanceDefinition
@@ -58,7 +57,7 @@ const load = <T>(path: string): T => {
         return toml.parse(fs.readFileSync(path, 'utf8')) as any;
     } else if (path.endsWith('.csv')) {
         return csv.parse(fs.readFileSync(path, 'utf8'), {
-            columns: true, skip_empty_lines: true, delimiter: ';'
+            columns: true, skip_empty_lines: true, delimiter: ','
         }) as any;
     } else {
         throw new Error(`Unknown file type: ${path}`);
@@ -100,44 +99,6 @@ const listAllVersions = (content: InstancesFile): InstanceDefinition[] => {
     return [content.custom, content.master, ...(content.groups || [])].filter(is);
 }
 
-const callTestground = (testRunId: number, raw_args: string[]): Promise<void> => {
-    const args = raw_args.map(x => {
-        // replace the string __TEST_RUN_ID__ in x with the actual test run id.
-        return x.replace('__TEST_RUN_ID__', testRunId.toString());
-    })
-
-    return new Promise((resolve, reject) => {
-        const env = {
-            ...process.env,
-            TestRunId: `${testRunId}`
-        }
-        const tg = spawn("testground", args, {
-            env
-        });
-
-        tg.stdout.on("data", (data: unknown) => {
-            console.log(`stdout: ${data}`);
-        });
-
-        tg.stderr.on("data", (data: unknown) => {
-            console.log(`stderr: ${data}`);
-        });
-
-        tg.on('error', (error: unknown) => {
-            console.log(`error: ${error}`);
-            reject(error);
-        });
-
-        tg.on("close", (code: number) => {
-            console.log(`child process exited with code ${code}`);
-            if (code === 0) {
-                resolve();
-            }
-            reject(new Error("Testground failed"));
-        });
-    });
-}
-
 const combinations = (versions: InstanceDefinition[]): RunDefinition[] => {
     const result: RunDefinition[] = [];
 
@@ -149,6 +110,9 @@ const combinations = (versions: InstanceDefinition[]): RunDefinition[] => {
 
             const run: RunDefinition = {
                 Id: `${p1.Id} x ${p2.Id}`,
+                test_params: {
+                    "iterations": "1",
+                },
                 groups: [
                     {
                         Id: p1.Id,
@@ -192,7 +156,7 @@ function generateTable(results: ResultFile, combinations: CombinationFile): stri
 
         const url = encodeURIComponent(runId);
 
-        const outcome = result.status === 'pass' ? ':green_circle:' : ':red_circle:';
+        const outcome = result.outcome === 'success' ? ':green_circle:' : ':red_circle:';
         const cell = `[${outcome}](#${url})`
 
         table[index + 1][otherIndex + 1] = cell;
@@ -252,27 +216,6 @@ const main = async () => {
             }
         })
         save(outputPath, artifacts);
-    }
-    else if (command === 'foreach') {
-        // testground should provide an equivalent to this function (see the README)
-        const [outputPath, ...tgArgs] = rest;
-
-        const runs = load<CombinationFile>(combinationsPath).runs;
-
-        // TODO: what is the output we want for this matrix?
-        fs.writeFileSync(outputPath, 'run_index;run_id;status\n');
-
-        for (let i = 0; i < runs.length; i++) {
-            // We WANT sequential run here.
-            const run = runs[i];
-
-            try {
-                await callTestground(i, tgArgs);
-                fs.appendFileSync(outputPath, `${i};${run.Id};pass\n`)
-            } catch (error) {
-                fs.appendFileSync(outputPath, `${i};${run.Id};fail\n`)
-            }
-        }
     } else {
         throw new Error(`Unknown command: ${command}`);
     }

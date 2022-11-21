@@ -8,9 +8,6 @@
     [groups.run]
       artifact = "{{ . }}"
     {{ end }}
-
-    [groups.run.test_params]
-      iterations = "1"
 {{ end }}
 
 {{ $combinations := (load_resource "./combinations.toml") }}
