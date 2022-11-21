@@ -15,8 +15,10 @@ const BUILDER = "docker:generic";
 // Command line arguments.
 const argv = yargs(process.argv.slice(2))
     .options({
-        "git-ref": { type: "string", demandOption: true },
-        "git-target": { type: "string", demandOption: true },
+        "rust-git-ref": { type: "string", demandOption: false },
+        "rust-git-target": { type: "string", demandOption: false },
+        "go-git-ref": { type: "string", demandOption: false },
+        "go-git-target": { type: "string", demandOption: false },
         total_instances: { type: "number", demandOption: true },
     })
     .parseSync();
@@ -27,32 +29,41 @@ class Instance {
 }
 
 class BuildArgs {
-    TRANSPORT: string;
-    MUXER: string;
     VERSION: string;
     GIT_REF?: string;
     GIT_TARGET?: string;
 
     constructor(
-        transport: string,
-        muxer: string,
         version: string,
-        gitRef: string,
-        gitTarget: string
+        rustGitRef?: string,
+        rustGitTarget?: string,
+        goGitRef?: string,
+        goGitTarget?: string
     ) {
-        this.TRANSPORT = transport;
-        this.MUXER = muxer;
         this.VERSION = version;
 
         if (version.includes("master")) {
-            this.GIT_REF = gitRef;
-            this.GIT_TARGET = gitTarget;
+            if (version.includes("rust")) {
+                this.GIT_REF = rustGitRef;
+                this.GIT_TARGET = rustGitTarget;
+            }
+            if (version.includes("go")) {
+                this.GIT_REF = goGitRef;
+                this.GIT_TARGET = goGitTarget;
+            }
         }
     }
 }
 
 class BuildConfig {
-    constructor(build_args: BuildArgs) {}
+    constructor(public build_args: BuildArgs) {}
+}
+
+class TestParams {
+    constructor(
+        public transport: string,
+        public muxer: string,
+    ){}
 }
 
 class Group {
@@ -60,7 +71,8 @@ class Group {
         public id: string,
         public builder: string,
         public instances: Instance,
-        public build_config: BuildConfig
+        public build_config: BuildConfig,
+        public test_params: TestParams
     ) {}
 }
 
@@ -126,25 +138,27 @@ async function main() {
         // Instance count is hardcoded to 1 for now.
         let instance = new Instance(1);
 
+        let test_params = new TestParams(row.transport, row.muxer);
         let build_args1 = new BuildArgs(
-            row.transport,
-            row.muxer,
             row.id1,
-            argv.gitRef,
-            argv.gitTarget
+            argv.rustGitRef,
+            argv.rustGitTarget,
+            argv.goGitRef,
+            argv.goGitTarget
         );
+
         let build_config1 = new BuildConfig(build_args1);
-        let group1 = new Group(row.id1, BUILDER, instance, build_config1);
+        let group1 = new Group(row.id1, BUILDER, instance, build_config1, test_params);
 
         let build_args2 = new BuildArgs(
-            row.transport,
-            row.muxer,
             row.id2,
-            argv.gitRef,
-            argv.gitTarget
+            argv.rustGitRef,
+            argv.rustGitTarget,
+            argv.goGitRef,
+            argv.goGitTarget
         );
         let build_config2 = new BuildConfig(build_args2);
-        let group2 = new Group(row.id2, BUILDER, instance, build_config2);
+        let group2 = new Group(row.id2, BUILDER, instance, build_config2, test_params);
 
         let run = new Run(
             `${row.id1} x ${row.id2} x ${row.transport} x ${row.muxer}`,
