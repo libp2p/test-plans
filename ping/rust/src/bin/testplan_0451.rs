@@ -1,8 +1,8 @@
 use anyhow::Result;
 use async_trait::async_trait;
 use futures::StreamExt;
-use libp2pv0450::swarm::SwarmEvent;
-use libp2pv0450::*;
+use libp2pv0451::swarm::SwarmEvent;
+use libp2pv0451::*;
 use std::collections::HashSet;
 use std::time::Duration;
 use testplan::{run_ping, PingSwarm};
