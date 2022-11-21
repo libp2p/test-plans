@@ -103,6 +103,9 @@ jobs:
         working-directory: ./test-plans/composer
         run: |
           make ./demo/results.md
+      - name: Setup tmate session
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
       - uses: actions/upload-artifact@v3
         if: ${{ failure() }}
         with:
