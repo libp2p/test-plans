@@ -25,7 +25,7 @@
 
     [groups.build_config.build_args]
       BINARY_NAME = '{{ .BinaryName }}'
-      GIT_REF = '{{ $.Env.GitTarget }}'
+      GIT_REF = '{{ $.Env.GitReference }}'
   {{ end }}
 
   {{ if $.Env.GitReference }}
@@ -37,7 +37,7 @@
       [groups.build_config.build_args]
         BINARY_NAME = '{{ .BinaryName }}'
         GIT_TARGET = '{{ $.Env.GitTarget }}'
-        GIT_REF = '{{ $.Env.GitTarget }}'
+        GIT_REF = '{{ $.Env.GitReference }}'
     {{ end }}
   {{ end }}
 {{ end }}
