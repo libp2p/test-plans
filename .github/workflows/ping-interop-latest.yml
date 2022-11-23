@@ -20,7 +20,7 @@ on:
   push:
   pull_request:
 
-name: libp2p ping - go + rust + nim test (latest) with testground.
+name: libp2p ping - go, rust and nim test (latest) with testground.
 
 jobs:
   run-ping-latest:
