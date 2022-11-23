@@ -1,9 +1,9 @@
-[master]
-Id = "rust-master"
-Version = '0.48.0'
-IsMaster = true
-Implementation = "rust"
-CargoFeatures = 'libp2pmaster'
+# [master]
+# Id = "rust-master"
+# Version = '0.48.0'
+# IsMaster = true
+# Implementation = "rust"
+# CargoFeatures = 'libp2pmaster'
 
 # [custom]
 # Id = "rust-custom"

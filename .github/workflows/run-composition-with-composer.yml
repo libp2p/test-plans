@@ -37,6 +37,8 @@ jobs:
       TEST_PLAN_BRANCH: ${{ inputs.test_ref || 'master' }}
       TESTGROUND_ENDPOINT: ${{ inputs.testground_endpoint }}
       COMPOSITION_FILE: ./composer/demo/composition-interop.toml  # ${{ inputs.composition_file }}
+      RustLibp2pMasterSha: 83c67954e9f4c3873b1f311e7bc7c615f5c08447
+      GoLibp2pMasterSha: ceece5a60a9f791dd4572c71dc58c6a573b7b706
     defaults:
       run:
         shell: bash

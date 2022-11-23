@@ -1,10 +1,10 @@
-[master]
-Id = "go-master"
-GoVersion = '1.18'
-IsMaster = true
-Modfile = "go.v0.22.mod"
-Implementation = "go"
-Selector = 'v0.22'
+# [master]
+# Id = "go-master"
+# GoVersion = '1.18'
+# IsMaster = true
+# Modfile = "go.v0.22.mod"
+# Implementation = "go"
+# Selector = 'v0.22'
 
 # [custom]
 # Id = "go-custom"
@@ -35,23 +35,23 @@ Modfile = "go.v0.20.mod"
 Implementation = "go"
 Selector = 'v0.20'
 
-[[groups]]
-Id = "go-v0.19"
-GoVersion = '1.17'
-Modfile = "go.v0.19.mod"
-Implementation = "go"
-Selector = 'v0.19'
+# [[groups]]
+# Id = "go-v0.19"
+# GoVersion = '1.17'
+# Modfile = "go.v0.19.mod"
+# Implementation = "go"
+# Selector = 'v0.19'
 
-[[groups]]
-Id = "go-v0.17"
-GoVersion = '1.16'
-Modfile = "go.v0.17.mod"
-Implementation = "go"
-Selector = 'v0.17'
+# [[groups]]
+# Id = "go-v0.17"
+# GoVersion = '1.16'
+# Modfile = "go.v0.17.mod"
+# Implementation = "go"
+# Selector = 'v0.17'
 
-[[groups]]
-Id = "go-v0.11"
-GoVersion = '1.14'
-Modfile = "go.v0.11.mod"
-Implementation = "go"
-Selector = 'v0.11'
+# [[groups]]
+# Id = "go-v0.11"
+# GoVersion = '1.14'
+# Modfile = "go.v0.11.mod"
+# Implementation = "go"
+# Selector = 'v0.11'
