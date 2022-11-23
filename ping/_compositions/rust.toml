@@ -17,12 +17,12 @@ Id = "v0.47.0"
 BinaryName = 'testplan_0470'
 
 [[groups]]
-Id = "v0.46.0"
-BinaryName = 'testplan_0460'
+Id = "v0.46.1"
+BinaryName = 'testplan_0461'
 
 [[groups]]
 Id = "v0.45.1"
-BinaryName = 'testplan_0450'
+BinaryName = 'testplan_0451'
 
 [[groups]]
 Id = "v0.44.0"
