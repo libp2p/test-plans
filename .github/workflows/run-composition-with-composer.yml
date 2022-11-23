@@ -105,6 +105,7 @@ jobs:
         working-directory: ./test-plans/composer
         run: |
           make generate-markdown
+          cat ./demo/results.md >> $GITHUB_STEP_SUMMARY
       - name: Setup tmate session
         if: ${{ failure() }}
         uses: mxschmitt/action-tmate@v3
