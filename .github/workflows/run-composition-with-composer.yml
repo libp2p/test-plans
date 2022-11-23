@@ -105,7 +105,13 @@ jobs:
         working-directory: ./test-plans/composer
         run: |
           make generate-markdown
+          echo "## Ping Status:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
           cat ./demo/results.md >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Ping Status (failures):" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          cat ./demo/results.csv | grep --invert-match "success"
       - name: Setup tmate session
         if: ${{ failure() }}
         uses: mxschmitt/action-tmate@v3
