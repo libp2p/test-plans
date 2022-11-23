@@ -11,7 +11,7 @@ ARG GIT_TARGET=""
 RUN if [ ! -z "${GIT_TARGET}" ]; then sed -i "s,^git.*,git = \"https://${GIT_TARGET}\"," ./plan/Cargo.toml; fi
 
 ARG GIT_REF=""
-RUN if [ ! -z "${GIT_REF}" ]; then sed -i "s/^rev.*/branch = \"${GIT_REF}\"/" ./plan/Cargo.toml; fi
+RUN if [ "master" == "${GIT_REF} ]; then sed -i "s/^rev.*/branch= \"master\"/" ./plan/Cargo.toml; elif [ ! -z "${GIT_REF}" ]; then sed -i "s/^rev.*/rev = \"${GIT_REF}\"/" ./plan/Cargo.toml; fi
 
 # Build the requested binary: Cargo will update lockfile on changed manifest (i.e. if one of the above `sed`s patched it).
 ARG BINARY_NAME
