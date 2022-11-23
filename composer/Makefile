@@ -17,6 +17,9 @@ all: ./demo/results.csv ./demo/results.md
 	make run-all
 
 ./demo/results.md: ./index.ts ./demo/results.csv
+	make generate-markdown
+
+generate-markdown:
 	./node_modules/.bin/ts-node index.ts export-results ./demo/results.csv ./demo/results.md
 
 # workaround poor write-artifacts feature
