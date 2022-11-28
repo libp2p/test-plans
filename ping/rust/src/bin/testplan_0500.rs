@@ -3,44 +3,64 @@ use async_trait::async_trait;
 use futures::StreamExt;
 use libp2pv0500::swarm::{keep_alive, NetworkBehaviour, SwarmEvent};
 use libp2pv0500::{tokio_development_transport,webrtc};
-use libp2pv0490::*;
+use libp2pv0500::*;
 use rand::thread_rng;
 use std::collections::HashSet;
 use std::env;
 use std::time::Duration;
 use testplan::*;
+use crate::core::transport::Boxed;
 
 #[async_std::main]
 async fn main() -> Result<()> {
     let local_key = identity::Keypair::generate_ed25519();
     let local_peer_id = PeerId::from(local_key.public());
     let transport_env = env::var("TRANSPORT").unwrap_or_else(|_|"tcp".to_string());
-    let transport = match transport_env.trim()  {
-        "tcp" => tokio_development_transport(local_key).await?,
-        "webrtc" => webrtc::tokio::Transport::new(
-            local_key,
-            webrtc::tokio::Certificate::generate(&mut thread_rng())?,
-        ),
+    match transport_env.trim()  {
+        "tcp" => {
+            let transport = tokio_development_transport(local_key)?;
+            let swarm = OrphanRuleWorkaround(Swarm::new(
+                transport,
+                Behaviour {
+                    keep_alive: keep_alive::Behaviour,
+                    ping: ping::Behaviour::new(ping::Config::new().with_interval(Duration::from_secs(1))),
+                },
+                local_peer_id,
+            ));
+            match transport_env.trim() {
+                "tcp" => run_ping(swarm).await?,
+                "webrtc" => run_ping_with_ma_pattern(swarm, "/ip4/ip4_address/udp/listening_port/webrtc".to_string()).await?,
+                unhandled => unimplemented!("Transport unhandled in test: {}", unhandled),
+            }
+        },
+        "webrtc" => {
+            let transport = webrtc::tokio::Transport::new(
+                local_key,
+                webrtc::tokio::Certificate::generate(&mut thread_rng())?,
+            ).boxed();
+            let swarm = OrphanRuleWorkaround(Swarm::new(
+                transport,
+                Behaviour {
+                    keep_alive: keep_alive::Behaviour,
+                    ping: ping::Behaviour::new(ping::Config::new().with_interval(Duration::from_secs(1))),
+                },
+                local_peer_id,
+            ));
+            match transport_env.trim() {
+                "tcp" => run_ping(swarm).await?,
+                "webrtc" => run_ping_with_ma_pattern(swarm, "/ip4/ip4_address/udp/listening_port/webrtc".to_string()).await?,
+                unhandled => unimplemented!("Transport unhandled in test: {}", unhandled),
+            }
+        },
         unhandled => unimplemented!("Transport unhandled in test: {}", unhandled),
     };
-    let swarm = OrphanRuleWorkaround(Swarm::new(
-        transport,
-        Behaviour {
-            keep_alive: keep_alive::Behaviour,
-            ping: ping::Behaviour::new(ping::Config::new().with_interval(Duration::from_secs(1))),
-        },
-        local_peer_id,
-    ));
-    match transport_env.trim() {
-        "tcp" => run_ping(swarm).await?,
-        "webrtc" => run_ping_with_ma_pattern(swarm, "/ip4/ip4_address/udp/listening_port/webrtc".to_string()).await?,
-        unhandled => unimplemented!("Transport unhandled in test: {}", unhandled),
-    }
 
     Ok(())
 }
 
-// #[behaviour(prelude = "libp2pv0500::swarm::derive_prelude")]
+
+#[derive(NetworkBehaviour)]
+#[behaviour(prelude = "libp2pv0500::swarm::derive_prelude")]
 struct Behaviour {
     keep_alive: keep_alive::Behaviour,
     ping: ping::Behaviour,
