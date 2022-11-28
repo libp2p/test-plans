@@ -10,7 +10,7 @@ use testground::network_conf::{
     FilterAction, LinkShape, NetworkConfiguration, RoutingPolicyType, DEFAULT_DATA_NETWORK,
 };
 
-const LISTENING_PORT: u16 = 1234;
+const LISTENING_PORT: &str = "1234";
 
 #[async_trait::async_trait]
 pub trait PingSwarm: Sized {
@@ -27,16 +27,21 @@ pub trait PingSwarm: Sized {
     fn local_peer_id(&self) -> String;
 }
 
-pub async fn run_ping<S>(mut swarm: S) -> Result<()>
-where
-    S: PingSwarm,
+pub async fn run_ping<S>(swarm: S) -> Result<()>
+    where
+        S: PingSwarm,
+{
+    run_ping_with_ma_pattern(swarm, format!("/ip4/ip4_address/tcp/listening_port")).await
+}
+pub async fn run_ping_with_ma_pattern<S>(mut swarm: S, ma_pattern: String) -> Result<()>
+    where
+        S: PingSwarm,
 {
     info!("Running ping test: {}", swarm.local_peer_id());
 
     env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
 
     let client = testground::client::Client::new_and_init().await.unwrap();
-
     let local_addr = match if_addrs::get_if_addrs()
         .unwrap()
         .into_iter()
@@ -45,7 +50,7 @@ where
         .addr
         .ip()
     {
-        std::net::IpAddr::V4(addr) => format!("/ip4/{addr}/tcp/{LISTENING_PORT}"),
+        std::net::IpAddr::V4(addr) => ma_pattern.replace("ip4_address", addr.to_string().as_str()).replace("listening_port",LISTENING_PORT),
         std::net::IpAddr::V6(_) => unimplemented!(),
     };
 
