@@ -9,51 +9,38 @@ use std::collections::HashSet;
 use std::env;
 use std::time::Duration;
 use testplan::*;
-use crate::core::transport::Boxed;
+use crate::core::{
+    muxing::StreamMuxerBox,
+    // transport::Boxed,
+};
 
 #[async_std::main]
 async fn main() -> Result<()> {
     let local_key = identity::Keypair::generate_ed25519();
     let local_peer_id = PeerId::from(local_key.public());
     let transport_env = env::var("TRANSPORT").unwrap_or_else(|_|"tcp".to_string());
-    match transport_env.trim()  {
-        "tcp" => {
-            let transport = tokio_development_transport(local_key)?;
-            let swarm = OrphanRuleWorkaround(Swarm::new(
-                transport,
-                Behaviour {
-                    keep_alive: keep_alive::Behaviour,
-                    ping: ping::Behaviour::new(ping::Config::new().with_interval(Duration::from_secs(1))),
-                },
-                local_peer_id,
-            ));
-            match transport_env.trim() {
-                "tcp" => run_ping(swarm).await?,
-                "webrtc" => run_ping_with_ma_pattern(swarm, "/ip4/ip4_address/udp/listening_port/webrtc".to_string()).await?,
-                unhandled => unimplemented!("Transport unhandled in test: {}", unhandled),
-            }
-        },
-        "webrtc" => {
-            let transport = webrtc::tokio::Transport::new(
+    let transport = match transport_env.trim()  {
+        "tcp" =>  tokio_development_transport(local_key)?,
+        "webrtc" =>  webrtc::tokio::Transport::new(
                 local_key,
-                webrtc::tokio::Certificate::generate(&mut thread_rng())?,
-            ).boxed();
-            let swarm = OrphanRuleWorkaround(Swarm::new(
-                transport,
-                Behaviour {
-                    keep_alive: keep_alive::Behaviour,
-                    ping: ping::Behaviour::new(ping::Config::new().with_interval(Duration::from_secs(1))),
-                },
-                local_peer_id,
-            ));
-            match transport_env.trim() {
-                "tcp" => run_ping(swarm).await?,
-                "webrtc" => run_ping_with_ma_pattern(swarm, "/ip4/ip4_address/udp/listening_port/webrtc".to_string()).await?,
-                unhandled => unimplemented!("Transport unhandled in test: {}", unhandled),
-            }
-        },
+                webrtc::tokio::Certificate::generate(&mut thread_rng())?)
+            .map(|(peer_id, conn), _| (peer_id, StreamMuxerBox::new(conn)))
+            .boxed(),
         unhandled => unimplemented!("Transport unhandled in test: {}", unhandled),
     };
+    let swarm = OrphanRuleWorkaround(Swarm::with_tokio_executor(
+        transport,
+        Behaviour {
+            keep_alive: keep_alive::Behaviour,
+            ping: ping::Behaviour::new(ping::Config::new().with_interval(Duration::from_secs(1))),
+        },
+        local_peer_id,
+    ));
+    match transport_env.trim() {
+        "tcp" => run_ping(swarm).await?,
+        "webrtc" => run_ping_with_ma_pattern(swarm, "/ip4/ip4_address/udp/listening_port/webrtc".to_string()).await?,
+        unhandled => unimplemented!("Transport unhandled in test: {}", unhandled),
+    }
 
     Ok(())
 }
