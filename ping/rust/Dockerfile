@@ -10,6 +10,7 @@ COPY ./plan/${PLAN_PATH}/src/main.rs ./plan/src/main.rs
 COPY ./plan/${PLAN_PATH}/Cargo.toml ./plan/Cargo.toml
 COPY ./plan/${PLAN_PATH}/Cargo.lock ./plan/Cargo.lock
 
+RUN echo initial build
 RUN cd ./plan/ && cargo build  # Initial build acts as a cache.
 
 ARG GIT_TARGET=""
@@ -23,12 +24,14 @@ COPY ./plan/${PLAN_PATH}/src/bin/ ./plan/src/bin/
 
 # Build the requested binary: Cargo will update lockfile on changed manifest (i.e. if one of the above `sed`s patched it).
 ARG BINARY_NAME
-RUN cd ./plan/ \
-    && cargo build --bin=${BINARY_NAME} \
-    && mv /usr/src/testplan/plan/target/debug/${BINARY_NAME} /usr/local/bin/testplan
+RUN echo BINARY_NAME=${BINARY_NAME}
+RUN cd ./plan/ && cargo build --bin=${BINARY_NAME}
+RUN cd ./plan/ && cargo build --bin=${BINARY_NAME}
+RUN cd ./plan/ && mv /usr/src/testplan/plan/target/debug/${BINARY_NAME} /usr/local/bin/testplan
 
 FROM debian:bullseye-slim
 COPY --from=builder /usr/local/bin/testplan /usr/local/bin/testplan
 EXPOSE 6060
+ENV TRANSPORT=webrtc # TODO revert
 ENV RUST_BACKTRACE=1
 ENTRYPOINT ["testplan"]
