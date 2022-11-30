@@ -12,7 +12,7 @@ async fn main() -> Result<()> {
     let local_key = identity::Keypair::generate_ed25519();
     let local_peer_id = PeerId::from(local_key.public());
 
-    let swarm = OrphanRuleWorkaround(Swarm::with_tokio_executor(
+    let swarm = OrphanRuleWorkaround(Swarm::with_async_std_executor(
         development_transport(local_key).await?,
         Behaviour {
             keep_alive: keep_alive::Behaviour,
