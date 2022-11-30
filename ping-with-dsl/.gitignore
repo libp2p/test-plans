@@ -1,0 +1,2 @@
+# For now, not committing image.json files. Eventually these will be commited by CI and cached.
+image.json

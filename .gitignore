@@ -39,3 +39,7 @@ __pycache__/
 .history
 
 # End of https://www.gitignore.io/api/go,visualstudiocode
+
+### NodeJS
+
+node_modules
