@@ -1,0 +1,44 @@
+name: Update Badge
+
+on:
+  workflow_run:
+    workflows: [Interop Dashboard]
+    types: [completed]
+    branches: [master]
+
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  update-badge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: pl-strflt/job-summary-url-action@v1
+        with:
+          workflow: ping-interop-dashboard.yml # ${{ github.event.workflow.path }}
+          run_id: ${{ github.event.workflow_run.id }}
+          run_attempt: ${{ github.event.workflow_run.run_attempt }}
+          job: run-libp2p-test-plans
+      - uses: actions/checkout@v3
+      # https://github.com/orgs/community/discussions/26560
+      - run: |
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+      - run: |
+          in='\[\!\[Interop Dashboard\]\(https\:\/\/github\.com\/libp2p\/test\-plans\/actions\/workflows\/ping\-interop\-dashboard\.yml\/badge\.svg\?branch\=master\)\]\(.*\)'
+          out="[![Interop Dashboard](https://github.com/libp2p/test-plans/actions/workflows/ping-interop-dashboard.yml/badge.svg?branch=master)](${env.GITHUB_JOB_SUMMARY_URL})"
+          sed -i '' '#${in}#{out}#' README.md
+      - run: |
+          git diff --exit-code
+          echo "GIT_CLEAN=$?" >> $GITHUB_OUTPUT
+      - if: env.GIT_CLEAN == '1'
+        run: |
+          git add README.md
+          git commit -m 'chore: update the link to the interop dashboard [skip ci]'
+          git push
+ 
