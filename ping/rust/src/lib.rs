@@ -87,6 +87,7 @@ pub async fn run_ping_with_ma_pattern<S>(mut swarm: S, ma_pattern: String) -> Re
     client.publish("peers", Cow::Owned(payload)).await?;
 
     while let Some(addr) = address_stream.next().await {
+        println!("About to dial: {}",&addr);
         swarm.dial(&addr).unwrap();
     }
 

@@ -3,22 +3,23 @@ use async_trait::async_trait;
 use futures::StreamExt;
 use libp2pv0500::swarm::{keep_alive, NetworkBehaviour, SwarmEvent};
 use libp2pv0500::{tokio_development_transport,webrtc};
+use libp2pv0500::core::multiaddr::*;
+use libp2pv0500::core::muxing::*;
 use libp2pv0500::*;
 use rand::thread_rng;
-use std::collections::HashSet;
-use std::env;
-use std::time::Duration;
-use testplan::*;
-use crate::core::{
-    muxing::StreamMuxerBox,
-    // transport::Boxed,
+use std::{
+    collections::HashSet,
+    env,
+    str::FromStr,
+    time::Duration,
 };
+use testplan::*;
 
 #[async_std::main]
 async fn main() -> Result<()> {
     let local_key = identity::Keypair::generate_ed25519();
     let local_peer_id = PeerId::from(local_key.public());
-    let transport_env = env::var("TRANSPORT").unwrap_or_else(|_|"tcp".to_string());
+    let transport_env = env::var("UNIQUELY_NAMED_ENV").unwrap_or_else(|_|"tcp".to_string());
     let transport = match transport_env.trim()  {
         "tcp" =>  tokio_development_transport(local_key)?,
         "webrtc" =>  webrtc::tokio::Transport::new(
@@ -36,9 +37,11 @@ async fn main() -> Result<()> {
         },
         local_peer_id,
     ));
+    println!("Compiled as if using a recent version of multiaddr: {:?}", Multiaddr::from_str("/ip4/127.0.0.1/tcp/8080").expect("could not parse simple multiaddr").protocol_stack().collect::<Vec<&'static str>>());
+    println!("Compiled as if using a webrtc-enabled recent version of multiaddr: {:?}", Multiaddr::from_str("/ip4/127.0.0.1/udp/8080/webrtc").expect("could not parse simple multiaddr").protocol_stack().collect::<Vec<&'static str>>());
     match transport_env.trim() {
         "tcp" => run_ping(swarm).await?,
-        "webrtc" => run_ping_with_ma_pattern(swarm, "/ip4/ip4_address/udp/listening_port/webrtc".to_string()).await?,
+        "webrtc" => run_ping_with_ma_pattern(swarm, "/ip4/ip4_address/udp/listening_port/webrtc".to_string()).await?,//TODO certhash
         unhandled => unimplemented!("Transport unhandled in test: {}", unhandled),
     }
 
