@@ -1,0 +1,12 @@
+on:
+  workflow_dispatch:
+  push:
+  pull_request:
+
+name: libp2p multidimensional interop test
+
+jobs:
+  run-multidim-interop:
+    uses: "./.github/workflows/run-testplans-dsl.yml"
+    with:
+      dir: "multidim-interop"

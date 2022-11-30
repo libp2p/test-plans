@@ -1,0 +1,50 @@
+name: Run composition file with a custom git reference
+
+on:
+  workflow_call:
+    inputs:
+      dir:
+        description: the directory with the testplans DSL test
+        required: true
+        type: string
+jobs:
+  run_test:
+    name: Run testplans test
+    runs-on: ubuntu-latest
+    env:
+      TEST_PLAN_DIR: ${{ inputs.dir }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+        with:
+          path: test-plans
+          repository: ${{ env.TEST_PLAN_REPO }}
+          ref: ${{ env.TEST_PLAN_BRANCH }}
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 17
+          cache: 'npm'
+          cache-dependency-path: ./test-plans/${{ env.TEST_PLAN_DIR }}/package-lock.json
+      - name: Install DSL deps
+        working-directory: ./test-plans/dsl/
+        run: npm ci
+      - name: Install deps
+        working-directory: ./test-plans/${{ env.TEST_PLAN_DIR }}/
+        run: npm ci
+      - name: setup testground
+        uses: ./test-plans/.github/actions/setup-testground
+      - name: Testground help
+        run: testground --help
+      - name: Build images
+        working-directory: ./test-plans/${{ env.TEST_PLAN_DIR }}/
+        run: make
+      - name: Run the test
+        timeout-minutes: 120
+        working-directory: ./test-plans/${{ env.TEST_PLAN_DIR }}/
+        run: PATH=~/testground:$PATH npm run test
+      - name: Print the results
+        working-directory: ./test-plans/${{ env.TEST_PLAN_DIR }}/
+        run: cat results.csv

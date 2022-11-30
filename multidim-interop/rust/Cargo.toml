@@ -1,0 +1,24 @@
+[package]
+edition = "2021"
+name = "testplan"
+version = "0.1.0"
+
+[dependencies]
+async-trait = "0.1.58"
+anyhow = "1"
+async-std = { version = "1.10", features = ["attributes", "tokio1"] }
+env_logger = "0.9.0"
+if-addrs = "0.7.0"
+log = "0.4"
+rand = "0.8"
+serde_json = "1"
+soketto = "0.7.1"
+testground = "0.4.0"
+thiserror = "1"
+tokio = { version = "1", default-features = false, features = ["sync", "rt-multi-thread", "macros", "net"] }
+tokio-stream = { version = "0.1", default-features = false, features = [] }
+tokio-util = { version = "0.7", default-features = false, features = ["compat"] }
+futures = "0.3.1"
+
+libp2pv0490 = { package = "libp2p", version = "0.49.0", features = ["websocket", "mplex", "yamux", "tcp", "async-std", "ping", "noise", "dns", "rsa"] }
+libp2pv0500 = { package = "libp2p", version = "0.50.0", features = ["websocket", "quic",  "mplex", "yamux", "tcp", "async-std", "ping", "noise", "dns", "rsa", "macros"] }
