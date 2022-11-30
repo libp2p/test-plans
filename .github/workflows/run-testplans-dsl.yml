@@ -1,0 +1,72 @@
+name: Run composition file with a custom git reference
+
+on:
+  workflow_call:
+    inputs:
+      dir:
+        description: the directory with the testplans test
+        required: true
+        type: string
+jobs:
+  run_test:
+    name: Run testplans test
+    runs-on: ubuntu-latest
+    env:
+      TEST_PLAN_DIR: ${{ inputs.dir }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+        with:
+          path: test-plans
+          repository: ${{ env.TEST_PLAN_REPO }}
+          ref: ${{ env.TEST_PLAN_BRANCH }}
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 17
+          cache: 'npm'
+          cache-dependency-path: ./test-plans/${{ env.TEST_PLAN_DIR }}/package-lock.json
+      - name: Expose GitHub Runtime # Needed for docker buildx to cache properly (See https://docs.docker.com/build/cache/backends/gha/#authentication)
+        uses: crazy-max/ghaction-github-runtime@v2
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Install deps
+        working-directory: ./test-plans/${{ env.TEST_PLAN_DIR }}/
+        run: npm ci
+      - name: Build images
+        working-directory: ./test-plans/${{ env.TEST_PLAN_DIR }}/
+        run: make
+      - name: List docker images
+        working-directory: ./test-plans/${{ env.TEST_PLAN_DIR }}/
+        run: docker image ls
+      - name: Run the test
+        timeout-minutes: 120
+        working-directory: ./test-plans/${{ env.TEST_PLAN_DIR }}/
+        run: WORKER_COUNT=2 npm run test
+      - name: Print the results
+        working-directory: ./test-plans/${{ env.TEST_PLAN_DIR }}/
+        run: cat results.csv
+      - name: Render results
+        working-directory: ./test-plans/${{ env.TEST_PLAN_DIR }}/
+        run: npm run renderResults > ./dashboard.md
+      - name: Show Dashboard Output
+        working-directory: ./test-plans/${{ env.TEST_PLAN_DIR }}/
+        run: cat ./dashboard.md >> $GITHUB_STEP_SUMMARY
+      - name: Exit with Error
+        working-directory: ./test-plans/${{ env.TEST_PLAN_DIR }}/
+        run: |
+          if grep -q ":red_circle:" ./dashboard.md; then
+            exit 1
+          else
+            exit 0
+          fi
+      - uses: actions/upload-artifact@v3
+        if: ${{ always() }}
+        with:
+          name: testground-output
+          path: |
+            ./test-plans/${{ env.TEST_PLAN_DIR }}/results.csv
+            ./test-plans/${{ env.TEST_PLAN_DIR }}/dashboard.md
