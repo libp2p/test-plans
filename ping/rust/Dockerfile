@@ -16,7 +16,7 @@ ARG GIT_TARGET=""
 RUN if [ ! -z "${GIT_TARGET}" ]; then sed -i "s,^git.*,git = \"https://${GIT_TARGET}\"," ./plan/Cargo.toml; fi
 
 ARG GIT_REF=""
-RUN if [ ! -z "${GIT_REF}" ]; then sed -i "s/^rev.*/rev = \"${GIT_REF}\"/" ./plan/Cargo.toml; fi
+RUN if [ ! -z "${GIT_REF}" ]; then sed -i "s,^rev.*,rev = \"${GIT_REF}\"," ./plan/Cargo.toml; fi
 
 COPY ./plan/${PLAN_PATH}/src/lib.rs ./plan/src/lib.rs
 COPY ./plan/${PLAN_PATH}/src/bin/ ./plan/src/bin/
