@@ -1,8 +1,8 @@
 use anyhow::Result;
 use async_trait::async_trait;
 use futures::StreamExt;
-use libp2pv0500::swarm::{keep_alive, NetworkBehaviour, SwarmEvent};
-use libp2pv0500::*;
+use libp2pv0510::swarm::{keep_alive, NetworkBehaviour, SwarmEvent};
+use libp2pv0510::*;
 use std::collections::HashSet;
 use std::time::Duration;
 use testplan::{run_ping, PingSwarm};
@@ -27,7 +27,7 @@ async fn main() -> Result<()> {
 }
 
 #[derive(NetworkBehaviour)]
-#[behaviour(prelude = "libp2pv0500::swarm::derive_prelude")]
+#[behaviour(prelude = "libp2pv0510::swarm::derive_prelude")]
 struct Behaviour {
     keep_alive: keep_alive::Behaviour,
     ping: ping::Behaviour,
