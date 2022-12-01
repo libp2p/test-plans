@@ -26,10 +26,11 @@ libp2pv0461 = { package = "libp2p", version = "0.46.1", default_features = false
 libp2pv0470 = { package = "libp2p", version = "0.47.0", default_features = false, features = ["websocket", "mplex", "yamux", "tcp-async-io", "ping", "noise", "dns-async-std"] }
 libp2pv0480 = { package = "libp2p", version = "0.48.0", default_features = false, features = ["websocket", "mplex", "yamux", "tcp-async-io", "ping", "noise", "dns-async-std", "rsa"] }
 libp2pv0490 = { package = "libp2p", version = "0.49.0", features = ["websocket", "mplex", "yamux", "tcp", "async-std", "ping", "noise", "dns", "rsa"] }
+libp2pv0500 = { package = "libp2p", version = "0.50.0", features = ["websocket", "mplex", "yamux", "tcp", "async-std", "ping", "noise", "dns", "rsa", "macros"] }
 
 # Next release
-[dependencies."libp2pv0500"]
+[dependencies."libp2pv0510"]
 package = "libp2p"
 git = "https://github.com/libp2p/rust-libp2p"
-rev = "368705a1465c4322948d14ee46d42475c472ca1e" # This should usually point to a commit on master.
+rev = "be0b62a78fe9d72811b9eda742137cc8ddc4da35" # This should usually point to a commit on master.
 features = ["websocket", "mplex", "yamux", "tcp", "ping", "noise", "dns", "async-std", "rsa", "macros"]
