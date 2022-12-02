@@ -17,6 +17,7 @@ use testplan::*;
 
 #[async_std::main]
 async fn main() -> Result<()> {
+    println!("0.50.0");
     let local_key = identity::Keypair::generate_ed25519();
     let local_peer_id = PeerId::from(local_key.public());
     let transport_env = env::var("UNIQUELY_NAMED_ENV").unwrap_or_else(|_|"tcp".to_string());
@@ -37,7 +38,6 @@ async fn main() -> Result<()> {
         },
         local_peer_id,
     ));
-    println!("Compiled as if using a recent version of multiaddr: {:?}", Multiaddr::from_str("/ip4/127.0.0.1/tcp/8080").expect("could not parse simple multiaddr").protocol_stack().collect::<Vec<&'static str>>());
     println!("Compiled as if using a webrtc-enabled recent version of multiaddr: {:?}", Multiaddr::from_str("/ip4/127.0.0.1/udp/8080/webrtc").expect("could not parse simple multiaddr").protocol_stack().collect::<Vec<&'static str>>());
     match transport_env.trim() {
         "tcp" => run_ping(swarm).await?,

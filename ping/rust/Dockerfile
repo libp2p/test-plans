@@ -26,7 +26,7 @@ COPY ./plan/${PLAN_PATH}/src/bin/ ./plan/src/bin/
 ARG BINARY_NAME
 RUN echo BINARY_NAME=${BINARY_NAME}
 RUN cd ./plan/ && cargo build --bin=${BINARY_NAME}
-RUN cd ./plan/ && mv /usr/src/testplan/plan/target/debug/${BINARY_NAME} /usr/local/bin/testplan
+RUN cd ./plan/ && mv -v /usr/src/testplan/plan/target/debug/${BINARY_NAME} /usr/local/bin/testplan
 
 FROM debian:bullseye-slim
 COPY --from=builder /usr/local/bin/testplan /usr/local/bin/testplan
@@ -35,5 +35,5 @@ EXPOSE 6060
 #TODO revert
 ENV UNIQUELY_NAMED_ENV=webrtc
 
-ENV RUST_BACKTRACE=1
+ENV RUST_BACKTRACE=full
 ENTRYPOINT ["testplan"]

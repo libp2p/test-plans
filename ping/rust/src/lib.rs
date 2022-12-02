@@ -2,7 +2,7 @@ use anyhow::Result;
 use env_logger::Env;
 use futures::future::ready;
 use futures::{FutureExt, StreamExt};
-use log::info;
+use log::{error, info};
 use rand::Rng;
 use std::borrow::Cow;
 use std::time::Duration;
@@ -31,13 +31,14 @@ pub async fn run_ping<S>(swarm: S) -> Result<()>
     where
         S: PingSwarm,
 {
+    info!("info run_ping uses hard-coded tcp");
     run_ping_with_ma_pattern(swarm, format!("/ip4/ip4_address/tcp/listening_port")).await
 }
 pub async fn run_ping_with_ma_pattern<S>(mut swarm: S, ma_pattern: String) -> Result<()>
     where
         S: PingSwarm,
 {
-    info!("Running ping test: {}", swarm.local_peer_id());
+    info!("info Running ping test: {} with pattern {}", swarm.local_peer_id(), &ma_pattern);
 
     env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
 
@@ -86,10 +87,19 @@ pub async fn run_ping_with_ma_pattern<S>(mut swarm: S, ma_pattern: String) -> Re
 
     client.publish("peers", Cow::Owned(payload)).await?;
 
+    let mut dialed_count = 0;
     while let Some(addr) = address_stream.next().await {
-        println!("About to dial: {}",&addr);
-        swarm.dial(&addr).unwrap();
+        info!("About to dial: {}",&addr);
+        match swarm.dial(&addr) {
+            Ok(()) => dialed_count += 1,
+            Err(e) => {
+                client.record_message(format!("Dial failure for {}: {:?}", addr,&e));
+                info!("ERROR: could not dial {} : {:?}", &addr, e);
+                error!("ERROR: could not dial {} : {:?}", &addr, e);
+            },
+        }
     }
+    assert_ne!(dialed_count,0);
 
     // Otherwise the testground background task gets blocked sending
     // subscription upgrades to the backpressured channel.
