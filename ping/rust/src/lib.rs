@@ -10,7 +10,7 @@ use testground::network_conf::{
     FilterAction, LinkShape, NetworkConfiguration, RoutingPolicyType, DEFAULT_DATA_NETWORK,
 };
 
-const LISTENING_PORT: &str = "1234";
+const LISTENING_PORT: u16 = 1234;
 
 #[async_trait::async_trait]
 pub trait PingSwarm: Sized {
