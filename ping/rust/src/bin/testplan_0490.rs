@@ -9,7 +9,6 @@ use testplan::{run_ping, PingSwarm};
 
 #[async_std::main]
 async fn main() -> Result<()> {
-    println!("0.49.0");
     let local_key = identity::Keypair::generate_ed25519();
     let local_peer_id = PeerId::from(local_key.public());
 

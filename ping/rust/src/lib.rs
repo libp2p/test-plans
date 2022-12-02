@@ -2,7 +2,7 @@ use anyhow::Result;
 use env_logger::Env;
 use futures::future::ready;
 use futures::{FutureExt, StreamExt};
-use log::{error, info};
+use log::info;
 use rand::Rng;
 use std::borrow::Cow;
 use std::time::Duration;
@@ -32,6 +32,8 @@ pub async fn run_ping<S>(mut swarm: S, client: testground::client::Client) -> Re
         S: PingSwarm,
 {
     env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
+
+    info!("Running ping test: {}", swarm.local_peer_id());
 
     let transport: String = client
         .run_parameters()
@@ -85,19 +87,10 @@ pub async fn run_ping<S>(mut swarm: S, client: testground::client::Client) -> Re
 
     client.publish("peers", Cow::Owned(payload)).await?;
 
-    let mut dialed_count = 0;
     while let Some(addr) = address_stream.next().await {
         info!("About to dial: {}",&addr);
-        match swarm.dial(&addr) {
-            Ok(()) => dialed_count += 1,
-            Err(e) => {
-                client.record_message(format!("Dial failure for {}: {:?}", addr,&e));
-                info!("ERROR: could not dial {} : {:?}", &addr, e);
-                error!("ERROR: could not dial {} : {:?}", &addr, e);
-            },
-        }
+        swarm.dial(&addr).expect("Dialing failure");
     }
-    assert_ne!(dialed_count,0);
 
     // Otherwise the testground background task gets blocked sending
     // subscription upgrades to the backpressured channel.
