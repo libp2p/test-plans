@@ -31,6 +31,6 @@ RUN cd ./plan/ && mv -v /usr/src/testplan/plan/target/debug/${BINARY_NAME} /usr/
 FROM debian:bullseye-slim
 COPY --from=builder /usr/local/bin/testplan /usr/local/bin/testplan
 EXPOSE 6060
-
+EXPOSE 1234
 ENV RUST_BACKTRACE=full
 ENTRYPOINT ["testplan"]

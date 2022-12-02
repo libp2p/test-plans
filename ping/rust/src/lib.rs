@@ -14,7 +14,7 @@ const LISTENING_PORT: &str = "1234";
 
 #[async_trait::async_trait]
 pub trait PingSwarm: Sized {
-    async fn listen_on(&mut self, address: &str) -> Result<()>;
+    async fn listen_on(&mut self, address: &str) -> Result<Option<String>>;
 
     fn dial(&mut self, address: &str) -> Result<()>;
 
@@ -59,7 +59,10 @@ pub async fn run_ping<S>(mut swarm: S, client: testground::client::Client) -> Re
     };
     info!("Test instance, listening for incoming connections on: {:?}.", local_addr);
 
-    swarm.listen_on(&local_addr).await?;
+    let dialable_multiaddr = match swarm.listen_on(&local_addr).await? {
+        Some(reported) => reported,
+        None => local_addr.clone(),
+    };
 
     let test_instance_count = client.run_parameters().test_instance_count as usize;
     let mut address_stream = client
@@ -75,12 +78,12 @@ pub async fn run_ping<S>(mut swarm: S, client: testground::client::Client) -> Re
         // two peers dialling each other at the same time).
         //
         // We can do this because sync service pubsub is ordered.
-        .take_while(|a| ready(a != &local_addr));
+        .take_while(|a| ready(a != &local_addr && a != &dialable_multiaddr));
 
     let payload = serde_json::json!({
         "ID": swarm.local_peer_id(),
         "Addrs": [
-            local_addr
+            dialable_multiaddr
         ],
     });
 

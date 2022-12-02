@@ -33,7 +33,7 @@ struct OrphanRuleWorkaround(Swarm<ping::Behaviour>);
 
 #[async_trait]
 impl PingSwarm for OrphanRuleWorkaround {
-    async fn listen_on(&mut self, address: &str) -> Result<()> {
+    async fn listen_on(&mut self, address: &str) -> Result<Option<String>> {
         let id = self.0.listen_on(address.parse()?)?;
 
         loop {
@@ -44,7 +44,7 @@ impl PingSwarm for OrphanRuleWorkaround {
             }
         }
 
-        Ok(())
+        Ok(None)
     }
 
     fn dial(&mut self, address: &str) -> Result<()> {

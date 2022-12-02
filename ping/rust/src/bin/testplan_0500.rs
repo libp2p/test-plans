@@ -11,6 +11,7 @@ use std::{
     collections::HashSet,
     time::Duration,
 };
+use log::info;
 use testplan::*;
 
 #[async_std::main]
@@ -59,18 +60,16 @@ struct OrphanRuleWorkaround(Swarm<Behaviour>);
 
 #[async_trait]
 impl PingSwarm for OrphanRuleWorkaround {
-    async fn listen_on(&mut self, address: &str) -> Result<()> {
+    async fn listen_on(&mut self, address: &str) -> Result<Option<String>> {
         let id = self.0.listen_on(address.parse()?)?;
-
         loop {
-            if let Some(SwarmEvent::NewListenAddr { listener_id, .. }) = self.0.next().await {
+            if let Some(SwarmEvent::NewListenAddr { listener_id, address }) = self.0.next().await {
                 if listener_id == id {
-                    break;
+                    info!("NewListenAddr event: listener_id={:?}, address={:?}", &listener_id, &address);
+                    return Ok(Some(address.to_string()));
                 }
             }
         }
-
-        Ok(())
     }
 
     fn dial(&mut self, address: &str) -> Result<()> {
@@ -83,8 +82,13 @@ impl PingSwarm for OrphanRuleWorkaround {
         let mut connected = HashSet::with_capacity(number);
 
         while connected.len() < number {
-            if let Some(SwarmEvent::ConnectionEstablished { peer_id, .. }) = self.0.next().await {
-                connected.insert(peer_id);
+            match self.0.next().await {
+                Some(SwarmEvent::ConnectionEstablished { peer_id, endpoint, .. }) => {
+                    info!("Connection established! {:?}={:?}", &peer_id, &endpoint);
+                    connected.insert(peer_id);
+                },
+                Some(event) => info!("Received event {:?}",&event),
+                None => (),
             }
         }
     }
