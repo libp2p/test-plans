@@ -1,7 +1,11 @@
 [master]
-BinaryName = 'testplan_0500'
+BinaryName = 'testplan_0510'
 
 [custom]
+BinaryName = 'testplan_0510'
+
+[[groups]]
+Id = '0.50.0'
 BinaryName = 'testplan_0500'
 
 [[groups]]
