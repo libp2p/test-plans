@@ -1,7 +1,15 @@
 import process from "process";
+import { load, generateTable, markdownTable, save } from "./lib";
 
 const main = async () => {
-  throw new Error("Not implemented");
+  const args: string[] = process.argv.slice(2);
+  const [csvInputPath, markdownOutputPath] = args;
+
+  const results = load(csvInputPath);
+  const table = generateTable(results);
+  const content = markdownTable(table);
+
+  save(markdownOutputPath, content);
 };
 
 main()

@@ -37,3 +37,11 @@ export const fromTaskIdToCoordinate = (
 
   return [match[1], match[2]];
 };
+
+export const generateTable = (results: ResultFile): string[][] => {
+  throw new Error("Not implemented");
+};
+
+export const markdownTable = (table: string[][]): string => {
+  throw new Error("Not implemented");
+};
