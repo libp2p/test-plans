@@ -32,8 +32,5 @@ FROM debian:bullseye-slim
 COPY --from=builder /usr/local/bin/testplan /usr/local/bin/testplan
 EXPOSE 6060
 
-#TODO revert
-ENV UNIQUELY_NAMED_ENV=webrtc
-
 ENV RUST_BACKTRACE=full
 ENTRYPOINT ["testplan"]
