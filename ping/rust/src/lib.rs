@@ -35,13 +35,12 @@ pub async fn run_ping<S>(mut swarm: S, client: testground::client::Client) -> Re
 
     info!("Running ping test: {}", swarm.local_peer_id());
 
-    let transport: String = client
+    let transport = client
         .run_parameters()
         .test_instance_params
-        .get("max_latency_ms")
-        .unwrap()
-        .parse()
-        .unwrap();
+        .get("transport")
+        .expect("transport testparam should be available, possibly defaulted")
+        .clone();
     let local_ip_addr = match if_addrs::get_if_addrs()
         .unwrap()
         .into_iter()
@@ -56,7 +55,7 @@ pub async fn run_ping<S>(mut swarm: S, client: testground::client::Client) -> Re
     let local_addr = match transport.as_str() {
         "tcp" => format!("/ip4/{local_ip_addr}/tcp/{LISTENING_PORT}"),
         "webrtc" => format!("/ip4/{local_ip_addr}/udp/{LISTENING_PORT}/webrtc"),
-        unhandled => unimplemented!("Transport unhandled in test: {}", unhandled),
+        unhandled => unimplemented!("Transport unhandled in test: '{}'", unhandled),
     };
     info!("Test instance, listening for incoming connections on: {:?}.", local_addr);
 
@@ -101,7 +100,7 @@ pub async fn run_ping<S>(mut swarm: S, client: testground::client::Client) -> Re
     swarm
         .await_connections(client.run_parameters().test_instance_count as usize - 1)
         .await;
-
+    info!("Connections awaited.");
     signal_wait_and_drive_swarm(&client, &mut swarm, "connected".to_string()).await?;
 
     ping(&client, &mut swarm, "initial".to_string()).await?;

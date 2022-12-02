@@ -18,21 +18,20 @@ async fn main() -> Result<()> {
     let local_key = identity::Keypair::generate_ed25519();
     let local_peer_id = PeerId::from(local_key.public());
     let client = testground::client::Client::new_and_init().await.unwrap();
-    let transport_name: String = client
+    let transport_name = client
         .run_parameters()
         .test_instance_params
-        .get("max_latency_ms")
-        .unwrap()
-        .parse()
-        .unwrap();
-    let transport = match transport_name.trim()  {
+        .get("transport")
+        .expect("transport testparam should be available, possibly defaulted")
+        .clone();
+    let transport = match transport_name.as_str()  {
         "tcp" =>  tokio_development_transport(local_key)?,
         "webrtc" =>  webrtc::tokio::Transport::new(
                 local_key,
                 webrtc::tokio::Certificate::generate(&mut thread_rng())?)
             .map(|(peer_id, conn), _| (peer_id, StreamMuxerBox::new(conn)))
             .boxed(),
-        unhandled => unimplemented!("Transport unhandled in test: {}", unhandled),
+        unhandled => unimplemented!("Transport unhandled in test: '{}'", unhandled),
     };
     let swarm = OrphanRuleWorkaround(Swarm::with_tokio_executor(
         transport,
