@@ -35,12 +35,7 @@ pub async fn run_ping<S>(mut swarm: S, client: testground::client::Client) -> Re
 
     info!("Running ping test: {}", swarm.local_peer_id());
 
-    let transport = client
-        .run_parameters()
-        .test_instance_params
-        .get("transport")
-        .expect("transport testparam should be available, possibly defaulted")
-        .clone();
+    let transport = transport_param(&client);
     let local_ip_addr = match if_addrs::get_if_addrs()
         .unwrap()
         .into_iter()
@@ -201,4 +196,13 @@ where
     .await;
 
     Ok(())
+}
+
+pub fn transport_param(client: &testground::client::Client) -> String {
+    client
+        .run_parameters()
+        .test_instance_params
+        .get("transport")
+        .map(|s|s.clone())
+        .unwrap_or_else(||"tcp".to_owned())
 }

@@ -19,13 +19,7 @@ async fn main() -> Result<()> {
     let local_key = identity::Keypair::generate_ed25519();
     let local_peer_id = PeerId::from(local_key.public());
     let client = testground::client::Client::new_and_init().await.unwrap();
-    let transport_name = client
-        .run_parameters()
-        .test_instance_params
-        .get("transport")
-        .expect("transport testparam should be available, possibly defaulted")
-        .clone();
-    let transport = match transport_name.as_str()  {
+    let transport = match transport_param(&client).as_str()  {
         "tcp" =>  tokio_development_transport(local_key)?,
         "webrtc" =>  webrtc::tokio::Transport::new(
                 local_key,
