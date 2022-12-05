@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           path: test-plans
           repository: ${{ env.TEST_PLAN_REPO }}
@@ -28,4 +28,10 @@ jobs:
           echo "RUN_URL=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" >> $GITHUB_ENV
       - name: Generate Dashboard
         uses: ./test-plans/.github/actions/generate-dashboard
+        with:
+          input_csv: ./test-plans/results.csv
+          output_markdown: ./test-plans/dashboard.md
+      - name: Show Dashboard Output
+        run: |
+          cat ./test-plans/dashboard.md >> $GITHUB_STEP_SUMMARY
 
