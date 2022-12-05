@@ -23,7 +23,7 @@ async fn main() -> Result<()> {
         ),
         local_peer_id,
     ));
-    let client = testground::client::Client::new_and_init().await.unwrap();
+    let client = testground::client::Client::new_and_init().await?;
     run_ping(swarm, client).await?;
 
     Ok(())

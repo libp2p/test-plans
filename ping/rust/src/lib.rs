@@ -28,8 +28,8 @@ pub trait PingSwarm: Sized {
 }
 
 pub async fn run_ping<S>(mut swarm: S, client: testground::client::Client) -> Result<()>
-    where
-        S: PingSwarm,
+where
+    S: PingSwarm,
 {
     env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
 
@@ -52,7 +52,10 @@ pub async fn run_ping<S>(mut swarm: S, client: testground::client::Client) -> Re
         "webrtc" => format!("/ip4/{local_ip_addr}/udp/{LISTENING_PORT}/webrtc"),
         unhandled => unimplemented!("Transport unhandled in test: '{}'", unhandled),
     };
-    info!("Test instance, listening for incoming connections on: {:?}.", local_addr);
+    info!(
+        "Test instance, listening for incoming connections on: {:?}.",
+        local_addr
+    );
 
     let dialable_multiaddr = match swarm.listen_on(&local_addr).await? {
         Some(reported) => reported,
@@ -85,8 +88,8 @@ pub async fn run_ping<S>(mut swarm: S, client: testground::client::Client) -> Re
     client.publish("peers", Cow::Owned(payload)).await?;
 
     while let Some(addr) = address_stream.next().await {
-        info!("About to dial: {}",&addr);
-        swarm.dial(&addr).expect("Dialing failure");
+        info!("About to dial: {}", &addr);
+        swarm.dial(&addr)?;
     }
 
     // Otherwise the testground background task gets blocked sending
@@ -203,6 +206,6 @@ pub fn transport_param(client: &testground::client::Client) -> String {
         .run_parameters()
         .test_instance_params
         .get("transport")
-        .map(|s|s.clone())
-        .unwrap_or_else(||"tcp".to_owned())
+        .map(|s| s.clone())
+        .unwrap_or_else(|| "tcp".to_owned())
 }

@@ -3,38 +3,29 @@ use async_trait::async_trait;
 use futures::StreamExt;
 use libp2pv0510::{
     core::muxing::StreamMuxerBox,
-    identity,
-    PeerId,
-    ping,
-    swarm::{
-        keep_alive,
-        NetworkBehaviour,
-        SwarmEvent
-    },
-    tokio_development_transport,
-    Transport,
-    Multiaddr,
-    Swarm,
-    webrtc,
+    identity, ping,
+    swarm::{keep_alive, NetworkBehaviour, SwarmEvent},
+    tokio_development_transport, webrtc, Multiaddr, PeerId, Swarm, Transport,
 };
 use log::info;
 use rand::thread_rng;
 use std::collections::HashSet;
 use std::time::Duration;
-use testplan::{run_ping, PingSwarm, transport_param};
+use testplan::{run_ping, transport_param, PingSwarm};
 
 #[async_std::main]
 async fn main() -> Result<()> {
     let local_key = identity::Keypair::generate_ed25519();
     let local_peer_id = PeerId::from(local_key.public());
-    let client = testground::client::Client::new_and_init().await.unwrap();
-    let transport = match transport_param(&client).as_str()  {
-        "tcp" =>  tokio_development_transport(local_key)?,
-        "webrtc" =>  webrtc::tokio::Transport::new(
-                local_key,
-                webrtc::tokio::Certificate::generate(&mut thread_rng())?)
-            .map(|(peer_id, conn), _| (peer_id, StreamMuxerBox::new(conn)))
-            .boxed(),
+    let client = testground::client::Client::new_and_init().await?;
+    let transport = match transport_param(&client).as_str() {
+        "tcp" => tokio_development_transport(local_key)?,
+        "webrtc" => webrtc::tokio::Transport::new(
+            local_key,
+            webrtc::tokio::Certificate::generate(&mut thread_rng())?,
+        )
+        .map(|(peer_id, conn), _| (peer_id, StreamMuxerBox::new(conn)))
+        .boxed(),
         unhandled => unimplemented!("Transport unhandled in test: '{}'", unhandled),
     };
     let swarm = OrphanRuleWorkaround(Swarm::with_tokio_executor(
@@ -66,7 +57,11 @@ impl PingSwarm for OrphanRuleWorkaround {
         let id = self.0.listen_on(address.parse()?)?;
 
         loop {
-            if let Some(SwarmEvent::NewListenAddr { listener_id, address }) = self.0.next().await {
+            if let Some(SwarmEvent::NewListenAddr {
+                listener_id,
+                address,
+            }) = self.0.next().await
+            {
                 if listener_id == id {
                     return Ok(Some(address.to_string()));
                 }
@@ -85,11 +80,13 @@ impl PingSwarm for OrphanRuleWorkaround {
 
         while connected.len() < number {
             match self.0.next().await {
-                Some(SwarmEvent::ConnectionEstablished { peer_id, endpoint, .. }) => {
+                Some(SwarmEvent::ConnectionEstablished {
+                    peer_id, endpoint, ..
+                }) => {
                     info!("Connection established! {:?}={:?}", &peer_id, &endpoint);
                     connected.insert(peer_id);
-                },
-                Some(event) => info!("Received event {:?}",&event),//This is useful, because it sometimes logs error messages
+                }
+                Some(event) => info!("Received event {:?}", &event), //This is useful, because it sometimes logs error messages
                 None => (),
             }
         }
