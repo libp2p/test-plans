@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: pl-strflt/job-summary-url-action@v1
-        name: metadata
+        id: metadata
         with:
           workflow: dashboard.yml # ${{ github.event.workflow.path }}
           run_id: ${{ github.event.workflow_run.id }}
