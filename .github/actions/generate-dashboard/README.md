@@ -11,6 +11,8 @@ This is a simple dashboard destined to complete the interop testing, see [Issue 
 
 `ts-node ./src/index.ts input_path.csv output_path.md`
 
+If the ENV variable `RUN_URL` is set, each item in the URL will contains link to this URL.
+
 ## Dev
 
 - `npm run lint` for linting

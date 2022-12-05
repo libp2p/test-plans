@@ -3,12 +3,58 @@ import os from "os";
 import path from "path";
 import {
   CSVToMarkdown,
+  defaultCellRender,
   fromRunIdToCoordinate,
   generateEmptyMatrix,
   generateTable,
   markdownTable,
-  ResultFile
+  ResultFile,
+  ResultLine
 } from "./lib";
+
+describe("default cell renderer", () => {
+  it("render a green circle in in the simple case", () => {
+    const result: ResultLine = {
+      run_id: "go-v0.21 x go-v0.20",
+      task_id: "some-id",
+      outcome: "success",
+      error: "",
+    };
+
+    const [a, b] = fromRunIdToCoordinate(result.run_id);
+    expect(defaultCellRender(a, b, result)).toEqual(":green_circle:");
+  });
+
+  it("render a red circle in error cases", () => {
+    const result: ResultLine = {
+      run_id: "go-v0.21 x go-v0.20",
+      task_id: "some-id",
+      outcome: "failure",
+      error: "",
+    };
+
+    const [a, b] = fromRunIdToCoordinate(result.run_id);
+    expect(defaultCellRender(a, b, result)).toEqual(":red_circle:");
+  });
+
+  it("render a green circle with URL when there is an env variable", () => {
+    const result: ResultLine = {
+      run_id: "go-v0.21 x go-v0.20",
+      task_id: "some-id",
+      outcome: "success",
+      error: "",
+    };
+
+    process.env.RUN_URL = "https://some-url.com";
+
+    const [a, b] = fromRunIdToCoordinate(result.run_id);
+    expect(defaultCellRender(a, b, result)).toEqual(
+      "[:green_circle:](https://some-url.com)"
+    );
+
+    delete process.env.RUN_URL;
+  });
+});
 
 describe("conversion", () => {
   it.each(["random id", "almost xtherexfriend"])(
@@ -73,6 +119,21 @@ describe("table generation", () => {
       ["go-v0.20", ":white_circle:", ":green_circle:", ":green_circle:"],
       ["go-v0.21", ":green_circle:", ":white_circle:", ":white_circle:"],
       ["go-v0.22", ":green_circle:", ":white_circle:", ":white_circle:"],
+    ]);
+  });
+
+  it("generateTable accept a function applied to each cell", () => {
+    const table = generateTable(
+      SIMPLE_RESULT_FILE,
+      "was_not_tested",
+      (x) => "was_tested"
+    );
+
+    expect(table).toEqual([
+      [" ", "go-v0.20", "go-v0.21", "go-v0.22"],
+      ["go-v0.20", "was_not_tested", "was_tested", "was_tested"],
+      ["go-v0.21", "was_tested", "was_not_tested", "was_not_tested"],
+      ["go-v0.22", "was_tested", "was_not_tested", "was_not_tested"],
     ]);
   });
 });

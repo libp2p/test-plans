@@ -1,7 +1,7 @@
 import * as csv from "csv-parse/sync";
 import fs from "fs";
 
-type ResultLine = {
+export type ResultLine = {
   task_id: string;
   run_id: string;
   outcome: string;
@@ -9,6 +9,27 @@ type ResultLine = {
 };
 
 export type ResultFile = ResultLine[];
+
+export type CellRender = (a: string, b: string, line: ResultLine) => string;
+
+/**
+ * called for every cell in the table.
+ *
+ * This is designed to let future implementers add more complex ouput interpretation, with nested tables, etc.
+ */
+export const defaultCellRender: CellRender = (a, b, line) => {
+  let result = ":red_circle:";
+
+  if (line.outcome === "success") {
+    result = ":green_circle:";
+  }
+
+  if (process.env.RUN_URL) {
+    result = `[${result}](${process.env.RUN_URL})`;
+  }
+
+  return result;
+};
 
 export const load = (path: string): ResultFile => {
   return csv.parse(fs.readFileSync(path, "utf8"), {
@@ -64,24 +85,25 @@ export const generateEmptyMatrix = (
   return matrix;
 };
 
-export const generateTable = (results: ResultFile): string[][] => {
+export const generateTable = (
+  results: ResultFile,
+  defaultValue: string = ":white_circle:",
+  testedCell: CellRender = defaultCellRender
+): string[][] => {
   const pairs = results.map((x) => fromRunIdToCoordinate(x.run_id));
   const uniqPairs = listUniqPairs(pairs);
 
-  const matrix = generateEmptyMatrix(uniqPairs, ":white_circle:");
+  const matrix = generateEmptyMatrix(uniqPairs, defaultValue);
 
   for (const result of results) {
     const [a, b] = fromRunIdToCoordinate(result.run_id);
     const i = uniqPairs.indexOf(a);
     const j = uniqPairs.indexOf(b);
 
-    if (result.outcome === "success") {
-      matrix[i + 1][j + 1] = ":green_circle:";
-      matrix[j + 1][i + 1] = ":green_circle:";
-    } else {
-      matrix[i + 1][j + 1] = ":red_circle:";
-      matrix[j + 1][i + 1] = ":red_circle:";
-    }
+    const cell = testedCell(a, b, result);
+
+    matrix[i + 1][j + 1] = cell;
+    matrix[j + 1][i + 1] = cell;
   }
 
   return matrix;
