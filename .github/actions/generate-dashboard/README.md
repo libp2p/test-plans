@@ -1,9 +1,9 @@
 # Generate Dashboard
 
-This script loads a Testground result file and generate a 2D matrix of the result.
-It expect the result file to be the output of some pairwise testing, where each run-id is using the format `pair-1 x pair-2 ...rest`.
+This script loads a Testground result file and generates a 2D matrix of the result.
+It expects the result file to be the output of some pairwise testing, where each `run-id` uses the format `pair-1 x pair-2 ...rest`.
 
-See `src/fixture.csv` for an example of input, and `src/fixture.md` for the expected output.
+See `src/fixture.csv` for an example of input and `src/fixture.md` for the expected output.
 
 This is a simple dashboard destined to complete the interop testing, see [Issue 55](https://github.com/libp2p/test-plans/issues/55).
 
