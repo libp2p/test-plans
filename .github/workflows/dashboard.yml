@@ -1,4 +1,4 @@
-name: Interop Dashboard
+name: Dashboard
 
 on:
   push:
@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  generate_dashboard:
+  generate-dashboard:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
