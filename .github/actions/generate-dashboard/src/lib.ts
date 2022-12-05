@@ -38,10 +38,68 @@ export const fromTaskIdToCoordinate = (
   return [match[1], match[2]];
 };
 
+export const listUniqPairs = (pairs: PairOfImplementation[]): string[] => {
+  const uniq = new Set<string>();
+
+  for (const [a, b] of pairs) {
+    uniq.add(a);
+    uniq.add(b);
+  }
+
+  return Array.from(uniq).sort();
+};
+
+export const generateEmptyMatrix = (
+  keys: string[],
+  defaultValue: string
+): string[][] => {
+  const header = [" ", ...keys];
+
+  const matrix = [header];
+  const rowOfDefaultValues = Array<string>(keys.length).fill(defaultValue);
+
+  for (const key of keys) {
+    const row = [key, ...rowOfDefaultValues];
+    matrix.push(row);
+  }
+
+  return matrix;
+};
+
 export const generateTable = (results: ResultFile): string[][] => {
-  throw new Error("Not implemented");
+  const pairs = results.map((x) => fromTaskIdToCoordinate(x.task_id));
+  const uniqPairs = listUniqPairs(pairs);
+
+  const matrix = generateEmptyMatrix(uniqPairs, ":white_circle:");
+
+  for (const result of results) {
+    const [a, b] = fromTaskIdToCoordinate(result.task_id);
+    const i = uniqPairs.indexOf(a);
+    const j = uniqPairs.indexOf(b);
+
+    if (result.outcome === "success") {
+      matrix[i + 1][j + 1] = ":green_circle:";
+      matrix[j + 1][i + 1] = ":green_circle:";
+    } else {
+      matrix[i + 1][j + 1] = ":red_circle:";
+      matrix[j + 1][i + 1] = ":red_circle:";
+    }
+  }
+
+  return matrix;
 };
 
 export const markdownTable = (table: string[][]): string => {
-  throw new Error("Not implemented");
+  const wrapped = (x: string) => `| ${x} |`;
+
+  const header = table[0].join(" | ");
+  const separator = table[0].map((x) => "-".repeat(x.length)).join(" | ");
+
+  const rows = table.slice(1).map((row) => row.join(" | "));
+
+  const body = [wrapped(header), wrapped(separator), ...rows.map(wrapped)].join(
+    "\n"
+  );
+
+  return body;
 };
