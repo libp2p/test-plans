@@ -1,9 +1,13 @@
+import * as core from '@actions/core';
 import process from "process";
-import { load, generateTable, markdownTable, save, CSVToMarkdown } from "./lib";
+import { CSVToMarkdown } from "./lib";
 
 const main = async () => {
-  const args: string[] = process.argv.slice(2);
-  const [csvInputPath, markdownOutputPath] = args;
+  const csvInputPath = core.getInput('input_csv')
+  const markdownOutputPath = core.getInput('output_markdown')
+
+  core.debug(`Genrating dasbhoard from ${csvInputPath} to ${markdownOutputPath}`)
+
   CSVToMarkdown(csvInputPath, markdownOutputPath);
 };
 

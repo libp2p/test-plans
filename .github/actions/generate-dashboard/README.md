@@ -17,6 +17,7 @@ If the ENV variable `RUN_URL` is set, each item in the URL will contains link to
 
 - `npm run lint` for linting
 - `npm run test` to run the tests
+- `npm run package` to generate the new dist file
 
 ## Output Example
 

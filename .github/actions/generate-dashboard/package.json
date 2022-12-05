@@ -6,7 +6,8 @@
   "scripts": {
     "test": "jest --config ./jest.config.js",
     "prettier": "pretty-quick",
-    "lint": "npm run prettier"
+    "lint": "npm run prettier",
+    "package": "ncc build --source-map -o dist"
   },
   "author": "",
   "license": "ISC",
@@ -21,6 +22,7 @@
     "typescript": "^4.8.4"
   },
   "dependencies": {
+    "@actions/core": "^1.10.0",
     "csv-parse": "^5.3.1"
   }
 }

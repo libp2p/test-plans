@@ -1,0 +1,12 @@
+name: 'Generate Dashboard'
+description: 'This action will turn results.csv from Testground / Composer into markdown tables'
+inputs:
+  input_csv:
+    required: true
+    description: 'input csv file path'
+  output_markdown:
+    required: true
+    description: 'output markdown file path'
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
