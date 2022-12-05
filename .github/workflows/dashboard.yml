@@ -1,0 +1,31 @@
+name: Interop Dashboard
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  generate_dashboard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+        with:
+          path: test-plans
+          repository: ${{ env.TEST_PLAN_REPO }}
+          ref: ${{ env.TEST_PLAN_BRANCH }}
+      # setup testground
+      # generate the test suite with the composer
+      # run testground test
+      # the result.csv file was generated.
+      - name: Generate the RUN_URL for the dashboard
+        run: |
+          echo "RUN_URL=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" >> $GITHUB_ENV
+      - name: Generate Dashboard
+        uses: ./test-plans/.github/actions/generate-dashboard
+
