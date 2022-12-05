@@ -1,5 +1,9 @@
+import fs from "fs";
+import os from "os";
+import path from "path";
 import {
-  fromTaskIdToCoordinate,
+  CSVToMarkdown,
+  fromRunIdToCoordinate,
   generateEmptyMatrix,
   generateTable,
   markdownTable,
@@ -8,9 +12,9 @@ import {
 
 describe("conversion", () => {
   it.each(["random id", "almost xtherexfriend"])(
-    "should throw on invalid taskId: %s",
-    (taskId) => {
-      expect(() => fromTaskIdToCoordinate(taskId)).toThrow();
+    "should throw on invalid run id: %s",
+    (runId) => {
+      expect(() => fromRunIdToCoordinate(runId)).toThrow();
     }
   );
 
@@ -25,8 +29,8 @@ describe("conversion", () => {
       "someid x anotherid (with additional parameters)",
       ["someid", "anotherid"],
     ],
-  ])("should parse pairs correctly: %s => %s", (taskId, pairs) => {
-    expect(fromTaskIdToCoordinate(taskId)).toEqual(pairs);
+  ])("should parse pairs correctly: %s => %s", (runId, pairs) => {
+    expect(fromRunIdToCoordinate(runId)).toEqual(pairs);
   });
 });
 
@@ -48,14 +52,14 @@ describe("generate empty matrix", () => {
 describe("table generation", () => {
   const SIMPLE_RESULT_FILE: ResultFile = [
     {
-      task_id: "go-v0.21 x go-v0.20",
-      run_id: "run-id-1",
+      run_id: "go-v0.21 x go-v0.20",
+      task_id: "some-id",
       outcome: "success",
       error: "",
     },
     {
-      task_id: "go-v0.22 x go-v0.20",
-      run_id: "run-id-1",
+      run_id: "go-v0.22 x go-v0.20",
+      task_id: "some-id-2",
       outcome: "success",
       error: "",
     },
@@ -89,5 +93,22 @@ describe("markdown table rendering", () => {
 | go-v0.20 | :white_circle: | :green_circle: | :green_circle: |
 | go-v0.21 | :green_circle: | :white_circle: | :white_circle: |
 | go-v0.22 | :green_circle: | :white_circle: | :white_circle: |`);
+  });
+});
+
+describe("full generation", () => {
+  it("generate expected markdown", () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "test-"));
+
+    const inputFile = "./src/fixture.csv";
+    const outputFile = path.join(tmpDir, "output.md");
+    const expectedOutputFile = "./src/fixture.md";
+
+    CSVToMarkdown(inputFile, outputFile);
+
+    const output = fs.readFileSync(outputFile, "utf8");
+    const expectedOutput = fs.readFileSync(expectedOutputFile, "utf8");
+
+    expect(output).toEqual(expectedOutput);
   });
 });

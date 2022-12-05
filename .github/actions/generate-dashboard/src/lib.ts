@@ -25,14 +25,12 @@ export const save = (path: string, content: string) => {
 type PairOfImplementation = [string, string];
 
 // `     something x something-else    more info ignore`
-const TASK_ID_MATCHER = /\s*(\S+)\s+x\s+(\S+)\s*.*/;
+const RUN_ID_MATCHER = /\s*(\S+)\s+x\s+(\S+)\s*.*/;
 
-export const fromTaskIdToCoordinate = (
-  taskId: string
-): PairOfImplementation => {
-  const match = taskId.match(TASK_ID_MATCHER);
+export const fromRunIdToCoordinate = (runId: string): PairOfImplementation => {
+  const match = runId.match(RUN_ID_MATCHER);
   if (!match) {
-    throw new Error(`Task ID ${taskId} does not match the expected format`);
+    throw new Error(`Task ID ${runId} does not match the expected format`);
   }
 
   return [match[1], match[2]];
@@ -67,13 +65,13 @@ export const generateEmptyMatrix = (
 };
 
 export const generateTable = (results: ResultFile): string[][] => {
-  const pairs = results.map((x) => fromTaskIdToCoordinate(x.task_id));
+  const pairs = results.map((x) => fromRunIdToCoordinate(x.run_id));
   const uniqPairs = listUniqPairs(pairs);
 
   const matrix = generateEmptyMatrix(uniqPairs, ":white_circle:");
 
   for (const result of results) {
-    const [a, b] = fromTaskIdToCoordinate(result.task_id);
+    const [a, b] = fromRunIdToCoordinate(result.run_id);
     const i = uniqPairs.indexOf(a);
     const j = uniqPairs.indexOf(b);
 
@@ -102,4 +100,12 @@ export const markdownTable = (table: string[][]): string => {
   );
 
   return body;
+};
+
+export const CSVToMarkdown = (csvInputPath: string, outputMarkdown: string) => {
+  const results = load(csvInputPath);
+  const table = generateTable(results);
+  const content = markdownTable(table);
+
+  save(outputMarkdown, content);
 };
