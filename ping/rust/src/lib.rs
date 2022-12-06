@@ -1,10 +1,11 @@
-use anyhow::Result;
+use anyhow::{Result};
 use env_logger::Env;
 use futures::future::ready;
 use futures::{FutureExt, StreamExt};
 use log::info;
 use rand::Rng;
 use std::borrow::Cow;
+use std::io;
 use std::time::Duration;
 use testground::network_conf::{
     FilterAction, LinkShape, NetworkConfiguration, RoutingPolicyType, DEFAULT_DATA_NETWORK,
@@ -36,11 +37,9 @@ where
     info!("Running ping test: {}", swarm.local_peer_id());
 
     let transport = transport_param(&client);
-    let local_ip_addr = match if_addrs::get_if_addrs()
-        .unwrap()
+    let local_ip_addr = match if_addrs::get_if_addrs()?
         .into_iter()
-        .find(|iface| iface.name == "eth1")
-        .unwrap()
+        .find(|iface| iface.name == "eth1").ok_or_else(||io::Error::new(io::ErrorKind::Other,"Can't find iface eth1"))?
         .addr
         .ip()
     {

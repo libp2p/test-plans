@@ -11,11 +11,11 @@ use rand::thread_rng;
 use std::{collections::HashSet, time::Duration};
 use testplan::*;
 
-#[async_std::main]
+#[tokio::main]
 async fn main() -> Result<()> {
     let local_key = identity::Keypair::generate_ed25519();
     let local_peer_id = PeerId::from(local_key.public());
-    let client = testground::client::Client::new_and_init().await?;
+    let client = testground::client::Client::new_and_init().await.expect("Unable to init testground cient.");
     let transport = match transport_param(&client).as_str() {
         "tcp" => tokio_development_transport(local_key)?,
         "webrtc" => webrtc::tokio::Transport::new(
