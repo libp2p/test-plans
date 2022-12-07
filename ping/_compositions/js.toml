@@ -1,18 +1,3 @@
-[master]
-
 [custom]
 
 [[groups]]
-Id = '0.40.0-chromium'
-Browser = 'chromium'
-Selector = 'v0.40.0'
-
-[[groups]]
-Id = '0.40.0-firefox'
-Browser = 'firefox'
-Selector = 'v0.40.0'
-
-[[groups]]
-Id = '0.40.0-webkit'
-Browser = 'webkit'
-Selector = 'v0.40.0'

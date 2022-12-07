@@ -22,7 +22,7 @@ enabled = true
 CHROME_DEBUG = "5321"
 
 [[testcases]]
-name = "ping"
+name = "sync"
 instances = { min = 2, max = 10000, default = 5 }
 
   [testcases.params]
