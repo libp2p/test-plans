@@ -1,5 +1,5 @@
 [metadata]
-  name = "go-rust-cross-version"
+  name = "all-latest-{{ or $.Env.InteropTarget "-" }}-{{ or $.Env.GitReference "" }}"
 
 [global]
   plan = "libp2p/ping"
@@ -14,9 +14,9 @@
     go_proxy_url           = "https://proxy.golang.org"
 
 {{ with (load_resource "./go.toml") }}
-  {{ range .groups }}
+  {{ with (index .groups 0) }}
     [[groups]]
-    id = "{{ .Id }}"
+    id = "go-latest-{{ .Id }}"
     instances = { count = 1 }
     builder = "docker:go"
 
@@ -27,40 +27,13 @@
       path = "./go/"
       build_base_image = 'golang:{{ .GoVersion }}-buster'
       modfile = "{{ .Modfile }}"
-  {{ end }}
-
-  {{ with .master }}
-    [[groups]]
-    id = "master"
-    instances = { count = 1 }
-    builder = "docker:go"
-
-    [groups.build]
-      selectors = ['{{ .Selector }}']
-
-      [[groups.build.dependencies]]
-        module = "github.com/libp2p/go-libp2p"
-        version = "master"
-
-    [groups.build_config]
-      path = "./go/"
-      build_base_image = 'golang:{{ .GoVersion }}-buster'
-      modfile = "{{ .Modfile }}"
-
-    [groups.build_config.dockerfile_extensions]
-      # deal with dependency changes in master until we create the new vx.y.z instance
-      pre_build = """
-        RUN cd ${PLAN_DIR} && \
-            go mod download github.com/libp2p/go-libp2p && \
-            go mod tidy -compat={{ .GoVersion }}
-        """
   {{ end }}
 
   {{ if eq $.Env.InteropTarget "go" }}
   {{ if $.Env.GitReference }}
   {{ with .custom }}
       [[groups]]
-      id = "custom-go"
+      id = "go-custom-{{ $.Env.GitReference }}"
       instances = { count = 1 }
       builder = "docker:go"
 
@@ -92,9 +65,9 @@
 {{ end }}
 
 {{ with (load_resource "./rust.toml") }}
-  {{ range .groups }}
+  {{ with (index .groups 0) }}
     [[groups]]
-    id = "rust-{{ .Id }}"
+    id = "rust-latest-{{ .Id }}"
     instances = { count = 1 }
     builder = "docker:generic"
 
@@ -102,27 +75,14 @@
       path = "./rust/"
 
     [groups.build_config.build_args]
-      CARGO_FEATURES = '{{ .CargoFeatures }}'
-  {{ end }}
-
-  {{ with .master }}
-    [[groups]]
-    id = "rust-master"
-    instances = { count = 1 }
-    builder = "docker:generic"
-
-    [groups.build_config]
-      path = "./rust/"
-      
-    [groups.build_config.build_args]
-      CARGO_FEATURES = '{{ .CargoFeatures }}'
+      BINARY_NAME = '{{ .BinaryName }}'
   {{ end }}
 
   {{ if eq $.Env.InteropTarget "rust" }}
   {{ if $.Env.GitReference }}
   {{ with .custom }}
       [[groups]]
-      id = "custom-rust"
+      id = "rust-custom-{{ $.Env.GitReference }}"
       instances = { count = 1 }
       builder = "docker:generic"
 
@@ -130,11 +90,41 @@
         path = "./rust/"
 
       [groups.build_config.build_args]
-        CARGO_FEATURES = '{{ .CargoFeatures }}'
-        CARGO_REMOVE = '{{ .CargoFeatures }}'
-        CARGO_PATCH = """
-          {{ .CargoFeatures }} = {package = "libp2p", git = "https://{{ or $.Env.GitTarget "github.com/libp2p/rust-libp2p" }}", rev = "{{ $.Env.GitReference }}", default_features = false, features = [ "websocket", "mplex", "yamux", "tcp", "ping", "noise", "dns", "async-std", "rsa" ], optional = true}
-          """
+        BINARY_NAME = '{{ .BinaryName }}'
+        GIT_TARGET = '{{ $.Env.GitTarget }}'
+        GIT_REF = '{{ $.Env.GitReference }}'
+  {{ end }}
+  {{ end }}
+  {{ end }}
+{{ end }}
+
+{{ with (load_resource "./nim.toml") }}
+  {{ with (index .groups 0) }}
+    [[groups]]
+    id = "nim-latest-{{ .Id }}"
+    instances = { count = 1 }
+    builder = "docker:generic"
+
+    [groups.build_config]
+      path = "./nim/"
+    [groups.build_config.build_args]
+      Libp2pVersion = '{{ .Id }}'
+      NimVersion = '{{ .NimVersion }}'
+  {{ end }}
+
+  {{ if eq $.Env.InteropTarget "nim" }}
+  {{ if $.Env.GitReference }}
+  {{ with .custom }}
+      [[groups]]
+      id = "nim-custom-{{ $.Env.GitReference }}"
+      instances = { count = 1 }
+      builder = "docker:generic"
+
+      [groups.build_config]
+        path = "./nim/"
+      [groups.build_config.build_args]
+        Libp2pVersion = '#{{ $.Env.GitReference }}'
+        NimVersion = '{{ .NimVersion }}'
   {{ end }}
   {{ end }}
   {{ end }}

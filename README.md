@@ -35,11 +35,11 @@ When a new version of libp2p is released, we want to make it permanent in the `p
 When a new version of libp2p is released, we want to make it permanent in the `ping/rust` test folder.
 
 1. In the `ping/_compositions/rust.toml` file,
-    - Copy the latest `[[groups]]` section and update it's `Id` and `CargoFeature` name.
+    - Copy the latest `[[groups]]` section and update it's `Id` and `BinaryName` accordingly.
 2. In the `ping/rust` folder,
-    - `Cargo.toml`: create the feature flags `libp2pvxxx` with the released version,
-    - `src/main.rs`: Update the `mod libp2p` definition with the new version,
-    - Run `cargo update` if needed. Try to build with `cargo build --features libp2pvxxx`
+    - `Cargo.toml`: Add the newly released version as a crates.io dependency.
+    - `Cargo.toml`: Update the `Next release` dependency to the latest `master` SHA.
+    - `src/bin`: Add a new binary with the next released version.
 3. Run the test on your machine
     - Do once, from the test-plans root: import the test-plans with `testground plan import --from ./ --name libp2p`
     - Run the test with `testground run composition -f ping/_compositions/rust-cross-versions.toml --wait`
