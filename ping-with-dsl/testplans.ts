@@ -11,10 +11,10 @@ type PingParams = {
 const testplans: TestPlans<PingParams> = {
     testPlans: [
         {
-            name: "Go v0.23",
+            name: "Go v0.23 x Go v0.23",
             instances: [
                 {
-                    name: "Go v0.23 x Go v0.23",
+                    name: "Go v0.23",
                     containerImageID: goV0230.imageID,
                     copies: 2,
                     runtimeEnv: {
@@ -25,10 +25,10 @@ const testplans: TestPlans<PingParams> = {
             ]
         },
         {
-            name: "Rust v0.49.0",
+            name: "Rust v0.49.0 x Rust v0.49.0",
             instances: [
                 {
-                    name: "Rust v0.49.0 x Rust v0.49.0",
+                    name: "Rust v0.49.0",
                     containerImageID: rustV0490.imageID,
                     copies: 2,
                     runtimeEnv: {
