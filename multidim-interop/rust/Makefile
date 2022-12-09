@@ -11,3 +11,5 @@ v0.50/image.json: Dockerfile src/*/*.rs src/*.rs Cargo.lock Cargo.toml
 clean:
 	rm v0.49/image.json
 	rm v0.50/image.json
+
+.PHONY: clean all
