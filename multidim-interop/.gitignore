@@ -2,3 +2,5 @@
 image.json
 
 results.csv
+# Logs from testground
+*.tgz
