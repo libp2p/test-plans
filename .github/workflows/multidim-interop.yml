@@ -12,6 +12,11 @@ jobs:
       dir: "multidim-interop"
   render-results:
     needs: run-multidim-interop
+    name: Render results into markdown
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
     steps:
       - name: Render results
         working-directory: ./test-plans/multidim-interop
