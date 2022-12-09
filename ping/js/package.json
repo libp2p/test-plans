@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "libp2p": "^0.41.0"
+  }
+}
