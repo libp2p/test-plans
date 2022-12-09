@@ -1,4 +1,4 @@
-use anyhow::{Result};
+use anyhow::Result;
 use env_logger::Env;
 use futures::future::ready;
 use futures::{FutureExt, StreamExt};
@@ -15,7 +15,7 @@ const LISTENING_PORT: u16 = 1234;
 
 #[async_trait::async_trait]
 pub trait PingSwarm: Sized {
-    async fn listen_on(&mut self, address: &str) -> Result<Option<String>>;
+    async fn listen_on(&mut self, address: &str) -> Result<String>;
 
     fn dial(&mut self, address: &str) -> Result<()>;
 
@@ -29,8 +29,8 @@ pub trait PingSwarm: Sized {
 }
 
 pub async fn run_ping<S>(mut swarm: S, client: testground::client::Client) -> Result<()>
-where
-    S: PingSwarm,
+    where
+        S: PingSwarm,
 {
     env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
 
@@ -39,7 +39,8 @@ where
     let transport = transport_param(&client);
     let local_ip_addr = match if_addrs::get_if_addrs()?
         .into_iter()
-        .find(|iface| iface.name == "eth1").ok_or_else(||io::Error::new(io::ErrorKind::Other,"Can't find iface eth1"))?
+        .find(|iface| iface.name == "eth1")
+        .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Can't find iface eth1"))?
         .addr
         .ip()
     {
@@ -56,10 +57,7 @@ where
         local_addr
     );
 
-    let dialable_multiaddr = match swarm.listen_on(&local_addr).await? {
-        Some(reported) => reported,
-        None => local_addr.clone(),
-    };
+    let dialable_multiaddr = swarm.listen_on(&local_addr).await?;
 
     let test_instance_count = client.run_parameters().test_instance_count as usize;
     let mut address_stream = client
@@ -163,8 +161,8 @@ where
 }
 
 async fn ping<S>(client: &testground::client::Client, swarm: &mut S, tag: String) -> Result<()>
-where
-    S: PingSwarm,
+    where
+        S: PingSwarm,
 {
     info!("Wait to receive ping from each peer.");
 
@@ -180,8 +178,8 @@ async fn signal_wait_and_drive_swarm<S>(
     swarm: &mut S,
     tag: String,
 ) -> Result<()>
-where
-    S: PingSwarm,
+    where
+        S: PingSwarm,
 {
     info!(
         "Signal and wait for all peers to signal being done with \"{}\".",
@@ -195,7 +193,7 @@ where
             .signal_and_wait(tag, client.run_parameters().test_instance_count)
             .boxed_local(),
     )
-    .await;
+        .await;
 
     Ok(())
 }

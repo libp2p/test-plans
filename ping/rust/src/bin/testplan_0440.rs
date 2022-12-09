@@ -21,7 +21,9 @@ async fn main() -> Result<()> {
         ),
         local_peer_id,
     ));
-    let client = testground::client::Client::new_and_init().await.expect("Unable to init testground cient.");
+    let client = testground::client::Client::new_and_init()
+        .await
+        .expect("Unable to init testground cient.");
     run_ping(swarm, client).await?;
 
     Ok(())
@@ -31,18 +33,16 @@ struct OrphanRuleWorkaround(Swarm<ping::Behaviour>);
 
 #[async_trait]
 impl PingSwarm for OrphanRuleWorkaround {
-    async fn listen_on(&mut self, address: &str) -> Result<Option<String>> {
+    async fn listen_on(&mut self, address: &str) -> Result<String> {
         let id = self.0.listen_on(address.parse()?)?;
 
         loop {
             if let Some(SwarmEvent::NewListenAddr { listener_id, .. }) = self.0.next().await {
                 if listener_id == id {
-                    break;
+                    return Ok(address.to_string());
                 }
             }
         }
-
-        Ok(None)
     }
 
     fn dial(&mut self, address: &str) -> Result<()> {
@@ -66,9 +66,9 @@ impl PingSwarm for OrphanRuleWorkaround {
 
         while received_pings.len() < number {
             if let Some(SwarmEvent::Behaviour(ping::Event {
-                peer,
-                result: Ok(ping::Success::Ping { .. }),
-            })) = self.0.next().await
+                                                  peer,
+                                                  result: Ok(ping::Success::Ping { .. }),
+                                              })) = self.0.next().await
             {
                 received_pings.insert(peer);
             }
