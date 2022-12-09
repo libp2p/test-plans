@@ -24,7 +24,12 @@ export async function run(testplans: dsl.TestPlans) {
         filesToCreate.files.map(({ filename, filecontents }) =>
             fs.writeFile(path.join(dir, "testplans", filename), filecontents)
         )
+
     )
+    await fs.writeFile(path.join(dir, ".env.toml"), `
+[daemon.scheduler]
+task_timeout_min = 2
+`)
 
     console.log("Created files in ", dir)
 
