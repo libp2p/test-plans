@@ -7,7 +7,7 @@ use libp2pv0510::{
     swarm::{keep_alive, NetworkBehaviour, SwarmEvent},
     tokio_development_transport, webrtc, Multiaddr, PeerId, Swarm, Transport,
 };
-use log::info;
+use log::{debug,info};
 use rand::thread_rng;
 use std::collections::HashSet;
 use std::time::Duration;
@@ -83,10 +83,10 @@ impl PingSwarm for OrphanRuleWorkaround {
                 Some(SwarmEvent::ConnectionEstablished {
                     peer_id, endpoint, ..
                 }) => {
-                    info!("Connection established! {:?}={:?}", &peer_id, &endpoint);
+                    info!("Connection established! {}={}", &peer_id, &endpoint.get_remote_address());
                     connected.insert(peer_id);
                 }
-                Some(event) => info!("Received event {:?}", &event), //This is useful, because it sometimes logs error messages
+                Some(event) => debug!("Received event {:?}", &event), //This is useful, because it sometimes logs error messages
                 None => (),
             }
         }

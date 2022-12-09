@@ -6,7 +6,7 @@ use libp2pv0500::core::muxing::*;
 use libp2pv0500::swarm::{keep_alive, NetworkBehaviour, SwarmEvent};
 use libp2pv0500::*;
 use libp2pv0500::{tokio_development_transport, webrtc};
-use log::info;
+use log::{debug,info};
 use rand::thread_rng;
 use std::{collections::HashSet, time::Duration};
 use testplan::*;
@@ -60,7 +60,7 @@ impl PingSwarm for OrphanRuleWorkaround {
             }) = self.0.next().await
             {
                 if listener_id == id {
-                    info!(
+                    debug!(
                         "NewListenAddr event: listener_id={:?}, address={:?}",
                         &listener_id, &address
                     );
@@ -84,10 +84,10 @@ impl PingSwarm for OrphanRuleWorkaround {
                 Some(SwarmEvent::ConnectionEstablished {
                     peer_id, endpoint, ..
                 }) => {
-                    info!("Connection established! {:?}={:?}", &peer_id, &endpoint);
+                    info!("Connection established! {}={}", &peer_id, &endpoint.get_remote_address());
                     connected.insert(peer_id);
                 }
-                Some(event) => info!("Received event {:?}", &event),
+                Some(event) => debug!("Received event {:?}", &event), //This is useful, because it sometimes logs error messages
                 None => (),
             }
         }
