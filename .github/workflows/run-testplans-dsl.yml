@@ -46,3 +46,24 @@ jobs:
       - name: Print the results
         working-directory: ./test-plans/${{ env.TEST_PLAN_DIR }}/
         run: cat results.csv
+      - name: Render results
+        working-directory: ./test-plans/${{ env.TEST_PLAN_DIR }}/
+        run: npm run renderResults > ./dashboard.md
+      - name: Show Dashboard Output
+        working-directory: ./test-plans/${{ env.TEST_PLAN_DIR }}/
+        run: cat ./dashboard.md >> $GITHUB_STEP_SUMMARY
+      - name: Exit with Error
+        working-directory: ./test-plans/${{ env.TEST_PLAN_DIR }}/
+        run: |
+          if grep -q ":red_circle:" ./dashboard.md; then
+            exit 1
+          else
+            exit 0
+          fi
+      - uses: actions/upload-artifact@v3
+        if: ${{ always() }}
+        with:
+          name: testground-output
+          path: |
+            ./test-plans/${{ env.TEST_PLAN_DIR }}/results.csv
+            ./test-plans/${{ env.TEST_PLAN_DIR }}/dashboard.md

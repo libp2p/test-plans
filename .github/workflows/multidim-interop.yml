@@ -10,30 +10,3 @@ jobs:
     uses: "./.github/workflows/run-testplans-dsl.yml"
     with:
       dir: "multidim-interop"
-  render-results:
-    needs: run-multidim-interop
-    name: Render results into markdown
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
-    steps:
-      - name: Render results
-        working-directory: ./test-plans/multidim-interop
-        run: npm run renderResults > ../interop-dashboard.md
-      - name: Show Dashboard Output
-        run: cat ./test-plans/interop-dashboard.md >> $GITHUB_STEP_SUMMARY
-      - name: Exit with Error
-        run: |
-          if grep -q ":red_circle:" ./test-plans/interop-dashboard.md; then
-            exit 1
-          else
-            exit 0
-          fi
-      - uses: actions/upload-artifact@v3
-        if: ${{ always() }}
-        with:
-          name: testground-output
-          path: |
-            ./test-plans/multidim-interop/results.csv
-            ./test-plans/interop-dashboard.md
