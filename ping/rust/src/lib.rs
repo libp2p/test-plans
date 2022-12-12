@@ -50,7 +50,7 @@ pub async fn run_ping<S>(mut swarm: S, client: testground::client::Client) -> Re
     let local_addr = match transport.as_str() {
         "tcp" => format!("/ip4/{local_ip_addr}/tcp/{LISTENING_PORT}"),
         "webrtc" => format!("/ip4/{local_ip_addr}/udp/{LISTENING_PORT}/webrtc"),
-        unhandled => unimplemented!("Transport unhandled in test: '{}'", unhandled),
+        unhandled => anyhow::bail!("Transport unhandled in test: '{}'", unhandled),
     };
     info!(
         "Test instance, listening for incoming connections on: {:?}.",
@@ -73,7 +73,7 @@ pub async fn run_ping<S>(mut swarm: S, client: testground::client::Client) -> Re
         // two peers dialling each other at the same time).
         //
         // We can do this because sync service pubsub is ordered.
-        .take_while(|a| ready(a != &local_addr && a != &dialable_multiaddr));
+        .take_while(|a| ready(a != &dialable_multiaddr));
 
     let payload = serde_json::json!({
         "ID": swarm.local_peer_id(),

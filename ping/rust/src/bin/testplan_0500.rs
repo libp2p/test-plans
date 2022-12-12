@@ -1,11 +1,29 @@
 use anyhow::Result;
 use async_trait::async_trait;
 use futures::StreamExt;
-use libp2pv0500::core::multiaddr::*;
-use libp2pv0500::core::muxing::*;
-use libp2pv0500::swarm::{keep_alive, NetworkBehaviour, SwarmEvent};
-use libp2pv0500::*;
-use libp2pv0500::{tokio_development_transport, webrtc};
+use libp2pv0500::{
+    core::{
+        either::EitherOutput,
+        muxing::StreamMuxerBox,
+        upgrade::{SelectUpgrade,Version},
+    },
+    identity,
+    mplex,
+    noise,
+    ping,
+    swarm::{
+        keep_alive,
+        NetworkBehaviour,
+        SwarmEvent
+    },
+    tcp,
+    webrtc,
+    yamux,
+    Multiaddr,
+    PeerId,
+    Swarm,
+    Transport,
+};
 use log::{debug, info};
 use rand::thread_rng;
 use std::{collections::HashSet, time::Duration};
@@ -18,16 +36,23 @@ async fn main() -> Result<()> {
     let client = testground::client::Client::new_and_init()
         .await
         .expect("Unable to init testground cient.");
-    let transport = match transport_param(&client).as_str() {
-        "tcp" => tokio_development_transport(local_key)?,
-        "webrtc" => webrtc::tokio::Transport::new(
+    let transport = tcp::tokio::Transport::default()
+        .upgrade(Version::V1)
+        .authenticate(noise::NoiseAuthenticated::xx(&local_key).unwrap())
+        .multiplex(SelectUpgrade::new(
+            yamux::YamuxConfig::default(),
+            mplex::MplexConfig::default(),
+        ))
+        .timeout(Duration::from_secs(20))
+        .or_transport(webrtc::tokio::Transport::new(
             local_key,
             webrtc::tokio::Certificate::generate(&mut thread_rng())?,
-        )
-            .map(|(peer_id, conn), _| (peer_id, StreamMuxerBox::new(conn)))
-            .boxed(),
-        unhandled => unimplemented!("Transport unhandled in test: '{}'", unhandled),
-    };
+        ))
+        .map(|either, _| match either {
+            EitherOutput::First((p, conn)) => (p, StreamMuxerBox::new(conn)),
+            EitherOutput::Second((p, conn)) => (p, StreamMuxerBox::new(conn)),
+        })
+        .boxed();
     let swarm = OrphanRuleWorkaround(Swarm::with_tokio_executor(
         transport,
         Behaviour {
@@ -104,9 +129,9 @@ impl PingSwarm for OrphanRuleWorkaround {
 
         while received_pings.len() < number {
             if let Some(SwarmEvent::Behaviour(BehaviourEvent::Ping(ping::Event {
-                                                                       peer,
-                                                                       result: Ok(ping::Success::Ping { .. }),
-                                                                   }))) = self.0.next().await
+                peer,
+                result: Ok(ping::Success::Ping { .. }),
+            }))) = self.0.next().await
             {
                 received_pings.insert(peer);
             }

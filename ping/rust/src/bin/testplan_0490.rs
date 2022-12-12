@@ -68,9 +68,9 @@ impl PingSwarm for OrphanRuleWorkaround {
 
         while received_pings.len() < number {
             if let Some(SwarmEvent::Behaviour(ping::Event {
-                                                  peer,
-                                                  result: Ok(ping::Success::Ping { .. }),
-                                              })) = self.0.next().await
+                peer,
+                result: Ok(ping::Success::Ping { .. }),
+            })) = self.0.next().await
             {
                 received_pings.insert(peer);
             }
