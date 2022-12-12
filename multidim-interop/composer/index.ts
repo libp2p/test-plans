@@ -44,7 +44,7 @@ export async function buildTestplans(versions: Array<Version>): Promise<TestPlan
     // and muxers tables the distinct combinations where the transport and the muxer
     // of the different libp2p implementations match.
     const queryResults =
-        await db.all(`SELECT DISTINCT a.id as id1, b.id as id2, a.transport, ma.muxer, sa.sec, ha.hash, hb.hash
+        await db.all(`SELECT DISTINCT a.id as id1, b.id as id2, a.transport, ma.muxer, sa.sec as sec1, sb.sec as sec2, ha.hash, hb.hash
                      FROM transports a, transports b, muxers ma, muxers mb, secureChannels sa, secureChannels sb, hash ha, hash hb
                      WHERE a.id != b.id
                      AND a.id == ma.id
@@ -53,44 +53,53 @@ export async function buildTestplans(versions: Array<Version>): Promise<TestPlan
                      AND b.id == sb.id
                      AND a.id == ha.id
                      AND b.id == hb.id
-                     AND a.transport == b.transport
                      AND sa.sec == sb.sec
+                     AND a.transport == b.transport
                      AND ma.muxer == mb.muxer
-                     AND ha.hash < hb.hash
-                     -- quic only uses its own muxer/securechannel
-                     AND a.transport != "quic"
-                     AND a.transport != "quic-v1";`);
-    const quicQueryResults =
-        await db.all(`SELECT DISTINCT a.id as id1, b.id as id2, a.transport, ha.hash, hb.hash
-                     FROM transports a, transports b, hash ha, hash hb
+                     AND ha.hash < hb.hash;`);
+    const sameSecurityQueryResults =
+        await db.all(`SELECT DISTINCT a.id as id1, b.id as id2, a.transport, ma.muxer, sa.sec as sec1, sb.sec as sec2, ha.hash, hb.hash
+                     FROM transports a, transports b, muxers ma, muxers mb, secureChannels sa, secureChannels sb, hash ha, hash hb
                      WHERE a.id != b.id
-                     AND a.transport == b.transport
+                     AND a.id == ma.id
+                     AND b.id == mb.id
+                     AND a.id == sa.id
+                     AND b.id == sb.id
                      AND a.id == ha.id
                      AND b.id == hb.id
-                     AND ha.hash < hb.hash
-                     -- Only quic transports
-                     AND a.transport == "quic";`);
-    const quicV1QueryResults =
-        await db.all(`SELECT DISTINCT a.id as id1, b.id as id2, a.transport, ha.hash, hb.hash
-                     FROM transports a, transports b, hash ha, hash hb
-                     WHERE a.id != b.id
+                     AND sa.sec != sb.sec
                      AND a.transport == b.transport
-                     AND a.id == ha.id
-                     AND b.id == hb.id
-                     AND ha.hash < hb.hash
-                     -- Only quic transports
-                     AND a.transport == "quic-v1";`);
+                     AND ma.muxer == mb.muxer
+                     AND ha.hash < hb.hash;`);
+    const sameVersionQueryResults =
+        await db.all(`SELECT DISTINCT a.id as id1, a.transport, ha.hash, sa.sec as sec1, sb.sec as sec2, ma.muxer, COUNT(*)
+                     FROM transports a, transports b, hash ha, hash hb,
+                     secureChannels sa, secureChannels sb, muxers ma
+                     WHERE a.id == b.id
+                     AND sa.sec != sb.sec
+                     AND ha.hash == hb.hash
+                     GROUP BY id1
+                     HAVING COUNT(*) >= 1;`);
+    const sameVersionAndSecurityQueryResults =
+        await db.all(`SELECT DISTINCT a.id as id1, a.transport, ha.hash, sa.sec as sec1, sb.sec as sec2, ma.muxer, COUNT(*)
+                     FROM transports a, transports b, hash ha, hash hb,
+                     secureChannels sa, secureChannels sb, muxers ma
+                     WHERE a.id == b.id
+                     AND sa.sec == sb.sec
+                     AND ha.hash == hb.hash
+                     GROUP BY id1
+                     HAVING COUNT(*) >= 1;`);
     await db.close();
 
     const testPlans = queryResults.map((test): TestPlan => ({
-        name: `${test.id1} x ${test.id2} (${test.transport}, ${test.sec}, ${test.muxer})`,
+        name: `${test.id1} x ${test.id2} (${test.transport}, ${test.sec1}, ${test.sec2}, ${test.muxer})`,
         instances: [{
             name: test.id1,
             containerImageID: containerImages[test.id1],
             runtimeEnv: {
                 transport: test.transport,
                 muxer: test.muxer,
-                security: test.sec,
+                security: test.sec1,
             }
         }, {
             name: test.id2,
@@ -98,30 +107,68 @@ export async function buildTestplans(versions: Array<Version>): Promise<TestPlan
             runtimeEnv: {
                 transport: test.transport,
                 muxer: test.muxer,
-                security: test.sec,
+                security: test.sec2,
             }
         }]
-    })).concat(quicQueryResults.concat(quicV1QueryResults).map((test): TestPlan => ({
-        name: `${test.id1} x ${test.id2} (${test.transport})`,
+    })).concat(sameSecurityQueryResults.map((test): TestPlan => ({
+        name: `${test.id1} x ${test.id2} (${test.transport}, ${test.sec1}, ${test.sec2}, ${test.muxer})`,
         instances: [{
             name: test.id1,
             containerImageID: containerImages[test.id1],
             runtimeEnv: {
                 transport: test.transport,
-                muxer: "quic",
-                security: "quic",
+                muxer: test.muxer,
+                security: test.sec1,
             }
         }, {
             name: test.id2,
             containerImageID: containerImages[test.id2],
             runtimeEnv: {
                 transport: test.transport,
-                muxer: "quic",
-                security: "quic",
+                muxer: test.muxer,
+                security: test.sec2,
             }
         }]
-
+    }))).concat(sameVersionQueryResults.map((test): TestPlan => ({
+        name: `${test.id1} x ${test.id1} (${test.transport}, ${test.sec1}, ${test.sec2}, ${test.muxer})`,
+        instances: [{
+            name: test.id1,
+            containerImageID: containerImages[test.id1],
+            runtimeEnv: {
+                transport: test.transport,
+                muxer: test.muxer,
+                security: test.sec1,
+            }
+        }, {
+            name: test.id1,
+            containerImageID: containerImages[test.id1],
+            runtimeEnv: {
+                transport: test.transport,
+                muxer: test.muxer,
+                security: test.sec2,
+            }
+        }]
+    }))).concat(sameVersionAndSecurityQueryResults.map((test): TestPlan => ({
+        name: `${test.id1} x ${test.id1} (${test.transport}, ${test.sec1}, ${test.sec2}, ${test.muxer})`,
+        instances: [{
+            name: test.id1,
+            containerImageID: containerImages[test.id1],
+            runtimeEnv: {
+                transport: test.transport,
+                muxer: test.muxer,
+                security: test.sec1,
+            }
+        }, {
+            name: test.id1,
+            containerImageID: containerImages[test.id1],
+            runtimeEnv: {
+                transport: test.transport,
+                muxer: test.muxer,
+                security: test.sec2,
+            }
+        }]
     })))
+
 
     return { testPlans }
 }

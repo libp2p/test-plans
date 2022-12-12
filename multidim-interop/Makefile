@@ -1,10 +1,8 @@
 GO_SUBDIRS := $(wildcard go/*/.)
 
-all: $(GO_SUBDIRS) rust/.
+all: $(GO_SUBDIRS)
 $(GO_SUBDIRS):
 	$(MAKE) -C $@
-rust/.:
-	$(MAKE) -C $@
 
 
-.PHONY: $(GO_SUBDIRS) rust/. all
+.PHONY: $(GO_SUBDIRS) all

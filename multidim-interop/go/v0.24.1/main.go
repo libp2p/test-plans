@@ -18,6 +18,7 @@ import (
 	libp2pquic "github.com/libp2p/go-libp2p/p2p/transport/quic"
 	"github.com/libp2p/go-libp2p/p2p/transport/tcp"
 	"github.com/libp2p/go-libp2p/p2p/transport/websocket"
+	libp2pwebtransport "github.com/libp2p/go-libp2p/p2p/transport/webtransport"
 
 	"github.com/testground/sdk-go/network"
 	"github.com/testground/sdk-go/run"
@@ -78,6 +79,12 @@ func runInterop(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	case "quic":
 		options = append(options, libp2p.Transport(libp2pquic.NewTransport))
 		listenAddr = fmt.Sprintf("/ip4/%s/udp/0/quic", ip)
+	case "quic-v1":
+		options = append(options, libp2p.Transport(libp2pquic.NewTransport))
+		listenAddr = fmt.Sprintf("/ip4/%s/udp/0/quic-v1", ip)
+	case "webtransport":
+		options = append(options, libp2p.Transport(libp2pwebtransport.New))
+		listenAddr = fmt.Sprintf("/ip4/%s/udp/0/quic-v1/webtransport", ip)
 	default:
 		panic("Unsupported transport")
 	}
