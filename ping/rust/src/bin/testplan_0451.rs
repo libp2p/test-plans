@@ -21,11 +21,7 @@ async fn main() -> Result<()> {
         ),
         local_peer_id,
     ));
-    let client = testground::client::Client::new_and_init()
-        .await
-        .expect("Unable to init testground cient.");
-    run_ping(swarm, client).await?;
-
+    run_ping(swarm).await?;
     Ok(())
 }
 

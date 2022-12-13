@@ -33,9 +33,6 @@ use testplan::*;
 async fn main() -> Result<()> {
     let local_key = identity::Keypair::generate_ed25519();
     let local_peer_id = PeerId::from(local_key.public());
-    let client = testground::client::Client::new_and_init()
-        .await
-        .expect("Unable to init testground cient.");
     let transport = tcp::tokio::Transport::default()
         .upgrade(Version::V1)
         .authenticate(noise::NoiseAuthenticated::xx(&local_key).unwrap())
@@ -62,7 +59,7 @@ async fn main() -> Result<()> {
         local_peer_id,
     ));
 
-    run_ping(swarm, client).await?;
+    run_ping(swarm).await?;
 
     Ok(())
 }
@@ -87,10 +84,6 @@ impl PingSwarm for OrphanRuleWorkaround {
                         }) = self.0.next().await
             {
                 if listener_id == id {
-                    debug!(
-                        "NewListenAddr event: listener_id={:?}, address={:?}",
-                        &listener_id, &address
-                    );
                     return Ok(address.to_string());
                 }
             }

@@ -2,7 +2,7 @@ use anyhow::Result;
 use env_logger::Env;
 use futures::future::ready;
 use futures::{FutureExt, StreamExt};
-use log::info;
+use log::{debug,info};
 use rand::Rng;
 use std::borrow::Cow;
 use std::io;
@@ -28,7 +28,7 @@ pub trait PingSwarm: Sized {
     fn local_peer_id(&self) -> String;
 }
 
-pub async fn run_ping<S>(mut swarm: S, client: testground::client::Client) -> Result<()>
+pub async fn run_ping<S>(mut swarm: S) -> Result<()>
     where
         S: PingSwarm,
 {
@@ -36,6 +36,9 @@ pub async fn run_ping<S>(mut swarm: S, client: testground::client::Client) -> Re
 
     info!("Running ping test: {}", swarm.local_peer_id());
 
+    let client = testground::client::Client::new_and_init()
+        .await
+        .expect("Unable to init testground cient.");
     let transport = transport_param(&client);
     let local_ip_addr = match if_addrs::get_if_addrs()?
         .into_iter()
@@ -58,6 +61,7 @@ pub async fn run_ping<S>(mut swarm: S, client: testground::client::Client) -> Re
     );
 
     let dialable_multiaddr = swarm.listen_on(&local_addr).await?;
+    debug!("Can be dialed at {}", &dialable_multiaddr);
 
     let test_instance_count = client.run_parameters().test_instance_count as usize;
     let mut address_stream = client

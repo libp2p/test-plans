@@ -34,9 +34,6 @@ use testplan::{run_ping, PingSwarm};
 async fn main() -> Result<()> {
     let local_key = identity::Keypair::generate_ed25519();
     let local_peer_id = PeerId::from(local_key.public());
-    let client = testground::client::Client::new_and_init()
-        .await
-        .expect("Unable to init testground cient.");
     let transport = tcp::tokio::Transport::default()
                 .upgrade(Version::V1)
                 .authenticate(noise::NoiseAuthenticated::xx(&local_key).unwrap())
@@ -63,7 +60,7 @@ async fn main() -> Result<()> {
         local_peer_id,
     ));
 
-    run_ping(swarm, client).await?;
+    run_ping(swarm).await?;
 
     Ok(())
 }
