@@ -2,7 +2,7 @@ use anyhow::Result;
 use env_logger::Env;
 use futures::future::ready;
 use futures::{FutureExt, StreamExt};
-use log::{debug,info};
+use log::{debug, info};
 use rand::Rng;
 use std::borrow::Cow;
 use std::io;
@@ -29,8 +29,8 @@ pub trait PingSwarm: Sized {
 }
 
 pub async fn run_ping<S>(mut swarm: S) -> Result<()>
-    where
-        S: PingSwarm,
+where
+    S: PingSwarm,
 {
     env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
 
@@ -165,8 +165,8 @@ pub async fn run_ping<S>(mut swarm: S) -> Result<()>
 }
 
 async fn ping<S>(client: &testground::client::Client, swarm: &mut S, tag: String) -> Result<()>
-    where
-        S: PingSwarm,
+where
+    S: PingSwarm,
 {
     info!("Wait to receive ping from each peer.");
 
@@ -182,8 +182,8 @@ async fn signal_wait_and_drive_swarm<S>(
     swarm: &mut S,
     tag: String,
 ) -> Result<()>
-    where
-        S: PingSwarm,
+where
+    S: PingSwarm,
 {
     info!(
         "Signal and wait for all peers to signal being done with \"{}\".",
@@ -197,7 +197,7 @@ async fn signal_wait_and_drive_swarm<S>(
             .signal_and_wait(tag, client.run_parameters().test_instance_count)
             .boxed_local(),
     )
-        .await;
+    .await;
 
     Ok(())
 }

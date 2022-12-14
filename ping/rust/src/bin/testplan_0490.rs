@@ -16,8 +16,8 @@ async fn main() -> Result<()> {
         development_transport(local_key).await?,
         ping::Behaviour::new(
             #[allow(deprecated)]
-                // TODO: Fixing this deprecation requires https://github.com/libp2p/rust-libp2p/pull/3055.
-                ping::Config::new()
+            // TODO: Fixing this deprecation requires https://github.com/libp2p/rust-libp2p/pull/3055.
+            ping::Config::new()
                 .with_interval(Duration::from_secs(1))
                 .with_keep_alive(true),
         ),

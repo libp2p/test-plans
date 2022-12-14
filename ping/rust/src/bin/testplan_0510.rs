@@ -5,24 +5,11 @@ use libp2pv0510::{
     core::{
         either::EitherOutput,
         muxing::StreamMuxerBox,
-        upgrade::{SelectUpgrade,Version},
+        upgrade::{SelectUpgrade, Version},
     },
-    identity,
-    mplex,
-    noise,
-    ping,
-    swarm::{
-        keep_alive,
-        NetworkBehaviour,
-        SwarmEvent
-    },
-    tcp,
-    webrtc,
-    yamux,
-    Multiaddr,
-    PeerId,
-    Swarm,
-    Transport,
+    identity, mplex, noise, ping,
+    swarm::{keep_alive, NetworkBehaviour, SwarmEvent},
+    tcp, webrtc, yamux, Multiaddr, PeerId, Swarm, Transport,
 };
 use log::{debug, info};
 use rand::thread_rng;
@@ -35,22 +22,22 @@ async fn main() -> Result<()> {
     let local_key = identity::Keypair::generate_ed25519();
     let local_peer_id = PeerId::from(local_key.public());
     let transport = tcp::tokio::Transport::default()
-                .upgrade(Version::V1)
-                .authenticate(noise::NoiseAuthenticated::xx(&local_key).unwrap())
-                .multiplex(SelectUpgrade::new(
-                    yamux::YamuxConfig::default(),
-                    mplex::MplexConfig::default(),
-                ))
-                .timeout(Duration::from_secs(20))
-                .or_transport(webrtc::tokio::Transport::new(
-                    local_key,
-                    webrtc::tokio::Certificate::generate(&mut thread_rng())?,
-                ))
-                .map(|either, _| match either {
-                    EitherOutput::First((p, conn)) => (p, StreamMuxerBox::new(conn)),
-                    EitherOutput::Second((p, conn)) => (p, StreamMuxerBox::new(conn)),
-                })
-                .boxed();
+        .upgrade(Version::V1)
+        .authenticate(noise::NoiseAuthenticated::xx(&local_key).unwrap())
+        .multiplex(SelectUpgrade::new(
+            yamux::YamuxConfig::default(),
+            mplex::MplexConfig::default(),
+        ))
+        .timeout(Duration::from_secs(20))
+        .or_transport(webrtc::tokio::Transport::new(
+            local_key,
+            webrtc::tokio::Certificate::generate(&mut thread_rng())?,
+        ))
+        .map(|either, _| match either {
+            EitherOutput::First((p, conn)) => (p, StreamMuxerBox::new(conn)),
+            EitherOutput::Second((p, conn)) => (p, StreamMuxerBox::new(conn)),
+        })
+        .boxed();
     let swarm = OrphanRuleWorkaround(Swarm::with_tokio_executor(
         transport,
         Behaviour {
@@ -81,9 +68,9 @@ impl PingSwarm for OrphanRuleWorkaround {
 
         loop {
             if let Some(SwarmEvent::NewListenAddr {
-                            listener_id,
-                            address,
-                        }) = self.0.next().await
+                listener_id,
+                address,
+            }) = self.0.next().await
             {
                 if listener_id == id {
                     return Ok(address.to_string());
@@ -104,8 +91,8 @@ impl PingSwarm for OrphanRuleWorkaround {
         while connected.len() < number {
             match self.0.next().await {
                 Some(SwarmEvent::ConnectionEstablished {
-                         peer_id, endpoint, ..
-                     }) => {
+                    peer_id, endpoint, ..
+                }) => {
                     info!(
                         "Connection established! {}={}",
                         &peer_id,

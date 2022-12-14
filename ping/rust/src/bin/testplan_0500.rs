@@ -5,24 +5,11 @@ use libp2pv0500::{
     core::{
         either::EitherOutput,
         muxing::StreamMuxerBox,
-        upgrade::{SelectUpgrade,Version},
+        upgrade::{SelectUpgrade, Version},
     },
-    identity,
-    mplex,
-    noise,
-    ping,
-    swarm::{
-        keep_alive,
-        NetworkBehaviour,
-        SwarmEvent
-    },
-    tcp,
-    webrtc,
-    yamux,
-    Multiaddr,
-    PeerId,
-    Swarm,
-    Transport,
+    identity, mplex, noise, ping,
+    swarm::{keep_alive, NetworkBehaviour, SwarmEvent},
+    tcp, webrtc, yamux, Multiaddr, PeerId, Swarm, Transport,
 };
 use log::{debug, info};
 use rand::thread_rng;
@@ -79,9 +66,9 @@ impl PingSwarm for OrphanRuleWorkaround {
         let id = self.0.listen_on(address.parse()?)?;
         loop {
             if let Some(SwarmEvent::NewListenAddr {
-                            listener_id,
-                            address,
-                        }) = self.0.next().await
+                listener_id,
+                address,
+            }) = self.0.next().await
             {
                 if listener_id == id {
                     return Ok(address.to_string());
@@ -102,8 +89,8 @@ impl PingSwarm for OrphanRuleWorkaround {
         while connected.len() < number {
             match self.0.next().await {
                 Some(SwarmEvent::ConnectionEstablished {
-                         peer_id, endpoint, ..
-                     }) => {
+                    peer_id, endpoint, ..
+                }) => {
                     info!(
                         "Connection established! {}={}",
                         &peer_id,
