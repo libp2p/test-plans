@@ -206,7 +206,6 @@ pub fn transport_param(client: &testground::client::Client) -> String {
     client
         .run_parameters()
         .test_instance_params
-        .get("transport")
-        .map(|s| s.clone())
+        .get("transport").cloned()
         .unwrap_or_else(|| "tcp".to_owned())
 }
