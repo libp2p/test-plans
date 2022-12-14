@@ -1,11 +1,10 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use env_logger::Env;
 use futures::future::ready;
 use futures::{FutureExt, StreamExt};
 use log::{debug, info};
 use rand::Rng;
 use std::borrow::Cow;
-use std::io;
 use std::time::Duration;
 use testground::network_conf::{
     FilterAction, LinkShape, NetworkConfiguration, RoutingPolicyType, DEFAULT_DATA_NETWORK,
@@ -38,12 +37,13 @@ where
 
     let client = testground::client::Client::new_and_init()
         .await
-        .expect("Unable to init testground cient.");
+        .map_err(|e| anyhow::anyhow!(e.to_string()))
+        .context("Unable to init testground cient.")?;
     let transport = transport_param(&client);
     let local_ip_addr = match if_addrs::get_if_addrs()?
         .into_iter()
         .find(|iface| iface.name == "eth1")
-        .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "Can't find iface eth1"))?
+        .context("Can't find iface eth1")?
         .addr
         .ip()
     {
@@ -206,6 +206,7 @@ pub fn transport_param(client: &testground::client::Client) -> String {
     client
         .run_parameters()
         .test_instance_params
-        .get("transport").cloned()
+        .get("transport")
+        .cloned()
         .unwrap_or_else(|| "tcp".to_owned())
 }

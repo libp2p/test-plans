@@ -94,7 +94,7 @@ impl PingSwarm for OrphanRuleWorkaround {
                     peer_id, endpoint, ..
                 }) => {
                     info!(
-                        "Connection established! {}={}",
+                        "Connection established! {}={:?}",
                         &peer_id,
                         &endpoint.get_remote_address()
                     );
