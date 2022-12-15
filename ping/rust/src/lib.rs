@@ -38,8 +38,7 @@ where
     let client = testground::client::Client::new_and_init()
         .await
         .map_err(|e| anyhow::anyhow!(e.to_string()))
-        .context("Unable to init testground cient.")?;
-    let transport = transport_param(&client);
+        .context("Unable to init testground client.")?;
     let local_ip_addr = match if_addrs::get_if_addrs()?
         .into_iter()
         .find(|iface| iface.name == "eth1")
@@ -50,7 +49,7 @@ where
         std::net::IpAddr::V4(addr) => addr.to_string(),
         std::net::IpAddr::V6(_) => unimplemented!(),
     };
-    let local_addr = match transport.as_str() {
+    let local_addr = match transport_param(&client).as_ref() {
         "tcp" => format!("/ip4/{local_ip_addr}/tcp/{LISTENING_PORT}"),
         "webrtc" => format!("/ip4/{local_ip_addr}/udp/{LISTENING_PORT}/webrtc"),
         unhandled => anyhow::bail!("Transport unhandled in test: '{}'", unhandled),
@@ -102,7 +101,12 @@ where
     swarm
         .await_connections(client.run_parameters().test_instance_count as usize - 1)
         .await;
-    info!("Connections awaited.");
+
+    info!(
+        "Connected to {} peers",
+        client.run_parameters().test_instance_count - 1
+    );
+
     signal_wait_and_drive_swarm(&client, &mut swarm, "connected".to_string()).await?;
 
     ping(&client, &mut swarm, "initial".to_string()).await?;
@@ -208,5 +212,5 @@ pub fn transport_param(client: &testground::client::Client) -> String {
         .test_instance_params
         .get("transport")
         .cloned()
-        .unwrap_or_else(|| "tcp".to_owned())
+        .unwrap_or_else(|| "tcp".into())
 }
