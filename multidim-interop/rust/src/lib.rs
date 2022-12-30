@@ -114,7 +114,7 @@ where
 
     ping(&client, &mut swarm, "initial".to_string()).await?;
 
-    let iterations: usize = 3;
+    let iterations: usize = 1;
     let max_latency_ms: u64 = 100;
 
     for i in 1..iterations + 1 {

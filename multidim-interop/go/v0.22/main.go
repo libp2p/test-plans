@@ -9,6 +9,8 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/libp2p/go-libp2p"
+	"github.com/libp2p/go-libp2p/core/event"
+	corenetwork "github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/p2p/muxer/mplex"
 	"github.com/libp2p/go-libp2p/p2p/muxer/yamux"
@@ -119,6 +121,12 @@ func runInterop(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	// Record our listen addrs.
 	runenv.RecordMessage("my listen addrs: %v", host.Addrs())
 
+	// Subscribe to connectedness events.
+	connectedEvtBus, err := host.EventBus().Subscribe(new(event.EvtPeerConnectednessChanged))
+	if err != nil {
+		return err
+	}
+
 	// Obtain our own address info, and use the sync service to publish it to a
 	// 'peersTopic' topic, where others will read from.
 	var (
@@ -202,13 +210,24 @@ func runInterop(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 		if ai.ID == hostId {
 			break
 		}
-		runenv.RecordMessage("Dial peer: %s", ai.ID)
+		runenv.RecordMessage("Dial peer: %s on %s", ai.ID, ai.Addrs)
 		if err := host.Connect(ctx, *ai); err != nil {
 			return err
 		}
 	}
 
 	runenv.RecordMessage("done dialling my peers")
+
+	// Wait for a connection to all peers
+	connectedPeers := 0
+	for e := range connectedEvtBus.Out() {
+		if e.(event.EvtPeerConnectednessChanged).Connectedness == corenetwork.Connected {
+			connectedPeers++
+		}
+		if connectedPeers == runenv.TestInstanceCount-1 {
+			break
+		}
+	}
 
 	// Wait for all peers to signal that they're done with the connection phase.
 	initCtx.SyncClient.MustSignalAndWait(ctx, "connected", runenv.TestInstanceCount)
@@ -232,7 +251,7 @@ func runInterop(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	// Let's initialize the random seed to the current timestamp + our global sequence number.
 	// Otherwise all instances will end up generating the same "random" latencies 🤦‍
 	rand.Seed(time.Now().UnixNano() + initCtx.GlobalSeq)
-	iterations := 3
+	iterations := 1
 	maxLatencyMs := 100
 
 	for i := 1; i <= iterations; i++ {
