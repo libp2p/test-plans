@@ -8,7 +8,9 @@ import (
 	"fmt"
 
 	"github.com/libp2p/go-libp2p"
+	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p/config"
+	"github.com/libp2p/go-libp2p/core/event"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
 
@@ -24,6 +26,34 @@ func NewLibp2(ctx context.Context, secureChannel string, opts ...config.Option) 
 	return libp2p.New(
 		append(opts, security)...,
 	)
+}
+
+type ConnEventsSub struct {
+	sub event.Subscription
+}
+
+func SubscribeToConnectedEvents() (ConnEventsSub, error) {
+	sub, err := host.EventBus().Subscribe(new(event.EvtPeerConnectednessChanged))
+	if err != nil {
+		return ConnEventsSub{}, err
+	}
+
+	return ConnEventsSub{
+		sub: sub,
+	}, nil
+
+}
+
+func (s *ConnEventsSub) WaitForNConnectedEvents(n int) {
+	connectedPeers := 0
+	for e := range s.sub.Out() {
+		if e.(event.EvtPeerConnectednessChanged).Connectedness == network.Connected {
+			connectedPeers++
+		}
+		if connectedPeers == n {
+			return
+		}
+	}
 }
 
 func getSecurityByName(secureChannel string) libp2p.Option {
