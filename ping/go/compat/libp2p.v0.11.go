@@ -43,7 +43,7 @@ type ConnEventsSub struct {
 	sub event.Subscription
 }
 
-func SubscribeToConnectedEvents() (ConnEventsSub, error) {
+func SubscribeToConnectedEvents(host host.Host) (ConnEventsSub, error) {
 	sub, err := host.EventBus().Subscribe(new(event.EvtPeerConnectednessChanged))
 	if err != nil {
 		return ConnEventsSub{}, err
