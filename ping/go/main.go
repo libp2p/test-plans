@@ -133,7 +133,7 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	runenv.RecordMessage("my listen addrs: %v", host.Addrs())
 
 	// Subscribe to connectedness events.
-	connectedEvents, err := compat.SubscribeToConnectedEvents()
+	connectedEvents, err := compat.SubscribeToConnectedEvents(host)
 	if err != nil {
 		return err
 	}
