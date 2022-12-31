@@ -132,6 +132,12 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	// Record our listen addrs.
 	runenv.RecordMessage("my listen addrs: %v", host.Addrs())
 
+	// Subscribe to connectedness events.
+	connectedEvents, err := compat.SubscribeToConnectedEvents(host)
+	if err != nil {
+		return err
+	}
+
 	// Obtain our own address info, and use the sync service to publish it to a
 	// 'peersTopic' topic, where others will read from.
 	var (
@@ -222,6 +228,10 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 	}
 
 	runenv.RecordMessage("done dialling my peers")
+
+	// Wait for a connection to all peers
+	connectedEvents.WaitForNConnectedEvents(runenv.TestInstanceCount - 1)
+	runenv.RecordMessage("Connected")
 
 	// Wait for all peers to signal that they're done with the connection phase.
 	initCtx.SyncClient.MustSignalAndWait(ctx, "connected", runenv.TestInstanceCount)
