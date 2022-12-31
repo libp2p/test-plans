@@ -6,11 +6,10 @@ package compat
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/libp2p/go-libp2p"
-	"github.com/libp2p/go-libp2p-core/event"
 	"github.com/libp2p/go-libp2p-core/host"
-	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p/config"
 
@@ -40,29 +39,13 @@ func getSecurityByName(secureChannel string) libp2p.Option {
 }
 
 type ConnEventsSub struct {
-	sub event.Subscription
 }
 
 func SubscribeToConnectedEvents(host host.Host) (ConnEventsSub, error) {
-	sub, err := host.EventBus().Subscribe(new(event.EvtPeerConnectednessChanged))
-	if err != nil {
-		return ConnEventsSub{}, err
-	}
-
-	return ConnEventsSub{
-		sub: sub,
-	}, nil
-
+	return ConnEventsSub{}, nil
 }
 
 func (s *ConnEventsSub) WaitForNConnectedEvents(n int) {
-	connectedPeers := 0
-	for e := range s.sub.Out() {
-		if e.(event.EvtPeerConnectednessChanged).Connectedness == network.Connected {
-			connectedPeers++
-		}
-		if connectedPeers == n {
-			return
-		}
-	}
+	// We can't subscribe to events here. Let's just do a timeout.
+	time.Sleep(5 * time.Second)
 }

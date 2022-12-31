@@ -231,6 +231,7 @@ func runPing(runenv *runtime.RunEnv, initCtx *run.InitContext) error {
 
 	// Wait for a connection to all peers
 	connectedEvents.WaitForNConnectedEvents(runenv.TestInstanceCount - 1)
+	runenv.RecordMessage("Connected")
 
 	// Wait for all peers to signal that they're done with the connection phase.
 	initCtx.SyncClient.MustSignalAndWait(ctx, "connected", runenv.TestInstanceCount)
