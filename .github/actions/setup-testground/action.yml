@@ -21,11 +21,12 @@ runs:
       run: |
         for i in 1 2 3; do
           echo "=== Attempt $i ==="
-          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/testground/testground/master/install.sh)" && \
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/testground/testground/install-to-pwd/install.sh)" && \
             exit 0
           sleep 10
         done
         exit 1
+      working-directory: /usr/local/bin
     # Custom setup (slower) when we use a different testground_ref
     - name: Checkout testground
       if: ${{ inputs.testground_ref != 'edge' }}
