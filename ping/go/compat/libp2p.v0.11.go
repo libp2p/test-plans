@@ -6,6 +6,7 @@ package compat
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/host"
@@ -35,4 +36,16 @@ func getSecurityByName(secureChannel string) libp2p.Option {
 		return libp2p.Security(tls.ID, tls.New)
 	}
 	panic(fmt.Sprintf("unknown secure channel: %s", secureChannel))
+}
+
+type ConnEventsSub struct {
+}
+
+func SubscribeToConnectedEvents(host host.Host) (ConnEventsSub, error) {
+	return ConnEventsSub{}, nil
+}
+
+func (s *ConnEventsSub) WaitForNConnectedEvents(n int) {
+	// We can't subscribe to events here. Let's just do a timeout.
+	time.Sleep(5 * time.Second)
 }
