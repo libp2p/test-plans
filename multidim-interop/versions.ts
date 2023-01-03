@@ -24,7 +24,7 @@ export const versions: Array<Version> = [
         id: "rust-v0.50.0",
         containerImageID: rustv050.imageID,
         transports: ["ws", "tcp", "quic-v1"],
-        secureChannels: ["noise"],
+        secureChannels: ["tls", "noise"],
         muxers: ["mplex", "yamux"],
     },
     {

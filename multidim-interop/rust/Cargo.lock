@@ -1431,6 +1431,7 @@ dependencies = [
  "libp2p-quic",
  "libp2p-swarm 0.41.1",
  "libp2p-tcp 0.38.0",
+ "libp2p-tls",
  "libp2p-websocket 0.40.0",
  "libp2p-yamux 0.42.0",
  "multiaddr 0.16.0",

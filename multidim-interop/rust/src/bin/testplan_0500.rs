@@ -1,7 +1,11 @@
 use anyhow::Result;
 use async_trait::async_trait;
-use futures::StreamExt;
-use libp2p::core::muxing::StreamMuxerBox;
+use futures::{AsyncRead, AsyncWrite, StreamExt};
+use libp2p::core::transport::Boxed;
+use libp2p::core::upgrade::EitherUpgrade;
+use libp2p::noise::NoiseOutput;
+use libp2p::tls::TlsStream;
+use libp2p::{core::muxing::StreamMuxerBox, swarm::derive_prelude::EitherOutput};
 use libp2pv0500 as libp2p;
 use libp2pv0500::swarm::SwarmEvent;
 use libp2pv0500::websocket::WsConfig;
@@ -10,6 +14,55 @@ use std::collections::HashSet;
 use std::time::Duration;
 use testground::client::Client as TGClient;
 use testplan::{run_ping, PingSwarm, TransportKind};
+
+fn build_builder<T, C>(
+    builder: core::transport::upgrade::Builder<T>,
+    secure_channel_param: String,
+    muxer_param: String,
+    local_key: identity::Keypair,
+) -> Boxed<(libp2p::PeerId, StreamMuxerBox)>
+where
+    T: Transport<Output = C> + Send + Unpin + 'static,
+    <T as libp2p::Transport>::Error: Sync + Send,
+    <T as libp2p::Transport>::Error: 'static,
+    <T as libp2p::Transport>::ListenerUpgrade: Send,
+    <T as libp2p::Transport>::Dial: Send,
+    C: AsyncRead + AsyncWrite + Send + Unpin + 'static,
+{
+    let secure_upgrade = match secure_channel_param.as_str() {
+        "noise" => EitherUpgrade::A(libp2p::noise::NoiseAuthenticated::xx(&local_key).unwrap()),
+        "tls" => EitherUpgrade::B(libp2p::tls::Config::new(&local_key).unwrap()),
+        _ => panic!("Unsupported secure channel"),
+    };
+
+    trait AsyncRW: 'static + AsyncRead + AsyncWrite + Unpin + Send {}
+    impl<T> AsyncRW for T where T: 'static + AsyncRead + AsyncWrite + Unpin + Send {}
+
+    let f = |x: EitherOutput<
+        (libp2p::PeerId, NoiseOutput<core::Negotiated<C>>),
+        (libp2p::PeerId, TlsStream<core::Negotiated<C>>),
+    >|
+     -> (PeerId, Box<dyn AsyncRW>) {
+        match x {
+            EitherOutput::First((p_id, out)) => (p_id, Box::new(out)),
+            EitherOutput::Second((p_id, out)) => (p_id, Box::new(out)),
+        }
+    };
+
+    let secure_upgrade = secure_upgrade.map_outbound(f).map_inbound(f);
+    let authenticated = builder.authenticate(secure_upgrade);
+
+    let mux_upgrade = match muxer_param.as_str() {
+        "yamux" => EitherUpgrade::A(yamux::YamuxConfig::default()),
+        "mplex" => EitherUpgrade::B(mplex::MplexConfig::default()),
+        _ => panic!("Unsupported muxer"),
+    };
+
+    authenticated
+        .multiplex(mux_upgrade)
+        .timeout(Duration::from_secs(5))
+        .boxed()
+}
 
 #[async_std::main]
 async fn main() -> Result<()> {
@@ -42,63 +95,39 @@ async fn main() -> Result<()> {
         .parse()
         .unwrap();
 
-    // Lots of duplication because I, Marco, couldn't figure out how to make the type system happy.
-    let boxed_transport =
-        match transport_param.as_str() {
-            "quic-v1" => {
-                let builder =
-                    libp2p::quic::async_std::Transport::new(libp2p::quic::Config::new(&local_key))
-                        .map(|(p, c), _| (p, StreamMuxerBox::new(c)));
-                builder.boxed()
-            }
-            "tcp" => {
-                let builder = libp2p::tcp::async_io::Transport::new(libp2p::tcp::Config::new())
-                    .upgrade(libp2p::core::upgrade::Version::V1Lazy);
-
-                let authenticated = match secure_channel_param.as_str() {
-                    "noise" => builder
-                        .authenticate(libp2p::noise::NoiseAuthenticated::xx(&local_key).unwrap()),
-                    _ => panic!("Unsupported secure channel"),
-                };
-
-                match muxer_param.as_str() {
-                    "yamux" => authenticated
-                        .multiplex(yamux::YamuxConfig::default())
-                        .timeout(Duration::from_secs(5))
-                        .boxed(),
-                    "mplex" => authenticated
-                        .multiplex(mplex::MplexConfig::default())
-                        .timeout(Duration::from_secs(5))
-                        .boxed(),
-                    _ => panic!("Unsupported muxer"),
-                }
-            }
-            "ws" => {
-                let builder = WsConfig::new(libp2p::tcp::async_io::Transport::new(
-                    libp2p::tcp::Config::new(),
-                ))
+    let boxed_transport = match transport_param.as_str() {
+        "quic-v1" => {
+            let builder =
+                libp2p::quic::async_std::Transport::new(libp2p::quic::Config::new(&local_key))
+                    .map(|(p, c), _| (p, StreamMuxerBox::new(c)));
+            builder.boxed()
+        }
+        "tcp" => {
+            let builder = libp2p::tcp::async_io::Transport::new(libp2p::tcp::Config::new())
                 .upgrade(libp2p::core::upgrade::Version::V1Lazy);
 
-                let authenticated = match secure_channel_param.as_str() {
-                    "noise" => builder
-                        .authenticate(libp2p::noise::NoiseAuthenticated::xx(&local_key).unwrap()),
-                    _ => panic!("Unsupported secure channel"),
-                };
+            build_builder(
+                builder,
+                secure_channel_param,
+                muxer_param,
+                local_key.clone(),
+            )
+        }
+        "ws" => {
+            let builder = WsConfig::new(libp2p::tcp::async_io::Transport::new(
+                libp2p::tcp::Config::new(),
+            ))
+            .upgrade(libp2p::core::upgrade::Version::V1Lazy);
 
-                match muxer_param.as_str() {
-                    "yamux" => authenticated
-                        .multiplex(yamux::YamuxConfig::default())
-                        .timeout(Duration::from_secs(5))
-                        .boxed(),
-                    "mplex" => authenticated
-                        .multiplex(mplex::MplexConfig::default())
-                        .timeout(Duration::from_secs(5))
-                        .boxed(),
-                    _ => panic!("Unsupported muxer"),
-                }
-            }
-            _ => panic!("Unsupported"),
-        };
+            build_builder(
+                builder,
+                secure_channel_param,
+                muxer_param,
+                local_key.clone(),
+            )
+        }
+        _ => panic!("Unsupported"),
+    };
 
     let transport_kind = match transport_param.as_str() {
         "tcp" => TransportKind::Tcp,
