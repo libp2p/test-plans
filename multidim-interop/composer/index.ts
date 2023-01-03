@@ -1,6 +1,5 @@
 import sqlite3 from "sqlite3";
 import { open } from "sqlite";
-import { promisify } from "util";
 import { TestPlan, TestPlans } from "dsl/src/dsl";
 import { createHmac } from "crypto";
 import { Version } from "../versions";
@@ -123,5 +122,8 @@ export async function buildTestplans(versions: Array<Version>): Promise<TestPlan
 
     })))
 
-    return { testPlans }
+    return {
+        testPlans,
+        env: { daemon: { scheduler: { task_timeout_min: 2 } } }
+    }
 }

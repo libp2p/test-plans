@@ -2,7 +2,8 @@ import * as dsl from './dsl'
 import * as TOML from '@iarna/toml'
 
 export type TestgroundConfig = {
-    files: Array<FileMeta>
+    files: Array<FileMeta>,
+    env?: dsl.TestgroundEnv,
 }
 
 type FileMeta = {
@@ -23,7 +24,8 @@ export function transform(testplans: dsl.TestPlans): TestgroundConfig {
                 filename: "manifest.toml",
                 filecontents: TOML.stringify(generateManifest())
             }
-        ]
+        ],
+        env: testplans.env,
     }
 }
 
@@ -70,8 +72,9 @@ function stringifyRuntimeEnv(env: dsl.GenericEnvParams): { [key: string]: string
 function generateRuns({ testPlans }: dsl.TestPlans): Array<{}> {
     return testPlans.map(tp => ({
         id: tp.name.replaceAll(" ", "_"),
-        groups: tp.instances.map(inst => ({
-            id: inst.name.replaceAll(" ", "_") + inst.containerImageID.replaceAll(":", "_"),
+        groups: tp.instances.map((inst, idx) => ({
+            group_id: inst.name.replaceAll(" ", "_") + inst.containerImageID.replaceAll(":", "_"),
+            id: `${inst.name.replaceAll(" ", "_")}_${idx}`,
             test_params: stringifyRuntimeEnv(inst.runtimeEnv)
         }))
     }))

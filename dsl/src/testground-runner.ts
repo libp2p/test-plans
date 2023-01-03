@@ -5,6 +5,7 @@ import { transform } from './testground-transform'
 import path from 'path';
 import { execSync, spawn } from 'child_process';
 import { env } from 'process';
+import * as TOML from '@iarna/toml'
 
 function waitForTestground(testgroundHome: string) {
     const execOpts = {
@@ -51,10 +52,10 @@ export async function run(testplans: dsl.TestPlans) {
         )
 
     )
-    await fs.writeFile(path.join(dir, ".env.toml"), `
-[daemon.scheduler]
-task_timeout_min = 2
-`)
+
+    if (testplans.env) {
+        await fs.writeFile(path.join(dir, ".env.toml"), TOML.stringify(testplans.env))
+    }
 
     console.log("Created files in ", dir)
 
