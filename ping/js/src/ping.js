@@ -1,30 +1,14 @@
 const { network } = require('@testground/sdk')
-const { PingService } = require('libp2p')
+const { createLibp2p } = require('libp2p')
+const { webSockets } = require('@libp2p/websockets')
+const { noise } = require('@chainsafe/libp2p-noise')
 
-function sleep (ms) {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms)
-  })
-}
-
-function getRandom (min, max) {
-  return Math.random() * (max - min) + min
-}
-
-// Demonstrates synchronization between instances in the test group.
-//
-// In this example, the first instance to signal enrollment becomes the leader
-// of the test case.
-//
-// The leader waits until all the followers have reached the state "ready"
-// then, the followers wait for a signal from the leader to be released.
 module.exports = async (runenv, client) => {
-	// 📝  Consume test parameters from the runtime environment.
-  const secureChannel = runenv.runParams.testInstanceParams['secure_channel']
+  // consume test parameters from the runtime environment.
   const maxLatencyMs = runenv.runParams.testInstanceParams['max_latency_ms']
   const iterations = runenv.runParams.testInstanceParams['iterations']
 
-	runenv.recordMessage(`started test instance; params: secure_channel=${secureChannel}, max_latency_ms=${maxLatencyMs}, iterations=${iterations}`)
+  runenv.recordMessage(`started test instance; params: secure_channel=${secureChannel}, max_latency_ms=${maxLatencyMs}, iterations=${iterations}`)
 
   // instantiate a network client; see 'Traffic shaping' in the docs.
   const netClient = network.newClient(client, runenv)
@@ -35,21 +19,64 @@ module.exports = async (runenv, client) => {
   runenv.recordMessage('network initilization complete')
 
   // We need to listen on (and advertise) our data network IP address, so we
-	// obtain it from the NetClient.
-	const ip = netClient.getDataNetworkIP()
+  // obtain it from the NetClient.
+  const ip = netClient.getDataNetworkIP()
 
-	// ☎️  Let's construct the libp2p node.
-	const listenAddr = `/ip4/${ip}/tcp/0`
-	// host, err := compat.NewLibp2(ctx,
-	// 	secureChannel,
-	// 	libp2p.ListenAddrStrings(listenAddr),
-	// )
+  // create our libp2p node without starting it
+  const node = await createLibp2p({
+    start: false,
+    addresses: {
+      listen: [`/ip4/${ip}/tcp/8000/ws`]
+    },
+    transports: [webSockets()],
+    connectionEncryption: [noise()]
+  })
 
+  // start the libp2p node
+  runenv.recordMessage('starting libp2p node')
+  await node.start()
 
-	// 🚧  Now we instantiate the ping service.
-	//
-	// This adds a stream handler to our Host so it can process inbound pings,
-	// and the returned PingService instance allows us to perform outbound pings.
-  const ping = new PingService()
-  // TODO: ^ how to construct this
+  const listenAddrs = node.getMultiaddrs()
+  runenv.recordMessage(`libp2p is listening on the following addresses: ${listenAddrs}`)
+
+  // obtain our peers and publish our own address as well
+  // ...fetch the other peers
+  const peers = []
+  const peerTopic = await client.subscribe('peers')
+  for (const i = 0; i < runenv.testInstanceCount; i++) {
+    peers.push(await peerTopic.wait.next())
+  }
+  peerTopic.cancel()
+  // ...publish our own
+  client.publish('peers', { id: node.peerId, addrs: listenAddrs })
+
+  // connect all (other) peers
+  await Promise.all(peers.forEach((peer) => {
+    if (peer.id === node.peerId) {
+      return Promise.resolve()
+    }
+    runenv.recordMessage(`dial peer ${peer.id}`)
+    return node.dial(peer.id).then((conn) => {
+      runenv.recordMessage(`connected to ${peer.id}: ${conn.id} (${conn.stat})`)
+    })
+  }))
+
+  await client.signalEntry('connected')
+  await client.barrier('connected', runenv.testInstanceCount)
+
+  // ping all (other) peers
+  await Promise.all(peers.forEach((peer) => {
+    if (peer.id === node.peerId) {
+      return Promise.resolve()
+    }
+    runenv.recordMessage(`dial peer ${peer.id}`)
+    return node.ping(peer.id).then((rtt) => {
+      runenv.recordMessage(`ping result (initial) from peer ${peer.id}: ${rtt}`)
+    })
+  }))
+
+  await client.signalEntry('initial')
+  await client.barrier('initial', runenv.testInstanceCount)
+
+  // TODO: next ping tests
 }
