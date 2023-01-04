@@ -57,6 +57,7 @@ export async function buildTestplans(versions: Array<Version>): Promise<TestPlan
                      AND ma.muxer == mb.muxer
                      AND ha.hash < hb.hash
                      -- quic only uses its own muxer/securechannel
+                     AND a.transport != "webtransport"
                      AND a.transport != "quic"
                      AND a.transport != "quic-v1";`);
     const quicQueryResults =
@@ -79,6 +80,16 @@ export async function buildTestplans(versions: Array<Version>): Promise<TestPlan
                      AND ha.hash < hb.hash
                      -- Only quic transports
                      AND a.transport == "quic-v1";`);
+    const webtransportQueryResults =
+        await db.all(`SELECT DISTINCT a.id as id1, b.id as id2, a.transport, ha.hash, hb.hash
+                     FROM transports a, transports b, hash ha, hash hb
+                     WHERE a.id != b.id
+                     AND a.transport == b.transport
+                     AND a.id == ha.id
+                     AND b.id == hb.id
+                     AND ha.hash < hb.hash
+                     -- Only webtransport transports
+                     AND a.transport == "webtransport";`);
     await db.close();
 
     const testPlans = queryResults.map((test): TestPlan => ({
@@ -100,7 +111,7 @@ export async function buildTestplans(versions: Array<Version>): Promise<TestPlan
                 security: test.sec,
             }
         }]
-    })).concat(quicQueryResults.concat(quicV1QueryResults).map((test): TestPlan => ({
+    })).concat(quicQueryResults.concat(quicV1QueryResults).concat(webtransportQueryResults).map((test): TestPlan => ({
         name: `${test.id1} x ${test.id2} (${test.transport})`,
         instances: [{
             name: test.id1,
