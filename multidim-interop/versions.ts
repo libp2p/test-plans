@@ -28,7 +28,7 @@ export const versions: Array<Version> = [
         muxers: ["mplex", "yamux"],
     },
     {
-        id: "go-v0.24.0",
+        id: "go-v0.24.2",
         containerImageID: gov024.imageID,
         transports: ["tcp", "ws", "quic", "quic-v1", "webtransport"],
         secureChannels: ["tls", "noise"],
