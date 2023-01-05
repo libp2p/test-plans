@@ -4,6 +4,7 @@ import { spawn } from 'child_process'
 import { chromium, firefox, webkit } from 'playwright'
 
 import pkg from '@testground/sdk'
+const { runtime } = pkg
 
 import spawnServer from './server/index.js'
 
@@ -25,7 +26,7 @@ import spawnServer from './server/index.js'
  * 7. exit, fun and profit
  */
 
-const { runtime } = pkg(async () => {
+(async () => {
   const envParameters = runtime.getEnvParameters()
   const runner = runtime.parseRunEnv(envParameters)
 
