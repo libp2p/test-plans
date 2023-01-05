@@ -15,6 +15,8 @@ RUN apt-get update && \
 
 RUN mkdir -p /plan
 
+ARG PLAN_PATH="./"
+
 COPY ./plan/package*.json ./plan/
 
 WORKDIR /plan

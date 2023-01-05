@@ -1,7 +1,7 @@
-const { network } = require('@testground/sdk')
-const { createLibp2p } = require('libp2p')
-const { webSockets } = require('@libp2p/websockets')
-const { noise } = require('@chainsafe/libp2p-noise')
+import { network } from '@testground/sdk'
+import { createLibp2p } from 'libp2p'
+import { webSockets } from '@libp2p/websockets'
+import { noise } from '@chainsafe/libp2p-noise'
 
 module.exports = async (runenv, client) => {
   // consume test parameters from the runtime environment.

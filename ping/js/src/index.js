@@ -1,4 +1,4 @@
-const { invokeMap } = require('@testground/sdk')
+import { invokeMap } from '@testground/sdk'
 
 const testcases = {
   ping: require('./ping')
