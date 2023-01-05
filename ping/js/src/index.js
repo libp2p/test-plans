@@ -1,7 +1,10 @@
-import { invokeMap } from '@testground/sdk'
+import pkg from '@testground/sdk'
+
+import ping from './ping.js'
+const { invokeMap } = pkg
 
 const testcases = {
-  ping: require('./ping')
+  ping
 }
 
 ;(async () => {

@@ -1,5 +1,10 @@
-const path = require('path')
-const express = require('express')
+import path from 'path'
+import { fileURLToPath } from 'url'
+
+import express from 'express'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 /**
  * Exposes a minimal express server
@@ -8,7 +13,7 @@ const express = require('express')
  * Only goal of this server is to serve the testplan together
  * with the `@testground/sdk` in the selected browser environment.
  */
-module.exports = (port) => {
+export default (port) => {
   const app = express()
 
   // Besides the minimal `index.html` page,

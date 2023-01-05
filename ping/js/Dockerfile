@@ -17,14 +17,14 @@ RUN mkdir -p /plan
 
 ARG PLAN_PATH="./"
 
-COPY ./plan/package*.json ./plan/
+COPY ./plan/${PLAN_PATH}package*.json ./plan/
 
 WORKDIR /plan
 RUN npm ci
 
-COPY ./plan/*.js /plan/
-COPY ./plan/src /plan/src
-COPY ./plan/runtime /plan/runtime
+COPY ./plan/${PLAN_PATH}*.js /plan/
+COPY ./plan/${PLAN_PATH}src /plan/src
+COPY ./plan/${PLAN_PATH}runtime /plan/runtime
 
 RUN npm run webpack
 RUN npm cache clean --force

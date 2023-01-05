@@ -1,14 +1,17 @@
-import { network } from '@testground/sdk'
+import pkg from '@testground/sdk'
+
 import { createLibp2p } from 'libp2p'
 import { webSockets } from '@libp2p/websockets'
 import { noise } from '@chainsafe/libp2p-noise'
+import { multiaddr } from '@multiformats/multiaddr'
+const { network } = pkg
 
-module.exports = async (runenv, client) => {
+export default async (runenv, client) => {
   // consume test parameters from the runtime environment.
-  const maxLatencyMs = runenv.runParams.testInstanceParams['max_latency_ms']
-  const iterations = runenv.runParams.testInstanceParams['iterations']
+  const maxLatencyMs = runenv.runParams.testInstanceParams.max_latency_ms
+  const iterations = runenv.runParams.testInstanceParams.iterations
 
-  runenv.recordMessage(`started test instance; params: secure_channel=${secureChannel}, max_latency_ms=${maxLatencyMs}, iterations=${iterations}`)
+  runenv.recordMessage(`started test instance; params: max_latency_ms=${maxLatencyMs}, iterations=${iterations}`)
 
   // instantiate a network client; see 'Traffic shaping' in the docs.
   const netClient = network.newClient(client, runenv)
@@ -40,36 +43,44 @@ module.exports = async (runenv, client) => {
   runenv.recordMessage(`libp2p is listening on the following addresses: ${listenAddrs}`)
 
   // obtain our peers and publish our own address as well
-  // ...fetch the other peers
+  // ...publish our own first
+  client.publish('peers', { id: node.peerId, addrs: listenAddrs })
+  runenv.recordMessage(`published our own (peer: ${node.peerId}) address: ${listenAddrs}`)
+  // ...and then fetch the other peers
   const peers = []
   const peerTopic = await client.subscribe('peers')
-  for (const i = 0; i < runenv.testInstanceCount; i++) {
-    peers.push(await peerTopic.wait.next())
+  for (let i = 0; i < runenv.testInstanceCount; i++) {
+    const result = await peerTopic.wait.next()
+    runenv.recordMessage(`received peer: ${JSON.stringify(result.value)}`)
+    peers.push(result.value)
   }
   peerTopic.cancel()
-  // ...publish our own
-  client.publish('peers', { id: node.peerId, addrs: listenAddrs })
+  runenv.recordMessage(`received ${peers.length} peers`)
 
   // connect all (other) peers
+  runenv.recordMessage(`connecting to all ${peers.length} peers`)
   await Promise.all(peers.forEach((peer) => {
-    if (peer.id === node.peerId) {
+    if (peer.id == node.peerId) {
       return Promise.resolve()
     }
-    runenv.recordMessage(`dial peer ${peer.id}`)
-    return node.dial(peer.id).then((conn) => {
+    runenv.recordMessage(`node ${node.peerId} dials peer ${peer.id}`)
+    return node.dial(multiaddr(peer.addrs[0])).then((conn) => {
       runenv.recordMessage(`connected to ${peer.id}: ${conn.id} (${conn.stat})`)
     })
   }))
 
+  runenv.recordMessage('signalEntry: connected')
   await client.signalEntry('connected')
+  runenv.recordMessage(`wait for barrier (${runenv.testInstanceCount}): connected`)
   await client.barrier('connected', runenv.testInstanceCount)
 
   // ping all (other) peers
+  runenv.recordMessage(`pinging to all ${peers.length} peers`)
   await Promise.all(peers.forEach((peer) => {
-    if (peer.id === node.peerId) {
+    if (peer.id == node.peerId) {
       return Promise.resolve()
     }
-    runenv.recordMessage(`dial peer ${peer.id}`)
+    runenv.recordMessage(`node ${node.peerId} pings peer ${peer.id}`)
     return node.ping(peer.id).then((rtt) => {
       runenv.recordMessage(`ping result (initial) from peer ${peer.id}: ${rtt}`)
     })

@@ -1,10 +1,11 @@
-const { chromium, firefox, webkit } = require('playwright')
-const { exit } = require('process')
-const { spawn } = require('child_process')
+import { exit } from 'process'
+import { spawn } from 'child_process'
 
-const { runtime } = require('@testground/sdk')
+import { chromium, firefox, webkit } from 'playwright'
 
-const spawnServer = require('./server')
+import pkg from '@testground/sdk'
+
+import spawnServer from './server/index.js'
 
 /**
  * Runs your testplan — found in the src/ folder of this testplan —
@@ -23,13 +24,14 @@ const spawnServer = require('./server')
  *    in-case this opt-in feature was enabled.
  * 7. exit, fun and profit
  */
-;(async () => {
+
+const { runtime } = pkg(async () => {
   const envParameters = runtime.getEnvParameters()
   const runner = runtime.parseRunEnv(envParameters)
 
-  const runtimeKind = runner.runParams.testInstanceParams['runtime'] || 'node';
+  const runtimeKind = runner.runParams.testInstanceParams.runtime || 'node'
   if (runtimeKind === 'node') {
-    require('../src/index')
+    import('../src/index.js')
     return
   }
 
@@ -38,7 +40,7 @@ const spawnServer = require('./server')
   let browser
   try {
     const browserDebugPort =
-      runner.runParams.testInstanceParams['BrowserDebugPort'] || process.env.TEST_BROWSER_DEBUG_PORT ||  9222
+      runner.runParams.testInstanceParams.BrowserDebugPort || process.env.TEST_BROWSER_DEBUG_PORT || 9222
 
     switch (runtimeKind) {
       // chromium is the default browser engine,
@@ -124,13 +126,13 @@ const spawnServer = require('./server')
     // `window.testground.result` is set by @testground/sdk (js),
     // at the end of invokeMap
     const testgroundResult = await page.waitForFunction(() => {
-      return window.testground && window.testground.result;
-    });
+      return window.testground && window.testground.result
+    })
     console.log(`testground in browser finished with result: ${testgroundResult}`)
 
     console.log('start browser exit process...')
 
-    if (runner.runParams.testInstanceParams['KeepOpenedBrowsers'] === 'true' || process.env.TEST_KEEP_OPENED_BROWSERS === 'true') {
+    if (runner.runParams.testInstanceParams.KeepOpenedBrowsers === 'true' || process.env.TEST_KEEP_OPENED_BROWSERS === 'true') {
       console.log('halting browser until SIGINT is received...')
       await new Promise((resolve) => {
         process.on('SIGINT', resolve)
