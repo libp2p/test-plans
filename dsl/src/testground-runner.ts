@@ -22,11 +22,10 @@ function waitForTestground(testgroundHome: string) {
     while (tries-- > 0) {
         try {
             execSync(`nc -z localhost 8042`, execOpts)
+            break
         } catch {
             execSync(`sleep 1`, execOpts)
-            continue
         }
-        break
     }
 
     execSync(`testground healthcheck --runner local:docker --fix`, execOpts)
