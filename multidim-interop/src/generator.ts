@@ -104,6 +104,7 @@ function buildSpec(containerImages: { [key: string]: string }, { name, dialerID,
                     security,
                     is_dialer: true,
                     ip: "0.0.0.0",
+                    results: "/results/results.json",
                 }
             },
             listener: {

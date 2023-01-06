@@ -22,6 +22,7 @@ export async function run(namespace: string, compose: ComposeSpecification, opts
     // sanitize namespace
     namespace = namespace.replace(/[^a-zA-Z0-9]/g, "-")
     const dir = path.join(tmpdir(), "compose-runner", namespace)
+    const resultsDir = path.join(dir, "results")
 
     // Check if directory exists
     try {
@@ -30,6 +31,8 @@ export async function run(namespace: string, compose: ComposeSpecification, opts
     } catch (e) {
     }
     await fs.mkdir(dir, { recursive: true })
+    await fs.mkdir(resultsDir, { recursive: true })
+    compose.services!.dialer.volumes! = [ resultsDir + ":/results" ]
 
     // Create compose.yaml file
     await fs.writeFile(path.join(dir, "compose.yaml"), stringify(compose))
@@ -45,6 +48,8 @@ export async function run(namespace: string, compose: ComposeSpecification, opts
     try {
         const { stdout, stderr } = await exec(`docker compose -f ${path.join(dir, "compose.yaml")} up ${upFlags.join(" ")}`);
         console.log("Finished:", stdout)
+        let buf = await fs.readFile(path.join(resultsDir, "results.json"))
+        console.log(JSON.parse(buf.toString()))
     } catch (e) {
         console.log("Failure", e)
         return e

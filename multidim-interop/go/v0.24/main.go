@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"time"
 
@@ -12,7 +14,7 @@ import (
 	"github.com/libp2p/go-libp2p/p2p/muxer/mplex"
 	"github.com/libp2p/go-libp2p/p2p/muxer/yamux"
 	"github.com/libp2p/go-libp2p/p2p/protocol/ping"
-	noise "github.com/libp2p/go-libp2p/p2p/security/noise"
+	"github.com/libp2p/go-libp2p/p2p/security/noise"
 	libp2ptls "github.com/libp2p/go-libp2p/p2p/security/tls"
 	libp2pquic "github.com/libp2p/go-libp2p/p2p/transport/quic"
 	"github.com/libp2p/go-libp2p/p2p/transport/tcp"
@@ -20,6 +22,11 @@ import (
 	libp2pwebtransport "github.com/libp2p/go-libp2p/p2p/transport/webtransport"
 	ma "github.com/multiformats/go-multiaddr"
 )
+
+type result struct {
+	HandshakeLatency float64 // seconds
+	PingRTT          float64 // seconds
+}
 
 func main() {
 	var (
@@ -29,6 +36,7 @@ func main() {
 		is_dialer_str = os.Getenv("is_dialer")
 		ip            = os.Getenv("ip")
 		redis_addr    = os.Getenv("REDIS_ADDR")
+		resultFile    = os.Getenv("results")
 	)
 
 	if redis_addr == "" {
@@ -121,13 +129,15 @@ func main() {
 		if err != nil {
 			panic("Failed to get peer id from multiaddr")
 		}
-		err = host.Connect(ctx, peer.AddrInfo{
+		startTime := time.Now()
+		if err := host.Connect(ctx, peer.AddrInfo{
 			ID:    otherPeerId,
 			Addrs: []ma.Multiaddr{otherMa},
-		})
-		if err != nil {
+		}); err != nil {
 			panic("Failed to connect to other peer")
 		}
+		handshakeLatency := time.Since(startTime)
+		fmt.Println("Handshake took:", handshakeLatency)
 
 		ping := ping.NewPingService(host)
 
@@ -135,8 +145,20 @@ func main() {
 		if res.Error != nil {
 			panic(res.Error)
 		}
+		fmt.Println("Ping successful:", res.RTT)
 
-		fmt.Println("Ping successful: ", res.RTT)
+		out, err := os.Create(resultFile)
+		if err != nil {
+			log.Fatalf("failed to create output file: %s", err)
+		}
+		defer out.Close()
+		enc := json.NewEncoder(out)
+		if err := enc.Encode(&result{
+			HandshakeLatency: handshakeLatency.Seconds(),
+			PingRTT:          res.RTT.Seconds(),
+		}); err != nil {
+			log.Fatalf("failed to encode result: %s", err)
+		}
 
 		rClient.RPush(ctx, "dialerDone", "").Result()
 	} else {
