@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use async_trait::async_trait;
 use futures::{AsyncRead, AsyncWrite, StreamExt};
 use libp2p::core::transport::Boxed;
@@ -11,9 +11,9 @@ use libp2pv0500::swarm::SwarmEvent;
 use libp2pv0500::websocket::WsConfig;
 use libp2pv0500::*;
 use std::collections::HashSet;
+use std::env;
 use std::time::Duration;
-use testground::client::Client as TGClient;
-use testplan::{run_ping, PingSwarm, TransportKind};
+use testplan::{run_ping_redis, PingSwarm};
 
 fn build_builder<T, C>(
     builder: core::transport::upgrade::Builder<T>,
@@ -69,48 +69,37 @@ async fn main() -> Result<()> {
     let local_key = identity::Keypair::generate_ed25519();
     let local_peer_id = PeerId::from(local_key.public());
 
-    let client = TGClient::new_and_init().await.unwrap();
+    let transport_param =
+        env::var("transport").context("transport environment variable is not set")?;
+    let secure_channel_param =
+        env::var("security").context("security environment variable is not set")?;
+    let muxer_param = env::var("muxer").context("muxer environment variable is not set")?;
+    let ip = env::var("ip").context("ip environment variable is not set")?;
+    let redis_addr = env::var("REDIS_ADDR")
+        .map(|addr| format!("redis://{addr}"))
+        .unwrap_or("redis://redis:6379".into());
 
-    let transport_param: String = client
-        .run_parameters()
-        .test_instance_params
-        .get("transport")
-        .unwrap()
-        .parse()
-        .unwrap();
+    let client = redis::Client::open(redis_addr).context("Could not connect to redis")?;
 
-    let secure_channel_param: String = client
-        .run_parameters()
-        .test_instance_params
-        .get("security")
-        .unwrap()
-        .parse()
-        .unwrap();
-
-    let muxer_param: String = client
-        .run_parameters()
-        .test_instance_params
-        .get("muxer")
-        .unwrap()
-        .parse()
-        .unwrap();
-
-    let boxed_transport = match transport_param.as_str() {
+    let (boxed_transport, local_addr) = match transport_param.as_str() {
         "quic-v1" => {
             let builder =
                 libp2p::quic::async_std::Transport::new(libp2p::quic::Config::new(&local_key))
                     .map(|(p, c), _| (p, StreamMuxerBox::new(c)));
-            builder.boxed()
+            (builder.boxed(), format!("/ip4/{ip}/udp/0/quic-v1"))
         }
         "tcp" => {
             let builder = libp2p::tcp::async_io::Transport::new(libp2p::tcp::Config::new())
                 .upgrade(libp2p::core::upgrade::Version::V1Lazy);
 
-            build_builder(
-                builder,
-                secure_channel_param,
-                muxer_param,
-                local_key.clone(),
+            (
+                build_builder(
+                    builder,
+                    secure_channel_param,
+                    muxer_param,
+                    local_key.clone(),
+                ),
+                format!("/ip4/{ip}/tcp/0"),
             )
         }
         "ws" => {
@@ -119,20 +108,16 @@ async fn main() -> Result<()> {
             ))
             .upgrade(libp2p::core::upgrade::Version::V1Lazy);
 
-            build_builder(
-                builder,
-                secure_channel_param,
-                muxer_param,
-                local_key.clone(),
+            (
+                build_builder(
+                    builder,
+                    secure_channel_param,
+                    muxer_param,
+                    local_key.clone(),
+                ),
+                format!("/ip4/{ip}/tcp/0/ws"),
             )
         }
-        _ => panic!("Unsupported"),
-    };
-
-    let transport_kind = match transport_param.as_str() {
-        "tcp" => TransportKind::Tcp,
-        "ws" => TransportKind::WebSocket,
-        "quic-v1" => TransportKind::Quic,
         _ => panic!("Unsupported"),
     };
 
@@ -148,7 +133,7 @@ async fn main() -> Result<()> {
         local_peer_id,
     ));
 
-    run_ping(client, swarm, transport_kind).await?;
+    run_ping_redis(client, swarm, &local_addr, local_peer_id).await?;
 
     Ok(())
 }

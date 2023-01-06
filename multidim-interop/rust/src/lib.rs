@@ -1,10 +1,13 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use env_logger::Env;
 use futures::future::ready;
 use futures::{FutureExt, StreamExt};
+use libp2pv0500::PeerId;
 use log::info;
 use rand::Rng;
+use redis::{AsyncCommands, Client as Rclient};
 use std::borrow::Cow;
+use std::env;
 use std::time::Duration;
 use testground::client::Client;
 use testground::network_conf::{
@@ -12,6 +15,7 @@ use testground::network_conf::{
 };
 
 const LISTENING_PORT: u16 = 0;
+const REDIS_TIMEOUT: usize = 5;
 
 #[async_trait::async_trait]
 pub trait PingSwarm: Sized {
@@ -34,6 +38,56 @@ pub enum TransportKind {
     Quic,
 }
 
+pub async fn run_ping_redis<S>(
+    client: Rclient,
+    mut swarm: S,
+    local_addr: &str,
+    local_peer_id: PeerId,
+) -> Result<()>
+where
+    S: PingSwarm,
+{
+    let mut conn = client.get_async_connection().await?;
+
+    info!("Running ping test: {}", swarm.local_peer_id());
+    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
+
+    let is_dialer = env::var("is_dialer")
+        .unwrap_or("true".into())
+        .parse::<bool>()?;
+
+    if is_dialer {
+        let result: Vec<String> = conn.blpop("listenerAddr", REDIS_TIMEOUT).await?;
+        let other = result
+            .get(1)
+            .context("Failed to wait for listener to be ready")?;
+
+        swarm.dial(other)?;
+        info!("Test instance, dialing multiaddress on: {}.", other);
+
+        swarm.await_connections(1).await;
+
+        swarm.await_pings(1).await;
+
+        conn.rpush("dialerDone", "").await?;
+        info!("Ping successful");
+    } else {
+        let local_addr = swarm.listen_on(local_addr).await?;
+        let ma = format!("{local_addr}/p2p/{local_peer_id}");
+        conn.rpush("listenerAddr", ma).await?;
+        info!(
+            "Test instance, listening for incoming connections on: {:?}.",
+            local_addr
+        );
+
+        swarm.await_connections(1).await;
+
+        let _done: Vec<String> = conn.blpop("dialerDone", REDIS_TIMEOUT).await?;
+        info!("Ping successful");
+    }
+
+    Ok(())
+}
 pub async fn run_ping<S>(client: Client, mut swarm: S, transport_kind: TransportKind) -> Result<()>
 where
     S: PingSwarm,
