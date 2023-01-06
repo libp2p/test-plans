@@ -91,12 +91,13 @@ export async function buildTestSpecs(versions: Array<Version>): Promise<Array<Co
     return testSpecs
 }
 
-function buildSpec(containerImages: { [key: string]: string }, { name, dialerID, listenerID, transport, muxer, security }: { name: string, dialerID: string, listenerID: string, transport: string, muxer: string, security: string }) {
+function buildSpec(containerImages: { [key: string]: string }, { name, dialerID, listenerID, transport, muxer, security }: { name: string, dialerID: string, listenerID: string, transport: string, muxer: string, security: string }): ComposeSpecification {
     return {
         name,
         services: {
             dialer: {
                 image: containerImages[dialerID],
+                depends_on: ["redis"],
                 environment: {
                     version: dialerID,
                     transport,
@@ -108,6 +109,7 @@ function buildSpec(containerImages: { [key: string]: string }, { name, dialerID,
             },
             listener: {
                 image: containerImages[listenerID],
+                depends_on: ["redis"],
                 environment: {
                     version: listenerID,
                     transport,

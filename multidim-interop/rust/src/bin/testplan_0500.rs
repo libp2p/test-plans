@@ -151,6 +151,9 @@ impl PingSwarm for OrphanRuleWorkaround {
                 address,
             }) = self.0.next().await
             {
+                if address.to_string().contains("127.0.0.1") {
+                    continue;
+                }
                 if listener_id == id {
                     return Ok(address.to_string());
                 }

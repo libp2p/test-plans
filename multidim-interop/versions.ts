@@ -20,13 +20,13 @@ export const versions: Array<Version> = [
     //     secureChannels: ["noise"],
     //     muxers: ["mplex", "yamux"],
     // },
-    // {
-    //     id: "rust-v0.50.0",
-    //     containerImageID: rustv050.imageID,
-    //     transports: ["ws", "tcp", "quic-v1"],
-    //     secureChannels: ["tls", "noise"],
-    //     muxers: ["mplex", "yamux"],
-    // },
+    {
+        id: "rust-v0.50.0",
+        containerImageID: rustv050.imageID,
+        transports: ["ws", "tcp", "quic-v1"],
+        secureChannels: ["tls", "noise"],
+        muxers: ["mplex", "yamux"],
+    },
     {
         id: "go-v0.24.2",
         containerImageID: gov024.imageID,
