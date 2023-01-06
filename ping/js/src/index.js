@@ -1,7 +1,7 @@
 import pkg from '@testground/sdk'
+const { invokeMap } = pkg
 
 import ping from './ping.js'
-const { invokeMap } = pkg
 
 const testcases = {
   ping

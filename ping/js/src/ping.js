@@ -1,15 +1,15 @@
 import pkg from '@testground/sdk'
+const { network } = pkg
 
 import { createLibp2p } from 'libp2p'
 import { webSockets } from '@libp2p/websockets'
 import { noise } from '@chainsafe/libp2p-noise'
 import { multiaddr } from '@multiformats/multiaddr'
-const { network } = pkg
 
-export default async (runenv, client) => {
+;export default async (runenv, client) => {
   // consume test parameters from the runtime environment.
-  const maxLatencyMs = runenv.runParams.testInstanceParams.max_latency_ms
-  const iterations = runenv.runParams.testInstanceParams.iterations
+  const maxLatencyMs = runenv.runParams.testInstanceParams['max_latency_ms']
+  const iterations = runenv.runParams.testInstanceParams['iterations']
 
   runenv.recordMessage(`started test instance; params: max_latency_ms=${maxLatencyMs}, iterations=${iterations}`)
 
@@ -59,13 +59,16 @@ export default async (runenv, client) => {
 
   // connect all (other) peers
   runenv.recordMessage(`connecting to all ${peers.length} peers`)
-  await Promise.all(peers.forEach((peer) => {
+  await Promise.all(peers.map((peer) => {
     if (peer.id == node.peerId) {
       return Promise.resolve()
     }
     runenv.recordMessage(`node ${node.peerId} dials peer ${peer.id}`)
+    // TODO: make it possible to dial directly using `peer`
+    // (might mean that we need to turn our json struct into an actual libp2p peer type,
+    //  but that would still be an improvement over this peer.addrs[0] hack)
     return node.dial(multiaddr(peer.addrs[0])).then((conn) => {
-      runenv.recordMessage(`connected to ${peer.id}: ${conn.id} (${conn.stat})`)
+      runenv.recordMessage(`connected to ${peer.id}: ${conn.id} (${JSON.stringify(conn.stat)})`)
     })
   }))
 
@@ -76,18 +79,25 @@ export default async (runenv, client) => {
 
   // ping all (other) peers
   runenv.recordMessage(`pinging to all ${peers.length} peers`)
-  await Promise.all(peers.forEach((peer) => {
+  await Promise.all(peers.map((peer) => {
     if (peer.id == node.peerId) {
       return Promise.resolve()
     }
     runenv.recordMessage(`node ${node.peerId} pings peer ${peer.id}`)
-    return node.ping(peer.id).then((rtt) => {
+    // TODO: make it possible to ping directly using `peer`
+    // (might mean that we need to turn our json struct into an actual libp2p peer type,
+    //  but that would still be an improvement over this peer.addrs[0] hack)
+    return node.ping(multiaddr(peer.addrs[0])).then((rtt) => {
       runenv.recordMessage(`ping result (initial) from peer ${peer.id}: ${rtt}`)
     })
   }))
 
+  runenv.recordMessage('signalEntry: initial')
   await client.signalEntry('initial')
+  runenv.recordMessage(`wait for barrier (${runenv.testInstanceCount}): initial`)
   await client.barrier('initial', runenv.testInstanceCount)
 
   // TODO: next ping tests
+
+  runenv.recordMessage('Bye!')
 }

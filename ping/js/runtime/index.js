@@ -32,7 +32,7 @@ import spawnServer from './server/index.js'
 
   const runtimeKind = runner.runParams.testInstanceParams.runtime || 'node'
   if (runtimeKind === 'node') {
-    import('../src/index.js')
+    await import('../src/index.js')
     return
   }
 
@@ -121,14 +121,14 @@ import spawnServer from './server/index.js'
     }, envParameters)
 
     console.log('opening up testplan webpage on localhost')
-    await page.goto('http://127.0.0.1:8080')
+    await page.goto('http://127.0.0.1:8080', { timeout: 3000 })
 
     console.log('waiting until testCase is finished...')
     // `window.testground.result` is set by @testground/sdk (js),
     // at the end of invokeMap
     const testgroundResult = await page.waitForFunction(() => {
       return window.testground && window.testground.result
-    })
+    }, undefined, { timeout: 120_000 })
     console.log(`testground in browser finished with result: ${testgroundResult}`)
 
     console.log('start browser exit process...')

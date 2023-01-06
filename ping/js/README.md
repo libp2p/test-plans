@@ -27,3 +27,18 @@ testground run single \
 ```
 
 This will run the ping test between two NodeJS instances.
+
+You can do the same between for example two chromium instances:
+
+```
+testground run single \
+    --plan compatibility-js \
+    --testcase ping \
+    --instances 2 \
+    --builder docker:generic \
+    --runner local:docker \
+    --tp runtime=chromium \
+    --wait
+```
+
+This will run the ping test between two chromium instances.
