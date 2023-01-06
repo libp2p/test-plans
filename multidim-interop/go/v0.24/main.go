@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"net"
 	"os"
 	"time"
 
@@ -23,28 +22,6 @@ import (
 )
 
 func main() {
-	ifaces, err := net.Interfaces()
-	if err != nil {
-		fmt.Print(fmt.Errorf("localAddresses: %+v\n", err.Error()))
-		return
-	}
-	fmt.Println("Interfaces: ", ifaces)
-	for _, i := range ifaces {
-		addrs, err := i.Addrs()
-		if err != nil {
-			fmt.Print(fmt.Errorf("localAddresses: %+v\n", err.Error()))
-			continue
-		}
-		for _, a := range addrs {
-			fmt.Println("Addr", a.String())
-			switch v := a.(type) {
-			case *net.IPAddr:
-				fmt.Printf("%v : %s (%s)\n", i.Name, v, v.IP.DefaultMask())
-			}
-
-		}
-	}
-
 	var (
 		transport     = os.Getenv("transport")
 		secureChannel = os.Getenv("security")
