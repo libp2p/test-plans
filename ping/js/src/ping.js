@@ -3,6 +3,7 @@ const { network } = pkg
 
 import { createLibp2p } from 'libp2p'
 import { webSockets } from '@libp2p/websockets'
+import { mplex } from '@libp2p/mplex'
 import { noise } from '@chainsafe/libp2p-noise'
 import { multiaddr } from '@multiformats/multiaddr'
 
@@ -32,7 +33,9 @@ import { multiaddr } from '@multiformats/multiaddr'
       listen: [`/ip4/${ip}/tcp/8000/ws`]
     },
     transports: [webSockets()],
-    connectionEncryption: [noise()]
+    connectionEncryption: [noise()],
+    // required or the ping step throws an error
+    streamMuxers: [mplex()]
   })
 
   // start the libp2p node
