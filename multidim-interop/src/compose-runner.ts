@@ -45,11 +45,13 @@ export async function run(namespace: string, compose: ComposeSpecification, opts
         upFlags.push("--renew-anon-volumes")
     }
 
+    // TODO: what's the idiomatic way to do this in JS? ;)
+    let result = -1
     try {
         const { stdout, stderr } = await exec(`docker compose -f ${path.join(dir, "compose.yaml")} up ${upFlags.join(" ")}`);
         console.log("Finished:", stdout)
         let buf = await fs.readFile(path.join(resultsDir, "results.json"))
-        console.log(JSON.parse(buf.toString()))
+        result = JSON.parse(buf.toString())
     } catch (e) {
         console.log("Failure", e)
         return e
@@ -61,4 +63,5 @@ export async function run(namespace: string, compose: ComposeSpecification, opts
         }
         await fs.rm(dir, { recursive: true, force: true })
     }
+    return result
 }

@@ -97,6 +97,7 @@ function buildSpec(containerImages: { [key: string]: string }, { name, dialerID,
         services: {
             dialer: {
                 image: containerImages[dialerID],
+                cap_add: [ "NET_ADMIN" ],
                 environment: {
                     version: dialerID,
                     transport,
@@ -104,17 +105,20 @@ function buildSpec(containerImages: { [key: string]: string }, { name, dialerID,
                     security,
                     is_dialer: true,
                     ip: "0.0.0.0",
+                    QLOGDIR: "/results/",
                     results: "/results/results.json",
                 }
             },
             listener: {
                 image: containerImages[listenerID],
+                cap_add: [ "NET_ADMIN" ],
                 environment: {
                     version: listenerID,
                     transport,
                     muxer,
                     security,
                     is_dialer: false,
+                    QLOGDIR: "/results/",
                     ip: "0.0.0.0",
                 }
             },

@@ -17,12 +17,13 @@ buildTestSpecs(versions).then(async (testSpecs) => {
                 return
             }
             console.log("Running test spec: " + testSpec.name)
-            const failure = await run(testSpec.name || "unknown test", testSpec, { up: { exitCodeFrom: "dialer", renewAnonVolumes: true }, })
-            if (failure != null) {
-                failures.push(failure)
+            const ret = await run(testSpec.name || "unknown test", testSpec, { up: { exitCodeFrom: "dialer", renewAnonVolumes: true }, })
+            console.log(ret)
+            if (ret == -1) {
+                failures.push(ret)
                 statuses.push([testSpec.name || "unknown test", "failure"])
             } else {
-                statuses.push([testSpec.name || "unknown test", "success"])
+                statuses.push([testSpec.name || "unknown test", (ret.HandshakeLatency / 0.1).toString() ])
             }
         }
     })

@@ -129,6 +129,20 @@ func main() {
 		if err != nil {
 			panic("Failed to get peer id from multiaddr")
 		}
+
+		// connect and then disconnect to trigger ARP resolution
+		// There's probably a better way to do this with ping / arp, but this is easy.
+		if err := host.Connect(ctx, peer.AddrInfo{
+			ID:    otherPeerId,
+			Addrs: []ma.Multiaddr{otherMa},
+		}); err != nil {
+			panic("Failed to connect to other peer")
+		}
+		for _, c := range host.Network().Conns() {
+			c.Close()
+		}
+		time.Sleep(time.Second)
+
 		startTime := time.Now()
 		if err := host.Connect(ctx, peer.AddrInfo{
 			ID:    otherPeerId,
@@ -159,6 +173,7 @@ func main() {
 		}); err != nil {
 			log.Fatalf("failed to encode result: %s", err)
 		}
+		time.Sleep(time.Second)
 
 		rClient.RPush(ctx, "dialerDone", "").Result()
 	} else {
