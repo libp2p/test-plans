@@ -20,7 +20,7 @@
     "@libp2p/mplex": "^7.1.1",
     "@libp2p/websockets": "^5.0.1",
     "@multiformats/multiaddr": "^11.1.4",
-    "@testground/sdk": "github:GlenDC/sdk-js#a4d345cdcd78208f064ed5bdeda88a7c6887e6c0",
+    "@testground/sdk": "github:GlenDC/sdk-js#ca33ef43b5755e2fd74629ea775fa9924a382421",
     "express": "^4.18.2",
     "libp2p": "^0.41.0",
     "playwright": "^1.29.1"
