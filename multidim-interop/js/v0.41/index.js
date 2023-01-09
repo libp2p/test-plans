@@ -7,7 +7,7 @@ import { noise } from '@chainsafe/libp2p-noise'
 import { mplex } from '@libp2p/mplex'
 import { multiaddr } from '@multiformats/multiaddr'
 
-;(async () => {
+(async () => {
     const TRANSPORT = process.env.transport
     const SECURE_CHANNEL = process.env.security
     const MUXER = process.env.muxer
@@ -66,13 +66,14 @@ import { multiaddr } from '@multiformats/multiaddr'
     const node = await createLibp2p(options)
 
     if (isDialer) {
-        const otherMa = (await redisClient.blPop('listenAddr', 5)).element
+        const otherMa = (await redisClient.blPop('listenerAddr', 5)).element
         console.log(`node ${node.peerId} pings: ${otherMa}`)
         await node.ping(multiaddr(otherMa))
             .then((rtt) => console.log(`Ping successful: ${rtt}`))
             .then(() => redisClient.rPush('dialerDone', ''))
     } else {
-        await redisClient.rPush('listenAddr', node.getMultiaddrs()[0].toString())
+        const multiaddrs = node.getMultiaddrs().map(ma => ma.toString()).filter(maString => !maString.includes("127.0.0.1"))
+        await redisClient.rPush('listenerAddr', multiaddrs[0])
         await redisClient.blPop('dialerDone', 4)
     }
 
