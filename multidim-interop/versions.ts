@@ -14,13 +14,6 @@ export type Version = {
 }
 
 export const versions: Array<Version> = [
-    // {
-    //     id: "rust-v0.49.0",
-    //     containerImageID: rustv049.imageID,
-    //     transports: ["tcp", "ws"],
-    //     secureChannels: ["noise"],
-    //     muxers: ["mplex", "yamux"],
-    // },
     {
         id: "rust-v0.50.0",
         containerImageID: rustv050.imageID,
@@ -33,7 +26,7 @@ export const versions: Array<Version> = [
         containerImageID: jsV041.imageID,
         transports: ["tcp", "ws"],
         secureChannels: ["noise"],
-        muxers: ["mplex"],
+        muxers: ["mplex", "yamux"],
     },
     {
         id: "go-v0.24.2",
