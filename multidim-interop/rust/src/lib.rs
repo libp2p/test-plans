@@ -5,7 +5,7 @@ use log::info;
 use redis::{AsyncCommands, Client as Rclient};
 use std::{env, time::Duration};
 
-const REDIS_TIMEOUT: usize = 5;
+const REDIS_TIMEOUT: usize = 10;
 
 #[async_trait::async_trait]
 pub trait PingSwarm: Sized {

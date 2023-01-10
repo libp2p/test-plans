@@ -111,7 +111,7 @@ func main() {
 	fmt.Println("My multiaddr is: ", host.Addrs())
 
 	if is_dialer {
-		val, err := rClient.BLPop(ctx, 5*time.Second, "listenerAddr").Result()
+		val, err := rClient.BLPop(ctx, 10*time.Second, "listenerAddr").Result()
 		if err != nil {
 			panic("Failed to wait for listener to be ready")
 		}

@@ -70,13 +70,14 @@ import { multiaddr } from '@multiformats/multiaddr'
     const node = await createLibp2p(options)
 
     if (isDialer) {
-        const otherMa = (await redisClient.blPop('listenerAddr', 5)).element
+        const otherMa = (await redisClient.blPop('listenerAddr', 10)).element
         console.log(`node ${node.peerId} pings: ${otherMa}`)
         await node.ping(multiaddr(otherMa))
             .then((rtt) => console.log(`Ping successful: ${rtt}`))
             .then(() => redisClient.rPush('dialerDone', ''))
     } else {
         const multiaddrs = node.getMultiaddrs().map(ma => ma.toString()).filter(maString => !maString.includes("127.0.0.1"))
+        console.log("My multiaddrs are", multiaddrs)
         await redisClient.rPush('listenerAddr', multiaddrs[0])
         await redisClient.blPop('dialerDone', 4)
     }
