@@ -108,13 +108,14 @@ func main() {
 	}
 	defer host.Close()
 
+	fmt.Println("My multiaddr is: ", host.Addrs())
+
 	if is_dialer {
 		val, err := rClient.BLPop(ctx, 5*time.Second, "listenerAddr").Result()
 		if err != nil {
 			panic("Failed to wait for listener to be ready")
 		}
 		otherMa := ma.StringCast(val[1])
-		fmt.Println("My multiaddr is: ", host.Addrs())
 		fmt.Println("Other peer multiaddr is: ", otherMa)
 		otherMa, p2pComponent := ma.SplitLast(otherMa)
 		otherPeerId, err := peer.Decode(p2pComponent.Value())
