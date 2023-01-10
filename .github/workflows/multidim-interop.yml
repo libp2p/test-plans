@@ -6,6 +6,6 @@ name: libp2p multidimensional interop test
 
 jobs:
   run-multidim-interop:
-    uses: "./.github/workflows/run-testplans-dsl.yml"
+    uses: "./.github/workflows/run-testplans.yml"
     with:
       dir: "multidim-interop"
