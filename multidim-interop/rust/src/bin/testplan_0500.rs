@@ -177,18 +177,20 @@ impl PingSwarm for OrphanRuleWorkaround {
         }
     }
 
-    async fn await_pings(&mut self, number: usize) {
-        let mut received_pings = HashSet::with_capacity(number);
+    async fn await_pings(&mut self, number: usize) -> Vec<Duration> {
+        let mut received_pings = Vec::with_capacity(number);
 
         while received_pings.len() < number {
             if let Some(SwarmEvent::Behaviour(ping::Event {
-                peer,
-                result: Ok(ping::Success::Ping { .. }),
+                peer: _,
+                result: Ok(ping::Success::Ping { rtt }),
             })) = self.0.next().await
             {
-                received_pings.insert(peer);
+                received_pings.push(rtt);
             }
         }
+
+        received_pings
     }
 
     async fn loop_on_next(&mut self) {
