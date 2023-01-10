@@ -25,7 +25,7 @@ func main() {
 		transport     = os.Getenv("transport")
 		secureChannel = os.Getenv("security")
 		muxer         = os.Getenv("muxer")
-		is_dialer_str = os.Getenv("is_dialer")
+		isDialerStr   = os.Getenv("is_dialer")
 		ip            = os.Getenv("ip")
 		redis_addr    = os.Getenv("REDIS_ADDR")
 	)
@@ -54,7 +54,7 @@ func main() {
 		time.Sleep(100 * time.Millisecond)
 	}
 
-	is_dialer := is_dialer_str == "true"
+	is_dialer := isDialerStr == "true"
 
 	options := []libp2p.Option{}
 
