@@ -10,5 +10,4 @@ RUN npm ci
 
 COPY *.js /app/
 
-EXPOSE 6060
 ENTRYPOINT [ "npm", "run", "start" ]

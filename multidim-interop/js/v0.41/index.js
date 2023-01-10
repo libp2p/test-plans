@@ -5,6 +5,7 @@ import { tcp } from '@libp2p/tcp'
 import { webSockets } from '@libp2p/websockets'
 import { noise } from '@chainsafe/libp2p-noise'
 import { mplex } from '@libp2p/mplex'
+import { yamux } from '@chainsafe/libp2p-yamux'
 import { multiaddr } from '@multiformats/multiaddr'
 
 (async () => {
@@ -58,6 +59,9 @@ import { multiaddr } from '@multiformats/multiaddr'
     switch (MUXER) {
         case 'mplex':
             options.streamMuxers = [mplex()]
+            break
+        case 'yamux':
+            options.streamMuxers = [yamux()]
             break
         default:
             throw new Error(`Unknown muxer: ${MUXER}`)
