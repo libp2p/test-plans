@@ -81,6 +81,9 @@ import { multiaddr } from '@multiformats/multiaddr'
         await redisClient.blPop('dialerDone', 4)
     }
 
-    await node.stop()
-    await redisClient.disconnect()
+    try {
+        // We don't care if these fail
+        await node.stop()
+        await redisClient.disconnect()
+    } catch { }
 })()
