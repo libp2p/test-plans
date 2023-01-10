@@ -12,5 +12,4 @@ COPY *.go ./
 
 RUN go build -o /testplan
 
-EXPOSE 6060
 ENTRYPOINT [ "/testplan"]
