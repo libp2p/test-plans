@@ -40,6 +40,7 @@ import path from "path";
                 extraVersions.push(...JSON.parse(contents.toString()))
             }
         } catch (err) {
+            console.error("Error reading extra versions")
             console.error(err);
         }
     }

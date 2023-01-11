@@ -15,13 +15,13 @@ on:
         description: artifact name for the image.tar(s) to import
         required: false
         type: string
-      test-plans_ref:
-        description: "branch of test-plans to checkout"
+      test-filter:
+        description: "Filter which test runs"
         type: string
         required: false
         default: ""
-      test-filter:
-        description: "Filter which test runs"
+      test-plans_ref:
+        description: "branch of test-plans to checkout"
         type: string
         required: false
         default: ""
@@ -41,24 +41,26 @@ jobs:
           path: test-plans
           repository: "libp2p/test-plans"
           ref: ${{ inputs.test-plans_ref }}
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 17
-          cache: "npm"
-          cache-dependency-path: ./test-plans/${{ env.TEST_PLAN_DIR }}/package-lock.json
+      # Download input data
       - uses: actions/download-artifact@v3
         if: ${{ inputs.extra-versions != '' }}
         with:
           name: ${{ inputs.extra-versions }}
           path: /tmp/extra-versions
-      - run: ls /tmp/extra-versions
       - uses: actions/download-artifact@v3
         if: ${{ inputs.image-tar != '' }}
         with:
           name: ${{ inputs.image-tar }}
           path: /tmp/images/
       - name: Load docker images
+        if: ${{ inputs.image-tar != '' }}
         run: for FILE in /tmp/images/*; do docker image load -i $FILE; done
+      # Continue with the test as before
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 17
+          cache: "npm"
+          cache-dependency-path: ./test-plans/${{ env.TEST_PLAN_DIR }}/package-lock.json
       - name: Expose GitHub Runtime # Needed for docker buildx to cache properly (See https://docs.docker.com/build/cache/backends/gha/#authentication)
         uses: crazy-max/ghaction-github-runtime@v2
       - name: Set up Docker Buildx
@@ -70,9 +72,6 @@ jobs:
       - name: Build images
         working-directory: ./test-plans/${{ env.TEST_PLAN_DIR }}/
         run: make
-      - name: List docker images
-        working-directory: ./test-plans/${{ env.TEST_PLAN_DIR }}/
-        run: docker image ls
       - name: Run the test
         timeout-minutes: 30
         working-directory: ./test-plans/${{ env.TEST_PLAN_DIR }}/
@@ -95,9 +94,8 @@ jobs:
             exit 0
           fi
       - uses: actions/upload-artifact@v3
-        if: ${{ always() }}
         with:
-          name: testground-output
+          name: test-plans-output
           path: |
             ./test-plans/${{ env.TEST_PLAN_DIR }}/results.csv
             ./test-plans/${{ env.TEST_PLAN_DIR }}/dashboard.md
