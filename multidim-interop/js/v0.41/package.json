@@ -11,7 +11,7 @@
         "node": ">=16"
     },
     "scripts": {
-        "start": "node index.js",
+        "ping": "node ping/index.js",
         "test": "standard"
     },
     "dependencies": {

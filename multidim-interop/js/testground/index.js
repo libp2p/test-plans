@@ -1,8 +1,8 @@
 import { createClient } from 'redis'
 
-export default async function test() {
-    console.log("Hello from testground")
+import node from './runtimes/node.js'
 
+export default async function test(fn) {
     const REDIS_ADDR = process.env.REDIS_ADDR || 'redis:6379'
 
     console.log(`connect to redis: redis://${REDIS_ADDR}`)
@@ -18,7 +18,20 @@ export default async function test() {
     const RUNTIME = process.env.TEST_RUNTIME || 'node'  // other options: chromium, firefox, webkit
 
     try {
-        // ... TODO: create actual runtime...
+        let runner
+        if (RUNTIME === 'node') {
+            runner = await node(redisClient)
+        } else if (['chromium', 'firefox', 'webkit'].indexOf(RUNTIME) >= 0) {
+            throw new Error('TODO: implement browser runtime')
+        } else {
+            throw new Error(`Unknown runtime: ${RUNTIME}`)
+        }
+
+        try {
+            await fn(runner)
+        } finally {
+            await runner.stop()
+        }
     } finally {
         await redisClient.disconnect()
         console.log(`redis disconnected: redis://${REDIS_ADDR}`)
