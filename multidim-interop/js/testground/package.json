@@ -1,9 +1,9 @@
 {
     "name": "wo-testground",
-    "private": true,
     "version": "1.0.0",
     "description": "Libp2p W/O Testground Package for the JS interop tests",
     "type": "module",
+    "main": "index.js",
     "author": "Glen De Cauwsemaecker <glen@littlebearlabs.io>",
     "license": "MIT",
     "engines": {
