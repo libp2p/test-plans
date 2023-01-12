@@ -8,7 +8,7 @@ use futures::{AsyncRead, AsyncWrite, StreamExt};
 use libp2p::core::muxing::StreamMuxerBox;
 use libp2p::core::transport::Boxed;
 use libp2p::core::upgrade::EitherUpgrade;
-use libp2p::swarm::SwarmEvent;
+use libp2p::swarm::{keep_alive, NetworkBehaviour, SwarmEvent};
 use libp2p::websocket::WsConfig;
 use libp2p::{core, identity, mplex, noise, ping, yamux, Multiaddr, PeerId, Swarm, Transport};
 use libp2pv0500 as libp2p;
@@ -99,13 +99,10 @@ async fn main() -> Result<()> {
 
     let swarm = OrphanRuleWorkaround(Swarm::with_tokio_executor(
         boxed_transport,
-        ping::Behaviour::new(
-            #[allow(deprecated)]
-            // TODO: Fixing this deprecation requires https://github.com/libp2p/rust-libp2p/pull/3055.
-            ping::Config::new()
-                .with_interval(Duration::from_secs(1))
-                .with_keep_alive(true),
-        ),
+        Behaviour {
+            ping: ping::Behaviour::new(ping::Config::new().with_interval(Duration::from_secs(1))),
+            keep_alive: keep_alive::Behaviour,
+        },
         local_peer_id,
     ));
 
@@ -116,7 +113,13 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-struct OrphanRuleWorkaround(Swarm<ping::Behaviour>);
+#[derive(NetworkBehaviour)]
+#[behaviour(prelude = "libp2pv0500::swarm::derive_prelude")]
+struct Behaviour {
+    ping: ping::Behaviour,
+    keep_alive: keep_alive::Behaviour,
+}
+struct OrphanRuleWorkaround(Swarm<Behaviour>);
 
 #[async_trait]
 impl PingSwarm for OrphanRuleWorkaround {
@@ -159,10 +162,10 @@ impl PingSwarm for OrphanRuleWorkaround {
         let mut received_pings = Vec::with_capacity(number);
 
         while received_pings.len() < number {
-            if let Some(SwarmEvent::Behaviour(ping::Event {
+            if let Some(SwarmEvent::Behaviour(BehaviourEvent::Ping(ping::Event {
                 peer: _,
                 result: Ok(ping::Success::Ping { rtt }),
-            })) = self.0.next().await
+            }))) = self.0.next().await
             {
                 received_pings.push(rtt);
             }
