@@ -8,65 +8,46 @@ use futures::{AsyncRead, AsyncWrite, StreamExt};
 use libp2p::core::muxing::StreamMuxerBox;
 use libp2p::core::transport::Boxed;
 use libp2p::core::upgrade::EitherUpgrade;
-use libp2p::noise::NoiseOutput;
-use libp2p::swarm::derive_prelude::EitherOutput;
 use libp2p::swarm::SwarmEvent;
-use libp2p::tls::TlsStream;
 use libp2p::websocket::WsConfig;
-use libp2p::{
-    core, identity, mplex, ping, yamux, InboundUpgradeExt, Multiaddr, OutboundUpgradeExt, PeerId,
-    Swarm, Transport,
-};
+use libp2p::{core, identity, mplex, noise, ping, yamux, Multiaddr, PeerId, Swarm, Transport};
 use libp2pv0500 as libp2p;
 use testplan::{run_ping, PingSwarm};
 
 fn build_builder<T, C>(
     builder: core::transport::upgrade::Builder<T>,
-    secure_channel_param: String,
-    muxer_param: String,
-    local_key: identity::Keypair,
+    secure_channel_param: &str,
+    muxer_param: &str,
+    local_key: &identity::Keypair,
 ) -> Boxed<(libp2p::PeerId, StreamMuxerBox)>
 where
     T: Transport<Output = C> + Send + Unpin + 'static,
-    <T as libp2p::Transport>::Error: Sync + Send,
-    <T as libp2p::Transport>::Error: 'static,
+    <T as libp2p::Transport>::Error: Sync + Send + 'static,
     <T as libp2p::Transport>::ListenerUpgrade: Send,
     <T as libp2p::Transport>::Dial: Send,
     C: AsyncRead + AsyncWrite + Send + Unpin + 'static,
 {
-    let secure_upgrade = match secure_channel_param.as_str() {
-        "noise" => EitherUpgrade::A(libp2p::noise::NoiseAuthenticated::xx(&local_key).unwrap()),
-        "tls" => EitherUpgrade::B(libp2p::tls::Config::new(&local_key).unwrap()),
-        _ => panic!("Unsupported secure channel"),
-    };
-
-    trait AsyncRW: 'static + AsyncRead + AsyncWrite + Unpin + Send {}
-    impl<T> AsyncRW for T where T: 'static + AsyncRead + AsyncWrite + Unpin + Send {}
-
-    let f = |x: EitherOutput<
-        (libp2p::PeerId, NoiseOutput<core::Negotiated<C>>),
-        (libp2p::PeerId, TlsStream<core::Negotiated<C>>),
-    >|
-     -> (PeerId, Box<dyn AsyncRW>) {
-        match x {
-            EitherOutput::First((p_id, out)) => (p_id, Box::new(out)),
-            EitherOutput::Second((p_id, out)) => (p_id, Box::new(out)),
-        }
-    };
-
-    let secure_upgrade = secure_upgrade.map_outbound(f).map_inbound(f);
-    let authenticated = builder.authenticate(secure_upgrade);
-
-    let mux_upgrade = match muxer_param.as_str() {
+    let mux_upgrade = match muxer_param {
         "yamux" => EitherUpgrade::A(yamux::YamuxConfig::default()),
         "mplex" => EitherUpgrade::B(mplex::MplexConfig::default()),
         _ => panic!("Unsupported muxer"),
     };
 
-    authenticated
-        .multiplex(mux_upgrade)
-        .timeout(Duration::from_secs(5))
-        .boxed()
+    let timeout = Duration::from_secs(5);
+
+    match secure_channel_param {
+        "noise" => builder
+            .authenticate(noise::NoiseAuthenticated::xx(&local_key).unwrap())
+            .multiplex(mux_upgrade)
+            .timeout(timeout)
+            .boxed(),
+        "tls" => builder
+            .authenticate(libp2p::tls::Config::new(&local_key).unwrap())
+            .multiplex(mux_upgrade)
+            .timeout(timeout)
+            .boxed(),
+        _ => panic!("Unsupported secure channel"),
+    }
 }
 
 #[tokio::main]
@@ -98,12 +79,7 @@ async fn main() -> Result<()> {
                 .upgrade(libp2p::core::upgrade::Version::V1Lazy);
 
             (
-                build_builder(
-                    builder,
-                    secure_channel_param,
-                    muxer_param,
-                    local_key.clone(),
-                ),
+                build_builder(builder, &secure_channel_param, &muxer_param, &local_key),
                 format!("/ip4/{ip}/tcp/0"),
             )
         }
@@ -114,12 +90,7 @@ async fn main() -> Result<()> {
             .upgrade(libp2p::core::upgrade::Version::V1Lazy);
 
             (
-                build_builder(
-                    builder,
-                    secure_channel_param,
-                    muxer_param,
-                    local_key.clone(),
-                ),
+                build_builder(builder, &secure_channel_param, &muxer_param, &local_key),
                 format!("/ip4/{ip}/tcp/0/ws"),
             )
         }
