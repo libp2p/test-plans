@@ -3,19 +3,33 @@ export const runtime = {
         return process.env
     },
 
-    _storage: {},
-    load: async function (key) {
-        return this._storage[key]
+    _barriers: {},
+    createBarrier: async function (name, value) {
+        if (name in this._barriers) {
+            throw new Error(`barrier with name ${name} already exists`)
+        }
+        this._barriers[name] = {}
+        this._barriers[name].promise = new Promise((resolve) => {
+            console.log(`created barrier with name ${name}`)
+            this._barriers[name].resolve = resolve
+            if (value !== undefined) {
+                this.resolveBarrier(name, value)
+            }
+        })
     },
-    store: async function (key, value) {
-        this._storage[key] = value
+    resolveBarrier: async function (name, value) {
+        if (!(name in this._barriers)) {
+            throw new Error(`barrier with name ${name} does not exist`)
+        }
+        console.log(`resolve barrier with name ${name}`)
+        this._barriers[name].resolve(value)
     },
-
-    testResult: async function () {
-        return await this._testResultPromise
-    },
-    setTestResult: async function(result) {
-        this._testResultPromiseResolve(result)
+    waitOnBarrier: async function (name) {
+        if (!(name in this._barriers)) {
+            throw new Error(`barrier with name ${name} does not exist`)
+        }
+        console.log(`wait on barrier with name ${name}`)
+        return await this._barriers[name].promise
     }
 }
 runtime._testResultPromise = new Promise((resolve) => runtime._testResultPromiseResolve = resolve)

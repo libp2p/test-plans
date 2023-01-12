@@ -60,9 +60,10 @@ import { runtime } from 'wo-testground/runtime.js'
     }
 
     const node = await createLibp2p(options)
+    console.log(`node ${node.peerId} created...`)
 
     if (isDialer) {
-        const otherMa = await runtime.load('otherMultiAddress')
+        const otherMa = await runtime.waitOnBarrier('otherMultiAddress')
         console.log(`node ${node.peerId} pings: ${otherMa}`)
         await node.ping(multiaddr(otherMa))
             .then((rtt) => console.log(`Ping successful: ${rtt}`))
@@ -71,14 +72,16 @@ import { runtime } from 'wo-testground/runtime.js'
             .getMultiaddrs()
             .map(ma => ma.toString())
             .filter(maString => !maString.includes("127.0.0.1"))
-        await runtime.store('multiAddress', multiaddrs[0])
+        await runtime.resolveBarrier('multiAddress', multiaddrs[0])
+        await runtime.waitOnBarrier('dialerDone')
     }
 
-    // TODO: enable again...
-    // try {
-    //     // We don't care if these fail
-    //     await node.stop()
-    // } catch { }
+    try {
+        // We don't care if these fail
+        await node.stop()
+    } catch (error) {
+        console.error('node::stop', error)
+    }
 
-    await runtime.setTestResult(true)
+    await runtime.resolveBarrier('testground::result', true)
 })()

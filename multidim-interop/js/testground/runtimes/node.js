@@ -8,16 +8,20 @@ export default async function runner(redis) {
             return _redis
         },
 
-        load: async function (key) {
-            return await runtime.load(key)
-        },
-        store: async function (key, value) {
-            return await runtime.store(key, value)
+        exec: async function (path) {
+            await runtime.createBarrier('testground::result')
+            await import(path)
+            return await runtime.waitOnBarrier('testground::result')
         },
 
-        exec: async function (path) {
-            await import(path)
-            return await runtime.testResult()
+        createBarrier: async function (name, value) {
+            return await runtime.createBarrier(name, value)
+        },
+        resolveBarrier: async function (name, value) {
+            return await runtime.resolveBarrier(name, value)
+        },
+        waitOnBarrier: async function (name) {
+            return await runtime.waitOnBarrier(name)
         },
 
         stop: async() => {}
