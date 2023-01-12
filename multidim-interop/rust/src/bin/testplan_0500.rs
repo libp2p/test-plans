@@ -1,19 +1,24 @@
-use anyhow::{Context, Result};
-use async_trait::async_trait;
-use futures::{AsyncRead, AsyncWrite, StreamExt};
-use libp2p::core::transport::Boxed;
-use libp2p::core::upgrade::EitherUpgrade;
-use libp2p::noise::NoiseOutput;
-use libp2p::tls::TlsStream;
-use libp2p::{core::muxing::StreamMuxerBox, swarm::derive_prelude::EitherOutput};
-use libp2pv0500 as libp2p;
-use libp2pv0500::swarm::SwarmEvent;
-use libp2pv0500::websocket::WsConfig;
-use libp2pv0500::*;
 use std::collections::HashSet;
 use std::env;
 use std::time::Duration;
-use testplan::{run_ping_redis, PingSwarm};
+
+use anyhow::{Context, Result};
+use async_trait::async_trait;
+use futures::{AsyncRead, AsyncWrite, StreamExt};
+use libp2p::core::muxing::StreamMuxerBox;
+use libp2p::core::transport::Boxed;
+use libp2p::core::upgrade::EitherUpgrade;
+use libp2p::noise::NoiseOutput;
+use libp2p::swarm::derive_prelude::EitherOutput;
+use libp2p::swarm::SwarmEvent;
+use libp2p::tls::TlsStream;
+use libp2p::websocket::WsConfig;
+use libp2p::{
+    core, identity, mplex, ping, yamux, InboundUpgradeExt, Multiaddr, OutboundUpgradeExt, PeerId,
+    Swarm, Transport,
+};
+use libp2pv0500 as libp2p;
+use testplan::{run_ping, PingSwarm};
 
 fn build_builder<T, C>(
     builder: core::transport::upgrade::Builder<T>,
@@ -64,7 +69,7 @@ where
         .boxed()
 }
 
-#[async_std::main]
+#[tokio::main]
 async fn main() -> Result<()> {
     let local_key = identity::Keypair::generate_ed25519();
     let local_peer_id = PeerId::from(local_key.public());
@@ -84,12 +89,12 @@ async fn main() -> Result<()> {
     let (boxed_transport, local_addr) = match transport_param.as_str() {
         "quic-v1" => {
             let builder =
-                libp2p::quic::async_std::Transport::new(libp2p::quic::Config::new(&local_key))
+                libp2p::quic::tokio::Transport::new(libp2p::quic::Config::new(&local_key))
                     .map(|(p, c), _| (p, StreamMuxerBox::new(c)));
             (builder.boxed(), format!("/ip4/{ip}/udp/0/quic-v1"))
         }
         "tcp" => {
-            let builder = libp2p::tcp::async_io::Transport::new(libp2p::tcp::Config::new())
+            let builder = libp2p::tcp::tokio::Transport::new(libp2p::tcp::Config::new())
                 .upgrade(libp2p::core::upgrade::Version::V1Lazy);
 
             (
@@ -103,7 +108,7 @@ async fn main() -> Result<()> {
             )
         }
         "ws" => {
-            let builder = WsConfig::new(libp2p::tcp::async_io::Transport::new(
+            let builder = WsConfig::new(libp2p::tcp::tokio::Transport::new(
                 libp2p::tcp::Config::new(),
             ))
             .upgrade(libp2p::core::upgrade::Version::V1Lazy);
@@ -121,7 +126,7 @@ async fn main() -> Result<()> {
         _ => panic!("Unsupported"),
     };
 
-    let swarm = OrphanRuleWorkaround(Swarm::with_async_std_executor(
+    let swarm = OrphanRuleWorkaround(Swarm::with_tokio_executor(
         boxed_transport,
         ping::Behaviour::new(
             #[allow(deprecated)]
@@ -133,7 +138,9 @@ async fn main() -> Result<()> {
         local_peer_id,
     ));
 
-    run_ping_redis(client, swarm, &local_addr, local_peer_id).await?;
+    // Use peer id as a String so that `run_ping` does not depend on a specific libp2p version.
+    let local_peer_id = local_peer_id.to_string();
+    run_ping(client, swarm, &local_addr, &local_peer_id).await?;
 
     Ok(())
 }

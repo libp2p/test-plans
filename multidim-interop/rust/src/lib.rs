@@ -1,14 +1,15 @@
+use std::env;
+use std::time::Duration;
+
 use anyhow::{Context, Result};
 use env_logger::Env;
-use libp2pv0500::PeerId;
 use log::info;
 use redis::{AsyncCommands, Client as Rclient};
-use std::{env, time::Duration};
 
 const REDIS_TIMEOUT: usize = 10;
 
 #[async_trait::async_trait]
-pub trait PingSwarm: Sized {
+pub trait PingSwarm: Sized + Send + 'static {
     async fn listen_on(&mut self, address: &str) -> Result<String>;
 
     fn dial(&mut self, address: &str) -> Result<()>;
@@ -22,17 +23,11 @@ pub trait PingSwarm: Sized {
     fn local_peer_id(&self) -> String;
 }
 
-pub enum TransportKind {
-    Tcp,
-    WebSocket,
-    Quic,
-}
-
-pub async fn run_ping_redis<S>(
+pub async fn run_ping<S>(
     client: Rclient,
     mut swarm: S,
     local_addr: &str,
-    local_peer_id: PeerId,
+    local_peer_id: &str,
 ) -> Result<()>
 where
     S: PingSwarm,
@@ -45,6 +40,12 @@ where
     let is_dialer = env::var("is_dialer")
         .unwrap_or("true".into())
         .parse::<bool>()?;
+
+    info!(
+        "Test instance, listening for incoming connections on: {:?}.",
+        local_addr
+    );
+    let local_addr = swarm.listen_on(local_addr).await?;
 
     if is_dialer {
         let result: Vec<String> = conn.blpop("listenerAddr", REDIS_TIMEOUT).await?;
@@ -65,17 +66,17 @@ where
             results.first().expect("Should have a ping result")
         );
     } else {
-        let local_addr = swarm.listen_on(local_addr).await?;
         let ma = format!("{local_addr}/p2p/{local_peer_id}");
         conn.rpush("listenerAddr", ma).await?;
-        info!(
-            "Test instance, listening for incoming connections on: {:?}.",
-            local_addr
-        );
 
-        swarm.await_connections(1).await;
+        // Drive Swarm in the background while we await for `dialerDone` to be ready.
+        tokio::spawn(async move {
+            swarm.loop_on_next().await;
+        });
 
-        let _done: Vec<String> = conn.blpop("dialerDone", REDIS_TIMEOUT).await?;
+        let done: Vec<String> = conn.blpop("dialerDone", REDIS_TIMEOUT).await?;
+        done.get(1)
+            .context("Failed to wait for dialer conclusion")?;
         info!("Ping successful");
     }
 
