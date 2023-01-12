@@ -13,5 +13,6 @@ log = "0.4"
 redis = { version = "0.22.1", features = ["tokio-native-tls-comp", "tokio-comp"] }
 tokio = { version = "1.24.1", features = ["full"] }
 
-libp2pv0500 = { package = "libp2p", version = "0.50.0", features = ["websocket", "quic", "mplex", "yamux", "tcp", "tokio", "ping", "noise", "tls", "dns", "rsa", "macros"] }
+libp2pv0500 = { package = "libp2p", version = "0.50.0", features = ["websocket", "webrtc", "quic", "mplex", "yamux", "tcp", "tokio", "ping", "noise", "tls", "dns", "rsa", "macros"] }
+rand = "0.8.5"
 

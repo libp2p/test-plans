@@ -10,7 +10,9 @@ use libp2p::core::transport::Boxed;
 use libp2p::core::upgrade::EitherUpgrade;
 use libp2p::swarm::{keep_alive, NetworkBehaviour, SwarmEvent};
 use libp2p::websocket::WsConfig;
-use libp2p::{core, identity, mplex, noise, ping, yamux, Multiaddr, PeerId, Swarm, Transport};
+use libp2p::{
+    core, identity, mplex, noise, ping, webrtc, yamux, Multiaddr, PeerId, Swarm, Transport,
+};
 use libp2pv0500 as libp2p;
 use testplan::{run_ping, PingSwarm};
 
@@ -94,6 +96,15 @@ async fn main() -> Result<()> {
                 format!("/ip4/{ip}/tcp/0/ws"),
             )
         }
+        "webrtc" => (
+            webrtc::tokio::Transport::new(
+                local_key,
+                webrtc::tokio::Certificate::generate(&mut rand::thread_rng())?,
+            )
+            .map(|(peer_id, conn), _| (peer_id, StreamMuxerBox::new(conn)))
+            .boxed(),
+            format!("/ip4/{ip}/udp/0/webrtc"),
+        ),
         _ => panic!("Unsupported"),
     };
 

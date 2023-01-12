@@ -3217,6 +3217,7 @@ dependencies = [
  "if-addrs",
  "libp2p",
  "log",
+ "rand 0.8.5",
  "redis",
  "tokio",
 ]
@@ -3685,6 +3686,7 @@ dependencies = [
  "interceptor",
  "lazy_static",
  "log",
+ "pem",
  "rand 0.8.5",
  "rcgen 0.9.3",
  "regex",
@@ -3750,6 +3752,7 @@ dependencies = [
  "oid-registry 0.6.1",
  "p256",
  "p384",
+ "pem",
  "rand 0.8.5",
  "rand_core 0.6.4",
  "rcgen 0.9.3",
