@@ -18,7 +18,10 @@ import { hideBin } from 'yargs/helpers'
     if (RUNTIME === 'node') {
         fork(testFile)
     } else if (['chromium', 'webkit', 'firefox'].indexOf(RUNTIME) > -1) {
-        throw new Error(`Unsupported browser runtime: ${RUNTIME}`)
+        // 1. webpack the test file
+        // TODO
+
+        // 2. run the test using the browser runtime
     } else {
         throw new Error(`Unsupported runtime: ${RUNTIME}`)
     }
