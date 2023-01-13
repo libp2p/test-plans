@@ -2,10 +2,18 @@
 
 import { fork } from 'child_process'
 
-; (async () => {
-    const RUNTIME = process.env.TESTGROUND_RUNTIME || 'node' // other possibilities: chromium, webkit, firefox
+import yargs from 'yargs/yargs'
+import { hideBin } from 'yargs/helpers'
 
-    const testFile = process.argv[2]
+; (async () => {
+    const argv = yargs(hideBin(process.argv))
+        .command('<path>', 'path to the test file to run')
+        .demandCommand(1)
+        .parseSync()
+
+    const RUNTIME = argv.runtime || 'node' // other possibilities: chromium, webkit, firefox
+
+    const testFile = argv._[0]
 
     if (RUNTIME === 'node') {
         fork(testFile)

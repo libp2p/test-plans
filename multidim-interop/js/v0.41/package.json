@@ -11,7 +11,7 @@
         "node": ">=16"
     },
     "scripts": {
-        "ping": "node ping/index.js",
+        "ping": "testground tests/ping.js",
         "test": "standard"
     },
     "dependencies": {
