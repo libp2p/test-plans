@@ -101,7 +101,7 @@ import {
     const multiaddrs = node.getMultiaddrs().map(ma => ma.toString()).filter(maString => !maString.includes('127.0.0.1'))
     logger.info('My multiaddrs are', multiaddrs)
     await redisClient.rPush('listenerAddr', multiaddrs[0])
-    await redisClient.blPop('dialerDone', 4)
+    await redisClient.blPop('dialerDone', 10)
   }
 
   // We don't care if these fail
