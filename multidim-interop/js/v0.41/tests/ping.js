@@ -48,6 +48,9 @@ import {
 
   switch (TRANSPORT) {
     case 'tcp':
+      if (IS_BROWSER) {
+        throw new Error('tcp transport not supported for browser runtimes')
+      }
       options.transports = [tcp()]
       if (!IS_BROWSER) {
         // (for now) not supported for browser runtimes
