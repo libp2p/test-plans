@@ -5,3 +5,5 @@ export async function getParams () {
     return {}
   }
 }
+
+export const IS_BROWSER = true

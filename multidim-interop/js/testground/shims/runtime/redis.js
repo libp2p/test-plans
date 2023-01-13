@@ -8,19 +8,30 @@ export async function redis (url) {
   }
   const handler = {
     get (target, method) {
-      return async function () {
+      // TODO: either figure out why stuff like 'then' is called here, or make a more complete whitelist
+      if (['blPop', 'rPush', 'disconnect'].indexOf(method) === -1) {
+        return Reflect.get(...arguments)
+      }
+      console.log(`redis http proxy client: intercept method: ${method}`)
+      return function () {
         const args = Array.prototype.slice.call(arguments)
         const rpc = { method, args }
 
-        const response = await fetch(target.endpoint, {
+        console.log(`redis http proxy client: make method call to ${method} with args: ${JSON.stringify(args)}`)
+
+        return fetch(target.endpoint, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify(rpc)
+        }).then((response) => {
+            console.log(`redis http proxy received response: ${response.status}`)
+            return response.json()
+        }).then((obj) => {
+            console.log(`redis http proxy received Json response: ${JSON.stringify(obj)}`)
+            return obj.output
         })
-
-        return (await response.json()).element
       }
     }
   }

@@ -9,7 +9,10 @@ import {
 import spawnServer from './server/index.js'
 
 export async function run (runtime, bundledTestFile) {
-  const envParameters = process.env
+  const envParameters = {
+    ...process.env,
+    REDIS_ADDR: '127.0.0.1:8080',
+  }
 
   await spawnServer(8080, bundledTestFile)
 

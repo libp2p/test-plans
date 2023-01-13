@@ -1,14 +1,35 @@
-import { redis, getParams, logger, markTestAsCompleted } from 'wo-testground/runtime/index.js'
+import {
+  redis,
+  getParams,
+  IS_BROWSER,
+  logger,
+  markTestAsCompleted
+} from 'wo-testground/runtime/index.js'
 
-import { createLibp2p } from 'libp2p'
-import { tcp } from '@libp2p/tcp'
-import { webSockets } from '@libp2p/websockets'
-import { noise } from '@chainsafe/libp2p-noise'
-import { mplex } from '@libp2p/mplex'
-import { yamux } from '@chainsafe/libp2p-yamux'
-import { multiaddr } from '@multiformats/multiaddr'
+import {
+  createLibp2p
+} from 'libp2p'
+import {
+  tcp
+} from '@libp2p/tcp'
+import {
+  webSockets
+} from '@libp2p/websockets'
+import {
+  noise
+} from '@chainsafe/libp2p-noise'
+import {
+  mplex
+} from '@libp2p/mplex'
+import {
+  yamux
+} from '@chainsafe/libp2p-yamux'
+import {
+  multiaddr
+} from '@multiformats/multiaddr'
 
-; (async () => {
+;
+(async () => {
   const params = await getParams()
 
   const TRANSPORT = params.transport
@@ -28,14 +49,20 @@ import { multiaddr } from '@multiformats/multiaddr'
   switch (TRANSPORT) {
     case 'tcp':
       options.transports = [tcp()]
-      options.addresses = {
-        listen: [`/ip4/${IP}/tcp/0`]
+      if (!IS_BROWSER) {
+        // (for now) not supported for browser runtimes
+        options.addresses = {
+          listen: [`/ip4/${IP}/tcp/0`]
+        }
       }
       break
     case 'ws':
       options.transports = [webSockets()]
-      options.addresses = {
-        listen: [`/ip4/${IP}/tcp/0/ws`]
+      if (!IS_BROWSER) {
+        // (for now) not supported for browser runtimes
+        options.addresses = {
+          listen: [`/ip4/${IP}/tcp/0/ws`]
+        }
       }
       break
     default:
@@ -61,6 +88,7 @@ import { multiaddr } from '@multiformats/multiaddr'
       throw new Error(`Unknown muxer: ${MUXER}`)
   }
 
+  logger.info(`creating libp2p node with options: ${JSON.stringify(options, null, 2)}`)
   const node = await createLibp2p(options)
 
   if (isDialer) {
