@@ -1,3 +1,3 @@
 export async function getParams () {
-    return process.env
+  return process.env
 }

@@ -12,11 +12,17 @@
     "scripts": {
         "test": "standard"
     },
+    "browser": {
+        "./runtime/env.js": "./shims/runtime/env.js",
+        "./runtime/redis.js": "./shims/runtime/redis.js",
+        "./runtime/test.js": "./shims/runtime/test.js"
+    },
     "bin": {
         "testground": "cli.js"
     },
     "dependencies": {
         "express": "^4.18.2",
+        "mustache-express": "^1.3.2",
         "playwright": "^1.29.1",
         "redis": "^4.5.1",
         "webpack": "^5.75.0",
