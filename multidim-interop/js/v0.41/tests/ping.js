@@ -1,3 +1,5 @@
+import { redis, getParams, logger } from 'wo-testground/runtime/index.js'
+
 import { createLibp2p } from 'libp2p'
 import { tcp } from '@libp2p/tcp'
 import { webSockets } from '@libp2p/websockets'
@@ -6,19 +8,19 @@ import { mplex } from '@libp2p/mplex'
 import { yamux } from '@chainsafe/libp2p-yamux'
 import { multiaddr } from '@multiformats/multiaddr'
 
-import { runtime } from 'wo-testground/runtime.js'
-
 (async () => {
-    const params = await runtime.params()
-
-    const IS_DIALER_STR = params.is_dialer
-    const isDialer = IS_DIALER_STR === 'true'
+    const params = await getParams()
 
     const TRANSPORT = params.transport
     const SECURE_CHANNEL = params.security
     const MUXER = params.muxer
+    const IS_DIALER_STR = params.is_dialer
     const IP = params.ip
+    const REDIS_ADDR = params.REDIS_ADDR
 
+    const redisClient = await redis(REDIS_ADDR)
+
+    const isDialer = IS_DIALER_STR === 'true'
     const options = {
         start: true
     }
@@ -60,28 +62,29 @@ import { runtime } from 'wo-testground/runtime.js'
     }
 
     const node = await createLibp2p(options)
-    console.log(`node ${node.peerId} created...`)
 
     if (isDialer) {
-        const otherMa = await runtime.waitOnBarrier('otherMultiAddress')
-        console.log(`node ${node.peerId} pings: ${otherMa}`)
+        const otherMa = (await redisClient.blPop('listenerAddr', 10)).element
+        logger.info(`node ${node.peerId} pings: ${otherMa}`)
         await node.ping(multiaddr(otherMa))
-            .then((rtt) => console.log(`Ping successful: ${rtt}`))
+            .then((rtt) => logger.info(`Ping successful: ${rtt}`))
+            .then(() => redisClient.rPush('dialerDone', ''))
     } else {
-        const multiaddrs = node
-            .getMultiaddrs()
-            .map(ma => ma.toString())
-            .filter(maString => !maString.includes("127.0.0.1"))
-        await runtime.resolveBarrier('multiAddress', multiaddrs[0])
-        await runtime.waitOnBarrier('dialerDone')
+        const multiaddrs = node.getMultiaddrs().map(ma => ma.toString()).filter(maString => !maString.includes("127.0.0.1"))
+        logger.info("My multiaddrs are", multiaddrs)
+        await redisClient.rPush('listenerAddr', multiaddrs[0])
+        await redisClient.blPop('dialerDone', 4)
     }
 
+    // We don't care if these fail
     try {
-        // We don't care if these fail
         await node.stop()
     } catch (error) {
-        console.error('node::stop', error)
+        logger.error('stop libp2p node:', error)
     }
-
-    await runtime.resolveBarrier('testground::result', true)
+    try {
+        await redisClient.disconnect()
+    } catch (error) {
+        logger.error('stop redis client:', error)
+    }
 })()

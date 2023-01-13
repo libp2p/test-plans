@@ -12,6 +12,9 @@
     "scripts": {
         "test": "standard"
     },
+    "bin": {
+        "testground": "cli.js"
+    },
     "dependencies": {
         "express": "^4.18.2",
         "playwright": "^1.29.1",
