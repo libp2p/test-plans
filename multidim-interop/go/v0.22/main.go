@@ -137,7 +137,7 @@ func main() {
 		if err != nil {
 			panic("Failed to send listener address")
 		}
-		_, err = rClient.BLPop(ctx, 4*time.Second, "dialerDone").Result()
+		_, err = rClient.BLPop(ctx, 10*time.Second, "dialerDone").Result()
 		if err != nil {
 			panic("Failed to wait for dialer conclusion")
 		}

@@ -7,6 +7,24 @@ on:
         description: the directory with the testplans test
         required: true
         type: string
+      extra-versions:
+        description: artifact name for the extra-versions.json file
+        required: false
+        type: string
+      image-tar:
+        description: artifact name for the image.tar(s) to import
+        required: false
+        type: string
+      test-filter:
+        description: "Filter which test runs"
+        type: string
+        required: false
+        default: ""
+      test-plans_ref:
+        description: "branch of test-plans to checkout"
+        type: string
+        required: false
+        default: ""
 jobs:
   run_test:
     name: Run testplans test
@@ -18,15 +36,30 @@ jobs:
         shell: bash
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           path: test-plans
-          repository: ${{ env.TEST_PLAN_REPO }}
-          ref: ${{ env.TEST_PLAN_BRANCH }}
+          repository: "libp2p/test-plans"
+          ref: ${{ inputs.test-plans_ref }}
+      # Download input data
+      - uses: actions/download-artifact@v3
+        if: ${{ inputs.extra-versions != '' }}
+        with:
+          name: ${{ inputs.extra-versions }}
+          path: /tmp/extra-versions
+      - uses: actions/download-artifact@v3
+        if: ${{ inputs.image-tar != '' }}
+        with:
+          name: ${{ inputs.image-tar }}
+          path: /tmp/images/
+      - name: Load docker images
+        if: ${{ inputs.image-tar != '' }}
+        run: for FILE in /tmp/images/*; do docker image load -i $FILE; done
+      # Continue with the test as before
       - uses: actions/setup-node@v3
         with:
           node-version: 17
-          cache: 'npm'
+          cache: "npm"
           cache-dependency-path: ./test-plans/${{ env.TEST_PLAN_DIR }}/package-lock.json
       - name: Expose GitHub Runtime # Needed for docker buildx to cache properly (See https://docs.docker.com/build/cache/backends/gha/#authentication)
         uses: crazy-max/ghaction-github-runtime@v2
@@ -39,13 +72,10 @@ jobs:
       - name: Build images
         working-directory: ./test-plans/${{ env.TEST_PLAN_DIR }}/
         run: make
-      - name: List docker images
-        working-directory: ./test-plans/${{ env.TEST_PLAN_DIR }}/
-        run: docker image ls
       - name: Run the test
-        timeout-minutes: 120
+        timeout-minutes: 30
         working-directory: ./test-plans/${{ env.TEST_PLAN_DIR }}/
-        run: WORKER_COUNT=2 npm run test
+        run: WORKER_COUNT=2 npm run test -- --extra-versions-dir=/tmp/extra-versions --name-filter=${{ inputs.test-filter }}
       - name: Print the results
         working-directory: ./test-plans/${{ env.TEST_PLAN_DIR }}/
         run: cat results.csv
@@ -64,9 +94,8 @@ jobs:
             exit 0
           fi
       - uses: actions/upload-artifact@v3
-        if: ${{ always() }}
         with:
-          name: testground-output
+          name: test-plans-output
           path: |
             ./test-plans/${{ env.TEST_PLAN_DIR }}/results.csv
             ./test-plans/${{ env.TEST_PLAN_DIR }}/dashboard.md
