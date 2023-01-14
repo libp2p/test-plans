@@ -41,7 +41,8 @@ import {
 
   const redisClient = await redis(REDIS_ADDR)
 
-  const isDialer = IS_DIALER_STR === 'true'
+  // browser can only dial, not listen (for now)
+  const isDialer = IS_BROWSER || IS_DIALER_STR === 'true'
   const options = {
     start: true
   }
@@ -52,8 +53,7 @@ import {
         throw new Error('tcp transport not supported for browser runtimes')
       }
       options.transports = [tcp()]
-      if (!IS_BROWSER) {
-        // (for now) not supported for browser runtimes
+      if (!isDialer) {
         options.addresses = {
           listen: [`/ip4/${IP}/tcp/0`]
         }
@@ -61,7 +61,7 @@ import {
       break
     case 'ws':
       options.transports = [webSockets()]
-      if (!IS_BROWSER) {
+      if (!isDialer) {
         // (for now) not supported for browser runtimes
         options.addresses = {
           listen: [`/ip4/${IP}/tcp/0/ws`]
