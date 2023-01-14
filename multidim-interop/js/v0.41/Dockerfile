@@ -8,6 +8,11 @@ COPY package*.json .
 
 RUN npm ci
 
-COPY *.js /app/
+COPY tsconfig.json .
+COPY .aegir.js .
+COPY test ./test
+COPY src ./src
 
-ENTRYPOINT [ "npm", "run", "start" ]
+RUN npm run build
+
+ENTRYPOINT [ "npm", "test", "--", "-b", "false", "-t", "node" ]
