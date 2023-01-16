@@ -1,7 +1,9 @@
 # syntax=docker/dockerfile:1
+
 FROM mcr.microsoft.com/playwright
 
 WORKDIR /app
+
 
 COPY package*.json .
 
@@ -14,4 +16,7 @@ COPY src ./src
 
 RUN npm run build
 
-ENTRYPOINT [ "npm", "test", "--", "--build", "false", "--types", "false", "-t", "node" ]
+# warmup the test
+RUN initial_setup=true npm test -- --types false --build false --grep "^$" -t browser
+
+ENTRYPOINT [ "npm", "test", "--", "--build", "false", "--types", "false", "-t", "browser" ]

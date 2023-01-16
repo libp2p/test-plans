@@ -6,10 +6,17 @@ import http from "http"
 const isDialer = process.env.is_dialer === "true"
 const REDIS_ADDR = process.env.REDIS_ADDR || 'redis:6379'
 
+// Used to preinstall the browsers in the docker image
+const initialSetup = process.env.initial_setup === "true"
+
 /** @type {import('aegir/types').PartialOptions} */
 export default {
   test: {
     async before() {
+      if (initialSetup) {
+        return {}
+      }
+
       const redisClient = createClient({
         url: `redis://${REDIS_ADDR}`
       })
@@ -75,6 +82,10 @@ export default {
       }
     },
     async after(_, { proxyServer, redisClient }) {
+      if (initialSetup) {
+        return
+      }
+
       await new Promise(resolve => {
         proxyServer.close(() => resolve());
       })

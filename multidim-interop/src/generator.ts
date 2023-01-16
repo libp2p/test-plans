@@ -16,19 +16,21 @@ export async function buildTestSpecs(versions: Array<Version>): Promise<Array<Co
         driver: sqlite3.Database,
     });
 
-    await db.exec(`CREATE TABLE IF NOT EXISTS transports (id string not null, transport string not null);`)
+    await db.exec(`CREATE TABLE IF NOT EXISTS transports (id string not null, transport string not null, onlyDial boolean not null);`)
     await db.exec(`CREATE TABLE IF NOT EXISTS secureChannels (id string not null, sec string not null);`)
     await db.exec(`CREATE TABLE IF NOT EXISTS muxers (id string not null, muxer string not null);`)
 
     await Promise.all(
         versions.flatMap(version => {
             return [
-                db.exec(`INSERT INTO transports (id, transport) 
-                VALUES ${version.transports.map(transport => `("${version.id}", "${transport}")`).join(", ")};`),
-                db.exec(`INSERT INTO secureChannels (id, sec) 
-                VALUES ${version.secureChannels.map(sec => `("${version.id}", "${sec}")`).join(", ")};`),
-                db.exec(`INSERT INTO muxers (id, muxer) 
-                VALUES ${version.muxers.map(muxer => `("${version.id}", "${muxer}")`).join(", ")};`),
+                db.exec(`INSERT INTO transports (id, transport, onlyDial)
+                VALUES ${version.transports.map(normalizeTransport).map(transport => `("${version.id}", "${transport.name}", ${transport.onlyDial})`).join(", ")};`),
+                (version.secureChannels.length > 0 ?
+                    db.exec(`INSERT INTO secureChannels (id, sec)
+                VALUES ${version.secureChannels.map(sec => `("${version.id}", "${sec}")`).join(", ")};`) : []),
+                (version.muxers.length > 0 ?
+                    db.exec(`INSERT INTO muxers (id, muxer)
+                VALUES ${version.muxers.map(muxer => `("${version.id}", "${muxer}")`).join(", ")};`) : []),
             ]
         })
     )
@@ -40,6 +42,7 @@ export async function buildTestSpecs(versions: Array<Version>): Promise<Array<Co
         await db.all(`SELECT DISTINCT a.id as id1, b.id as id2, a.transport, ma.muxer, sa.sec
                      FROM transports a, transports b, muxers ma, muxers mb, secureChannels sa, secureChannels sb
                      WHERE a.id == ma.id
+                     AND NOT b.onlyDial
                      AND b.id == mb.id
                      AND a.id == sa.id
                      AND b.id == sb.id
@@ -67,6 +70,7 @@ export async function buildTestSpecs(versions: Array<Version>): Promise<Array<Co
         await db.all(`SELECT DISTINCT a.id as id1, b.id as id2, a.transport
                      FROM transports a, transports b
                      WHERE a.transport == b.transport
+                     AND NOT b.onlyDial
                      -- Only webtransport transports
                      AND a.transport == "webtransport";`);
     const webrtcQueryResults =
@@ -142,4 +146,8 @@ function buildSpec(containerImages: { [key: string]: string }, { name, dialerID,
             redis: { image: "redis/redis-stack", }
         }
     }
+}
+
+function normalizeTransport(transport: string | { name: string, onlyDial: boolean }): { name: string, onlyDial: boolean } {
+    return typeof transport === "string" ? { name: transport, onlyDial: false } : transport
 }

@@ -2,10 +2,9 @@
 /* eslint-env mocha */
 
 import { } from 'aegir/chai'
-// import { createClient } from 'redis'
-
 import { createLibp2p, Libp2pOptions } from 'libp2p'
 // import { tcp } from '@libp2p/tcp'
+import { webTransport } from '@libp2p/webtransport'
 import { webSockets } from '@libp2p/websockets'
 import { noise } from '@chainsafe/libp2p-noise'
 import { mplex } from '@libp2p/mplex'
@@ -37,7 +36,13 @@ describe('ping test', () => {
         const { tcp } = await import(tcpImport)
         options.transports = [tcp()]
         options.addresses = {
-          listen: [`/ip4/${IP}/tcp/0`]
+          listen: isDialer ? [] : [`/ip4/${IP}/tcp/0`]
+        }
+        break
+      case 'webtransport':
+        options.transports = [webTransport()]
+        if (!isDialer) {
+          throw new Error("WebTransport is not supported as a listener")
         }
         break
       case 'ws':
@@ -54,8 +59,11 @@ describe('ping test', () => {
       case 'noise':
         options.connectionEncryption = [noise()]
         break
+      case 'quic':
+        options.connectionEncryption = [noise()]
+        break
       default:
-        throw new Error(`Unknown secure channel: ${TRANSPORT}`)
+        throw new Error(`Unknown secure channel: ${SECURE_CHANNEL}`)
     }
 
     switch (MUXER) {
@@ -64,6 +72,8 @@ describe('ping test', () => {
         break
       case 'yamux':
         options.streamMuxers = [yamux()]
+        break
+      case 'quic':
         break
       default:
         throw new Error(`Unknown muxer: ${MUXER}`)
