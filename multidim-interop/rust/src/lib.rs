@@ -1,13 +1,44 @@
-use std::env;
 use std::time::Duration;
 
 use anyhow::{Context, Result};
 use env_logger::Env;
 use log::info;
 use redis::{AsyncCommands, Client as Rclient};
+use strum::EnumString;
 
 const REDIS_TIMEOUT: usize = 10;
 
+/// Supported transports by rust-libp2p.
+#[derive(Clone, Debug, EnumString)]
+#[strum(serialize_all = "kebab-case")]
+pub enum Transport {
+    Tcp,
+    QuicV1,
+    Webrtc,
+    Ws,
+}
+
+/// Supported stream multiplexers by rust-libp2p.
+#[derive(Clone, Debug, EnumString)]
+#[strum(serialize_all = "kebab-case")]
+pub enum Muxer {
+    Mplex,
+    Yamux,
+    Quic,
+    Webrtc,
+}
+
+/// Supported security protocols by rust-libp2p.
+#[derive(Clone, Debug, EnumString)]
+#[strum(serialize_all = "kebab-case")]
+pub enum SecProtocol {
+    Noise,
+    Tls,
+    Quic,
+    Webrtc,
+}
+
+/// PingSwarm allows us to abstract over libp2p versions for `run_ping`.
 #[async_trait::async_trait]
 pub trait PingSwarm: Sized + Send + 'static {
     async fn listen_on(&mut self, address: &str) -> Result<String>;
@@ -23,11 +54,15 @@ pub trait PingSwarm: Sized + Send + 'static {
     fn local_peer_id(&self) -> String;
 }
 
+/// Run a ping interop test. Based on `is_dialer`, either dial the address
+/// retrieved via `listenAddr` key over the redis connection. Or wait to be pinged and have
+/// `dialerDone` key ready on the redis connection.
 pub async fn run_ping<S>(
     client: Rclient,
     mut swarm: S,
     local_addr: &str,
     local_peer_id: &str,
+    is_dialer: bool,
 ) -> Result<()>
 where
     S: PingSwarm,
@@ -36,10 +71,6 @@ where
 
     info!("Running ping test: {}", swarm.local_peer_id());
     env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
-
-    let is_dialer = env::var("is_dialer")
-        .unwrap_or("true".into())
-        .parse::<bool>()?;
 
     info!(
         "Test instance, listening for incoming connections on: {:?}.",
