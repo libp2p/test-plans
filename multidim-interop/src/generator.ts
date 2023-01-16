@@ -90,14 +90,22 @@ export async function buildTestSpecs(versions: Array<Version>): Promise<Array<Co
         quicQueryResults
         .concat(quicV1QueryResults)
         .concat(webtransportQueryResults)
-        .concat(webrtcQueryResults)
         .map((test): ComposeSpecification => buildSpec(containerImages, {
             name: `${test.id1} x ${test.id2} (${test.transport})`,
             dialerID: test.id1,
             listenerID: test.id2,
             transport: test.transport,
             muxer: "quic",
-            security: "quic",
+            security: "tls",
+        })))
+        .concat(webrtcQueryResults
+        .map((test): ComposeSpecification => buildSpec(containerImages, {
+            name: `${test.id1} x ${test.id2} (${test.transport})`,
+            dialerID: test.id1,
+            listenerID: test.id2,
+            transport: test.transport,
+            muxer: "webrtc",
+            security: "tls",
         })))
 
     return testSpecs
