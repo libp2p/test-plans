@@ -36,19 +36,17 @@ export default {
         })
 
         try {
-
-          if (requestJSON.listenerAddr) {
-            await redisClient.rPush('listenerAddr', requestJSON.listenerAddr)
+          const redisRes = await redisClient.sendCommand(requestJSON)
+          if (redisRes === null) {
+            throw new Error("redis sent back null")
           }
 
-          if (requestJSON.popDialerDone) {
-            const res = await redisClient.blPop('dialerDone', 10)
-            if (res === null) {
-              throw new Error("timeout waiting for dialer done")
-            }
-          }
+          res.writeHead(200, {
+            'Access-Control-Allow-Origin': '*'
+          })
+          res.end(JSON.stringify(redisRes))
         } catch (err) {
-          console.error(err)
+          console.error("Error in redis command:", err)
           res.writeHead(500, {
             'Access-Control-Allow-Origin': '*'
           })
@@ -57,26 +55,16 @@ export default {
         }
 
 
-        res.writeHead(200, {
-          'Access-Control-Allow-Origin': '*'
-        })
-        res.end()
       };
 
       const proxyServer = http.createServer(requestListener);
       await new Promise(resolve => { proxyServer.listen(0, "localhost", () => { resolve() }); })
-
-      let otherMa = null;
-      if (isDialer) {
-        otherMa = (await redisClient.blPop('listenerAddr', 10))?.element
-      }
 
       return {
         redisClient,
         proxyServer: proxyServer,
         env: {
           ...process.env,
-          otherMa,
           proxyPort: proxyServer.address().port
         }
       }
@@ -90,9 +78,6 @@ export default {
         proxyServer.close(() => resolve());
       })
 
-      if (isDialer) {
-        await redisClient.rPush('dialerDone', '')
-      }
       try {
         // We don't care if this fails
         await redisClient.disconnect()

@@ -3,7 +3,6 @@
 
 import { } from 'aegir/chai'
 import { createLibp2p, Libp2pOptions } from 'libp2p'
-// import { tcp } from '@libp2p/tcp'
 import { webTransport } from '@libp2p/webtransport'
 import { webSockets } from '@libp2p/websockets'
 import { noise } from '@chainsafe/libp2p-noise'
@@ -11,13 +10,20 @@ import { mplex } from '@libp2p/mplex'
 import { yamux } from '@chainsafe/libp2p-yamux'
 import { multiaddr } from '@multiformats/multiaddr'
 
+async function redisProxy(commands: any[]): Promise<any> {
+  let nodeFetchImport = "node-fetch"
+  let fetch = (typeof window === "undefined") ?
+    (await import(nodeFetchImport)).default :
+    window.fetch;
+  const res = await fetch(`http://localhost:${process.env.proxyPort}/`, { body: JSON.stringify(commands), method: "POST" })
+  if (!res.ok) {
+    throw new Error("Redis command failed")
+  }
+  return await res.json()
+}
+
 describe('ping test', () => {
   it('should ping', async () => {
-    let nodeFetchImport = "node-fetch"
-    let fetch = (typeof window === "undefined") ?
-      (await import(nodeFetchImport)).default :
-      window.fetch
-
     const TRANSPORT = process.env.transport
     const SECURE_CHANNEL = process.env.security
     const MUXER = process.env.muxer
@@ -84,20 +90,19 @@ describe('ping test', () => {
     try {
 
       if (isDialer) {
-        const otherMa = process.env.otherMa
-        if (otherMa === undefined) {
-          throw new Error("Failed to wait for listener")
-        }
+        const otherMa = (await redisProxy(["BLPOP", "listenerAddr", "10"]).catch(err => { throw new Error("Failed to wait for listener") }))[1]
         console.log(`node ${node.peerId} pings: ${otherMa}`)
         const rtt = await node.ping(multiaddr(otherMa))
         console.log(`Ping successful: ${rtt}`)
+        await redisProxy(["RPUSH", "dialerDone", ""])
       } else {
         const multiaddrs = node.getMultiaddrs().map(ma => ma.toString()).filter(maString => !maString.includes("127.0.0.1"))
         console.log("My multiaddrs are", multiaddrs)
         // Send the listener addr over the proxy server so this works on both the Browser and Node
-        await fetch(`http://localhost:${process.env.proxyPort}/`, { body: JSON.stringify({ "listenerAddr": multiaddrs[0] }), method: "POST" })
-        const res = await fetch(`http://localhost:${process.env.proxyPort}/`, { body: JSON.stringify({ "popDialerDone": true }), method: "POST" })
-        if (!res.ok) {
+        await redisProxy(["RPUSH", "listenerAddr", multiaddrs[0]])
+        try {
+          await redisProxy(["BLPOP", "dialerDone", "10"])
+        } catch {
           throw new Error("Failed to wait for dialer to finish")
         }
       }
