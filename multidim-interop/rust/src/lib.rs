@@ -34,8 +34,6 @@ pub enum Muxer {
 pub enum SecProtocol {
     Noise,
     Tls,
-    Quic,
-    Webrtc,
 }
 
 /// PingSwarm allows us to abstract over libp2p versions for `run_ping`.

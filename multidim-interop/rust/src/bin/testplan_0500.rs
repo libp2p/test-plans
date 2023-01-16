@@ -48,9 +48,6 @@ where
             .multiplex(mux_upgrade)
             .timeout(timeout)
             .boxed(),
-        sec_protocol => {
-            panic!("security protocol {sec_protocol:?} not supported for build_builder")
-        }
     }
 }
 
