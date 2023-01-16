@@ -35,7 +35,7 @@ func main() {
 		redis_addr = "redis:6379"
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	// Get peer information via redis
@@ -111,7 +111,7 @@ func main() {
 	fmt.Println("My multiaddr is: ", host.Addrs())
 
 	if is_dialer {
-		val, err := rClient.BLPop(ctx, 10*time.Second, "listenerAddr").Result()
+		val, err := rClient.BLPop(ctx, 30*time.Second, "listenerAddr").Result()
 		if err != nil {
 			panic("Failed to wait for listener to be ready")
 		}
@@ -145,7 +145,7 @@ func main() {
 		if err != nil {
 			panic("Failed to send listener address")
 		}
-		_, err = rClient.BLPop(ctx, 10*time.Second, "dialerDone").Result()
+		_, err = rClient.BLPop(ctx, 30*time.Second, "dialerDone").Result()
 		if err != nil {
 			panic("Failed to wait for dialer conclusion")
 		}
