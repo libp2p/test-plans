@@ -73,7 +73,7 @@ export async function buildTestSpecs(versions: Array<Version>): Promise<Array<Co
         await db.all(`SELECT DISTINCT a.id as id1, b.id as id2, a.transport
                      FROM transports a, transports b
                      WHERE a.transport == b.transport
-                     -- Only webtransport transports
+                     -- Only webrtc transports
                      AND a.transport == "webrtc";`);
     await db.close();
 
