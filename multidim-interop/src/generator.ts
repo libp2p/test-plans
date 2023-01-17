@@ -99,13 +99,13 @@ export async function buildTestSpecs(versions: Array<Version>): Promise<Array<Co
             security: "quic",
         })))
         .concat(webrtcQueryResults
-        .map((test): ComposeSpecification => buildSpec(containerImages, {
-            name: `${test.id1} x ${test.id2} (${test.transport})`,
-            dialerID: test.id1,
-            listenerID: test.id2,
-            transport: test.transport,
-            muxer: "webrtc",
-            security: "webrtc",
+            .map((test): ComposeSpecification => buildSpec(containerImages, {
+                name: `${test.id1} x ${test.id2} (${test.transport})`,
+                dialerID: test.id1,
+                listenerID: test.id2,
+                transport: test.transport,
+                muxer: "webrtc",
+                security: "webrtc",
         })))
 
     return testSpecs
