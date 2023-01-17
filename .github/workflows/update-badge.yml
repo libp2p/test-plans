@@ -2,16 +2,9 @@ name: Update Badge
 
 on:
   workflow_run:
-    workflows:
-      - libp2p multidimensional interop test
-    types:
-      - completed
-    branches:
-      - marco/update-badge
-
-defaults:
-  run:
-    shell: bash
+    workflows: ["libp2p multidimensional interop test"]
+    types: [completed]
+    branches: ["marco/update-badge"]
 
 concurrency:
   group: ${{ github.workflow }}
@@ -27,7 +20,7 @@ jobs:
           workflow: multidim-interop.yml # ${{ github.event.workflow.path }}
           run_id: ${{ github.event.workflow_run.id }}
           run_attempt: ${{ github.event.workflow_run.run_attempt }}
-          job: generate-dashboard
+          job: run-multidim-interop
       - uses: actions/checkout@v3
       # https://github.com/orgs/community/discussions/26560
       - run: |
