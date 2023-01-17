@@ -24,7 +24,7 @@ jobs:
       - uses: pl-strflt/job-summary-url-action@v1
         id: metadata
         with:
-          workflow: dashboard.yml # ${{ github.event.workflow.path }}
+          workflow: multidim-interop.yml # ${{ github.event.workflow.path }}
           run_id: ${{ github.event.workflow_run.id }}
           run_attempt: ${{ github.event.workflow_run.run_attempt }}
           job: generate-dashboard
