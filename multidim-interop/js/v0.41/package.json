@@ -8,7 +8,7 @@
   "author": "Glen De Cauwsemaecker <glen@littlebearlabs.io>",
   "license": "MIT",
   "engines": {
-    "node": ">=16"
+    "node": ">=18"
   },
   "scripts": {
     "start": "node index.js",
