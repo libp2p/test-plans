@@ -1,0 +1,55 @@
+name: Update Badge
+
+on:
+  workflow_run:
+    workflows:
+      - libp2p multidimensional interop test
+    types:
+      - completed
+    branches:
+      - master
+
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  update-badge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: pl-strflt/job-summary-url-action@v1
+        id: metadata
+        with:
+          workflow: dashboard.yml # ${{ github.event.workflow.path }}
+          run_id: ${{ github.event.workflow_run.id }}
+          run_attempt: ${{ github.event.workflow_run.run_attempt }}
+          job: generate-dashboard
+      - uses: actions/checkout@v3
+      # https://github.com/orgs/community/discussions/26560
+      - run: |
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+      - run: |
+          GITHUB_JOB_SUMMARY_URL="${{ steps.metadata.outputs.job_summary_url }}"
+
+          IN='[![Interop Dashboard](https://github.com/libp2p/test-plans/actions/workflows/dashboard.yml/badge.svg?branch=master)](.*)'
+          ESCAPED_IN=$(printf '%s\n' "$IN" | sed -e 's/[][\/!&]/\\&/g')
+
+          OUT="[![Interop Dashboard](https://github.com/libp2p/test-plans/actions/workflows/dashboard.yml/badge.svg?branch=master)](${GITHUB_JOB_SUMMARY_URL})"
+
+          sed -i "s;${ESCAPED_IN};${OUT};" README.md
+      - run: |
+          if [[ -n $(git diff --shortstat 2> /dev/null | tail -n1) ]]; then
+            echo "GIT_DIRTY=1" >> $GITHUB_ENV
+          else
+            echo "GIT_DIRTY=0" >> $GITHUB_ENV
+          fi
+      - if: env.GIT_DIRTY == '1'
+        run: |
+          git add README.md
+          git commit -m 'chore: update the link to the interop dashboard [skip ci]'
+          git push
