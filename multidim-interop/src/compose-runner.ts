@@ -46,7 +46,6 @@ export async function run(namespace: string, compose: ComposeSpecification, opts
         const { stdout, stderr } = await exec(`docker compose -f ${path.join(dir, "compose.yaml")} up ${upFlags.join(" ")}`);
         console.log("Finished:", stdout)
     } catch (e: any) {
-        console.log("Failure", e)
         if (e !== null && typeof e === "object" && typeof e["stdout"] === "string") {
             if (e["stdout"].match(/dialer.*ping successful/i) !== null) {
                 // The ping succeeded, but the listener exited first. Common if
@@ -55,6 +54,7 @@ export async function run(namespace: string, compose: ComposeSpecification, opts
                 return null
             }
         }
+        console.log("Failure", e)
         return e
     } finally {
         try {

@@ -9,14 +9,14 @@ COPY package*.json .
 
 RUN npm ci
 
+# Install browsers
+RUN ./node_modules/.bin/playwright install
+
 COPY tsconfig.json .
 COPY .aegir.js .
 COPY test ./test
 COPY src ./src
 
 RUN npm run build
-
-# warmup the test
-RUN initial_setup=true npm test -- --types false --build false --grep "^$" -t browser
 
 ENTRYPOINT [ "npm", "test", "--", "--build", "false", "--types", "false", "-t", "browser" ]
