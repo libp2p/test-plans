@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{env, str::FromStr, time::Duration};
 
 use anyhow::{Context, Result};
 use env_logger::Env;
@@ -24,8 +24,6 @@ pub enum Transport {
 pub enum Muxer {
     Mplex,
     Yamux,
-    Quic,
-    Webrtc,
 }
 
 /// Supported security protocols by rust-libp2p.
@@ -34,6 +32,18 @@ pub enum Muxer {
 pub enum SecProtocol {
     Noise,
     Tls,
+}
+
+/// Helper function to get a ENV variable into an test parameter like `Transport`.
+pub fn from_env<T>(env_var: &str) -> Result<T>
+where
+    T: FromStr,
+    T::Err: std::error::Error + Send + Sync + 'static,
+{
+    env::var(env_var)
+        .with_context(|| format!("{env_var} environment variable is not set"))?
+        .parse()
+        .map_err(Into::into)
 }
 
 /// PingSwarm allows us to abstract over libp2p versions for `run_ping`.

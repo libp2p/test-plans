@@ -96,7 +96,7 @@ export async function buildTestSpecs(versions: Array<Version>): Promise<Array<Co
             listenerID: test.id2,
             transport: test.transport,
             muxer: "quic",
-            security: "tls",
+            security: "quic",
         })))
         .concat(webrtcQueryResults
         .map((test): ComposeSpecification => buildSpec(containerImages, {
@@ -105,7 +105,7 @@ export async function buildTestSpecs(versions: Array<Version>): Promise<Array<Co
             listenerID: test.id2,
             transport: test.transport,
             muxer: "webrtc",
-            security: "tls",
+            security: "webrtc",
         })))
 
     return testSpecs

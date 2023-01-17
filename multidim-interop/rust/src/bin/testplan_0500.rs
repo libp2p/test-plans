@@ -32,7 +32,6 @@ where
     let mux_upgrade = match muxer_param {
         Muxer::Yamux => EitherUpgrade::A(yamux::YamuxConfig::default()),
         Muxer::Mplex => EitherUpgrade::B(mplex::MplexConfig::default()),
-        muxer => panic!("muxer {muxer:?} not supported for build_builder"),
     };
 
     let timeout = Duration::from_secs(5);
@@ -56,20 +55,9 @@ async fn main() -> Result<()> {
     let local_key = identity::Keypair::generate_ed25519();
     let local_peer_id = PeerId::from(local_key.public());
 
-    let transport_param: testplan::Transport = env::var("transport")
-        .context("transport environment variable is not set")?
-        .parse()
-        .context("unsupported transport")?;
+    let transport_param: Transport =
+        testplan::from_env("transport").context("unsupported transport")?;
 
-    let secure_channel_param: testplan::SecProtocol = env::var("security")
-        .context("security environment variable is not set")?
-        .parse()
-        .context("unsupported secure channel")?;
-
-    let muxer_param: Muxer = env::var("muxer")
-        .context("muxer environment variable is not set")?
-        .parse()
-        .context("unsupported muxer")?;
     let ip = env::var("ip").context("ip environment variable is not set")?;
 
     let is_dialer = env::var("is_dialer")
@@ -93,6 +81,12 @@ async fn main() -> Result<()> {
             let builder = libp2p::tcp::tokio::Transport::new(libp2p::tcp::Config::new())
                 .upgrade(libp2p::core::upgrade::Version::V1Lazy);
 
+            let secure_channel_param: SecProtocol =
+                testplan::from_env("security").context("unsupported secure channel")?;
+
+            let muxer_param: Muxer =
+                testplan::from_env("muxer").context("unsupported multiplexer")?;
+
             (
                 build_builder(builder, secure_channel_param, muxer_param, &local_key),
                 format!("/ip4/{ip}/tcp/0"),
@@ -103,6 +97,12 @@ async fn main() -> Result<()> {
                 libp2p::tcp::Config::new(),
             ))
             .upgrade(libp2p::core::upgrade::Version::V1Lazy);
+
+            let secure_channel_param: SecProtocol =
+                testplan::from_env("security").context("unsupported secure channel")?;
+
+            let muxer_param: Muxer =
+                testplan::from_env("muxer").context("unsupported multiplexer")?;
 
             (
                 build_builder(builder, secure_channel_param, muxer_param, &local_key),
