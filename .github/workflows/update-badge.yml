@@ -7,7 +7,7 @@ on:
     types:
       - completed
     branches:
-      - master
+      - marco/update-badge
 
 defaults:
   run:
@@ -36,10 +36,10 @@ jobs:
       - run: |
           GITHUB_JOB_SUMMARY_URL="${{ steps.metadata.outputs.job_summary_url }}"
 
-          IN='[![Interop Dashboard](https://github.com/libp2p/test-plans/actions/workflows/dashboard.yml/badge.svg?branch=master)](.*)'
+          IN='[![Interop Dashboard](https://github.com/libp2p/test-plans/actions/workflows/multidim-interop.yml/badge.svg?branch=marco/update-badge)](.*)'
           ESCAPED_IN=$(printf '%s\n' "$IN" | sed -e 's/[][\/!&]/\\&/g')
 
-          OUT="[![Interop Dashboard](https://github.com/libp2p/test-plans/actions/workflows/dashboard.yml/badge.svg?branch=master)](${GITHUB_JOB_SUMMARY_URL})"
+          OUT="[![Interop Dashboard](https://github.com/libp2p/test-plans/actions/workflows/multidim-interop.yml/badge.svg?branch=marco/update-badge)](${GITHUB_JOB_SUMMARY_URL})"
 
           sed -i "s;${ESCAPED_IN};${OUT};" README.md
       - run: |
