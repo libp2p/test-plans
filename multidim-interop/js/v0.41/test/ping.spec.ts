@@ -98,8 +98,6 @@ describe('ping test', () => {
         }
       }
     } finally {
-      // sleep for a second
-      await new Promise(resolve => setTimeout(resolve, 1000))
       try {
         // We don't care if this fails
         await node.stop()
