@@ -80,7 +80,6 @@ describe('ping test', () => {
     const node = await createLibp2p(options)
 
     try {
-
       if (isDialer) {
         const otherMa = (await redisProxy(["BLPOP", "listenerAddr", "10"]).catch(err => { throw new Error("Failed to wait for listener") }))[1]
         console.log(`node ${node.peerId} pings: ${otherMa}`)
@@ -99,6 +98,8 @@ describe('ping test', () => {
         }
       }
     } finally {
+      // sleep for a second
+      await new Promise(resolve => setTimeout(resolve, 1000))
       try {
         // We don't care if this fails
         await node.stop()
