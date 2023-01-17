@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM mcr.microsoft.com/playwright
+FROM node:18
 
 WORKDIR /app
 

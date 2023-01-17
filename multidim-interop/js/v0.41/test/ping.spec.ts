@@ -4,6 +4,7 @@
 import { } from 'aegir/chai'
 import { createLibp2p, Libp2pOptions } from 'libp2p'
 import { webTransport } from '@libp2p/webtransport'
+import { tcp } from '@libp2p/tcp'
 import { webSockets } from '@libp2p/websockets'
 import { noise } from '@chainsafe/libp2p-noise'
 import { mplex } from '@libp2p/mplex'
@@ -11,10 +12,6 @@ import { yamux } from '@chainsafe/libp2p-yamux'
 import { multiaddr } from '@multiformats/multiaddr'
 
 async function redisProxy(commands: any[]): Promise<any> {
-  let nodeFetchImport = "node-fetch"
-  let fetch = (typeof window === "undefined") ?
-    (await import(nodeFetchImport)).default :
-    window.fetch;
   const res = await fetch(`http://localhost:${process.env.proxyPort}/`, { body: JSON.stringify(commands), method: "POST" })
   if (!res.ok) {
     throw new Error("Redis command failed")
@@ -27,19 +24,14 @@ describe('ping test', () => {
     const TRANSPORT = process.env.transport
     const SECURE_CHANNEL = process.env.security
     const MUXER = process.env.muxer
-    const IS_DIALER_STR = process.env.is_dialer
+    const isDialer = process.env.is_dialer === "true"
     const IP = process.env.ip
-
-    const isDialer = IS_DIALER_STR === 'true'
     const options: Libp2pOptions = {
       start: true
     }
 
     switch (TRANSPORT) {
       case 'tcp':
-        // Dynamic so this doesn't get imported in the browser
-        const tcpImport = "@libp2p/tcp"
-        const { tcp } = await import(tcpImport)
         options.transports = [tcp()]
         options.addresses = {
           listen: isDialer ? [] : [`/ip4/${IP}/tcp/0`]
