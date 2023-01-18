@@ -1,16 +1,19 @@
 [package]
 edition = "2021"
 name = "testplan"
-version = "0.1.0"
+version = "0.2.0"
 
 [dependencies]
-async-trait = "0.1.58"
 anyhow = "1"
-async-std = { version = "1.10", features = ["attributes", "tokio1"] }
+async-trait = "0.1.58"
 env_logger = "0.9.0"
+futures = "0.3.1"
 if-addrs = "0.7.0"
 log = "0.4"
-futures = "0.3.1"
+redis = { version = "0.22.1", features = ["tokio-native-tls-comp", "tokio-comp"] }
+tokio = { version = "1.24.1", features = ["full"] }
 
-libp2pv0500 = { package = "libp2p", version = "0.50.0", features = ["websocket", "quic",  "mplex", "yamux", "tcp", "async-std", "ping", "noise", "tls", "dns", "rsa", "macros"] }
-redis = { version = "0.22.1", features = ["async-std-tls-comp"] }
+libp2pv0500 = { package = "libp2p", version = "0.50.0", features = ["websocket", "webrtc", "quic", "mplex", "yamux", "tcp", "tokio", "ping", "noise", "tls", "dns", "rsa", "macros"] }
+rand = "0.8.5"
+strum = { version = "0.24.1", features = ["derive"] }
+

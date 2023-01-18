@@ -48,6 +48,7 @@ export async function buildTestSpecs(versions: Array<Version>): Promise<Array<Co
                      AND ma.muxer == mb.muxer
                      -- quic only uses its own muxer/securechannel
                      AND a.transport != "webtransport"
+                     AND a.transport != "webrtc"
                      AND a.transport != "quic"
                      AND a.transport != "quic-v1";`);
     const quicQueryResults =
@@ -68,6 +69,12 @@ export async function buildTestSpecs(versions: Array<Version>): Promise<Array<Co
                      WHERE a.transport == b.transport
                      -- Only webtransport transports
                      AND a.transport == "webtransport";`);
+    const webrtcQueryResults =
+        await db.all(`SELECT DISTINCT a.id as id1, b.id as id2, a.transport
+                     FROM transports a, transports b
+                     WHERE a.transport == b.transport
+                     -- Only webrtc transports
+                     AND a.transport == "webrtc";`);
     await db.close();
 
     const testSpecs = queryResults.map((test): ComposeSpecification => (
@@ -79,14 +86,27 @@ export async function buildTestSpecs(versions: Array<Version>): Promise<Array<Co
             muxer: test.muxer,
             security: test.sec,
         })
-    )).concat(quicQueryResults.concat(quicV1QueryResults).concat(webtransportQueryResults).map((test): ComposeSpecification => buildSpec(containerImages, {
-        name: `${test.id1} x ${test.id2} (${test.transport})`,
-        dialerID: test.id1,
-        listenerID: test.id2,
-        transport: test.transport,
-        muxer: "quic",
-        security: "quic",
-    })))
+    )).concat(
+        quicQueryResults
+        .concat(quicV1QueryResults)
+        .concat(webtransportQueryResults)
+        .map((test): ComposeSpecification => buildSpec(containerImages, {
+            name: `${test.id1} x ${test.id2} (${test.transport})`,
+            dialerID: test.id1,
+            listenerID: test.id2,
+            transport: test.transport,
+            muxer: "quic",
+            security: "quic",
+        })))
+        .concat(webrtcQueryResults
+            .map((test): ComposeSpecification => buildSpec(containerImages, {
+                name: `${test.id1} x ${test.id2} (${test.transport})`,
+                dialerID: test.id1,
+                listenerID: test.id2,
+                transport: test.transport,
+                muxer: "webrtc",
+                security: "webrtc",
+        })))
 
     return testSpecs
 }
