@@ -1,0 +1,79 @@
+name: Update Badge
+
+on:
+  workflow_run:
+    workflows:
+      - libp2p multidimensional interop test
+    types:
+      - completed
+    branches:
+      - master
+
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+env:
+  BADGE_NAME: Interop Dashboard
+
+jobs:
+  update-badge:
+    runs-on: ubuntu-latest
+    steps:
+      - id: workflow
+        env:
+          WORKFLOW_PATH: ${{ github.event.workflow.path }}
+        run: echo "name=${WORKFLOW_PATH#.github/workflows/}" >> $GITHUB_OUTPUT
+      - uses: pl-strflt/job-summary-url-action@v1
+        id: metadata
+        with:
+          workflow: ${{ steps.workflow.outputs.name }}
+          run_id: ${{ github.event.workflow_run.id }}
+          run_attempt: ${{ github.event.workflow_run.run_attempt }}
+          job: latest
+      - uses: actions/checkout@v3
+      - id: update
+        uses: actions/github-script@v6
+        env:
+          BADGE_URL: ${{ github.event.workflow.badge_url }}
+          SUMMARY_URL: ${{ steps.metadata.outputs.job_summary_url }}
+        with:
+          script: |
+            const fs = require('fs')
+
+            const badgeName = process.env.BADGE_NAME
+            const badgeURL = process.env.BADGE_URL
+            const refName = process.env.GITHUB_REF_NAME
+            const summaryURL = process.env.SUMMARY_URL
+
+            const searchValue = new RegExp(`\\[!\\[${badgeName}\\]\\(.*\\)\\]\\(.*\\)`, 'g')
+            const replaceValue = `[![${badgeName}](${badgeURL}?branch=${refName})](${summaryURL})`
+
+            console.log(`Searching for: ${searchValue}`)
+            console.log(`To replace it with: ${replaceValue}`)
+
+            const readme = fs.readFileSync('README.md').toString()
+            const updatedReadme = readme.replace(searchValue, replaceValue)
+
+            if (readme !== updatedReadme) {
+              console.log('Updating README')
+              fs.writeFileSync('README.md', updatedReadme)
+              return true
+            } else {
+              console.log('README does not need to be updated')
+              return false
+            }
+      # https://github.com/orgs/community/discussions/26560
+      - if: steps.update.outputs.result == 'true'
+        run: |
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+      - if: steps.update.outputs.result == 'true'
+        run: |
+          git add README.md
+          git commit -m 'chore: update the link to the interop dashboard [skip ci]'
+          git push
