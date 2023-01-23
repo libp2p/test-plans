@@ -6,8 +6,6 @@ use log::info;
 use redis::{AsyncCommands, Client as Rclient};
 use strum::EnumString;
 
-const REDIS_TIMEOUT: usize = 10;
-
 /// Supported transports by rust-libp2p.
 #[derive(Clone, Debug, EnumString)]
 #[strum(serialize_all = "kebab-case")]
@@ -71,6 +69,7 @@ pub async fn run_ping<S>(
     local_addr: &str,
     local_peer_id: &str,
     is_dialer: bool,
+    redis_timeout_secs: usize,
 ) -> Result<()>
 where
     S: PingSwarm,
@@ -87,7 +86,7 @@ where
     let local_addr = swarm.listen_on(local_addr).await?;
 
     if is_dialer {
-        let result: Vec<String> = conn.blpop("listenerAddr", REDIS_TIMEOUT).await?;
+        let result: Vec<String> = conn.blpop("listenerAddr", redis_timeout_secs).await?;
         let other = result
             .get(1)
             .context("Failed to wait for listener to be ready")?;
@@ -113,7 +112,7 @@ where
             swarm.loop_on_next().await;
         });
 
-        let done: Vec<String> = conn.blpop("dialerDone", REDIS_TIMEOUT).await?;
+        let done: Vec<String> = conn.blpop("dialerDone", redis_timeout_secs).await?;
         done.get(1)
             .context("Failed to wait for dialer conclusion")?;
         info!("Ping successful");

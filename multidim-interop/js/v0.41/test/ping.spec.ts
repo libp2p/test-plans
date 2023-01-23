@@ -26,6 +26,8 @@ describe('ping test', () => {
     const MUXER = process.env.muxer
     const isDialer = process.env.is_dialer === "true"
     const IP = process.env.ip
+    const timeoutSecs: string = process.env.test_timeout || "10"
+
     const options: Libp2pOptions = {
       start: true
     }
@@ -81,7 +83,7 @@ describe('ping test', () => {
 
     try {
       if (isDialer) {
-        const otherMa = (await redisProxy(["BLPOP", "listenerAddr", "10"]).catch(err => { throw new Error("Failed to wait for listener") }))[1]
+        const otherMa = (await redisProxy(["BLPOP", "listenerAddr", timeoutSecs]).catch(err => { throw new Error("Failed to wait for listener") }))[1]
         console.log(`node ${node.peerId} pings: ${otherMa}`)
         const rtt = await node.ping(multiaddr(otherMa))
         console.log(`Ping successful: ${rtt}`)
@@ -92,7 +94,7 @@ describe('ping test', () => {
         // Send the listener addr over the proxy server so this works on both the Browser and Node
         await redisProxy(["RPUSH", "listenerAddr", multiaddrs[0]])
         try {
-          await redisProxy(["BLPOP", "dialerDone", "10"])
+          await redisProxy(["BLPOP", "dialerDone", timeoutSecs])
         } catch {
           throw new Error("Failed to wait for dialer to finish")
         }
