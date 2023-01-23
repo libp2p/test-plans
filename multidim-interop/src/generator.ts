@@ -3,10 +3,21 @@ import { open } from "sqlite";
 import { Version } from "../versions";
 import { ComposeSpecification } from "../compose-spec/compose-spec";
 
+function buildExtraEnv(timeoutOverride: { [key: string]: number }, test1ID: string, test2ID: string): { [key: string]: string } {
+    const maxTimeout = Math.max(timeoutOverride[test1ID] || 0, timeoutOverride[test2ID] || 0)
+    console.log("Max is", maxTimeout)
+    return maxTimeout > 0 ? { "test_timeout": maxTimeout.toString(10) } : {}
+}
 
 export async function buildTestSpecs(versions: Array<Version>): Promise<Array<ComposeSpecification>> {
     const containerImages: { [key: string]: string } = {}
+    const timeoutOverride: { [key: string]: number } = {}
     versions.forEach(v => containerImages[v.id] = v.containerImageID)
+    versions.forEach(v => {
+        if (v.timeoutSecs) {
+            timeoutOverride[v.id] = v.timeoutSecs
+        }
+    })
 
     sqlite3.verbose();
 
@@ -89,19 +100,21 @@ export async function buildTestSpecs(versions: Array<Version>): Promise<Array<Co
             transport: test.transport,
             muxer: test.muxer,
             security: test.sec,
+            extraEnv: buildExtraEnv(timeoutOverride, test.id1, test.id2)
         })
     )).concat(
         quicQueryResults
-        .concat(quicV1QueryResults)
-        .concat(webtransportQueryResults)
-        .map((test): ComposeSpecification => buildSpec(containerImages, {
-            name: `${test.id1} x ${test.id2} (${test.transport})`,
-            dialerID: test.id1,
-            listenerID: test.id2,
-            transport: test.transport,
-            muxer: "quic",
-            security: "quic",
-        })))
+            .concat(quicV1QueryResults)
+            .concat(webtransportQueryResults)
+            .map((test): ComposeSpecification => buildSpec(containerImages, {
+                name: `${test.id1} x ${test.id2} (${test.transport})`,
+                dialerID: test.id1,
+                listenerID: test.id2,
+                transport: test.transport,
+                muxer: "quic",
+                security: "quic",
+                extraEnv: buildExtraEnv(timeoutOverride, test.id1, test.id2)
+            })))
         .concat(webrtcQueryResults
             .map((test): ComposeSpecification => buildSpec(containerImages, {
                 name: `${test.id1} x ${test.id2} (${test.transport})`,
@@ -110,12 +123,13 @@ export async function buildTestSpecs(versions: Array<Version>): Promise<Array<Co
                 transport: test.transport,
                 muxer: "webrtc",
                 security: "webrtc",
-        })))
+                extraEnv: buildExtraEnv(timeoutOverride, test.id1, test.id2)
+            })))
 
     return testSpecs
 }
 
-function buildSpec(containerImages: { [key: string]: string }, { name, dialerID, listenerID, transport, muxer, security }: { name: string, dialerID: string, listenerID: string, transport: string, muxer: string, security: string }): ComposeSpecification {
+function buildSpec(containerImages: { [key: string]: string }, { name, dialerID, listenerID, transport, muxer, security, extraEnv }: { name: string, dialerID: string, listenerID: string, transport: string, muxer: string, security: string, extraEnv?: { [key: string]: string } }): ComposeSpecification {
     return {
         name,
         services: {
@@ -129,6 +143,7 @@ function buildSpec(containerImages: { [key: string]: string }, { name, dialerID,
                     security,
                     is_dialer: true,
                     ip: "0.0.0.0",
+                    ...extraEnv,
                 }
             },
             listener: {
@@ -141,6 +156,7 @@ function buildSpec(containerImages: { [key: string]: string }, { name, dialerID,
                     security,
                     is_dialer: false,
                     ip: "0.0.0.0",
+                    ...extraEnv,
                 }
             },
             redis: { image: "redis/redis-stack", }

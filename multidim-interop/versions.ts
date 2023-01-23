@@ -8,6 +8,8 @@ import chromiumJsV041 from "./js/v0.41/chromium-image.json"
 export type Version = {
     id: string,
     containerImageID: string,
+    // If defined, this will increase the timeout for tests using this version
+    timeoutSecs?: number,
     transports: Array<(string | { name: string, onlyDial: boolean })>,
     secureChannels: string[],
     muxers: string[]
@@ -24,12 +26,14 @@ export const versions: Array<Version> = [
     {
         id: "js-v0.41.0",
         containerImageID: jsV041.imageID,
+        timeoutSecs: 30,
         transports: ["tcp", "ws"],
         secureChannels: ["noise"],
         muxers: ["mplex", "yamux"],
     },
     {
         id: "chromium-js-v0.41.0",
+        timeoutSecs: 30,
         containerImageID: chromiumJsV041.imageID,
         transports: [{ name: "webtransport", onlyDial: true }],
         secureChannels: [],
