@@ -139,7 +139,12 @@ function buildSpec(containerImages: { [key: string]: string }, { name, dialerID,
                     ip: "0.0.0.0",
                 }
             },
-            redis: { image: "redis/redis-stack", }
+            redis: {
+                image: "redis/redis-stack",
+                environment: {
+                    REDIS_ARGS: "--loglevel warning"
+                }
+            }
         }
     }
 }
