@@ -1,7 +1,7 @@
 use std::{env, str::FromStr, time::Duration};
 
 use anyhow::{Context, Result};
-use env_logger::Env;
+use env_logger::{Env, Target};
 use log::info;
 use redis::{AsyncCommands, Client as Rclient};
 use strum::EnumString;
@@ -78,7 +78,9 @@ where
     let mut conn = client.get_async_connection().await?;
 
     info!("Running ping test: {}", swarm.local_peer_id());
-    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
+    env_logger::Builder::from_env(Env::default().default_filter_or("info"))
+        .target(Target::Stdout)
+        .init();
 
     info!(
         "Test instance, listening for incoming connections on: {:?}.",
