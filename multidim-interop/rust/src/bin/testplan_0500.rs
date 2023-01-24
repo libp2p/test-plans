@@ -64,6 +64,11 @@ async fn main() -> Result<()> {
         .unwrap_or("true".into())
         .parse::<bool>()?;
 
+    let timeout_secs: usize = env::var("test_timeout")
+        .ok()
+        .and_then(|timeout| timeout.parse().ok())
+        .unwrap_or(10);
+
     let redis_addr = env::var("REDIS_ADDR")
         .map(|addr| format!("redis://{addr}"))
         .unwrap_or("redis://redis:6379".into());
@@ -131,7 +136,15 @@ async fn main() -> Result<()> {
 
     // Use peer id as a String so that `run_ping` does not depend on a specific libp2p version.
     let local_peer_id = local_peer_id.to_string();
-    run_ping(client, swarm, &local_addr, &local_peer_id, is_dialer).await?;
+    run_ping(
+        client,
+        swarm,
+        &local_addr,
+        &local_peer_id,
+        is_dialer,
+        timeout_secs,
+    )
+    .await?;
 
     Ok(())
 }

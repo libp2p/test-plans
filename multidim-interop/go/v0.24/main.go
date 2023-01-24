@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/go-redis/redis/v8"
@@ -23,24 +24,33 @@ import (
 
 func main() {
 	var (
-		transport     = os.Getenv("transport")
-		secureChannel = os.Getenv("security")
-		muxer         = os.Getenv("muxer")
-		isDialerStr   = os.Getenv("is_dialer")
-		ip            = os.Getenv("ip")
-		redis_addr    = os.Getenv("REDIS_ADDR")
+		transport      = os.Getenv("transport")
+		secureChannel  = os.Getenv("security")
+		muxer          = os.Getenv("muxer")
+		isDialerStr    = os.Getenv("is_dialer")
+		ip             = os.Getenv("ip")
+		testTimeoutStr = os.Getenv("test_timeout")
+		redisAddr      = os.Getenv("REDIS_ADDR")
 	)
 
-	if redis_addr == "" {
-		redis_addr = "redis:6379"
+	var testTimeout = 10 * time.Second
+	if testTimeoutStr != "" {
+		secs, err := strconv.ParseInt(testTimeoutStr, 10, 32)
+		if err == nil {
+			testTimeout = time.Duration(secs) * time.Second
+		}
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	if redisAddr == "" {
+		redisAddr = "redis:6379"
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
 
 	// Get peer information via redis
 	rClient := redis.NewClient(&redis.Options{
-		Addr:     redis_addr,
+		Addr:     redisAddr,
 		Password: "",
 		DB:       0,
 	})
@@ -111,7 +121,7 @@ func main() {
 	fmt.Println("My multiaddr is: ", host.Addrs())
 
 	if is_dialer {
-		val, err := rClient.BLPop(ctx, 10*time.Second, "listenerAddr").Result()
+		val, err := rClient.BLPop(ctx, testTimeout, "listenerAddr").Result()
 		if err != nil {
 			panic("Failed to wait for listener to be ready")
 		}
@@ -145,7 +155,7 @@ func main() {
 		if err != nil {
 			panic("Failed to send listener address")
 		}
-		_, err = rClient.BLPop(ctx, 10*time.Second, "dialerDone").Result()
+		_, err = rClient.BLPop(ctx, testTimeout, "dialerDone").Result()
 		if err != nil {
 			panic("Failed to wait for dialer conclusion")
 		}
