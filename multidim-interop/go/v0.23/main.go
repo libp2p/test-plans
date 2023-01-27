@@ -93,7 +93,7 @@ func main() {
 		options = append(options, libp2p.Security(libp2ptls.ID, libp2ptls.New))
 	case "noise":
 		options = append(options, libp2p.Security(noise.ID, noise.New))
-	case "quic":
+	case "":
 	default:
 		panic("Unsupported secure channel")
 	}
@@ -103,7 +103,7 @@ func main() {
 		options = append(options, libp2p.Muxer("/yamux/1.0.0", yamux.DefaultTransport))
 	case "mplex":
 		options = append(options, libp2p.Muxer("/mplex/6.7.0", mplex.DefaultTransport))
-	case "quic":
+	case "":
 	default:
 		panic("Unsupported muxer")
 	}

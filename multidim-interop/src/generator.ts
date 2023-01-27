@@ -111,8 +111,8 @@ export async function buildTestSpecs(versions: Array<Version>): Promise<Array<Co
                 dialerID: test.id1,
                 listenerID: test.id2,
                 transport: test.transport,
-                muxer: "quic",
-                security: "quic",
+                muxer: "",
+                security: "",
                 extraEnv: buildExtraEnv(timeoutOverride, test.id1, test.id2)
             })))
         .concat(webrtcQueryResults
@@ -121,8 +121,8 @@ export async function buildTestSpecs(versions: Array<Version>): Promise<Array<Co
                 dialerID: test.id1,
                 listenerID: test.id2,
                 transport: test.transport,
-                muxer: "webrtc",
-                security: "webrtc",
+                muxer: "",
+                security: "",
                 extraEnv: buildExtraEnv(timeoutOverride, test.id1, test.id2)
             })))
 
