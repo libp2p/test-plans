@@ -37,10 +37,11 @@ string result should be emitted to `stdout`.
 6. Ping the listener, and record the round trip time as `pingRTT`
 8. Record the time since `handshakeStart`. This is `handshakePlusOneRTT`.
 9. Print to `stdout` the JSON formatted string: `{"handshakePlusOneRTT":
-   handshakePlusOneRTT, "pingRTT": pingRTT}`.
+   handshakePlusOneRTT, "pingRTT": pingRTT}`. Durations should be printed in
+   milliseconds as a float.
 10. Exit with a code zero.
 
-On error, the dialer should return a non zero exit code.
+On error, the dialer should return a non-zero exit code.
 
 ## Listener
 
@@ -54,4 +55,4 @@ The listener should emit all diagnostic logs to `stderr`.
    process when the dialer finishes.
 5. If the timeout is hit, exit with a non-zero error code.
 
-On error, the listener should return a non zero exit code.
+On error, the listener should return a non-zero exit code.
