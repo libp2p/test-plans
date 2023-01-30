@@ -83,7 +83,7 @@ describe('ping test', () => {
 
     try {
       if (isDialer) {
-        const otherMa = (await redisProxy(["BLPOP", "listenerAddr", timeoutSecs]).catch(err => { throw new Error("Failed to wait for listener") }))[1]
+        const otherMa = (await redisProxy(["BLPOP", "listenerAddr", timeoutSecs]).catch(err => { throw new Error(`Failed to wait for listener: ${err}`) }))[1]
         console.log(`node ${node.peerId} pings: ${otherMa}`)
         const rtt = await node.ping(multiaddr(otherMa))
         console.log(`Ping successful: ${rtt}`)
@@ -99,6 +99,13 @@ describe('ping test', () => {
           throw new Error("Failed to wait for dialer to finish")
         }
       }
+    } catch (err: any) {
+      if (err instanceof AggregateError) {
+        console.error(`unexpected exception in ping test: ${err}\n Errors: ${err.errors}`)
+      } else {
+        console.error(`unexpected exception in ping test: ${err}`)
+      }
+      throw err
     } finally {
       try {
         // We don't care if this fails
