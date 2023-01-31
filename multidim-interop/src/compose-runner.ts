@@ -20,8 +20,8 @@ export type RunFailure = any
 
 export async function run(namespace: string, compose: ComposeSpecification, opts: RunOpts): Promise<RunFailure | null> {
     // sanitize namespace
-    namespace = namespace.replace(/[^a-zA-Z0-9]/g, "-")
-    const dir = path.join(tmpdir(), "compose-runner", namespace)
+    const sanitizedNamespace = namespace.replace(/[^a-zA-Z0-9]/g, "-")
+    const dir = path.join(tmpdir(), "compose-runner", sanitizedNamespace)
 
     // Check if directory exists
     try {
@@ -43,17 +43,20 @@ export async function run(namespace: string, compose: ComposeSpecification, opts
     }
 
     try {
-        const { stdout, stderr } = await exec(`docker compose -f ${path.join(dir, "compose.yaml")} up ${upFlags.join(" ")}`);
-        console.log("Finished:", stdout)
-    } catch (e: any) {
-        if (e !== null && typeof e === "object" && typeof e["stdout"] === "string") {
-            if (e["stdout"].match(/dialer.*ping successful/i) !== null) {
-                // The ping succeeded, but the listener exited first. Common if
-                // the dialer tear-down is slow as is the case with browser
-                // tests.
-                return null
-            }
+        const timeoutSecs = 3 * 60
+        const { stdout, stderr } =
+            (await Promise.race([
+                exec(`docker compose -f ${path.join(dir, "compose.yaml")} up ${upFlags.join(" ")}`),
+                // Timeout - uses any type because this will only reject the promise.
+                new Promise<any>((resolve, reject) => { setTimeout(() => reject("Timeout"), 1000 * timeoutSecs) })
+            ]))
+        const testResults = stdout.match(/.*dialer.*({.*)/)
+        if (testResults === null || testResults.length < 2) {
+            throw new Error("Test JSON results not found")
         }
+        const testResultsParsed = JSON.parse(testResults[1])
+        console.log("Finished:", namespace, testResultsParsed)
+    } catch (e: any) {
         console.log("Failure", e)
         return e
     } finally {
