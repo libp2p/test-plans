@@ -4,7 +4,7 @@ import { createClient } from 'redis'
 import http from "http"
 
 const isDialer = process.env.is_dialer === "true"
-const REDIS_ADDR = process.env.REDIS_ADDR || 'redis:6379'
+const redis_addr = process.env.redis_addr || 'redis:6379'
 
 // Used to preinstall the browsers in the docker image
 const initialSetup = process.env.initial_setup === "true"
@@ -18,7 +18,7 @@ export default {
       }
 
       const redisClient = createClient({
-        url: `redis://${REDIS_ADDR}`
+        url: `redis://${redis_addr}`
       })
       redisClient.on('error', (err) => console.error(`Redis Client Error: ${err}`))
       await redisClient.connect()
