@@ -11,15 +11,15 @@ its capabilities along with the id of its container image.
 The implementation is run in a container and is passed parameters via
 environment variables. The current parameters are:
 
-| Name         | Description                                                  | Is Optional                                                     |
-| ------------ | ------------------------------------------------------------ | --------------------------------------------------------------- |
-| REDIS_ADDR   | A different address to connect to redis (default redis:6379) | yes                                                             |
-| ip           | IP address to bind the listener to                           | no                                                              |
-| transport    | The transport to use                                         | no                                                              |
-| muxer        | The muxer to use                                             | no, except when transport is one of quic, quic-v1, webtransport |
-| security     | The security channel to use                                  | no, except when transport is one of quic, quic-v1, webtransport |
-| is_dialer    | Should you dial or listen                                    | no                                                              |
-| test_timeout | Control the timeout of test. In seconds                      | yes, default to 10 seconds                                      |
+| Name                 | Description                                                  | Is Optional                                                     |
+| -------------------- | ------------------------------------------------------------ | --------------------------------------------------------------- |
+| transport            | The transport to use                                         | no                                                              |
+| muxer                | The muxer to use                                             | no, except when transport is one of quic, quic-v1, webtransport |
+| security             | The security channel to use                                  | no, except when transport is one of quic, quic-v1, webtransport |
+| is_dialer            | Should you dial or listen                                    | no                                                              |
+| ip                   | IP address to bind the listener to                           | yes, default to "0.0.0.0"                                       |
+| redis_addr           | A different address to connect to redis (default redis:6379) | yes, default to the `redis` host on port 6379                   |
+| test_timeout_seconds | Control the timeout of test.                                 | yes, default to 180 seconds.                                    |
 
 The test should do two different things depending on if it's the dialer or
 listener.
@@ -32,14 +32,14 @@ string result should be emitted to `stdout`.
 1. Connect to the Redis instance.
 2. Create a libp2p node as defined by the environment variables.
 3. Get the listener's address via Redis' `BLPOP` using the `listenerAddr` key.
-4. Record the current time as `handshakeStart`.
+4. Record the current instant as `handshakeStartInstant`.
 5. Connect to the listener.
-6. Ping the listener, and record the round trip time as `pingRTT`
-8. Record the time since `handshakeStart`. This is `handshakePlusOneRTT`.
-9. Print to `stdout` the JSON formatted string: `{"handshakePlusOneRTT":
-   handshakePlusOneRTT, "pingRTT": pingRTT}`. Durations should be printed in
+6. Ping the listener, and record the round trip duration as `pingRTT`
+7. Record the duration since `handshakeStartInstant`. This is `handshakePlusOneRTT`.
+8. Print to `stdout` the JSON formatted string: `{"handshakePlusOneRTTMillis":
+   handshakePlusOneRTT, "pingRTTMilllis": pingRTT}`. Durations should be printed in
    milliseconds as a float.
-10. Exit with a code zero.
+9.  Exit with a code zero.
 
 On error, the dialer should return a non-zero exit code.
 
@@ -51,7 +51,7 @@ The listener should emit all diagnostic logs to `stderr`.
 2. Create a libp2p node as defined by the environment variables.
 3. Publish the listener's address via Redis' `RPUSH` using the `listenerAddr`
    key.
-4. Sleep for the duration of test_timeout. The test runner will kill this
+4. Sleep for the duration of `test_timeout_seconds`. The test runner will kill this
    process when the dialer finishes.
 5. If the timeout is hit, exit with a non-zero error code.
 
