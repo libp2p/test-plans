@@ -95,7 +95,6 @@ func main() {
 	var skipSecureChannel bool
 	switch transport {
 	case "quic":
-		fallthrough
 		skipMuxer = true
 		skipSecureChannel = true
 	}
