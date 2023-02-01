@@ -36,8 +36,8 @@ jobs:
         shell: bash
     steps:
       - run: |
-          echo "${{ github.action_path }}"
-          ls -la "${{ github.action_path }}/../.."
+          echo "${{ github.workspace }}"
+          ls -la "${{ github.workspace }}"
 
       - name: Checkout sources
         uses: actions/checkout@v3
