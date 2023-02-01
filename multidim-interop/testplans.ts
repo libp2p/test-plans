@@ -50,9 +50,7 @@ import path from "path";
         }
     }
 
-    const extraVersionPaths = argv.extraVersion as string[] || []
-
-    for (let versionPath of extraVersionPaths.filter(p => p !== "")) {
+    for (let versionPath of argv.extraVersion.filter(p => p !== "")) {
         const contents = await fs.readFile(versionPath);
         extraVersions.push(JSON.parse(contents.toString()))
     }
