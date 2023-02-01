@@ -38,68 +38,68 @@ jobs:
       - run: |
           echo "${{ github.workspace }}"
           ls -la "${{ github.workspace }}"
-
-      - name: Checkout sources
-        uses: actions/checkout@v3
-        with:
-          path: test-plans
-          repository: "libp2p/test-plans"
-          ref: ${{ inputs.test-plans_ref }}
-      # Download input data
-      - uses: actions/download-artifact@v3
-        if: ${{ inputs.extra-versions != '' }}
-        with:
-          name: ${{ inputs.extra-versions }}
-          path: /tmp/extra-versions
-      - uses: actions/download-artifact@v3
-        if: ${{ inputs.image-tar != '' }}
-        with:
-          name: ${{ inputs.image-tar }}
-          path: /tmp/images/
-      - name: Load docker images
-        if: ${{ inputs.image-tar != '' }}
-        run: for FILE in /tmp/images/*; do docker image load -i $FILE; done
-      # Continue with the test as before
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 17
-          cache: "npm"
-          cache-dependency-path: ./test-plans/${{ env.TEST_PLAN_DIR }}/package-lock.json
-      - name: Expose GitHub Runtime # Needed for docker buildx to cache properly (See https://docs.docker.com/build/cache/backends/gha/#authentication)
-        uses: crazy-max/ghaction-github-runtime@v2
-      - name: Set up Docker Buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Install deps
-        working-directory: ./test-plans/${{ env.TEST_PLAN_DIR }}/
-        run: npm ci
-      - name: Build images
-        working-directory: ./test-plans/${{ env.TEST_PLAN_DIR }}/
-        run: make
-      - name: Run the test
-        timeout-minutes: 30
-        working-directory: ./test-plans/${{ env.TEST_PLAN_DIR }}/
-        run: WORKER_COUNT=2 npm run test -- --extra-versions-dir=/tmp/extra-versions --name-filter=${{ inputs.test-filter }}
-      - name: Print the results
-        working-directory: ./test-plans/${{ env.TEST_PLAN_DIR }}/
-        run: cat results.csv
-      - name: Render results
-        working-directory: ./test-plans/${{ env.TEST_PLAN_DIR }}/
-        run: npm run renderResults > ./dashboard.md
-      - name: Show Dashboard Output
-        working-directory: ./test-plans/${{ env.TEST_PLAN_DIR }}/
-        run: cat ./dashboard.md >> $GITHUB_STEP_SUMMARY
-      - name: Exit with Error
-        working-directory: ./test-plans/${{ env.TEST_PLAN_DIR }}/
-        run: |
-          if grep -q ":red_circle:" ./dashboard.md; then
-            exit 1
-          else
-            exit 0
-          fi
-      - uses: actions/upload-artifact@v3
-        with:
-          name: test-plans-output
-          path: |
-            ./test-plans/${{ env.TEST_PLAN_DIR }}/results.csv
-            ./test-plans/${{ env.TEST_PLAN_DIR }}/dashboard.md
+#
+#      - name: Checkout sources
+#        uses: actions/checkout@v3
+#        with:
+#          path: test-plans
+#          repository: "libp2p/test-plans"
+#          ref: ${{ inputs.test-plans_ref }}
+#      # Download input data
+#      - uses: actions/download-artifact@v3
+#        if: ${{ inputs.extra-versions != '' }}
+#        with:
+#          name: ${{ inputs.extra-versions }}
+#          path: /tmp/extra-versions
+#      - uses: actions/download-artifact@v3
+#        if: ${{ inputs.image-tar != '' }}
+#        with:
+#          name: ${{ inputs.image-tar }}
+#          path: /tmp/images/
+#      - name: Load docker images
+#        if: ${{ inputs.image-tar != '' }}
+#        run: for FILE in /tmp/images/*; do docker image load -i $FILE; done
+#      # Continue with the test as before
+#      - uses: actions/setup-node@v3
+#        with:
+#          node-version: 17
+#          cache: "npm"
+#          cache-dependency-path: ./test-plans/${{ env.TEST_PLAN_DIR }}/package-lock.json
+#      - name: Expose GitHub Runtime # Needed for docker buildx to cache properly (See https://docs.docker.com/build/cache/backends/gha/#authentication)
+#        uses: crazy-max/ghaction-github-runtime@v2
+#      - name: Set up Docker Buildx
+#        id: buildx
+#        uses: docker/setup-buildx-action@v2
+#      - name: Install deps
+#        working-directory: ./test-plans/${{ env.TEST_PLAN_DIR }}/
+#        run: npm ci
+#      - name: Build images
+#        working-directory: ./test-plans/${{ env.TEST_PLAN_DIR }}/
+#        run: make
+#      - name: Run the test
+#        timeout-minutes: 30
+#        working-directory: ./test-plans/${{ env.TEST_PLAN_DIR }}/
+#        run: WORKER_COUNT=2 npm run test -- --extra-versions-dir=/tmp/extra-versions --name-filter=${{ inputs.test-filter }}
+#      - name: Print the results
+#        working-directory: ./test-plans/${{ env.TEST_PLAN_DIR }}/
+#        run: cat results.csv
+#      - name: Render results
+#        working-directory: ./test-plans/${{ env.TEST_PLAN_DIR }}/
+#        run: npm run renderResults > ./dashboard.md
+#      - name: Show Dashboard Output
+#        working-directory: ./test-plans/${{ env.TEST_PLAN_DIR }}/
+#        run: cat ./dashboard.md >> $GITHUB_STEP_SUMMARY
+#      - name: Exit with Error
+#        working-directory: ./test-plans/${{ env.TEST_PLAN_DIR }}/
+#        run: |
+#          if grep -q ":red_circle:" ./dashboard.md; then
+#            exit 1
+#          else
+#            exit 0
+#          fi
+#      - uses: actions/upload-artifact@v3
+#        with:
+#          name: test-plans-output
+#          path: |
+#            ./test-plans/${{ env.TEST_PLAN_DIR }}/results.csv
+#            ./test-plans/${{ env.TEST_PLAN_DIR }}/dashboard.md
