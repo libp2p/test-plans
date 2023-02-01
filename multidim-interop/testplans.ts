@@ -28,7 +28,7 @@ import path from "path";
             },
             'extra-version': {
                 description: 'Paths to JSON files for additional versions to include in the test matrix',
-                default: "",
+                default: [],
                 type: 'array'
             },
         })

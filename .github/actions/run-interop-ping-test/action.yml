@@ -1,5 +1,5 @@
-name: 'libp2p ping interop test'
-description: 'Run the libp2p ping interoperability test suite'
+name: "libp2p ping interop test"
+description: "Run the libp2p ping interoperability test suite"
 inputs:
   test-filter:
     description: "Filter which tests to run out of the created matrix"
@@ -12,6 +12,8 @@ inputs:
 runs:
   using: "composite"
   steps:
+    # This depends on where this file is within this repository. This walks up
+    # from here to the multidim-interop folder
     - run: |
         WORK_DIR=$(realpath "${{ github.action_path }}/../../../multidim-interop")
         echo "WORK_DIR=$WORK_DIR" >> $GITHUB_OUTPUT
@@ -20,7 +22,7 @@ runs:
 
     - uses: actions/setup-node@v3
       with:
-        node-version: 17
+        node-version: 18
 
     - name: Expose GitHub Runtime # Needed for docker buildx to cache properly (See https://docs.docker.com/build/cache/backends/gha/#authentication)
       uses: crazy-max/ghaction-github-runtime@v2
@@ -40,7 +42,6 @@ runs:
       shell: bash
 
     - name: Run the test
-#      timeout-minutes: 30
       working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
       run: WORKER_COUNT=2 npm run test -- --extra-version=${{ inputs.extra-versions }} --name-filter=${{ inputs.test-filter }}
       shell: bash
