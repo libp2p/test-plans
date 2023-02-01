@@ -31,6 +31,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       TEST_PLAN_DIR: ${{ inputs.dir }}
+      AWS_BUCKET: ${{ vars.S3_BUCKET_NAME }}
+      AWS_REGION: us-east-1
     defaults:
       run:
         shell: bash
@@ -41,6 +43,12 @@ jobs:
           path: test-plans
           repository: "libp2p/test-plans"
           ref: ${{ inputs.test-plans_ref }}
+      - name: Configure AWS credentials for S3 build cache
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ vars.S3_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.S3_AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
       # Download input data
       - uses: actions/download-artifact@v3
         if: ${{ inputs.extra-versions != '' }}

@@ -12,6 +12,7 @@ jobs:
     uses: "./.github/workflows/run-testplans.yml"
     with:
       dir: "multidim-interop"
+    secrets: inherit
   run-multidim-interop-ng:
     runs-on: ubuntu-latest
     steps:
