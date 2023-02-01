@@ -12,3 +12,8 @@ jobs:
     uses: "./.github/workflows/run-testplans.yml"
     with:
       dir: "multidim-interop"
+  run-multidim-interop-ng:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/run-interop-ping-test

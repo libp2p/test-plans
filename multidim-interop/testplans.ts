@@ -26,6 +26,11 @@ import path from "path";
                 default: "",
                 type: 'string'
             },
+            'extra-version': {
+                description: 'Paths to JSON files for additional versions to include in the test matrix',
+                default: [],
+                type: 'array'
+            },
         })
         .help()
         .version(false)
@@ -43,6 +48,11 @@ import path from "path";
             console.error("Error reading extra versions")
             console.error(err);
         }
+    }
+
+    for (let versionPath of argv.extraVersion.filter(p => p !== "")) {
+        const contents = await fs.readFile(versionPath);
+        extraVersions.push(JSON.parse(contents.toString()))
     }
 
     let testSpecs = await buildTestSpecs(versions.concat(extraVersions))

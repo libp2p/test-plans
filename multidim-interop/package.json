@@ -4,7 +4,7 @@
     "description": "Tests libp2p implementations against each other across various dimensions.",
     "main": "testplans.ts",
     "scripts": {
-        "test": "ts-node -O '{\"resolveJsonModule\": true}' testplans.ts",
+        "test": "ts-node testplans.ts",
         "renderResults": "ts-node renderResults.ts"
     },
     "author": "marcopolo",
