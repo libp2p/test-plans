@@ -9,7 +9,9 @@ This repository contains interoperability and end to end tests for libp2p module
 
 ## Specs
 
-Please see the interoperability test specification here: [Interoperability Test Specs](https://github.com/libp2p/test-plans/blob/master/multidim-interop/README.md)
+Please see our first specification for interoperability tests between transports, multiplexers, and secure channels here: [Interoperability Test Specs](https://github.com/libp2p/test-plans/blob/master/multidim-interop/README.md)
+
+More specs to come soon!
 
 ## History
 
