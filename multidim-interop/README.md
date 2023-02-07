@@ -36,10 +36,10 @@ string result should be emitted to `stdout`.
 5. Connect to the listener.
 6. Ping the listener, and record the round trip duration as `pingRTT`
 7. Record the duration since `handshakeStartInstant`. This is `handshakePlusOneRTT`.
-8. Print to `stdout` the JSON formatted string: `{"handshakePlusOneRTTMillis":
-   handshakePlusOneRTT, "pingRTTMilllis": pingRTT}`. Durations should be printed in
-   milliseconds as a float.
-9.  Exit with a code zero.
+8. Print to `stdout` the JSON formatted string: `{"handshakePlusOneRTT":
+   handshakePlusOneRTT, "pingRTT": pingRTT}`. Durations should be printed in
+   seconds as a float.
+9. Exit with a code zero.
 
 On error, the dialer should return a non-zero exit code.
 
