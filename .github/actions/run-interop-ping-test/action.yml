@@ -55,9 +55,6 @@ runs:
       with:
         node-version: 18
 
-    - name: Expose GitHub Runtime # Needed for docker buildx to cache properly (See https://docs.docker.com/build/cache/backends/gha/#authentication)
-      uses: crazy-max/ghaction-github-runtime@v2
-
     - name: Set up Docker Buildx
       id: buildx
       uses: docker/setup-buildx-action@v2
