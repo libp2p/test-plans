@@ -25,8 +25,8 @@ describe('ping test', () => {
     const SECURE_CHANNEL = process.env.security
     const MUXER = process.env.muxer
     const isDialer = process.env.is_dialer === "true"
-    const IP = process.env.ip
-    const timeoutSecs: string = process.env.test_timeout || "10"
+    const IP = process.env.ip || "0.0.0.0"
+    const timeoutSecs: string = process.env.test_timeout_secs || "180"
 
     const options: Libp2pOptions = {
       start: true
@@ -55,28 +55,43 @@ describe('ping test', () => {
         throw new Error(`Unknown transport: ${TRANSPORT}`)
     }
 
-    switch (SECURE_CHANNEL) {
-      case 'noise':
-        options.connectionEncryption = [noise()]
-        break
-      case 'quic':
-        options.connectionEncryption = [noise()]
-        break
-      default:
-        throw new Error(`Unknown secure channel: ${SECURE_CHANNEL}`)
+    let skipSecureChannel = false
+    let skipMuxer = false
+    switch (TRANSPORT) {
+      case 'webtransport':
+        skipSecureChannel = true
+        skipMuxer = true
     }
 
-    switch (MUXER) {
-      case 'mplex':
-        options.streamMuxers = [mplex()]
-        break
-      case 'yamux':
-        options.streamMuxers = [yamux()]
-        break
-      case 'quic':
-        break
-      default:
-        throw new Error(`Unknown muxer: ${MUXER}`)
+    if (!skipSecureChannel) {
+      switch (SECURE_CHANNEL) {
+        case 'noise':
+          options.connectionEncryption = [noise()]
+          break
+        case 'quic':
+          options.connectionEncryption = [noise()]
+          break
+        default:
+          throw new Error(`Unknown secure channel: ${SECURE_CHANNEL}`)
+      }
+    } else {
+      // Libp2p requires at least one encryption module. Even if unused.
+      options.connectionEncryption = [noise()]
+    }
+
+    if (!skipMuxer) {
+      switch (MUXER) {
+        case 'mplex':
+          options.streamMuxers = [mplex()]
+          break
+        case 'yamux':
+          options.streamMuxers = [yamux()]
+          break
+        case 'quic':
+          break
+        default:
+          throw new Error(`Unknown muxer: ${MUXER}`)
+      }
     }
 
     const node = await createLibp2p(options)
@@ -84,21 +99,26 @@ describe('ping test', () => {
     try {
       if (isDialer) {
         const otherMa = (await redisProxy(["BLPOP", "listenerAddr", timeoutSecs]).catch(err => { throw new Error("Failed to wait for listener") }))[1]
-        console.log(`node ${node.peerId} pings: ${otherMa}`)
-        const rtt = await node.ping(multiaddr(otherMa))
-        console.log(`Ping successful: ${rtt}`)
-        await redisProxy(["RPUSH", "dialerDone", ""])
+        console.error(`node ${node.peerId} pings: ${otherMa}`)
+        const handshakeStartInstant = Date.now()
+        await node.dial(multiaddr(otherMa))
+        const pingRTT = await node.ping(multiaddr(otherMa))
+        const handshakePlusOneRTT = Date.now() - handshakeStartInstant
+        console.log(JSON.stringify({
+          handshakePlusOneRTTMillis: handshakePlusOneRTT,
+          pingRTTMilllis: pingRTT
+        }))
       } else {
         const multiaddrs = node.getMultiaddrs().map(ma => ma.toString()).filter(maString => !maString.includes("127.0.0.1"))
-        console.log("My multiaddrs are", multiaddrs)
+        console.error("My multiaddrs are", multiaddrs)
         // Send the listener addr over the proxy server so this works on both the Browser and Node
         await redisProxy(["RPUSH", "listenerAddr", multiaddrs[0]])
-        try {
-          await redisProxy(["BLPOP", "dialerDone", timeoutSecs])
-        } catch {
-          throw new Error("Failed to wait for dialer to finish")
-        }
+        // Wait
+        await new Promise(resolve => setTimeout(resolve, 1000 * parseInt(timeoutSecs, 10)))
       }
+    } catch (err) {
+      console.error("unexpected exception in ping test", err)
+      throw err
     } finally {
       try {
         // We don't care if this fails
