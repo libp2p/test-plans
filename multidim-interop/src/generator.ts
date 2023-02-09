@@ -5,8 +5,7 @@ import { ComposeSpecification } from "../compose-spec/compose-spec";
 
 function buildExtraEnv(timeoutOverride: { [key: string]: number }, test1ID: string, test2ID: string): { [key: string]: string } {
     const maxTimeout = Math.max(timeoutOverride[test1ID] || 0, timeoutOverride[test2ID] || 0)
-    console.log("Max is", maxTimeout)
-    return maxTimeout > 0 ? { "test_timeout": maxTimeout.toString(10) } : {}
+    return maxTimeout > 0 ? { "test_timeout_seconds": maxTimeout.toString(10) } : {}
 }
 
 export async function buildTestSpecs(versions: Array<Version>): Promise<Array<ComposeSpecification>> {
@@ -111,8 +110,6 @@ export async function buildTestSpecs(versions: Array<Version>): Promise<Array<Co
                 dialerID: test.id1,
                 listenerID: test.id2,
                 transport: test.transport,
-                muxer: "quic",
-                security: "quic",
                 extraEnv: buildExtraEnv(timeoutOverride, test.id1, test.id2)
             })))
         .concat(webrtcQueryResults
@@ -121,15 +118,13 @@ export async function buildTestSpecs(versions: Array<Version>): Promise<Array<Co
                 dialerID: test.id1,
                 listenerID: test.id2,
                 transport: test.transport,
-                muxer: "webrtc",
-                security: "webrtc",
                 extraEnv: buildExtraEnv(timeoutOverride, test.id1, test.id2)
             })))
 
     return testSpecs
 }
 
-function buildSpec(containerImages: { [key: string]: string }, { name, dialerID, listenerID, transport, muxer, security, extraEnv }: { name: string, dialerID: string, listenerID: string, transport: string, muxer: string, security: string, extraEnv?: { [key: string]: string } }): ComposeSpecification {
+function buildSpec(containerImages: { [key: string]: string }, { name, dialerID, listenerID, transport, muxer, security, extraEnv }: { name: string, dialerID: string, listenerID: string, transport: string, muxer?: string, security?: string, extraEnv?: { [key: string]: string } }): ComposeSpecification {
     return {
         name,
         services: {
@@ -139,27 +134,35 @@ function buildSpec(containerImages: { [key: string]: string }, { name, dialerID,
                 environment: {
                     version: dialerID,
                     transport,
-                    muxer,
-                    security,
                     is_dialer: true,
                     ip: "0.0.0.0",
+                    ...(!!muxer && { muxer }),
+                    ...(!!security && { security }),
                     ...extraEnv,
                 }
             },
             listener: {
+                // Add init process to be PID 1 to proxy signals. Rust doesn't
+                // handle SIGINT without this
+                init: true,
                 image: containerImages[listenerID],
                 depends_on: ["redis"],
                 environment: {
                     version: listenerID,
                     transport,
-                    muxer,
-                    security,
                     is_dialer: false,
                     ip: "0.0.0.0",
+                    ...(!!muxer && { muxer }),
+                    ...(!!security && { security }),
                     ...extraEnv,
                 }
             },
-            redis: { image: "redis/redis-stack", }
+            redis: {
+                image: "redis/redis-stack",
+                environment: {
+                    REDIS_ARGS: "--loglevel warning"
+                }
+            }
         }
     }
 }
