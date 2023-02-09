@@ -29,18 +29,16 @@ runs:
   using: "composite"
   steps:
     - run: |
-        echo "S3_AWS_ACCESS_KEY_ID=${{ inputs.s3-access-key-id }}" >> $GITHUB_ENV
-        echo "S3_AWS_SECRET_ACCESS_KEY=${{ inputs.s3-secret-access-key }}" >> $GITHUB_ENV
         echo "AWS_BUCKET=${{ inputs.s3-cache-bucket }}" >> $GITHUB_ENV
         echo "AWS_REGION=${{ inputs.aws-region }}" >> $GITHUB_ENV
       shell: bash
 
     - name: Configure AWS credentials for S3 build cache
-      if: ${{ inputs.s3-access-key-id }} != "" && ${{ inputs.s3-secret-key }} != ""
+      if: ${{ inputs.s3-access-key-id }} != "" && ${{ inputs.s3-secret-access-key }} != ""
       uses: aws-actions/configure-aws-credentials@v1
       with:
-        aws-access-key-id: ${{ env.S3_AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ env.S3_AWS_SECRET_ACCESS_KEY }}
+        aws-access-key-id: ${{ inputs.s3-access-key-id }}
+        aws-secret-access-key: ${{ inputs.s3-secret-access-key}}
         aws-region: ${{ env.AWS_REGION }}
 
     # This depends on where this file is within this repository. This walks up
