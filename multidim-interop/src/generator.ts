@@ -68,12 +68,14 @@ export async function buildTestSpecs(versions: Array<Version>): Promise<Array<Co
         await db.all(`SELECT DISTINCT a.id as id1, b.id as id2, a.transport
                      FROM transports a, transports b
                      WHERE a.transport == b.transport
+                     AND NOT b.onlyDial
                      -- Only quic transports
                      AND a.transport == "quic";`);
     const quicV1QueryResults =
         await db.all(`SELECT DISTINCT a.id as id1, b.id as id2, a.transport
                      FROM transports a, transports b
                      WHERE a.transport == b.transport
+                     AND NOT b.onlyDial
                      -- Only quic transports
                      AND a.transport == "quic-v1";`);
     const webtransportQueryResults =
@@ -87,6 +89,7 @@ export async function buildTestSpecs(versions: Array<Version>): Promise<Array<Co
         await db.all(`SELECT DISTINCT a.id as id1, b.id as id2, a.transport
                      FROM transports a, transports b
                      WHERE a.transport == b.transport
+                     AND NOT b.onlyDial
                      -- Only webrtc transports
                      AND a.transport == "webrtc";`);
     await db.close();
