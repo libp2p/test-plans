@@ -17,3 +17,12 @@ jobs:
           s3-cache-bucket: libp2p-by-tf-aws-bootstrap
           s3-access-key-id: ${{ vars.S3_AWS_ACCESS_KEY_ID }}
           s3-secret-access-key: ${{ secrets.S3_AWS_SECRET_ACCESS_KEY }}
+  build-without-cache:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      # Purposely not using cache to replicate how forks will behave.
+      - uses: ./.github/actions/run-interop-ping-test
+        with:
+          # It's okay to not run the tests, we only care to check if the tests build without cache.
+          test-filter: '"no test matches this, skip all"'
