@@ -5,12 +5,15 @@ on:
     branches:
       - "master"
 
-name: No Cache - libp2p multidimensional interop test
+name: No Cache - libp2p multidimensional interop test build without cache
 
 jobs:
   run-multidim-interop:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      # Purposely not using cache to replicate how forks will behave
+      # Purposely not using cache to replicate how forks will behave.
       - uses: ./.github/actions/run-interop-ping-test
+        with:
+          # It's okay to not run the tests, we only care to check if the tests build without cache.
+          test-filter: "no test matches this, skip all"
