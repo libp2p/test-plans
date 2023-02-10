@@ -34,7 +34,7 @@ runs:
     #   shell: bash
 
     - name: Configure AWS credentials for S3 build cache
-      if: inputs.missing-s3-access-key-id != "" && inputs.missing-s3-secret-access-key != ""
+      if: inputs.missing-s3-access-key-id != '' && inputs.missing-s3-secret-access-key != ''
       uses: aws-actions/configure-aws-credentials@v1
       with:
         aws-access-key-id: ${{ inputs.s3-access-key-id }}
