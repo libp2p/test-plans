@@ -16,4 +16,4 @@ jobs:
       - uses: ./.github/actions/run-interop-ping-test
         with:
           # It's okay to not run the tests, we only care to check if the tests build without cache.
-          test-filter: "no test matches this, skip all"
+          test-filter: '"no test matches this, skip all"'
