@@ -1,0 +1,16 @@
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - "master"
+
+name: No Cache - libp2p multidimensional interop test
+
+jobs:
+  run-multidim-interop:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      # Purposely not using cache to replicate how forks will behave
+      - uses: ./.github/actions/run-interop-ping-test
