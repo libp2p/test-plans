@@ -28,13 +28,13 @@ inputs:
 runs:
   using: "composite"
   steps:
-    # - run: |
-    #     echo "AWS_BUCKET=${{ inputs.s3-cache-bucket }}" >> $GITHUB_ENV
-    #     echo "AWS_REGION=${{ inputs.aws-region }}" >> $GITHUB_ENV
-    #   shell: bash
+    - run: |
+        echo "AWS_BUCKET=${{ inputs.s3-cache-bucket }}" >> $GITHUB_ENV
+        echo "AWS_REGION=${{ inputs.aws-region }}" >> $GITHUB_ENV
+      shell: bash
 
     - name: Configure AWS credentials for S3 build cache
-      if: inputs.missing-s3-access-key-id != '' && inputs.missing-s3-secret-access-key != ''
+      if: inputs.s3-access-key-id != '' && inputs.s3-secret-access-key != ''
       uses: aws-actions/configure-aws-credentials@v1
       with:
         aws-access-key-id: ${{ inputs.s3-access-key-id }}
