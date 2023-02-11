@@ -26,16 +26,14 @@ export const versions: Array<Version> = [
     {
         id: "js-v0.41.0",
         containerImageID: jsV041.imageID,
-        timeoutSecs: 30,
         transports: ["tcp", "ws"],
         secureChannels: ["noise"],
         muxers: ["mplex", "yamux"],
     },
     {
         id: "chromium-js-v0.41.0",
-        timeoutSecs: 30,
         containerImageID: chromiumJsV041.imageID,
-        transports: [{ name: "webtransport", onlyDial: true }],
+        transports: [{ name: "webtransport", onlyDial: true }, { name: "webrtc", onlyDial: true }],
         secureChannels: [],
         muxers: []
     },

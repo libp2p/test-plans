@@ -9,9 +9,38 @@ inputs:
     description: "Space-separated paths to JSON files describing additional images"
     required: false
     default: ""
+  s3-cache-bucket:
+    description: "Which S3 bucket to use for container layer caching"
+    required: false
+    default: ""
+  s3-access-key-id:
+    description: "S3 Access key id for the cache"
+    required: false
+    default: ""
+  s3-secret-access-key:
+    description: "S3 secret key id for the cache"
+    required: false
+    default: ""
+  aws-region:
+    description: "Which AWS region to use"
+    required: false
+    default: "us-east-1"
 runs:
   using: "composite"
   steps:
+    - run: |
+        echo "AWS_BUCKET=${{ inputs.s3-cache-bucket }}" >> $GITHUB_ENV
+        echo "AWS_REGION=${{ inputs.aws-region }}" >> $GITHUB_ENV
+      shell: bash
+
+    - name: Configure AWS credentials for S3 build cache
+      if: inputs.s3-access-key-id != '' && inputs.s3-secret-access-key != ''
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ inputs.s3-access-key-id }}
+        aws-secret-access-key: ${{ inputs.s3-secret-access-key}}
+        aws-region: ${{ env.AWS_REGION }}
+
     # This depends on where this file is within this repository. This walks up
     # from here to the multidim-interop folder
     - run: |
@@ -23,9 +52,6 @@ runs:
     - uses: actions/setup-node@v3
       with:
         node-version: 18
-
-    - name: Expose GitHub Runtime # Needed for docker buildx to cache properly (See https://docs.docker.com/build/cache/backends/gha/#authentication)
-      uses: crazy-max/ghaction-github-runtime@v2
 
     - name: Set up Docker Buildx
       id: buildx
