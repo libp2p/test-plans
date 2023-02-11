@@ -1,6 +1,8 @@
 import gov024 from "./go/v0.24/image.json"
 import gov023 from "./go/v0.23/image.json"
 import gov022 from "./go/v0.22/image.json"
+import rustv048 from "./rust/v0.48/image.json"
+import rustv049 from "./rust/v0.49/image.json"
 import rustv050 from "./rust/v0.50/image.json"
 import jsV041 from "./js/v0.41/node-image.json"
 import chromiumJsV041 from "./js/v0.41/chromium-image.json"
@@ -16,6 +18,20 @@ export type Version = {
 }
 
 export const versions: Array<Version> = [
+    {
+        id: "rust-v0.48.0",
+        containerImageID: rustv050.imageID,
+        transports: ["ws", "tcp"],
+        secureChannels: ["noise"],
+        muxers: ["mplex", "yamux"],
+    },
+    {
+        id: "rust-v0.49.0",
+        containerImageID: rustv050.imageID,
+        transports: ["ws", "tcp"],
+        secureChannels: ["noise"],
+        muxers: ["mplex", "yamux"],
+    },
     {
         id: "rust-v0.50.0",
         containerImageID: rustv050.imageID,
