@@ -1,3 +1,4 @@
+import gov025 from "./go/v0.25/image.json"
 import gov024 from "./go/v0.24/image.json"
 import gov023 from "./go/v0.23/image.json"
 import gov022 from "./go/v0.22/image.json"
@@ -36,6 +37,13 @@ export const versions: Array<Version> = [
         transports: [{ name: "webtransport", onlyDial: true }, { name: "webrtc", onlyDial: true }],
         secureChannels: [],
         muxers: []
+    },
+    {
+        id: "go-v0.25.1",
+        containerImageID: gov025.imageID,
+        transports: ["tcp", "ws", "quic", "quic-v1", "webtransport"],
+        secureChannels: ["tls", "noise"],
+        muxers: ["mplex", "yamux"],
     },
     {
         id: "go-v0.24.2",
