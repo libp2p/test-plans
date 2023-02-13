@@ -28,7 +28,8 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - run: |
+    - if: inputs.s3-access-key-id != '' && inputs.s3-secret-access-key != ''
+      run: |
         echo "AWS_BUCKET=${{ inputs.s3-cache-bucket }}" >> $GITHUB_ENV
         echo "AWS_REGION=${{ inputs.aws-region }}" >> $GITHUB_ENV
       shell: bash
