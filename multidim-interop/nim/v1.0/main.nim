@@ -1,5 +1,5 @@
 import
-  std/[os, strutils],
+  std/[os, strutils, sequtils],
   chronos, redis, serialization, json_serialization,
   libp2p, libp2p/protocols/ping, libp2p/transports/wstransport
 
@@ -14,12 +14,16 @@ let
     except CatchableError: 3.minutes
 
 proc main {.async.} =
+  let addresses = getInterfaces().filterIt(it.name == "eth1").mapIt(it.addresses)
+  if addresses.len < 1 or addresses[0].len < 1:
+    quit "Can't find local ip!"
+
   let
     transport = getEnv("transport")
     muxer = getEnv("muxer")
     secureChannel = getEnv("security")
     isDialer = getEnv("is_dialer") == "true"
-    ip = getEnv("ip", "0.0.0.0")
+    ip = getEnv("ip", $addresses[0][0].host)
     redisAddr = getEnv("redis_addr", "redis:6379").split(":")
 
     # using synchronous redis because async redis is based on
