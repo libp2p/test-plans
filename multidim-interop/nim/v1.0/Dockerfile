@@ -10,4 +10,4 @@ RUN nimble install -dy
 COPY main.nim .
 RUN nim c -d:chronicles_log_level=WARN --threads:off main.nim
 
-ENTRYPOINT ["main"]
+ENTRYPOINT ["/app/main"]
