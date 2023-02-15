@@ -28,7 +28,7 @@ proc main {.async.} =
 
     switchBuilder = SwitchBuilder.new()
 
-  case "transport":
+  case transport:
     of "tcp":
       discard switchBuilder.withTcpTransport().withAddress(
         MultiAddress.init("/ip4/" & ip & "/tcp/0").tryGet()
