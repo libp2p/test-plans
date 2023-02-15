@@ -4,6 +4,7 @@ import gov023 from "./go/v0.23/image.json"
 import gov022 from "./go/v0.22/image.json"
 import rustv050 from "./rust/v0.50/image.json"
 import jsV041 from "./js/v0.41/node-image.json"
+import nimv10 from "./nim/v1.0/node-image.json"
 import chromiumJsV041 from "./js/v0.41/chromium-image.json"
 
 export type Version = {
@@ -64,6 +65,13 @@ export const versions: Array<Version> = [
         containerImageID: gov022.imageID,
         transports: ["tcp", "ws", "quic"],
         secureChannels: ["tls", "noise"],
+        muxers: ["mplex", "yamux"],
+    },
+    {
+        id: "nim-v1.0",
+        containerImageID: nimv10.imageID,
+        transports: ["tcp", "ws"],
+        secureChannels: ["noise"],
         muxers: ["mplex", "yamux"],
     },
 ]
