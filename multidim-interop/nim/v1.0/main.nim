@@ -14,7 +14,7 @@ let
     except CatchableError: 3.minutes
 
 proc main {.async.} =
-  let addresses = getInterfaces().filterIt(it.name == "eth1").mapIt(it.addresses)
+  let addresses = getInterfaces().filterIt(it.name == "eth0").mapIt(it.addresses)
   if addresses.len < 1 or addresses[0].len < 1:
     quit "Can't find local ip!"
 
