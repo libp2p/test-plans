@@ -14,16 +14,23 @@ let
     except CatchableError: 3.minutes
 
 proc main {.async.} =
-  let addresses = getInterfaces().filterIt(it.name == "eth0").mapIt(it.addresses)
-  if addresses.len < 1 or addresses[0].len < 1:
-    quit "Can't find local ip!"
 
   let
     transport = getEnv("transport")
     muxer = getEnv("muxer")
     secureChannel = getEnv("security")
     isDialer = getEnv("is_dialer") == "true"
-    ip = getEnv("ip", $addresses[0][0].host)
+    envIp = getEnv("ip", "0.0.0.0")
+    ip =
+      # nim-libp2p doesn't do snazzy ip expansion
+      if envIp == "0.0.0.0":
+        block:
+          let addresses = getInterfaces().filterIt(it.name == "eth0").mapIt(it.addresses)
+          if addresses.len < 1 or addresses[0].len < 1:
+            quit "Can't find local ip!"
+          $addresses[0][0].host
+      else:
+        envIp
     redisAddr = getEnv("redis_addr", "redis:6379").split(":")
 
     # using synchronous redis because async redis is based on
