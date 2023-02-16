@@ -28,7 +28,7 @@ proc main {.async.} =
           let addresses = getInterfaces().filterIt(it.name == "eth0").mapIt(it.addresses)
           if addresses.len < 1 or addresses[0].len < 1:
             quit "Can't find local ip!"
-          $addresses[0][0].host
+          ($addresses[0][0].host).split(":")[0]
       else:
         envIp
     redisAddr = getEnv("redis_addr", "redis:6379").split(":")
