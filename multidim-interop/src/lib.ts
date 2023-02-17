@@ -89,6 +89,7 @@ export const generateTable = (
   const uniqPairs = listUniqPairs(pairs);
 
   const matrix = generateEmptyMatrix(uniqPairs, defaultValue);
+  matrix[0][0] = "⬇️ dialer 📞 \\  ➡️ listener 🎧"
 
   for (const result of results) {
     const { implA, implB } = result
