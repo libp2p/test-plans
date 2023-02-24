@@ -161,7 +161,7 @@ function buildSpec(containerImages: { [key: string]: string }, { name, dialerID,
                 }
             },
             redis: {
-                image: "redis/redis-stack",
+                image: "redis:7-alpine",
                 environment: {
                     REDIS_ARGS: "--loglevel warning"
                 }
