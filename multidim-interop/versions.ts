@@ -8,6 +8,7 @@ import rustv050 from "./rust/v0.50/image.json"
 import jsV041 from "./js/v0.41/node-image.json"
 import nimv10 from "./nim/v1.0/image.json"
 import chromiumJsV041 from "./js/v0.41/chromium-image.json"
+import chromiumJsV042 from "./js/v0.42/chromium-image.json"
 
 export type Version = {
     id: string,
@@ -51,6 +52,13 @@ export const versions: Array<Version> = [
     {
         id: "chromium-js-v0.41.0",
         containerImageID: chromiumJsV041.imageID,
+        transports: [{ name: "webtransport", onlyDial: true }, { name: "webrtc", onlyDial: true } ],
+        secureChannels: ["noise"],
+        muxers: ["mplex", "yamux"]
+    },
+    {
+        id: "chromium-js-v0.42.0",
+        containerImageID: chromiumJsV042.imageID,
         transports: [{ name: "webtransport", onlyDial: true }, { name: "webrtc", onlyDial: true }, { name: "wss", onlyDial: true }],
         secureChannels: ["noise"],
         muxers: ["mplex", "yamux"]
