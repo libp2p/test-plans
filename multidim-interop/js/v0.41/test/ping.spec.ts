@@ -58,13 +58,6 @@ describe('ping test', () => {
           listen: isDialer ? [] : [`/ip4/${IP}/tcp/0/ws`]
         }
         break
-      case 'wss':
-        process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = "0"
-        options.transports = [webSockets()]
-        options.addresses = {
-          listen: isDialer ? [] : [`/ip4/${IP}/tcp/0/wss`]
-        }
-        break
       default:
         throw new Error(`Unknown transport: ${TRANSPORT}`)
     }
@@ -113,9 +106,7 @@ describe('ping test', () => {
 
     try {
       if (isDialer) {
-        var otherMa = (await redisProxy(["BLPOP", "listenerAddr", timeoutSecs]).catch(err => { throw new Error("Failed to wait for listener") }))[1]
-        otherMa = otherMa.replace("/tls/ws", "/wss")
-        // otherMa = otherMa.replace("/ip4/100.74.222.94", "/dns4/localhost")
+        const otherMa = (await redisProxy(["BLPOP", "listenerAddr", timeoutSecs]).catch(err => { throw new Error("Failed to wait for listener") }))[1]
         console.error(`node ${node.peerId} pings: ${otherMa}`)
         const handshakeStartInstant = Date.now()
         await node.dial(multiaddr(otherMa))

@@ -1,18 +1,22 @@
+import { spawn, exec } from "child_process";
+import { existsSync } from "fs";
 import { createClient } from 'redis'
 import http from "http"
 
+const isDialer = process.env.is_dialer === "true"
 const redis_addr = process.env.redis_addr || 'redis:6379'
+
+// Used to preinstall the browsers in the docker image
+const initialSetup = process.env.initial_setup === "true"
 
 /** @type {import('aegir/types').PartialOptions} */
 export default {
   test: {
-    browser: {
-      config: {
-        // Ignore self signed certificates
-        browserContextOptions: { ignoreHTTPSErrors: true }
-      }
-    },
     async before() {
+      if (initialSetup) {
+        return {}
+      }
+
       const redisClient = createClient({
         url: `redis://${redis_addr}`
       })
@@ -66,6 +70,10 @@ export default {
       }
     },
     async after(_, { proxyServer, redisClient }) {
+      if (initialSetup) {
+        return
+      }
+
       await new Promise(resolve => {
         proxyServer.close(() => resolve());
       })
