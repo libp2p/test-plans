@@ -53,16 +53,16 @@ export const versions: Array<Version> = [
     {
         id: "js-v0.42.0",
         containerImageID: jsV042.imageID,
-        transports: ["tcp", "ws"],
+        transports: ["tcp", "ws", { name: "wss", onlyDial: true }],
         secureChannels: ["noise"],
         muxers: ["mplex", "yamux"],
     },
     {
         id: "chromium-js-v0.41.0",
         containerImageID: chromiumJsV041.imageID,
-        transports: [{ name: "webtransport", onlyDial: true }, { name: "webrtc", onlyDial: true } ],
-        secureChannels: ["noise"],
-        muxers: ["mplex", "yamux"]
+        transports: [{ name: "webtransport", onlyDial: true }, { name: "webrtc", onlyDial: true }],
+        secureChannels: [],
+        muxers: []
     },
     {
         id: "chromium-js-v0.42.0",
