@@ -1,0 +1,45 @@
+name: relay
+services:
+  source:
+    build:
+      context: ./rust/v0.51.0
+    depends_on:
+      - redis
+    environment:
+      version: rust-v0.51.0
+      transport: tcp
+      role: source
+      ip: 0.0.0.0
+      muxer: yamux
+      security: tls
+  relay:
+    init: true
+    build:
+      context: ./rust/v0.51.0
+    depends_on:
+      - redis
+    environment:
+      version: rust-v0.51.0
+      transport: tcp
+      role: relay
+      ip: 0.0.0.0
+      muxer: yamux
+      security: tls
+  destination:
+    init: true
+    build:
+      context: ./rust/v0.51.0
+    depends_on:
+      - redis
+    environment:
+      version: rust-v0.51.0
+      transport: tcp
+      role: destination
+      ip: 0.0.0.0
+      muxer: yamux
+      security: tls
+  redis:
+    image: redis:7-alpine
+    environment:
+      REDIS_ARGS: --loglevel warning
+
