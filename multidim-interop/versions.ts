@@ -5,6 +5,7 @@ import gov022 from "./go/v0.22/image.json"
 import rustv048 from "./rust/v0.48/image.json"
 import rustv049 from "./rust/v0.49/image.json"
 import rustv050 from "./rust/v0.50/image.json"
+import rustv051 from "./rust/v0.51/image.json"
 import jsV041 from "./js/v0.41/node-image.json"
 import jsV042 from "./js/v0.42/node-image.json"
 import nimv10 from "./nim/v1.0/image.json"
@@ -39,6 +40,13 @@ export const versions: Array<Version> = [
     {
         id: "rust-v0.50.0",
         containerImageID: rustv050.imageID,
+        transports: ["ws", "tcp", "quic-v1", "webrtc"],
+        secureChannels: ["tls", "noise"],
+        muxers: ["mplex", "yamux"],
+    },
+    {
+        id: "rust-v0.51.0",
+        containerImageID: rustv051.imageID,
         transports: ["ws", "tcp", "quic-v1", "webrtc"],
         secureChannels: ["tls", "noise"],
         muxers: ["mplex", "yamux"],
