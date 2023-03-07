@@ -2,9 +2,15 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/tls"
+	"crypto/x509"
+	"crypto/x509/pkix"
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/big"
 	"os"
 	"strconv"
 	"time"
@@ -80,6 +86,9 @@ func main() {
 	case "ws":
 		options = append(options, libp2p.Transport(websocket.New))
 		listenAddr = fmt.Sprintf("/ip4/%s/tcp/0/ws", ip)
+	case "wss":
+		options = append(options, libp2p.Transport(websocket.New, websocket.WithTLSConfig(generateTLSConfig()), websocket.WithTLSClientConfig(&tls.Config{InsecureSkipVerify: true})))
+		listenAddr = fmt.Sprintf("/ip4/%s/tcp/0/wss", ip)
 	case "tcp":
 		options = append(options, libp2p.Transport(tcp.NewTCPTransport))
 		listenAddr = fmt.Sprintf("/ip4/%s/tcp/0", ip)
@@ -193,5 +202,30 @@ func main() {
 		}
 		time.Sleep(testTimeout)
 		os.Exit(1)
+	}
+}
+
+func generateTLSConfig() *tls.Config {
+	priv, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		log.Fatal(err)
+	}
+	tmpl := &x509.Certificate{
+		SerialNumber:          big.NewInt(1),
+		Subject:               pkix.Name{},
+		SignatureAlgorithm:    x509.SHA256WithRSA,
+		NotBefore:             time.Now(),
+		NotAfter:              time.Now().Add(time.Hour), // valid for an hour
+		BasicConstraintsValid: true,
+	}
+	certDER, err := x509.CreateCertificate(rand.Reader, tmpl, tmpl, priv.Public(), priv)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return &tls.Config{
+		Certificates: []tls.Certificate{{
+			PrivateKey:  priv,
+			Certificate: [][]byte{certDER},
+		}},
 	}
 }
