@@ -2,7 +2,11 @@ module github.com/libp2p/test-plans/multidim-interop/go/v0.24
 
 go 1.18
 
-require github.com/libp2p/go-libp2p v0.24.2
+require (
+	github.com/go-redis/redis/v8 v8.11.5
+	github.com/libp2p/go-libp2p v0.24.2
+	github.com/multiformats/go-multiaddr v0.8.0
+)
 
 require (
 	github.com/benbjohnson/clock v1.3.0 // indirect
@@ -17,7 +21,6 @@ require (
 	github.com/elastic/gosigar v0.14.2 // indirect
 	github.com/flynn/noise v1.0.0 // indirect
 	github.com/francoispqt/gojay v1.2.13 // indirect
-	github.com/go-redis/redis/v8 v8.11.5 // indirect
 	github.com/go-task/slim-sprig v0.0.0-20210107165309-348f09dbbbc0 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
@@ -62,7 +65,6 @@ require (
 	github.com/mr-tron/base58 v1.2.0 // indirect
 	github.com/multiformats/go-base32 v0.1.0 // indirect
 	github.com/multiformats/go-base36 v0.2.0 // indirect
-	github.com/multiformats/go-multiaddr v0.8.0 // indirect
 	github.com/multiformats/go-multiaddr-dns v0.3.1 // indirect
 	github.com/multiformats/go-multiaddr-fmt v0.1.0 // indirect
 	github.com/multiformats/go-multibase v0.1.1 // indirect
