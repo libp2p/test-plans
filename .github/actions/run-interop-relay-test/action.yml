@@ -78,15 +78,17 @@ runs:
       run: cat results.csv
       shell: bash
 
-    - name: Render results
-      working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
-      run: npm run renderResults > ./dashboard.md
-      shell: bash
+    # TODO
+    # - name: Render results
+    #   working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
+    #   run: npm run renderResults > ./dashboard.md
+    #   shell: bash
 
-    - name: Show Dashboard Output
-      working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
-      run: cat ./dashboard.md >> $GITHUB_STEP_SUMMARY
-      shell: bash
+    # TODO
+    # - name: Show Dashboard Output
+    #   working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
+    #   run: cat ./dashboard.md >> $GITHUB_STEP_SUMMARY
+    #   shell: bash
 
     - name: Exit with Error
       working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
