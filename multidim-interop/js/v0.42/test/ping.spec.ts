@@ -115,10 +115,8 @@ describe('ping test', () => {
       if (isDialer) {
         var otherMa = (await redisProxy(["BLPOP", "listenerAddr", timeoutSecs]).catch(err => { throw new Error("Failed to wait for listener") }))[1]
         // Hack until these are merged:
-        // - https://github.com/multiformats/js-multiaddr/pull/312 
         // - https://github.com/multiformats/js-multiaddr-to-uri/pull/120
         otherMa = otherMa.replace("/tls/ws", "/wss")
-        otherMa = otherMa.replace("/ip4/192.168.5.124", "/dns4/localhost")
 
         console.error(`node ${node.peerId} pings: ${otherMa}`)
         const handshakeStartInstant = Date.now()

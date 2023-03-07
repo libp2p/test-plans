@@ -58,6 +58,13 @@ describe('ping test', () => {
           listen: isDialer ? [] : [`/ip4/${IP}/tcp/0/ws`]
         }
         break
+      case 'wss':
+        process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = "0"
+        options.transports = [webSockets()]
+        options.addresses = {
+          listen: isDialer ? [] : [`/ip4/${IP}/tcp/0/wss`]
+        }
+        break
       default:
         throw new Error(`Unknown transport: ${TRANSPORT}`)
     }
@@ -106,7 +113,11 @@ describe('ping test', () => {
 
     try {
       if (isDialer) {
-        const otherMa = (await redisProxy(["BLPOP", "listenerAddr", timeoutSecs]).catch(err => { throw new Error("Failed to wait for listener") }))[1]
+        var otherMa = (await redisProxy(["BLPOP", "listenerAddr", timeoutSecs]).catch(err => { throw new Error("Failed to wait for listener") }))[1]
+        // Hack until these are merged:
+        // - https://github.com/multiformats/js-multiaddr-to-uri/pull/120
+        otherMa = otherMa.replace("/tls/ws", "/wss")
+
         console.error(`node ${node.peerId} pings: ${otherMa}`)
         const handshakeStartInstant = Date.now()
         await node.dial(multiaddr(otherMa))
@@ -125,7 +136,12 @@ describe('ping test', () => {
         await new Promise(resolve => setTimeout(resolve, 1000 * parseInt(timeoutSecs, 10)))
       }
     } catch (err) {
-      console.error("unexpected exception in ping test", err)
+      // Show all errors in an aggregated error
+      if (err instanceof AggregateError) {
+        console.error(`unexpected exception in ping test: ${err}\n Errors:`, err.errors)
+      } else {
+        console.error(`unexpected exception in ping test:`, err)
+      }
       throw err
     } finally {
       try {
