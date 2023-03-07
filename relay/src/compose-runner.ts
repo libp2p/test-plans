@@ -52,12 +52,7 @@ export async function run(namespace: string, compose: ComposeSpecification, opts
                 new Promise<any>((resolve, reject) => { timeoutId = setTimeout(() => reject("Timeout"), 1000 * timeoutSecs) })
             ]))
         clearTimeout(timeoutId)
-        const testResults = stdout.match(/.*dialer.*({.*)/)
-        if (testResults === null || testResults.length < 2) {
-            throw new Error("Test JSON results not found")
-        }
-        const testResultsParsed = JSON.parse(testResults[1])
-        console.log("Finished:", namespace, testResultsParsed)
+        console.log("Finished:", namespace)
     } catch (e: any) {
         console.log("Failure", e)
         return e

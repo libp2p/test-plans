@@ -5,19 +5,13 @@ use std::time::Duration;
 use anyhow::{bail, Context, Result};
 use either::Either;
 use env_logger::{Env, Target};
-use futures::{future, AsyncRead, AsyncWrite, StreamExt};
+use futures::StreamExt;
 use libp2p::core::muxing::StreamMuxerBox;
 use libp2p::core::transport::OrTransport;
-use libp2p::core::upgrade::{MapInboundUpgrade, MapOutboundUpgrade, Version};
+use libp2p::core::upgrade::Version;
 use libp2p::multiaddr::Protocol;
-use libp2p::noise::{NoiseOutput, X25519Spec, XX};
 use libp2p::swarm::{keep_alive, AddressScore, NetworkBehaviour, SwarmEvent};
-use libp2p::tls::TlsStream;
-use libp2p::websocket::WsConfig;
-use libp2p::{
-    identity, mplex, noise, ping, quic, tcp, tls, webrtc, yamux, InboundUpgradeExt, Multiaddr,
-    OutboundUpgradeExt, PeerId, Swarm, Transport as _,
-};
+use libp2p::{identity, noise, ping, tcp, yamux, Multiaddr, PeerId, Swarm, Transport as _};
 use redis::AsyncCommands;
 
 #[tokio::main]
@@ -25,11 +19,7 @@ async fn main() -> Result<()> {
     let local_key = identity::Keypair::generate_ed25519();
     let local_peer_id = PeerId::from(local_key.public());
 
-    let transport_param: Transport = from_env("transport")?;
     let role_param: Role = from_env("role")?;
-
-    let ip = env::var("ip").context("ip environment variable is not set")?;
-
     let test_timeout = env::var("test_timeout_seconds")
         .unwrap_or_else(|_| "180".into())
         .parse::<u64>()?;
@@ -40,42 +30,17 @@ async fn main() -> Result<()> {
 
     let client = redis::Client::open(redis_addr).context("Could not connect to redis")?;
 
-    // Build the transport from the passed ENV var.
-    let (boxed_transport, local_addr) = match transport_param {
-        Transport::QuicV1 => (
-            quic::tokio::Transport::new(quic::Config::new(&local_key))
-                .map(|(p, c), _| (p, StreamMuxerBox::new(c)))
-                .boxed(),
-            format!("/ip4/{ip}/udp/0/quic-v1"),
-        ),
-        Transport::Tcp => (
-            tcp::tokio::Transport::new(tcp::Config::new())
-                .upgrade(Version::V1Lazy)
-                .authenticate(secure_channel_protocol_from_env(&local_key)?)
-                .multiplex(muxer_protocol_from_env()?)
-                .timeout(Duration::from_secs(5))
-                .boxed(),
-            format!("/ip4/{ip}/tcp/0"),
-        ),
-        Transport::Ws => (
-            WsConfig::new(tcp::tokio::Transport::new(tcp::Config::new()))
-                .upgrade(Version::V1Lazy)
-                .authenticate(secure_channel_protocol_from_env(&local_key)?)
-                .multiplex(muxer_protocol_from_env()?)
-                .timeout(Duration::from_secs(5))
-                .boxed(),
-            format!("/ip4/{ip}/tcp/0/ws"),
-        ),
-        Transport::Webrtc => (
-            webrtc::tokio::Transport::new(
-                local_key.clone(),
-                webrtc::tokio::Certificate::generate(&mut rand::thread_rng())?,
+    let (boxed_transport, local_addr) = (
+        tcp::tokio::Transport::new(tcp::Config::new())
+            .upgrade(Version::V1Lazy)
+            .authenticate(
+                noise::NoiseAuthenticated::xx(&local_key).context("failed to intialise noise")?,
             )
-            .map(|(peer_id, conn), _| (peer_id, StreamMuxerBox::new(conn)))
+            .multiplex(yamux::YamuxConfig::default())
+            .timeout(Duration::from_secs(5))
             .boxed(),
-            format!("/ip4/{ip}/udp/0/webrtc"),
-        ),
-    };
+        format!("/ip4/0.0.0.0/tcp/0"),
+    );
 
     let (boxed_transport, relay_behaviour) = match role_param {
         Role::Source | Role::Destination => {
@@ -248,50 +213,6 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-fn secure_channel_protocol_from_env<C: AsyncRead + AsyncWrite + Unpin + Send + 'static>(
-    identity: &identity::Keypair,
-) -> Result<
-    MapOutboundUpgrade<
-        MapInboundUpgrade<
-            Either<noise::NoiseAuthenticated<XX, X25519Spec, ()>, tls::Config>,
-            MapSecOutputFn<C>,
-        >,
-        MapSecOutputFn<C>,
-    >,
-> {
-    let either_sec_upgrade = match from_env("security")? {
-        SecProtocol::Noise => Either::Left(
-            noise::NoiseAuthenticated::xx(identity).context("failed to intialise noise")?,
-        ),
-        SecProtocol::Tls => {
-            Either::Right(tls::Config::new(identity).context("failed to initialise tls")?)
-        }
-    };
-
-    Ok(either_sec_upgrade
-        .map_inbound(factor_peer_id as MapSecOutputFn<C>)
-        .map_outbound(factor_peer_id as MapSecOutputFn<C>))
-}
-
-type SecOutput<C> = future::Either<(PeerId, NoiseOutput<C>), (PeerId, TlsStream<C>)>;
-type MapSecOutputFn<C> = fn(SecOutput<C>) -> (PeerId, future::Either<NoiseOutput<C>, TlsStream<C>>);
-
-fn factor_peer_id<C>(
-    output: SecOutput<C>,
-) -> (PeerId, future::Either<NoiseOutput<C>, TlsStream<C>>) {
-    match output {
-        future::Either::Left((peer, stream)) => (peer, future::Either::Left(stream)),
-        future::Either::Right((peer, stream)) => (peer, future::Either::Right(stream)),
-    }
-}
-
-fn muxer_protocol_from_env() -> Result<Either<yamux::YamuxConfig, mplex::MplexConfig>> {
-    Ok(match from_env("muxer")? {
-        Muxer::Yamux => Either::Left(yamux::YamuxConfig::default()),
-        Muxer::Mplex => Either::Right(mplex::MplexConfig::new()),
-    })
-}
-
 /// Supported relay roles by rust-libp2p.
 #[derive(Clone, Debug)]
 pub enum Role {
@@ -309,67 +230,6 @@ impl FromStr for Role {
             "relay" => Self::Relay,
             "destination" => Self::Destination,
             other => bail!("unknown transport {other}"),
-        })
-    }
-}
-
-/// Supported transports by rust-libp2p.
-#[derive(Clone, Debug)]
-pub enum Transport {
-    Tcp,
-    QuicV1,
-    Webrtc,
-    Ws,
-}
-
-impl FromStr for Transport {
-    type Err = anyhow::Error;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        Ok(match s {
-            "tcp" => Self::Tcp,
-            "quic-v1" => Self::QuicV1,
-            "webrtc" => Self::Webrtc,
-            "ws" => Self::Ws,
-            other => bail!("unknown transport {other}"),
-        })
-    }
-}
-
-/// Supported stream multiplexers by rust-libp2p.
-#[derive(Clone, Debug)]
-pub enum Muxer {
-    Mplex,
-    Yamux,
-}
-
-impl FromStr for Muxer {
-    type Err = anyhow::Error;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        Ok(match s {
-            "mplex" => Self::Mplex,
-            "yamux" => Self::Yamux,
-            other => bail!("unknown muxer {other}"),
-        })
-    }
-}
-
-/// Supported security protocols by rust-libp2p.
-#[derive(Clone, Debug)]
-pub enum SecProtocol {
-    Noise,
-    Tls,
-}
-
-impl FromStr for SecProtocol {
-    type Err = anyhow::Error;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        Ok(match s {
-            "noise" => Self::Noise,
-            "tls" => Self::Tls,
-            other => bail!("unknown security protocol {other}"),
         })
     }
 }
