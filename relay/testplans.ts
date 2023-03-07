@@ -82,7 +82,7 @@ import path from "path";
                 return
             }
             console.log("Running test spec: " + testSpec.name)
-            const failure = await run(testSpec.name || "unknown test", testSpec, { up: { exitCodeFrom: "dialer", renewAnonVolumes: true }, })
+            const failure = await run(testSpec.name || "unknown test", testSpec, { up: { exitCodeFrom: "source", renewAnonVolumes: true }, })
             if (failure != null) {
                 failures.push(failure)
                 statuses.push([testSpec.name || "unknown test", "failure"])
