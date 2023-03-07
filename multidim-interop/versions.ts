@@ -46,7 +46,7 @@ export const versions: Array<Version> = [
     {
         id: "js-v0.41.0",
         containerImageID: jsV041.imageID,
-        transports: ["tcp", "ws"],
+        transports: ["tcp", "ws", { name: "wss", onlyDial: true }],
         secureChannels: ["noise"],
         muxers: ["mplex", "yamux"],
     },
@@ -60,16 +60,16 @@ export const versions: Array<Version> = [
     {
         id: "chromium-js-v0.41.0",
         containerImageID: chromiumJsV041.imageID,
-        transports: [{ name: "webtransport", onlyDial: true }, { name: "webrtc", onlyDial: true }],
-        secureChannels: [],
-        muxers: []
+        transports: [{ name: "webtransport", onlyDial: true }, { name: "webrtc", onlyDial: true }, { name: "wss", onlyDial: true }],
+        secureChannels: ["noise"],
+        muxers: ["mplex", "yamux"],
     },
     {
         id: "chromium-js-v0.42.0",
         containerImageID: chromiumJsV042.imageID,
         transports: [{ name: "webtransport", onlyDial: true }, { name: "webrtc", onlyDial: true }, { name: "wss", onlyDial: true }],
         secureChannels: ["noise"],
-        muxers: ["mplex", "yamux"]
+        muxers: ["mplex", "yamux"],
     },
     {
         id: "go-v0.25.1",
