@@ -1,0 +1,106 @@
+name: "libp2p relay interop test"
+description: "Run the libp2p relay interoperability test suite"
+inputs:
+  test-filter:
+    description: "Filter which tests to run out of the created matrix"
+    required: false
+    default: ""
+  extra-versions:
+    description: "Space-separated paths to JSON files describing additional images"
+    required: false
+    default: ""
+  s3-cache-bucket:
+    description: "Which S3 bucket to use for container layer caching"
+    required: false
+    default: ""
+  s3-access-key-id:
+    description: "S3 Access key id for the cache"
+    required: false
+    default: ""
+  s3-secret-access-key:
+    description: "S3 secret key id for the cache"
+    required: false
+    default: ""
+  aws-region:
+    description: "Which AWS region to use"
+    required: false
+    default: "us-east-1"
+runs:
+  using: "composite"
+  steps:
+    - if: inputs.s3-access-key-id != '' && inputs.s3-secret-access-key != ''
+      run: |
+        echo "AWS_BUCKET=${{ inputs.s3-cache-bucket }}" >> $GITHUB_ENV
+        echo "AWS_REGION=${{ inputs.aws-region }}" >> $GITHUB_ENV
+      shell: bash
+
+    - name: Configure AWS credentials for S3 build cache
+      if: inputs.s3-access-key-id != '' && inputs.s3-secret-access-key != ''
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ inputs.s3-access-key-id }}
+        aws-secret-access-key: ${{ inputs.s3-secret-access-key}}
+        aws-region: ${{ env.AWS_REGION }}
+
+    # This depends on where this file is within this repository. This walks up
+    # from here to the relay folder
+    - run: |
+        WORK_DIR=$(realpath "${{ github.action_path }}/../../../relay")
+        echo "WORK_DIR=$WORK_DIR" >> $GITHUB_OUTPUT
+      shell: bash
+      id: find-workdir
+
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 18
+
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Install deps
+      working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
+      run: npm ci
+      shell: bash
+
+    - name: Build images
+      working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
+      run: make
+      shell: bash
+
+    - name: Run the test
+      working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
+      run: WORKER_COUNT=2 npm run test -- --extra-version=${{ inputs.extra-versions }} --name-filter=${{ inputs.test-filter }}
+      shell: bash
+
+    - name: Print the results
+      working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
+      run: cat results.csv
+      shell: bash
+
+    - name: Render results
+      working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
+      run: npm run renderResults > ./dashboard.md
+      shell: bash
+
+    - name: Show Dashboard Output
+      working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
+      run: cat ./dashboard.md >> $GITHUB_STEP_SUMMARY
+      shell: bash
+
+    - name: Exit with Error
+      working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
+      run: |
+        if grep -q ":red_circle:" ./dashboard.md; then
+          exit 1
+        else
+          exit 0
+        fi
+      shell: bash
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: test-plans-output
+        path: |
+          ${{ steps.find-workdir.outputs.WORK_DIR }}/results.csv
+          ${{ steps.find-workdir.outputs.WORK_DIR }}/dashboard.md
