@@ -1,4 +1,4 @@
-image_name := rust-v0.51
+image_name := rust-relay-v0.51
 
 all: image.json
 
