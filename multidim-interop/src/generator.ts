@@ -33,11 +33,14 @@ export async function buildTestSpecs(versions: Array<Version>): Promise<Array<Co
     await Promise.all(
         versions.flatMap(version => {
             return [
-                db.exec(`INSERT INTO transports (id, transport, onlyDial)
-                VALUES ${version.transports.map(normalizeTransport).map(transport => `("${version.id}", "${transport.name}", ${transport.onlyDial})`).join(", ")};`),
+                (version.transports.length > 0 ?
+                    db.exec(`INSERT INTO transports (id, transport, onlyDial)
+                VALUES ${version.transports.map(normalizeTransport).map(transport => `("${version.id}", "${transport.name}", ${transport.onlyDial})`).join(", ")};`) : []),
+
                 (version.secureChannels.length > 0 ?
                     db.exec(`INSERT INTO secureChannels (id, sec)
                 VALUES ${version.secureChannels.map(sec => `("${version.id}", "${sec}")`).join(", ")};`) : []),
+
                 (version.muxers.length > 0 ?
                     db.exec(`INSERT INTO muxers (id, muxer)
                 VALUES ${version.muxers.map(muxer => `("${version.id}", "${muxer}")`).join(", ")};`) : []),
