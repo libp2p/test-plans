@@ -46,14 +46,14 @@ export const versions: Array<Version> = [
     {
         id: "js-v0.41.0",
         containerImageID: jsV041.imageID,
-        transports: ["tcp", "ws", "wss"],
+        transports: ["tcp", "ws", { name: "wss", onlyDial: true }],
         secureChannels: ["noise"],
         muxers: ["mplex", "yamux"],
     },
     {
         id: "js-v0.42.0",
         containerImageID: jsV042.imageID,
-        transports: ["tcp", "ws", "wss"],
+        transports: ["tcp", "ws", { name: "wss", onlyDial: true }],
         secureChannels: ["noise"],
         muxers: ["mplex", "yamux"],
     },
