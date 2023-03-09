@@ -3,7 +3,6 @@ module github.com/libp2p/test-plans/multidim-interop/go/relay/m/2
 go 1.19
 
 require (
-	github.com/go-redis/redis/v8 v8.11.5
 	github.com/libp2p/go-libp2p v0.25.1
 	github.com/multiformats/go-multiaddr v0.8.0
 )
@@ -16,7 +15,6 @@ require (
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
 	github.com/davidlazar/go-crypto v0.0.0-20200604182044-b73af7476f6c // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.1.0 // indirect
-	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/elastic/gosigar v0.14.2 // indirect
 	github.com/flynn/noise v1.0.0 // indirect
