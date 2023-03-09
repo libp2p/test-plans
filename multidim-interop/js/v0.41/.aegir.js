@@ -9,6 +9,12 @@ const redis_addr = process.env.redis_addr || 'redis:6379'
 /** @type {import('aegir/types').PartialOptions} */
 export default {
   test: {
+    browser: {
+      config: {
+        // Ignore self signed certificates
+        browserContextOptions: { ignoreHTTPSErrors: true }
+      }
+    },
     async before() {
       const redisClient = createClient({
         url: `redis://${redis_addr}`
