@@ -11,15 +11,16 @@ its capabilities along with the id of its container image.
 The implementation is run in a container and is passed parameters via
 environment variables. The current parameters are:
 
-| Name                 | Description                                                  | Is Optional                                                     |
-| -------------------- | ------------------------------------------------------------ | --------------------------------------------------------------- |
-| transport            | The transport to use                                         | no                                                              |
-| muxer                | The muxer to use                                             | no, except when transport is one of quic, quic-v1, webtransport |
-| security             | The security channel to use                                  | no, except when transport is one of quic, quic-v1, webtransport |
-| is_dialer            | Should you dial or listen                                    | no                                                              |
-| ip                   | IP address to bind the listener to                           | yes, default to "0.0.0.0"                                       |
-| redis_addr           | A different address to connect to redis (default redis:6379) | yes, default to the `redis` host on port 6379                   |
-| test_timeout_seconds | Control the timeout of test.                                 | yes, default to 180 seconds.                                    |
+| Name                 | Description                                                  | Is Optional                                                         |
+| -------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------- |
+| transport            | The transport to use                                         | no                                                                  |
+| muxer                | The muxer to use                                             | no, except when transport is one of quic, quic-v1, webtransport     |
+| security             | The security channel to use                                  | no, except when transport is one of quic, quic-v1, webtransport     |
+| is_dialer            | Should you dial or listen                                    | no                                                                  |
+| ip                   | IP address to bind the listener to                           | yes, default to "0.0.0.0"                                           |
+| redis_addr           | A different address to connect to redis (default redis:6379) | yes, default to the `redis` host on port 6379                       |
+| test_timeout_seconds | Control the timeout of test.                                 | yes, default to 180 seconds.                                        |
+| relay_addr           | Multiaddr for the relay                                      | yes, only passed in when `addRelay` is set to true in the transport |
 
 The test should do two different things depending on if it's the dialer or
 listener.
