@@ -17,7 +17,7 @@ export type Version = {
     containerImageID: string,
     // If defined, this will increase the timeout for tests using this version
     timeoutSecs?: number,
-    transports: Array<(string | { name: string, onlyDial: boolean })>,
+    transports: Array<(string | { name: string, onlyDial: boolean, addRelay?: boolean })>,
     secureChannels: string[],
     muxers: string[]
 }
@@ -75,7 +75,7 @@ export const versions: Array<Version> = [
     {
         id: "chromium-js-v0.42.0",
         containerImageID: chromiumJsV042.imageID,
-        transports: [{ name: "webtransport", onlyDial: true }, { name: "webrtc", onlyDial: true }, { name: "wss", onlyDial: true }],
+        transports: [{ name: "webtransport", onlyDial: true }, { name: "webrtc", onlyDial: true }, { name: "wss", onlyDial: true }, { name: "webrtc-private-to-private", onlyDial: false, addRelay: true }],
         secureChannels: ["noise"],
         muxers: ["mplex", "yamux"]
     },
