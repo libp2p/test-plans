@@ -2,20 +2,45 @@ import sqlite3 from "sqlite3";
 import { open } from "sqlite";
 import { Version } from "../versions";
 import { ComposeSpecification } from "../compose-spec/compose-spec";
+import relayId from "../go/relay/image.json"
 
-function buildExtraEnv(timeoutOverride: { [key: string]: number }, test1ID: string, test2ID: string): { [key: string]: string } {
-    const maxTimeout = Math.max(timeoutOverride[test1ID] || 0, timeoutOverride[test2ID] || 0)
-    return maxTimeout > 0 ? { "test_timeout_seconds": maxTimeout.toString(10) } : {}
+// The peer id is hardcoded to be generated from a 0 seed.
+const hardCodedRelayAddr = "/dns4/relay/tcp/4003/ws/p2p/12D3KooWDpJ7As7BWAwRMfu1VU2WCqNjvq387JEYKDBj4kx6nXTN"
+
+function needsRelay(addRelayMeta: AddRelayMeta, versionId: string, transport: string): boolean {
+    return addRelayMeta[versionId] && addRelayMeta[versionId].has(transport)
 }
+
+function buildExtraEnv(timeoutOverride: { [key: string]: number }, addRelayMeta: AddRelayMeta, test1ID: string, test2ID: string, transport: string): { [key: string]: string } {
+    const maxTimeout = Math.max(timeoutOverride[test1ID] || 0, timeoutOverride[test2ID] || 0)
+    let extraEnv = maxTimeout > 0 ? { "test_timeout_seconds": maxTimeout.toString(10) } : {}
+    if (needsRelay(addRelayMeta, test1ID, transport) || needsRelay(addRelayMeta, test2ID, transport)) {
+        extraEnv["relay_addr"] = hardCodedRelayAddr
+    }
+    return extraEnv
+}
+
+type AddRelayMeta = { [versionId: string]: Set<string> }
 
 export async function buildTestSpecs(versions: Array<Version>): Promise<Array<ComposeSpecification>> {
     const containerImages: { [key: string]: string } = {}
     const timeoutOverride: { [key: string]: number } = {}
+    const addRelayMeta: AddRelayMeta = {}
     versions.forEach(v => containerImages[v.id] = v.containerImageID)
     versions.forEach(v => {
         if (v.timeoutSecs) {
             timeoutOverride[v.id] = v.timeoutSecs
         }
+    })
+    versions.forEach(v => {
+        v.transports.forEach(t => {
+            if (typeof t === "object" && t.addRelay === true) {
+                if (!addRelayMeta[v.id]) {
+                    addRelayMeta[v.id] = new Set()
+                }
+                addRelayMeta[v.id].add(t.name)
+            }
+        })
     })
 
     sqlite3.verbose();
@@ -102,8 +127,8 @@ export async function buildTestSpecs(versions: Array<Version>): Promise<Array<Co
             transport: test.transport,
             muxer: test.muxer,
             security: test.sec,
-            extraEnv: buildExtraEnv(timeoutOverride, test.id1, test.id2)
-        })
+            extraEnv: buildExtraEnv(timeoutOverride, addRelayMeta, test.id1, test.id2, test.transport)
+        }, addRelayMeta)
     )).concat(
         quicQueryResults
             .concat(quicV1QueryResults)
@@ -113,21 +138,22 @@ export async function buildTestSpecs(versions: Array<Version>): Promise<Array<Co
                 dialerID: test.id1,
                 listenerID: test.id2,
                 transport: test.transport,
-                extraEnv: buildExtraEnv(timeoutOverride, test.id1, test.id2)
-            })))
+                extraEnv: buildExtraEnv(timeoutOverride, addRelayMeta, test.id1, test.id2, test.transport)
+            }, addRelayMeta)))
         .concat(webrtcQueryResults
             .map((test): ComposeSpecification => buildSpec(containerImages, {
                 name: `${test.id1} x ${test.id2} (${test.transport})`,
                 dialerID: test.id1,
                 listenerID: test.id2,
                 transport: test.transport,
-                extraEnv: buildExtraEnv(timeoutOverride, test.id1, test.id2)
-            })))
+                extraEnv: buildExtraEnv(timeoutOverride, addRelayMeta, test.id1, test.id2, test.transport)
+            }, addRelayMeta)))
 
     return testSpecs
 }
 
-function buildSpec(containerImages: { [key: string]: string }, { name, dialerID, listenerID, transport, muxer, security, extraEnv }: { name: string, dialerID: string, listenerID: string, transport: string, muxer?: string, security?: string, extraEnv?: { [key: string]: string } }): ComposeSpecification {
+function buildSpec(containerImages: { [key: string]: string }, { name, dialerID, listenerID, transport, muxer, security, extraEnv }: { name: string, dialerID: string, listenerID: string, transport: string, muxer?: string, security?: string, extraEnv?: { [key: string]: string } }, addRelayMeta: AddRelayMeta): ComposeSpecification {
+    const eitherNeedsRelay = needsRelay(addRelayMeta, dialerID, transport) || needsRelay(addRelayMeta, listenerID, transport)
     return {
         name,
         services: {
@@ -164,12 +190,13 @@ function buildSpec(containerImages: { [key: string]: string }, { name, dialerID,
                 image: "redis:7-alpine",
                 environment: {
                     REDIS_ARGS: "--loglevel warning"
-                }
-            }
+                },
+            },
+            ...(eitherNeedsRelay ? { relay: { image: relayId.imageID } } : {})
         }
     }
 }
 
-function normalizeTransport(transport: string | { name: string, onlyDial: boolean }): { name: string, onlyDial: boolean } {
-    return typeof transport === "string" ? { name: transport, onlyDial: false } : transport
+function normalizeTransport(transport: string | { name: string, onlyDial: boolean }): { name: string, onlyDial: boolean, addRelay?: boolean } {
+    return typeof transport === "string" ? { name: transport, onlyDial: false, addRelay: false } : transport
 }
