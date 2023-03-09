@@ -47,8 +47,6 @@ func makeRelayV1() host.Host {
 		panic(err)
 	}
 
-	// fmt.Println(host.Mux().Protocols())
-
 	for _, addr := range host.Addrs() {
 		a, err := ma.NewMultiaddr(fmt.Sprintf("/p2p/%s", host.ID().Pretty()))
 		if err != nil {
