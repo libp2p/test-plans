@@ -6,11 +6,12 @@ import { createLibp2p, Libp2pOptions } from 'libp2p'
 import { webTransport } from '@libp2p/webtransport'
 import { tcp } from '@libp2p/tcp'
 import { webSockets } from '@libp2p/websockets'
+import * as filters from "@libp2p/websockets/filters"
 import { noise } from '@chainsafe/libp2p-noise'
 import { mplex } from '@libp2p/mplex'
 import { yamux } from '@chainsafe/libp2p-yamux'
 import { multiaddr } from '@multiformats/multiaddr'
-import { webRTC } from '@libp2p/webrtc'
+import { webRTC, webRTCDirect } from '@libp2p/webrtc'
 
 async function redisProxy(commands: any[]): Promise<any> {
   const res = await fetch(`http://localhost:${process.env.proxyPort}/`, { body: JSON.stringify(commands), method: "POST" })
@@ -20,12 +21,15 @@ async function redisProxy(commands: any[]): Promise<any> {
   return await res.json()
 }
 
+const CIRCUIT_RELAY_CODE = 290
+
 describe('ping test', () => {
   it('should ping', async () => {
     const TRANSPORT = process.env.transport
     const SECURE_CHANNEL = process.env.security
     const MUXER = process.env.muxer
     const isDialer = process.env.is_dialer === "true"
+    const relayAddr = process.env.relay_addr ?? ""
     const IP = process.env.ip || "0.0.0.0"
     const timeoutSecs: string = process.env.test_timeout_secs || "180"
 
@@ -50,6 +54,20 @@ describe('ping test', () => {
         options.transports = [webRTC()]
         options.addresses = {
           listen: isDialer ? [] : [`/ip4/${IP}/udp/0/webrtc`]
+        }
+        break
+      case 'webrtc-private-to-private':
+        options.transports = [
+          webSockets({
+            filter: filters.all,
+          }),
+          webRTCDirect({}),
+        ]
+        options.relay = {
+          enabled: true,
+          autoRelay: {
+            enabled: true,
+          },
         }
         break
       case 'ws':
@@ -118,7 +136,6 @@ describe('ping test', () => {
         // - https://github.com/multiformats/js-multiaddr/pull/312 
         // - https://github.com/multiformats/js-multiaddr-to-uri/pull/120
         otherMa = otherMa.replace("/tls/ws", "/wss")
-        otherMa = otherMa.replace("/ip4/192.168.5.124", "/dns4/localhost")
 
         console.error(`node ${node.peerId} pings: ${otherMa}`)
         const handshakeStartInstant = Date.now()
@@ -130,7 +147,37 @@ describe('ping test', () => {
           pingRTTMilllis: pingRTT
         }))
       } else {
-        const multiaddrs = node.getMultiaddrs().map(ma => ma.toString()).filter(maString => !maString.includes("127.0.0.1"))
+        let multiaddrs = node.getMultiaddrs().map(ma => ma.toString()).filter(maString => !maString.includes("127.0.0.1"))
+
+        if (TRANSPORT === "webrtc-private-to-private") {
+          // Connect to relay node
+          await node.dial(multiaddr(relayAddr))
+
+          // wait for the relay to be ready
+          multiaddrs = [await new Promise((resolve) => {
+            node.peerStore.addEventListener("change:multiaddrs", (event) => {
+              const { peerId } = event.detail
+
+              if (node.getMultiaddrs().length === 0 || !node.peerId.equals(peerId)) {
+                return
+              }
+
+              for (const ma of node.getMultiaddrs()) {
+                if (ma.protoCodes().includes(CIRCUIT_RELAY_CODE)) {
+                  const newWebrtcDirectAddress = multiaddr(ma.encapsulate(
+                    multiaddr(`/webrtc-w3c/p2p/${node.peerId}`)
+                  ))
+                  resolve(newWebrtcDirectAddress.toString())
+                  return
+                }
+              }
+            })
+          })]
+        }
+
+        if (multiaddrs.length === 0) {
+          throw new Error("No multiaddrs found")
+        }
         console.error("My multiaddrs are", multiaddrs)
         // Send the listener addr over the proxy server so this works on both the Browser and Node
         await redisProxy(["RPUSH", "listenerAddr", multiaddrs[0]])
