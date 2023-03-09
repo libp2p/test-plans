@@ -6,6 +6,7 @@ import { createLibp2p, Libp2pOptions } from 'libp2p'
 import { webTransport } from '@libp2p/webtransport'
 import { tcp } from '@libp2p/tcp'
 import { webSockets } from '@libp2p/websockets'
+import * as filters from "@libp2p/websockets/filters"
 import { noise } from '@chainsafe/libp2p-noise'
 import { mplex } from '@libp2p/mplex'
 import { yamux } from '@chainsafe/libp2p-yamux'
@@ -53,7 +54,7 @@ describe('ping test', () => {
         }
         break
       case 'ws':
-        options.transports = [webSockets()]
+        options.transports = [webSockets({ filter: filters.all })]
         options.addresses = {
           listen: isDialer ? [] : [`/ip4/${IP}/tcp/0/ws`]
         }
