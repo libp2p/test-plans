@@ -132,7 +132,6 @@ function buildSpec(containerImages: { [key: string]: string }, { name, dialerID,
         name,
         services: {
             dialer: {
-                init: true,
                 image: containerImages[dialerID],
                 depends_on: ["redis"],
                 environment: {
