@@ -12,7 +12,7 @@ inputs:
   s3-cache-bucket:
     description: "Which S3 bucket to use for container layer caching"
     required: false
-    default: ""
+    default: "libp2p-by-tf-aws-bootstrap" # Default public cache
   s3-access-key-id:
     description: "S3 Access key id for the cache"
     required: false
@@ -41,7 +41,6 @@ runs:
       run: |
         echo "READ_ONLY_CACHE=true" >> $GITHUB_ENV
       shell: bash
-
     - name: Configure AWS credentials for S3 build cache
       if: inputs.s3-access-key-id != '' && inputs.s3-secret-access-key != ''
       uses: aws-actions/configure-aws-credentials@v1
@@ -49,6 +48,12 @@ runs:
         aws-access-key-id: ${{ inputs.s3-access-key-id }}
         aws-secret-access-key: ${{ inputs.s3-secret-access-key}}
         aws-region: ${{ env.AWS_REGION }}
+
+    - name: Fallback to public cache
+      if: inputs.s3-access-key-id == '' && inputs.s3-secret-access-key == '' && inputs.s3-cache-bucket == 'libp2p-by-tf-aws-bootstrap' # No keys, but using default public cache
+      shell: bash
+      run: |
+        echo "READ_ONLY_CACHE=true" >> $GITHUB_ENV
 
     # This depends on where this file is within this repository. This walks up
     # from here to the multidim-interop folder
