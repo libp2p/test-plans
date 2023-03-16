@@ -49,16 +49,6 @@ runs:
         aws-secret-access-key: ${{ inputs.s3-secret-access-key}}
         aws-region: ${{ env.AWS_REGION }}
 
-    - name: Fallback to public cache
-      if: inputs.s3-access-key-id == '' && inputs.s3-secret-access-key == '' && inputs.s3-cache-bucket == 'libp2p-by-tf-aws-bootstrap' # No keys, but using default public cache
-      shell: bash
-      run: |
-        echo "AWS_BUCKET=${{ inputs.s3-cache-bucket }}" >> $GITHUB_ENV
-        echo "AWS_REGION=${{ inputs.aws-region }}" >> $GITHUB_ENV
-        echo "READ_ONLY_CACHE=true" >> $GITHUB_ENV
-        echo 'AWS_ACCESS_KEY_ID=""' >> $GITHUB_ENV
-        echo 'AWS_SECRET_ACCESS_KEY=""' >> $GITHUB_ENV
-
     # This depends on where this file is within this repository. This walks up
     # from here to the multidim-interop folder
     - run: |

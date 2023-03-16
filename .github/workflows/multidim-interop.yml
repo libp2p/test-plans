@@ -17,7 +17,7 @@ jobs:
           s3-cache-bucket: libp2p-by-tf-aws-bootstrap
           s3-access-key-id: ${{ vars.S3_AWS_ACCESS_KEY_ID }}
           s3-secret-access-key: ${{ secrets.S3_AWS_SECRET_ACCESS_KEY }}
-  build-with-public-cache:
+  build-without-cache:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3

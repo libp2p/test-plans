@@ -1,5 +1,4 @@
 #!/usr/bin/env /bin/bash
-set -x
 
 CACHING_OPTIONS=""
 # If in CI and we have a defined cache bucket, use caching
