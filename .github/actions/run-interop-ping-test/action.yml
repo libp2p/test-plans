@@ -38,14 +38,6 @@ runs:
         echo "PUSH_CACHE=true" >> $GITHUB_ENV
       shell: bash
 
-    - name: Configure AWS credentials for S3 build cache
-      if: inputs.s3-access-key-id != '' && inputs.s3-secret-access-key != ''
-      uses: aws-actions/configure-aws-credentials@v1
-      with:
-        aws-access-key-id: ${{ inputs.s3-access-key-id }}
-        aws-secret-access-key: ${{ inputs.s3-secret-access-key}}
-        aws-region: ${{ inputs.aws-region }}
-
     # This depends on where this file is within this repository. This walks up
     # from here to the multidim-interop folder
     - run: |
@@ -88,6 +80,11 @@ runs:
     - name: Push the image cache
       if: env.PUSH_CACHE == 'true'
       working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
+      env:
+        AWS_BUCKET: ${{ inputs.s3-cache-bucket }}
+        AWS_REGION: ${{ inputs.aws-region }}
+        AWS_ACCESS_KEY_ID: ${{ inputs.s3-access-key-id }}
+        AWS_SECRET_ACCESS_KEY: ${{ inputs.s3-secret-access-key }}
       run: npm run cache -- push
       shell: bash
 
