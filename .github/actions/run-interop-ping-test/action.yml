@@ -58,9 +58,22 @@ runs:
       with:
         node-version: 18
 
+    # Existence of /etc/buildkit/buildkitd.toml indicates that this is a
+    # self-hosted runner. If so, we need to pass the config to the buildx
+    # action. The config enables docker.io proxy which is required to
+    # work around docker hub rate limiting.
+    - run: |
+        if test -f /etc/buildkit/buildkitd.toml; then
+          echo "config=/etc/buildkit/buildkitd.toml" >> $GITHUB_OUTPUT
+        fi
+      shell: bash
+      id: buildkit
+
     - name: Set up Docker Buildx
       id: buildx
       uses: docker/setup-buildx-action@v2
+      with:
+        config: ${{ steps.buildkit.outputs.config }}
 
     - name: Install deps
       working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
