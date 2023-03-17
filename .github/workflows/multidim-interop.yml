@@ -9,7 +9,7 @@ name: libp2p multidimensional interop test
 
 jobs:
   run-multidim-interop:
-    runs-on: ubuntu-latest
+    runs-on: ['self-hosted', 'linux', 'x64', 'test-plans'] # https://github.com/pl-strflt/tf-aws-gh-runner/blob/44a36598d121770aed5329d7458e80da2f8933cb/runners.tf#L28
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/run-interop-ping-test
