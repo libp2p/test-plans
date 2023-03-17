@@ -25,15 +25,13 @@ inputs:
     description: "Which AWS region to use"
     required: false
     default: "us-east-1"
+  worker-count:
+    description: "How many workers to use for the test"
+    required: false
+    default: "2"
 runs:
   using: "composite"
   steps:
-    - if: inputs.s3-access-key-id != '' && inputs.s3-secret-access-key != ''
-      run: |
-        echo "AWS_BUCKET=${{ inputs.s3-cache-bucket }}" >> $GITHUB_ENV
-        echo "AWS_REGION=${{ inputs.aws-region }}" >> $GITHUB_ENV
-      shell: bash
-
     - name: Configure AWS credentials for S3 build cache
       if: inputs.s3-access-key-id != '' && inputs.s3-secret-access-key != ''
       run: |
@@ -46,12 +44,12 @@ runs:
       with:
         aws-access-key-id: ${{ inputs.s3-access-key-id }}
         aws-secret-access-key: ${{ inputs.s3-secret-access-key}}
-        aws-region: ${{ env.AWS_REGION }}
+        aws-region: ${{ inputs.aws-region }}
 
     # This depends on where this file is within this repository. This walks up
     # from here to the multidim-interop folder
     - run: |
-        WORK_DIR=$(realpath "${{ github.action_path }}/../../../multidim-interop")
+        WORK_DIR=$(realpath "$GITHUB_ACTION_PATH/../../../multidim-interop")
         echo "WORK_DIR=$WORK_DIR" >> $GITHUB_OUTPUT
       shell: bash
       id: find-workdir
@@ -82,7 +80,11 @@ runs:
 
     - name: Run the test
       working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
-      run: WORKER_COUNT=2 npm run test -- --extra-version=${{ inputs.extra-versions }} --name-filter=${{ inputs.test-filter }}
+      env:
+        WORKER_COUNT: ${{ inputs.worker-count }}
+        EXTRA_VERSION: ${{ inputs.extra-versions }}
+        NAME_FILTER: ${{ inputs.test-filter }}
+      run: npm run test -- --extra-version=$EXTRA_VERSION --name-filter=$NAME_FILTER
       shell: bash
 
     - name: Print the results
