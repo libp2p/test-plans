@@ -1,0 +1,75 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$ref": "#/definitions/BenchmarkResults",
+  "definitions": {
+    "BenchmarkResults": {
+      "type": "object",
+      "properties": {
+        "benchmarks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Benchmark"
+          }
+        },
+        "$schema": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "benchmarks"
+      ],
+      "additionalProperties": false
+    },
+    "Benchmark": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "unit": {
+          "type": "string",
+          "enum": [
+            "bits/s",
+            "s"
+          ]
+        },
+        "results": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Result"
+          }
+        }
+      },
+      "required": [
+        "name",
+        "unit",
+        "results"
+      ],
+      "additionalProperties": false
+    },
+    "Result": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "type": "string"
+        },
+        "implementation": {
+          "type": "string"
+        },
+        "transportStack": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "result",
+        "implementation",
+        "transportStack",
+        "version"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

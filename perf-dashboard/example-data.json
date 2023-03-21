@@ -1,0 +1,47 @@
+{
+    "$schema": "./benchmarks.schema.json",
+    "benchmarks": [
+        {
+            "name": "Single Connection throughput – Upload",
+            "unit": "bits/s",
+            "results": [
+                {
+                    "result": "1234",
+                    "implementation": "go-libp2p",
+                    "transportStack": "quic-v1",
+                    "version": "v0.26.2"
+                },
+                {
+                    "result": "4567",
+                    "implementation": "go-libp2p",
+                    "transportStack": "quic-v1",
+                    "version": "v0.50.0"
+                },
+                {
+                    "result": "1000000",
+                    "implementation": "zig-libp2p",
+                    "transportStack": "quic-v1",
+                    "version": "v0.0.1"
+                }
+            ]
+        },
+        {
+            "name": "Single Connection 1 byte round trip latency",
+            "unit": "s",
+            "results": [
+                {
+                    "result": "0.022",
+                    "implementation": "go-libp2p",
+                    "transportStack": "quic-v1",
+                    "version": "v0.26.2"
+                },
+                {
+                    "result": "0.012",
+                    "implementation": "rust-libp2p",
+                    "transportStack": "quic-v1",
+                    "version": "v0.50.0"
+                }
+            ]
+        }
+    ]
+}
