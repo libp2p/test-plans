@@ -24,3 +24,7 @@ We have to be careful to compare apples to apples. A raw iperf number might be
 confusing here because no application will ever hit those numbers since they
 will at least want some encryption in their connection. I would suggest not
 having this or an HTTP comparison. Having HTTPS might be okay.
+
+# Example dashboard
+
+https://observablehq.com/@realmarcopolo/libp2p-perf
