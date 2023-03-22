@@ -28,3 +28,8 @@ having this or an HTTP comparison. Having HTTPS might be okay.
 # Example dashboard
 
 https://observablehq.com/@realmarcopolo/libp2p-perf
+
+The dashboard automatically pulls data from this repo to display it.
+
+It currently pulls example-data.json. The schema of this data is defined in
+`benchmarks.schema.json` and `benchmark-result-type.ts`.
