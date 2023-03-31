@@ -8,6 +8,7 @@ import { ComposeSpecification, PropertiesServices } from "../compose-spec/compos
 import { stringify } from 'yaml';
 
 const exec = util.promisify(execStd);
+const timeoutSecs = 3 * 60
 
 export type RunOpts = {
     up: {
@@ -43,14 +44,11 @@ export async function run(namespace: string, compose: ComposeSpecification, opts
     }
 
     try {
-        const timeoutSecs = 3 * 60
-        let timeoutId
-        const { stdout, stderr } =
-            (await Promise.race([
-                exec(`docker compose -f ${path.join(dir, "compose.yaml")} up ${upFlags.join(" ")}`),
-                // Timeout - uses any type because this will only reject the promise.
-                new Promise<any>((resolve, reject) => { timeoutId = setTimeout(() => reject("Timeout"), 1000 * timeoutSecs) })
-            ]))
+        const timeoutId = setTimeout(() => controller.abort(), 1000 * timeoutSecs)
+
+        const controller = new AbortController();
+        const { signal } = controller;
+        const { stdout, stderr } = await exec(`docker compose -f ${path.join(dir, "compose.yaml")} up ${upFlags.join(" ")}`, { signal })
         clearTimeout(timeoutId)
         const testResults = stdout.match(/.*dialer.*({.*)/)
         if (testResults === null || testResults.length < 2) {
