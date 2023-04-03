@@ -44,9 +44,8 @@ export async function run(namespace: string, compose: ComposeSpecification, opts
     }
 
     try {
-        const timeoutId = setTimeout(() => controller.abort(), 1000 * timeoutSecs)
-
         const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 1000 * timeoutSecs)
         const { signal } = controller;
         const { stdout, stderr } = await exec(`docker compose -f ${path.join(dir, "compose.yaml")} up ${upFlags.join(" ")}`, { signal })
         clearTimeout(timeoutId)
