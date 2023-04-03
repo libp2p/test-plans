@@ -75,7 +75,7 @@ CACHING_OPTIONS=""
 
 docker buildx build \
     --load \
-    -t $IMAGE_NAME $CACHING_OPTIONS "$REST_ARGS" $BUILD_CONTEXT
+    -t $IMAGE_NAME $CACHING_OPTIONS $REST_ARGS $BUILD_CONTEXT
 
 # If we're in CI, let's save the image to S3
 # Check if CI is set, and if we have an S3 bucket defined
