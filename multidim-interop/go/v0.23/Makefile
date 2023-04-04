@@ -1,3 +1,4 @@
+SHELL := /usr/bin/env bash
 imageName := go-v0.23
 
 cacheKey=${shell git ls-files  | tr "\n" " " | xargs ../../helpers/hashFiles.sh}

@@ -1,3 +1,4 @@
+SHELL := /usr/bin/env bash
 imageName := rust-v0.50
 commitSha := beb66b5832384d9b813fcbf1f0fa01e6a64a9c5f
 cacheKey := ${commitSha}

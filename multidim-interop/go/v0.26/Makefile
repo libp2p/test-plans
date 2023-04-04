@@ -1,3 +1,4 @@
+SHELL := /usr/bin/env bash
 imageName := go-v0.26
 commitSha := 59a14cf3194d5d057c45cb1dbc7b1af3a116bc7a
 cacheKey := ${commitSha}

@@ -1,3 +1,4 @@
+SHELL := /usr/bin/env bash
 imageName := nim-v1.0
 commitSha := 408dcf12bdf44dcd6f9021a6c795c472679d6d02
 cacheKey := ${commitSha}

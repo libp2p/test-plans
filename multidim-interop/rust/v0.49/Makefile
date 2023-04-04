@@ -1,4 +1,5 @@
-image_name := rust-v0.49
+SHELL := /usr/bin/env bash
+imageName := rust-v0.49
 commitSha := 582c84043050eb0dd6e52d1bd0527175181d41cb
 cacheKey := ${commitSha}
 shouldUseCache := ${shell IMAGE_NAME=${imageName} CACHE_KEY=${cacheKey} ../../helpers/shouldUseCache.sh}
