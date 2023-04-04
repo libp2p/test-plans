@@ -16,3 +16,5 @@ if docker image inspect $IMAGE_NAME -f "{{.Id}}" &> /dev/null; then
 fi
 
 curl --fail --head https://s3.amazonaws.com/$AWS_BUCKET/imageCache/$BUILD_CACHE_KEY.tar.gz &> /dev/null
+# We need to echo something so that Make sees this as a target
+echo $BUILD_CACHE_KEY
