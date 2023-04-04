@@ -15,4 +15,4 @@ if docker image inspect $IMAGE_NAME -f "{{.Id}}" &> /dev/null; then
     exit 1;
 fi
 
-curl --fail-with-body --head https://s3.amazonaws.com/$AWS_BUCKET/imageCache/$BUILD_CACHE_KEY.tar.gz &> /dev/null
+curl --fail --head https://s3.amazonaws.com/$AWS_BUCKET/imageCache/$BUILD_CACHE_KEY.tar.gz &> /dev/null
