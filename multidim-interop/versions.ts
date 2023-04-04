@@ -40,14 +40,14 @@ export const versions: Array<Version> = [
     {
         id: "rust-v0.50.0",
         containerImageID: rustv050.imageID,
-        transports: ["ws", "tcp", "quic-v1", "webrtc"],
+        transports: ["ws", "tcp", "quic-v1"],
         secureChannels: ["tls", "noise"],
         muxers: ["mplex", "yamux"],
     },
     {
         id: "rust-v0.51.0",
         containerImageID: rustv051.imageID,
-        transports: ["ws", "tcp", "quic-v1", "webrtc"],
+        transports: ["ws", "tcp", "quic-v1"],
         secureChannels: ["tls", "noise"],
         muxers: ["mplex", "yamux"],
     },
@@ -68,14 +68,14 @@ export const versions: Array<Version> = [
     {
         id: "chromium-js-v0.41.0",
         containerImageID: chromiumJsV041.imageID,
-        transports: [{ name: "webtransport", onlyDial: true }, { name: "webrtc", onlyDial: true }],
+        transports: [{ name: "webtransport", onlyDial: true }],
         secureChannels: [],
         muxers: []
     },
     {
         id: "chromium-js-v0.42.0",
         containerImageID: chromiumJsV042.imageID,
-        transports: [{ name: "webtransport", onlyDial: true }, { name: "webrtc", onlyDial: true }, { name: "wss", onlyDial: true }],
+        transports: [{ name: "webtransport", onlyDial: true }, { name: "wss", onlyDial: true }],
         secureChannels: ["noise"],
         muxers: ["mplex", "yamux"]
     },
