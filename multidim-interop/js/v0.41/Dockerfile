@@ -4,7 +4,7 @@ FROM mcr.microsoft.com/playwright
 
 WORKDIR /app
 
-COPY package*.json .
+COPY package*.json ./
 
 RUN npm ci
 
