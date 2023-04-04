@@ -14,8 +14,8 @@ image.json:
 	docker image inspect ${imageName} -f "{{.Id}}" | \
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
 else
-image.json: main.nim nim-libp2p Dockerfile
-	docker build -t ${imageName} .
+image.json: rust-libp2p-${commitSha}
+	cd rust-libp2p-${commitSha} && docker build -f interop-tests/Dockerfile -t ${imageName} .
 	docker image inspect ${imageName} -f "{{.Id}}" | \
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
 	# If we're in CI, save the cache
