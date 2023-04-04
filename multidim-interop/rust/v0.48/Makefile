@@ -1,12 +1,25 @@
 image_name := rust-v0.48
 commitSha := 7b3047d6d05d599f11f05938d4257e70de66ac12
+cacheKey := ${commitSha}
+shouldUseCache := ${shell IMAGE_NAME=${imageName} CACHE_KEY=${cacheKey} ../../helpers/shouldUseCache.sh}
 
 all: image.json
 
-image.json: rust-libp2p-${commitSha}
-	cd rust-libp2p-${commitSha} && IMAGE_NAME=${image_name} ../../../dockerBuildWrapper.sh -f interop-tests/Dockerfile .
-	docker image inspect ${image_name} -f "{{.Id}}" | \
+ifneq (${shouldUseCache},)
+# We have a cached image, let's use it
+image.json:
+	echo "Using cached image ${shouldUseCache} f"
+	CACHE_KEY=${cacheKey} IMAGE_NAME=${imageName} ../../helpers/tryLoadCache.sh
+	docker image inspect ${imageName} -f "{{.Id}}" | \
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
+else
+image.json: main.nim nim-libp2p Dockerfile
+	docker build -t ${imageName} .
+	docker image inspect ${imageName} -f "{{.Id}}" | \
+		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
+	# If we're in CI, save the cache
+	if [[ -n "$${CI:-}" ]]; then IMAGE_NAME=${imageName} CACHE_KEY=${cacheKey} ../../helpers/saveCache.sh; fi
+endif
 
 rust-libp2p-${commitSha}: rust-libp2p-${commitSha}.zip
 	unzip -o rust-libp2p-${commitSha}.zip

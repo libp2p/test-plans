@@ -1,16 +1,15 @@
-image_name := js-v0.42
+imageName := js-v0.42
 TEST_SOURCES := $(wildcard test/*.ts)
 
-all: chromium-image.json node-image.json
+all: node-${imageName}-image.json chromium-${imageName}-image.json
 
-chromium-image.json: ChromiumDockerfile $(TEST_SOURCES) package.json package-lock.json .aegir.js
-	IMAGE_NAME=chromium-${image_name} ../../dockerBuildWrapper.sh -f ChromiumDockerfile .
-	docker image inspect chromium-${image_name} -f "{{.Id}}" | \
-		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
 
-node-image.json: Dockerfile $(TEST_SOURCES) package.json package-lock.json .aegir.js
-	IMAGE_NAME=node-${image_name} ../../dockerBuildWrapper.sh -f Dockerfile .
-	docker image inspect node-${image_name} -f "{{.Id}}" | \
+node-${imageName}-image.json: Dockerfile $(TEST_SOURCES) package.json package-lock.json .aegir.js
+	PATH=$$PATH:../../node_modules/.bin ./build.ts node-${imageName}
+
+chromium-${imageName}-image.json: ChromiumDockerfile $(TEST_SOURCES) node-${imageName}-image.json
+	docker build -t chromium-${imageName} -f ChromiumDockerfile --build-arg="BASE_IMAGE=node-${imageName}" .
+	docker image inspect chromium-${imageName} -f "{{.Id}}" | \
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
 
 .PHONY: clean

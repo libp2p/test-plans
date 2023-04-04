@@ -1,12 +1,26 @@
-image_name := nim-v1.0
+imageName := nim-v1.0
 commitSha := 408dcf12bdf44dcd6f9021a6c795c472679d6d02
+cacheKey := ${commitSha}
+shouldUseCache := ${shell IMAGE_NAME=${imageName} CACHE_KEY=${cacheKey} ../../helpers/shouldUseCache.sh}
 
 all: image.json
 
-image.json: main.nim nim-libp2p Dockerfile
-	IMAGE_NAME=${image_name} ../../dockerBuildWrapper.sh .
-	docker image inspect ${image_name} -f "{{.Id}}" | \
+ifneq (${shouldUseCache},)
+# We have a cached image, let's use it
+image.json:
+	echo "Using cached image ${shouldUseCache} f"
+	CACHE_KEY=${cacheKey} IMAGE_NAME=${imageName} ../../helpers/tryLoadCache.sh
+	docker image inspect ${imageName} -f "{{.Id}}" | \
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
+else
+image.json: main.nim nim-libp2p Dockerfile
+	docker build -t ${imageName} .
+	docker image inspect ${imageName} -f "{{.Id}}" | \
+		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
+	# If we're in CI, save the cache
+	if [[ -n "$${CI:-}" ]]; then IMAGE_NAME=${imageName} CACHE_KEY=${cacheKey} ../../helpers/saveCache.sh; fi
+endif
+
 
 main.nim: ../mainv1.nim
 	cp ../mainv1.nim main.nim
