@@ -15,7 +15,7 @@ image.json:
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
 else
 image.json: rust-libp2p-${commitSha}
-	cd rust-libp2p-${commitSha} && docker build -f interop-tests/Dockerfile -t ${imageName} .
+	cd rust-libp2p-${commitSha} && docker buildx build -f interop-tests/Dockerfile -t ${imageName} .
 	docker image inspect ${imageName} -f "{{.Id}}" | \
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
 	# If we're in CI, save the cache
