@@ -65,7 +65,7 @@ runs:
 
     - name: Build images
       working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
-      run: make
+      run: make -j 2
       shell: bash
 
     - name: Run the test
