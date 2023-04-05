@@ -70,7 +70,7 @@ runs:
 
     - name: Run the test
       working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
-      run: WORKER_COUNT=2 npm run test -- --extra-version=${{ inputs.extra-versions }} --name-filter=${{ inputs.test-filter }}
+      run: WORKER_COUNT=4 npm run test -- --extra-version=${{ inputs.extra-versions }} --name-filter=${{ inputs.test-filter }}
       shell: bash
 
     - name: Print the results
