@@ -128,8 +128,10 @@ export async function buildTestSpecs(versions: Array<Version>): Promise<Array<Co
 }
 
 function buildSpec(containerImages: { [key: string]: string }, { name, dialerID, listenerID, transport, muxer, security, extraEnv }: { name: string, dialerID: string, listenerID: string, transport: string, muxer?: string, security?: string, extraEnv?: { [key: string]: string } }): ComposeSpecification {
+    const normalizedName = name.replace(/[^a-zA-Z0-9_-]/g, "_")
+
     return {
-        name,
+        name: normalizedName,
         services: {
             dialer: {
                 image: containerImages[dialerID],
