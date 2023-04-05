@@ -17,7 +17,7 @@ else
 image.json: go-libp2p-${commitSha}
 	cd go-libp2p-${commitSha} && docker build -t ${imageName} -f test-plans/PingDockerfile .
 	# If we're in CI, save the cache
-	if [[ -n "$${CI:-}" ]]; then IMAGE_NAME=${imageName} CACHE_KEY=${cacheKey} ../../helpers/saveCache.sh; fi
+	IMAGE_NAME=${imageName} CACHE_KEY=${cacheKey} ../../helpers/maybePushCache.sh
 	docker image inspect ${imageName} -f "{{.Id}}" | \
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
 endif

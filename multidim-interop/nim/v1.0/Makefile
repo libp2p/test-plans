@@ -19,7 +19,7 @@ image.json: main.nim nim-libp2p Dockerfile
 	docker image inspect ${imageName} -f "{{.Id}}" | \
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
 	# If we're in CI, save the cache
-	if [[ -n "$${CI:-}" ]]; then IMAGE_NAME=${imageName} CACHE_KEY=${cacheKey} ../../helpers/saveCache.sh; fi
+	IMAGE_NAME=${imageName} CACHE_KEY=${cacheKey} ../../helpers/maybePushCache.sh
 endif
 
 

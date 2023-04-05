@@ -20,10 +20,7 @@ function buildImage(imageName: string, dockerfile: string) {
     execSync(`CACHE_KEY=${cacheKey} IMAGE_NAME=${imageName} ../../helpers/tryLoadCache.sh`, { stdio: 'inherit' });
   } else {
     execSync(`docker build -t ${imageName} -f ${dockerfile} .`, { stdio: 'inherit' });
-
-    if (process.env.CI !== undefined && process.env.CI !== '') {
-      execSync(`IMAGE_NAME=${imageName} CACHE_KEY=${cacheKey} ../../helpers/saveCache.sh`, { stdio: 'inherit' });
-    }
+    execSync(`IMAGE_NAME=${imageName} CACHE_KEY=${cacheKey} ../../helpers/maybePushCache.sh`, { stdio: 'inherit' });
   }
 
   const imageHash = execSync(`docker image inspect ${imageName} -f "{{.Id}}"`).toString().trim();
