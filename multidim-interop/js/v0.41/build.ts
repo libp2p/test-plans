@@ -1,5 +1,3 @@
-#! /usr/bin/env -S ts-node-esm --skipProject -O {"module":"es2022"}
-
 import { execSync } from 'child_process';
 import * as fs from 'fs';
 
