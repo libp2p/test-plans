@@ -4,7 +4,7 @@ TEST_SOURCES := $(wildcard test/*.ts)
 all: node-${imageName}-image.json chromium-${imageName}-image.json
 
 
-node-${imageName}-image.json: Dockerfile $(TEST_SOURCES) package.json package-lock.json .aegir.js
+node-${imageName}-image.json: Dockerfile $(TEST_SOURCES) package.json package-lock.json .aegir.js build.ts
 	PATH=$$PATH:../../node_modules/.bin ./build.ts node-${imageName}
 
 chromium-${imageName}-image.json: ChromiumDockerfile $(TEST_SOURCES) node-${imageName}-image.json

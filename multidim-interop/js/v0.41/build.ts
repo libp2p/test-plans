@@ -1,9 +1,9 @@
-#! /usr/bin/env -S ts-node-esm --skipProject -O '{"module":"es2022"}'
+#! /usr/bin/env -S ts-node-esm --skipProject -O {"module":"es2022"}
 
 import { execSync } from 'child_process';
 import * as fs from 'fs';
 
-const cacheKey = execSync('git ls-files | tr "\n" " " | xargs ../../helpers/hashFiles.sh').toString().trim();
+const cacheKey = execSync('find . -type f | sort | grep -v image.json | grep -v ./dist/ |  tr "\n" " " | xargs ../../helpers/hashFiles.sh').toString().trim();
 
 function shouldUseCache(imageName: string): boolean {
   try {

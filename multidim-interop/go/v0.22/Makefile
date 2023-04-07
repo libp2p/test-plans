@@ -1,7 +1,7 @@
 SHELL := /usr/bin/env bash
 imageName := go-v0.22
 
-cacheKey=${shell git ls-files  | tr "\n" " " | xargs ../../helpers/hashFiles.sh}
+cacheKey=${shell find . -type f | sort | grep -v image.json  | tr "\n" " " | xargs ../../helpers/hashFiles.sh}
 shouldUseCache := ${shell IMAGE_NAME=${imageName} CACHE_KEY=${cacheKey} ../../helpers/shouldUseCache.sh}
 
 all: image.json
