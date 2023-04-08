@@ -33,7 +33,9 @@ export async function run(namespace: string, compose: ComposeSpecification, opts
     await fs.mkdir(dir, { recursive: true })
 
     // Create compose.yaml file
-    await fs.writeFile(path.join(dir, "compose.yaml"), stringify(compose))
+    // Some docker compose environments don't like the name field to have special characters
+    const sanitizedComposeName = compose?.name.replace(/[^a-zA-Z0-9_-]/g, "_")
+    await fs.writeFile(path.join(dir, "compose.yaml"), stringify({...compose, name: sanitizedComposeName}))
 
     const upFlags: Array<string> = []
     if (opts.up.exitCodeFrom) {
