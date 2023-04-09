@@ -82,6 +82,7 @@ const mode: Mode = process.argv[2] == "push" ? Mode.PushCache : Mode.LoadCache;
                     continue
                 }
                 console.log("Loading cache")
+                let cacheHit = false
                 try {
                     // Check if the cache exists
                     const res = await fetch(`https://s3.amazonaws.com/${AWS_BUCKET}/imageCache/${cacheKey}-${arch}.tar.gz`, { method: "HEAD" })
@@ -91,12 +92,21 @@ const mode: Mode = process.argv[2] == "push" ? Mode.PushCache : Mode.LoadCache;
                         if (loadedImageId) {
                             console.log(`Cache hit for ${loadedImageId}`);
                             fs.writeFileSync(path.join(implFolder, 'image.json'), JSON.stringify({ imageID: loadedImageId }) + "\n");
+                            cacheHit = true
                         }
                     } else {
                         console.log("Cache not found")
                     }
                 } catch (e) {
                     console.log("Cache not found:", e)
+                }
+
+                if (cacheHit) {
+                    console.log("Building any remaining things from image.json")
+                    child_process.execSync(`make -o image.json`, { cwd: implFolder })
+                } else {
+                    console.log("No cache, building from scratch")
+                    child_process.execSync(`make`, { cwd: implFolder })
                 }
             }
         }

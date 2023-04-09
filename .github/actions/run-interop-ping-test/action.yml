@@ -69,14 +69,9 @@ runs:
       run: npm ci
       shell: bash
 
-    - name: Load cache, if any
+    - name: Load cache and build
       working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
       run: npm run cache -- load
-      shell: bash
-
-    - name: Build images
-      working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
-      run: make
       shell: bash
 
     - name: Push the image cache
