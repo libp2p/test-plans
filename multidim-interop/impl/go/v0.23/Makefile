@@ -1,7 +1,7 @@
-image_name := go-v0.22
+image_name := go-v0.23
 
 image.json: Dockerfile main.go go.mod go.sum
-	IMAGE_NAME=${image_name} ../../dockerBuildWrapper.sh .
+	IMAGE_NAME=${image_name} ../../../dockerBuildWrapper.sh .
 	docker image inspect ${image_name} -f "{{.Id}}" | \
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
 

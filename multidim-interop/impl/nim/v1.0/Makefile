@@ -4,7 +4,7 @@ commitSha := 408dcf12bdf44dcd6f9021a6c795c472679d6d02
 all: image.json
 
 image.json: main.nim nim-libp2p Dockerfile
-	IMAGE_NAME=${image_name} ../../dockerBuildWrapper.sh .
+	IMAGE_NAME=${image_name} ../../../dockerBuildWrapper.sh .
 	docker image inspect ${image_name} -f "{{.Id}}" | \
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
 

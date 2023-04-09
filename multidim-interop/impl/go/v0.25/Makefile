@@ -1,10 +1,10 @@
-image_name := go-v0.26
-commitSha := 59a14cf3194d5d057c45cb1dbc7b1af3a116bc7a
+image_name := go-v0.25
+commitSha := 5741b6c9bbcc1185bdf94d816dca966b37ce61ff
 
 all: image.json
 
 image.json: go-libp2p-${commitSha}
-	cd go-libp2p-${commitSha} && IMAGE_NAME=${image_name} ../../../dockerBuildWrapper.sh -f test-plans/PingDockerfile .
+	cd go-libp2p-${commitSha} && IMAGE_NAME=${image_name} ../../../../dockerBuildWrapper.sh -f test-plans/PingDockerfile .
 	docker image inspect ${image_name} -f "{{.Id}}" | \
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
 

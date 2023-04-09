@@ -1,10 +1,10 @@
-image_name := rust-v0.49
-commitSha := 582c84043050eb0dd6e52d1bd0527175181d41cb
+image_name := rust-v0.50
+commitSha := beb66b5832384d9b813fcbf1f0fa01e6a64a9c5f
 
 all: image.json
 
 image.json: rust-libp2p-${commitSha}
-	cd rust-libp2p-${commitSha} && IMAGE_NAME=${image_name} ../../../dockerBuildWrapper.sh -f interop-tests/Dockerfile .
+	cd rust-libp2p-${commitSha} && IMAGE_NAME=${image_name} ../../../../dockerBuildWrapper.sh -f interop-tests/Dockerfile .
 	docker image inspect ${image_name} -f "{{.Id}}" | \
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
 
