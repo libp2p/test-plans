@@ -15,7 +15,6 @@ enum Mode {
 }
 const mode: Mode = process.argv[2] == "push" ? Mode.PushCache : Mode.LoadCache;
 
-
 (async () => {
     for (const implFamily of fs.readdirSync(path.join(scriptDir, '..', 'impl'))) {
         const ig = ignore()
@@ -65,14 +64,23 @@ const mode: Mode = process.argv[2] == "push" ? Mode.PushCache : Mode.LoadCache;
             if (mode == Mode.PushCache) {
                 console.log("Pushing cache")
                 try {
-                    // Read image id from image.json
-                    const imageID = JSON.parse(fs.readFileSync(path.join(implFolder, 'image.json')).toString()).imageID;
-                    console.log(`Pushing cache for ${impl}: ${imageID}`)
-                    child_process.execSync(`docker image save ${imageID} | gzip | aws s3 cp - s3://${AWS_BUCKET}/imageCache/${cacheKey}-${arch}.tar.gz`);
+                    const res = await fetch(`https://s3.amazonaws.com/${AWS_BUCKET}/imageCache/${cacheKey}-${arch}.tar.gz`, { method: "HEAD" })
+                    if (res.ok) {
+                        console.log("Cache already exists")
+                    } else {
+                        // Read image id from image.json
+                        const imageID = JSON.parse(fs.readFileSync(path.join(implFolder, 'image.json')).toString()).imageID;
+                        console.log(`Pushing cache for ${impl}: ${imageID}`)
+                        child_process.execSync(`docker image save ${imageID} | gzip | aws s3 cp - s3://${AWS_BUCKET}/imageCache/${cacheKey}-${arch}.tar.gz`);
+                    }
                 } catch (e) {
                     console.log("Failed to push image cache:", e)
                 }
             } else {
+                if (fs.existsSync(path.join(implFolder, 'image.json'))) {
+                    console.log("Already built")
+                    continue
+                }
                 console.log("Loading cache")
                 try {
                     // Check if the cache exists
