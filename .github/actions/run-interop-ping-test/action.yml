@@ -36,6 +36,12 @@ runs:
 
     - name: Configure AWS credentials for S3 build cache
       if: inputs.s3-access-key-id != '' && inputs.s3-secret-access-key != ''
+      run: |
+        echo "PUSH_CACHE=true" >> $GITHUB_ENV
+      shell: bash
+
+    - name: Configure AWS credentials for S3 build cache
+      if: inputs.s3-access-key-id != '' && inputs.s3-secret-access-key != ''
       uses: aws-actions/configure-aws-credentials@v1
       with:
         aws-access-key-id: ${{ inputs.s3-access-key-id }}
@@ -63,9 +69,20 @@ runs:
       run: npm ci
       shell: bash
 
+    - name: Load cache, if any
+      working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
+      run: npm run cache -- load
+      shell: bash
+
     - name: Build images
       working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
       run: make
+      shell: bash
+
+    - name: Push the image cache
+      if: env.PUSH_CACHE == 'true'
+      working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
+      run: npm run cache -- push
       shell: bash
 
     - name: Run the test
