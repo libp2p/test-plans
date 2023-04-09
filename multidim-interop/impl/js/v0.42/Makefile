@@ -9,6 +9,7 @@ chromium-image.json: node-image.json
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
 
 node-image.json: image.json
+	docker image tag $$(cat image.json | jq -r '.imageID') node-${image_name}
 	cp image.json node-image.json
 
 image.json: Dockerfile $(TEST_SOURCES) package.json package-lock.json .aegir.js
