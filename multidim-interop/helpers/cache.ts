@@ -1,4 +1,5 @@
 const AWS_BUCKET = process.env.AWS_BUCKET || 'libp2p-by-tf-aws-bootstrap';
+const scriptDir = __dirname;
 
 import * as crypto from 'crypto';
 import * as fs from 'fs';
@@ -6,17 +7,14 @@ import * as path from 'path';
 import * as child_process from 'child_process';
 import ignore from 'ignore'
 
+const arch = child_process.execSync('docker info -f "{{.Architecture}}"').toString().trim();
+
 enum Mode {
     LoadCache = 1,
     PushCache,
 }
 const mode: Mode = process.argv[2] == "push" ? Mode.PushCache : Mode.LoadCache;
 
-console.log("Mode is:", mode, process.argv[2])
-
-
-const scriptDir = __dirname;
-const arch = child_process.execSync('docker info -f "{{.Architecture}}"').toString().trim();
 
 (async () => {
     for (const implFamily of fs.readdirSync(path.join(scriptDir, '..', 'impl'))) {
@@ -37,8 +35,6 @@ const arch = child_process.execSync('docker info -f "{{.Architecture}}"').toStri
             }
         } catch { }
 
-        console.log(`Impl family: ${implFamily}`);
-
         for (const impl of fs.readdirSync(implFamilyDir)) {
             const implFolder = fs.realpathSync(path.join(implFamilyDir, impl));
             if (!fs.statSync(implFolder).isDirectory()) {
@@ -51,17 +47,15 @@ const arch = child_process.execSync('docker info -f "{{.Architecture}}"').toStri
                 }
             } catch { }
 
-            console.log(`Impl: ${impl}`);
-
             // Get all the files in the implFolder:
             let files = walkDir(implFolder)
             files = files.map(f => f.replace(implFolder + "/", ""))
             // Ignore files that are in the .gitignore:
-            console.log(implFolder)
             files = files.filter(f => !ig.ignores(f))
             // Sort them to be deterministic
             files = files.sort()
 
+            console.log(implFolder)
             console.log("Files:", files)
 
             files = files.map(f => path.join(implFolder, f))
