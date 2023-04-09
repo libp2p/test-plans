@@ -1,22 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM mcr.microsoft.com/playwright
-
-WORKDIR /app
-
-
-COPY package*.json .
-
-RUN npm ci
-
-# Install browsers
-RUN ./node_modules/.bin/playwright install
-
-COPY tsconfig.json .
-COPY .aegir.js .
-COPY test ./test
-COPY src ./src
-
-RUN npm run build
+ARG BASE_IMAGE
+FROM $BASE_IMAGE
 
 ENTRYPOINT [ "npm", "test", "--", "--build", "false", "--types", "false", "-t", "browser" ]
