@@ -1,6 +1,5 @@
 const AWS_BUCKET = process.env.AWS_BUCKET || 'libp2p-by-tf-aws-bootstrap';
 const scriptDir = __dirname;
-const multidimInteropDir = path.join(scriptDir, '..')
 
 import * as crypto from 'crypto';
 import * as fs from 'fs';
@@ -8,6 +7,7 @@ import * as path from 'path';
 import * as child_process from 'child_process';
 import ignore, { Ignore } from 'ignore'
 
+const multidimInteropDir = path.join(scriptDir, '..')
 const arch = child_process.execSync('docker info -f "{{.Architecture}}"').toString().trim();
 
 enum Mode {
