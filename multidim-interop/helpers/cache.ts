@@ -1,11 +1,12 @@
 const AWS_BUCKET = process.env.AWS_BUCKET || 'libp2p-by-tf-aws-bootstrap';
 const scriptDir = __dirname;
+const multidimInteropDir = path.join(scriptDir, '..')
 
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as child_process from 'child_process';
-import ignore from 'ignore'
+import ignore, { Ignore } from 'ignore'
 
 const arch = child_process.execSync('docker info -f "{{.Architecture}}"').toString().trim();
 
@@ -13,26 +14,28 @@ enum Mode {
     LoadCache = 1,
     PushCache,
 }
-const mode: Mode = process.argv[2] == "push" ? Mode.PushCache : Mode.LoadCache;
+const modeStr = process.argv[2];
+let mode: Mode
+switch (modeStr) {
+    case "push":
+        mode = Mode.PushCache
+        break
+    case "load":
+        mode = Mode.LoadCache
+        break
+    default:
+        throw new Error(`Unknown mode: ${modeStr}`)
+}
 
 (async () => {
-    for (const implFamily of fs.readdirSync(path.join(scriptDir, '..', 'impl'))) {
+    for (const implFamily of fs.readdirSync(path.join(multidimInteropDir, 'impl'))) {
         const ig = ignore()
-        ig.add(".DS_Store")
 
-        if (fs.statSync(path.join(scriptDir, "..", ".gitignore")).isFile()) {
-            ig.add(fs.readFileSync(path.join(scriptDir, "..", ".gitignore")).toString())
-        }
-        if (fs.statSync(path.join(scriptDir, "..", "..", ".gitignore")).isFile()) {
-            ig.add(fs.readFileSync(path.join(scriptDir, "..", "..", ".gitignore")).toString())
-        }
+        addGitignoreIfPresent(ig, path.join(multidimInteropDir, ".gitignore"))
+        addGitignoreIfPresent(ig, path.join(multidimInteropDir, "..", ".gitignore"))
 
-        const implFamilyDir = path.join(scriptDir, '..', 'impl', implFamily)
-        try {
-            if (fs.statSync(path.join(implFamilyDir, ".gitignore")).isFile()) {
-                ig.add(fs.readFileSync(path.join(implFamilyDir, ".gitignore")).toString())
-            }
-        } catch { }
+        const implFamilyDir = path.join(multidimInteropDir, 'impl', implFamily)
+        addGitignoreIfPresent(ig, path.join(implFamilyDir, ".gitignore"))
 
         for (const impl of fs.readdirSync(implFamilyDir)) {
             const implFolder = fs.realpathSync(path.join(implFamilyDir, impl));
@@ -40,14 +43,11 @@ const mode: Mode = process.argv[2] == "push" ? Mode.PushCache : Mode.LoadCache;
                 continue
             }
 
-            try {
-                if (fs.statSync(path.join(implFolder, ".gitignore")).isFile()) {
-                    ig.add(fs.readFileSync(path.join(implFolder, ".gitignore")).toString())
-                }
-            } catch { }
+            addGitignoreIfPresent(ig, path.join(implFolder, ".gitignore"))
 
             // Get all the files in the implFolder:
             let files = walkDir(implFolder)
+            // Turn them into relative paths:
             files = files.map(f => f.replace(implFolder + "/", ""))
             // Ignore files that are in the .gitignore:
             files = files.filter(f => !ig.ignores(f))
@@ -57,6 +57,7 @@ const mode: Mode = process.argv[2] == "push" ? Mode.PushCache : Mode.LoadCache;
             console.log(implFolder)
             console.log("Files:", files)
 
+            // Turn them back into absolute paths:
             files = files.map(f => path.join(implFolder, f))
             const cacheKey = await hashFiles(files)
             console.log("Cache key:", cacheKey)
@@ -76,7 +77,7 @@ const mode: Mode = process.argv[2] == "push" ? Mode.PushCache : Mode.LoadCache;
                 } catch (e) {
                     console.log("Failed to push image cache:", e)
                 }
-            } else {
+            } else if (mode == Mode.LoadCache) {
                 if (fs.existsSync(path.join(implFolder, 'image.json'))) {
                     console.log("Already built")
                     continue
@@ -103,6 +104,8 @@ const mode: Mode = process.argv[2] == "push" ? Mode.PushCache : Mode.LoadCache;
 
                 if (cacheHit) {
                     console.log("Building any remaining things from image.json")
+                    // We're building using -o image.json. This tells make to
+                    // not bother building image.json or anything it depends on.
                     child_process.execSync(`make -o image.json`, { cwd: implFolder })
                 } else {
                     console.log("No cache, building from scratch")
@@ -131,4 +134,15 @@ async function hashFiles(files: string[]): Promise<string> {
         })
     );
     return crypto.createHash('sha256').update(fileHashes.join('')).digest('hex');
+}
+
+function addGitignoreIfPresent(ig: Ignore, pathStr: string): boolean {
+    try {
+        if (fs.statSync(pathStr).isFile()) {
+            ig.add(fs.readFileSync(pathStr).toString())
+        }
+        return true
+    } catch {
+        return false
+    }
 }
