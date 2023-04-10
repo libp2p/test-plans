@@ -1,10 +1,15 @@
 # Interoperability test
 
 This tests that different libp2p implementations can communicate with each other
-on each of their supported capabilites.
+on each of their supported capabilities.
 
 Each version of libp2p is defined in `versions.ts`. There the version defines
 its capabilities along with the id of its container image.
+
+This repo and tests adhere to these constraints:
+1. Be reproducible for a given commit.
+2. Caching is an optimization. Things should be fine without it.
+3. If we have a cache hit, be fast.
 
 # Test spec
 
@@ -56,3 +61,18 @@ The listener should emit all diagnostic logs to `stderr`.
 5. If the timeout is hit, exit with a non-zero error code.
 
 On error, the listener should return a non-zero exit code.
+
+# Caching
+
+The caching strategy is opinionated in an attempt to make things simpler and
+faster. Here's how it works:
+
+1. We cache the result of image.json in each implementation folder.
+2. The cache key is derived from the hashes of the files in the implementation folder.
+3. When loading from cache, if we have a cache hit, we load the image into
+   docker and create the image.json file. We then call `make -o image.json` to
+   allow the implementation to build any extra things from cache (e.g. JS-libp2p
+   builds browser images from the same base as node). If we have a cache miss,
+   we simply call `make` and build from scratch.
+4. When we push the cache we use the cache-key along with the docker platform
+   (arm64 vs x86_64).
