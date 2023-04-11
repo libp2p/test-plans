@@ -1,0 +1,6 @@
+# syntax=docker/dockerfile:1
+
+ARG BASE_IMAGE
+FROM $BASE_IMAGE
+
+ENTRYPOINT [ "npm", "test", "--", "--build", "false", "--types", "false", "-t", "browser" ]

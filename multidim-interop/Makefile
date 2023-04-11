@@ -1,7 +1,7 @@
-GO_SUBDIRS := $(wildcard go/*/.)
-JS_SUBDIRS := $(wildcard js/*/.)
-RUST_SUBDIRS := $(wildcard rust/*/.)
-NIM_SUBDIRS := $(wildcard nim/*/.)
+GO_SUBDIRS := $(wildcard impl/go/*/.)
+JS_SUBDIRS := $(wildcard impl/js/*/.)
+RUST_SUBDIRS := $(wildcard impl/rust/*/.)
+NIM_SUBDIRS := $(wildcard impl/nim/*/.)
 
 all: $(GO_SUBDIRS) $(JS_SUBDIRS) $(RUST_SUBDIRS) $(NIM_SUBDIRS)
 $(JS_SUBDIRS):
