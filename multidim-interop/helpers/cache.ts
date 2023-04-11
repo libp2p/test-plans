@@ -50,7 +50,7 @@ switch (modeStr) {
             // Turn them into relative paths:
             files = files.map(f => f.replace(implFolder + "/", ""))
             // Ignore files that are in the .gitignore:
-            files = files.filter(f => !ig.ignores(f))
+            files = files.filter(ig.createFilter())
             // Sort them to be deterministic
             files = files.sort()
 
