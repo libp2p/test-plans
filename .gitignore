@@ -43,3 +43,6 @@ __pycache__/
 ### NodeJS
 
 node_modules
+
+# ignore system files
+.DS_Store

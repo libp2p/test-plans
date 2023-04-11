@@ -5,7 +5,8 @@
     "main": "testplans.ts",
     "scripts": {
         "test": "ts-node testplans.ts",
-        "renderResults": "ts-node renderResults.ts"
+        "renderResults": "ts-node renderResults.ts",
+        "cache": "ts-node helpers/cache.ts"
     },
     "author": "marcopolo",
     "license": "MIT",
@@ -17,6 +18,7 @@
         "@types/yargs": "^17.0.19",
         "csv-parse": "^5.3.3",
         "csv-stringify": "^6.2.3",
+        "ignore": "^5.2.4",
         "json-schema-to-typescript": "^11.0.2",
         "sqlite": "^4.1.2",
         "sqlite3": "^5.1.2",
