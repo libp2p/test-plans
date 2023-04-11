@@ -1,49 +1,88 @@
 import { execSync } from 'child_process';
 import { versions } from './versions';
 import yargs from 'yargs';
-import { BenchmarkResults, Benchmark } from './benchmark-result-type';
+import { BenchmarkResults, Benchmark, Result } from './benchmark-result-type';
 
 async function main(clientPublicIP: string, serverPublicIP: string) {
-    const benchmark: Benchmark = {
-        name: "",
-        unit: "s",
-        results: [],
-        comparisons: [],
+    const benchmarkResults: BenchmarkResults = {
+        benchmarks: [
+            {
+                name: "Single Connection throughput – Upload 10 MiB",
+                unit: "s",
+                results: runBenchmarkAcrossVersions({
+                    clientPublicIP,
+                    serverPublicIP,
+                    uploadBytes: 10 * 1024 * 1024,
+                    downloadBytes: 0,
+                    nTimes: 1,
+                }),
+                comparisons: [],
+            },
+            {
+                name: "Single Connection throughput – Download 10 MiB",
+                unit: "s",
+                results: runBenchmarkAcrossVersions({
+                    clientPublicIP,
+                    serverPublicIP,
+                    uploadBytes: 0,
+                    downloadBytes: 10 * 1024 * 1024,
+                    nTimes: 1,
+                }),
+                comparisons: [],
+            },
+            {
+                name: "Single Connection 1 byte round trip latency",
+                unit: "s",
+                results: runBenchmarkAcrossVersions({
+                    clientPublicIP,
+                    serverPublicIP,
+                    uploadBytes: 1,
+                    downloadBytes: 1,
+                    nTimes: 10,
+                }),
+                comparisons: [],
+            }
+        ],
     };
 
+    console.log(JSON.stringify(benchmarkResults, null, 2));
+}
 
+interface ArgsRunBenchmarkAcrossVersions {
+    clientPublicIP: string;
+    serverPublicIP: string;
+    uploadBytes: number,
+    downloadBytes: number,
+    nTimes: number,
+}
+
+function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions): Result[] {
+    const results: Result[] = [];
     for (const version of versions) {
         for (const transportStack of version.transportStacks) {
             const latencies = runBenchmark({
-                clientPublicIP: clientPublicIP,
-                serverPublicIP: serverPublicIP,
+                clientPublicIP: args.clientPublicIP,
+                serverPublicIP: args.serverPublicIP,
                 dockerImageId: version.containerImageID,
                 transportStack: transportStack,
-                uploadBytes: 1,
-                downloadBytes: 1,
-                nTimes: 10,
+                uploadBytes: args.uploadBytes,
+                downloadBytes: args.downloadBytes,
+                nTimes: args.nTimes,
             });
 
-            benchmark.results.push({
+            results.push({
                 result: latencies.latencies,
                 implementation: "",
                 version: version.id,
-                transportStack: "",
+                transportStack: transportStack,
             });
         }
     };
 
-    const benchmarkResults: BenchmarkResults = {
-        benchmarks: [benchmark],
-    };
-    console.log(JSON.stringify(benchmarkResults, null, 2));
+    return results;
 }
 
-interface Latencies {
-    latencies: number[];
-}
-
-interface Args {
+interface ArgsRunBenchmark {
     clientPublicIP: string;
     serverPublicIP: string;
     dockerImageId: string;
@@ -53,7 +92,12 @@ interface Args {
     nTimes: number,
 }
 
-function runBenchmark(args: Args): Latencies {
+interface Latencies {
+    latencies: number[];
+}
+
+
+function runBenchmark(args: ArgsRunBenchmark): Latencies {
     let serverAddress: string;
 
     switch (args.transportStack) {
@@ -70,7 +114,8 @@ function runBenchmark(args: Args): Latencies {
     }
 
     const binFlags = `--server-address ${serverAddress} --upload-bytes ${args.uploadBytes} --download-bytes ${args.downloadBytes} --n-times ${args.nTimes}`
-    const dockerCMD = `docker run --rm --entrypoint perf-client ${args.dockerImageId} ${binFlags}`
+    // TODO Take docker hub repository from version.ts
+    const dockerCMD = `docker run --rm --entrypoint perf-client mxinden/libp2p-perf@sha256:${args.dockerImageId} ${binFlags}`
     const cmd = `ssh ec2-user@${args.clientPublicIP} ${dockerCMD}`;
 
     try {
