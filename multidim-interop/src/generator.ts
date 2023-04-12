@@ -61,7 +61,7 @@ export async function buildTestSpecs(versions: Array<Version>): Promise<Array<Co
                      AND ma.muxer == mb.muxer
                      -- quic only uses its own muxer/securechannel
                      AND a.transport != "webtransport"
-                     AND a.transport != "webrtc"
+                     AND a.transport != "webrtc-direct"
                      AND a.transport != "quic"
                      AND a.transport != "quic-v1";`);
     const quicQueryResults =
@@ -85,13 +85,13 @@ export async function buildTestSpecs(versions: Array<Version>): Promise<Array<Co
                      AND NOT b.onlyDial
                      -- Only webtransport transports
                      AND a.transport == "webtransport";`);
-    const webrtcQueryResults =
+    const webrtcDirectQueryResults =
         await db.all(`SELECT DISTINCT a.id as id1, b.id as id2, a.transport
                      FROM transports a, transports b
                      WHERE a.transport == b.transport
                      AND NOT b.onlyDial
-                     -- Only webrtc transports
-                     AND a.transport == "webrtc";`);
+                     -- Only webrtc-direct transports
+                     AND a.transport == "webrtc-direct";`);
     await db.close();
 
     const testSpecs = queryResults.map((test): ComposeSpecification => (
@@ -115,7 +115,7 @@ export async function buildTestSpecs(versions: Array<Version>): Promise<Array<Co
                 transport: test.transport,
                 extraEnv: buildExtraEnv(timeoutOverride, test.id1, test.id2)
             })))
-        .concat(webrtcQueryResults
+        .concat(webrtcDirectQueryResults
             .map((test): ComposeSpecification => buildSpec(containerImages, {
                 name: `${test.id1} x ${test.id2} (${test.transport})`,
                 dialerID: test.id1,

@@ -117,6 +117,8 @@ func main() {
 	case "webtransport":
 		fallthrough
 	case "webrtc":
+		fallthrough
+	case "webrtc-direct":
 		skipMuxer = true
 		skipSecureChannel = true
 	}
