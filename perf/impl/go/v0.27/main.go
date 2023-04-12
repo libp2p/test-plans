@@ -67,15 +67,23 @@ func main() {
 	}
 
 	// float32 because json
-	timesMs := make([]float32, 0, len(times))
+	timesS := make([]float32, 0, len(times))
 	for _, t := range times {
-		timesMs = append(timesMs, float32(t.Nanoseconds())/1_000_000)
+		timesS = append(timesS, float32(t.Nanoseconds())/1_000_000_000)
 	}
 
-	jsonB, err := json.Marshal(timesMs)
+	latencies := Latencies {
+		Latencies: timesS,
+	}
+
+	jsonB, err := json.Marshal(latencies)
 	if err != nil {
 		panic(err)
 	}
 
 	fmt.Println(string(jsonB))
+}
+
+type Latencies struct {
+	Latencies []float32 `json:"latencies"`
 }
