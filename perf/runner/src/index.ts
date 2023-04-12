@@ -115,7 +115,7 @@ function runBenchmark(args: ArgsRunBenchmark): Latencies {
 
     const binFlags = `--server-address ${serverAddress} --upload-bytes ${args.uploadBytes} --download-bytes ${args.downloadBytes} --n-times ${args.nTimes}`
     // TODO Take docker hub repository from version.ts
-    const dockerCMD = `docker run --rm --entrypoint perf-client mxinden/libp2p-perf@sha256:${args.dockerImageId} ${binFlags}`
+    const dockerCMD = `docker run --rm --network host --entrypoint perf-client mxinden/libp2p-perf@sha256:${args.dockerImageId} ${binFlags}`
     const cmd = `ssh ec2-user@${args.clientPublicIP} ${dockerCMD}`;
 
     try {
