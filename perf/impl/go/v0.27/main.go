@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/libp2p/go-libp2p"
@@ -24,7 +23,6 @@ func main() {
 	// --n-times <N_TIMES>
 	nTimes := flag.Int("n-times", 0, "N times")
 	flag.Parse()
-	fmt.Fprintf(os.Stderr, "Hello, playground", *serverAddr, uploadBytes, downloadBytes, nTimes)
 
 	// var opts []libp2p.Option
 	// if *runServer != "" {
@@ -72,7 +70,7 @@ func main() {
 		timesS = append(timesS, float32(t.Nanoseconds())/1_000_000_000)
 	}
 
-	latencies := Latencies {
+	latencies := Latencies{
 		Latencies: timesS,
 	}
 
