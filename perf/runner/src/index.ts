@@ -112,6 +112,7 @@ function runBenchmark(args: ArgsRunBenchmark): Latencies {
             process.exit(1);
 
     }
+    serverAddress = serverAddress + "/p2p/12D3KooWDpJ7As7BWAwRMfu1VU2WCqNjvq387JEYKDBj4kx6nXTN";
 
     const binFlags = `--server-address ${serverAddress} --upload-bytes ${args.uploadBytes} --download-bytes ${args.downloadBytes} --n-times ${args.nTimes}`
     // TODO Take docker hub repository from version.ts
