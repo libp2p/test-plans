@@ -7,7 +7,7 @@ export type Version = {
 export const versions: Array<Version> = [
     {
         id: "rust-master",
-        containerImageID: "f567b27347a8d222e88f3c0b160e0547023e88aa700dc5e4255d9fcdf3d08eb1",
+        containerImageID: "90bd7031f56ef2311659ea79b6e980080063b83ddc6644e7ebd5dbea869a1119",
         transportStacks: ["tcp", "quic-v1"]
     },
     {
