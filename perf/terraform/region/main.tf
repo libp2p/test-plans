@@ -104,8 +104,8 @@ resource "aws_security_group" "restricted_inbound" {
 }
 
 resource "aws_key_pair" "mxinden" {
-  key_name   = "mxinden-public-key"
-  public_key = file("./mxinden.pub")
+  key_name   = "user-public-key"
+  public_key = file("./user.pub")
 }
 
 resource "aws_instance" "node" {
@@ -121,7 +121,7 @@ resource "aws_instance" "node" {
   # Debug via:
   # - /var/log/cloud-init.log and
   # - /var/log/cloud-init-output.log
-  user_data = file("./user-data.sh")
+  user_data                   = file("./user-data.sh")
   user_data_replace_on_change = true
 
   tags = merge(var.common_tags, {
