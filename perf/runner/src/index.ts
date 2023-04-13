@@ -1,6 +1,7 @@
 import { execSync } from 'child_process';
 import { versions } from './versions';
 import yargs from 'yargs';
+import fs from 'fs';
 import { BenchmarkResults, Benchmark, Result } from './benchmark-result-type';
 
 async function main(clientPublicIP: string, serverPublicIP: string) {
@@ -46,6 +47,9 @@ async function main(clientPublicIP: string, serverPublicIP: string) {
     };
 
     console.log(JSON.stringify(benchmarkResults, null, 2));
+
+    // Save results to benchmark-results.json
+    fs.writeFileSync('./benchmark-results.json', JSON.stringify(benchmarkResults, null, 2));
 }
 
 interface ArgsRunBenchmarkAcrossVersions {
