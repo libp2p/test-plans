@@ -59,6 +59,12 @@ interface ArgsRunBenchmarkAcrossVersions {
 function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions): Result[] {
     const results: Result[] = [];
     for (const version of versions) {
+        console.error(`Starting ${version.id} server.`);
+        const serverCMD = `ssh ec2-user@${args.serverPublicIP} 'docker stop $(docker ps -aq); docker run -d --restart always --network host --entrypoint /app/server mxinden/libp2p-perf@sha256:${version.containerImageID} --secret-key-seed 0'`;
+        console.error(serverCMD);
+        const serverSTDOUT = execCommand(serverCMD);
+        console.error(serverSTDOUT);
+
         for (const transportStack of version.transportStacks) {
             const latencies = runBenchmark({
                 clientPublicIP: args.clientPublicIP,
@@ -98,6 +104,8 @@ interface Latencies {
 
 
 function runBenchmark(args: ArgsRunBenchmark): Latencies {
+    console.error(`Starting ${args.transportStack} client.`);
+
     let serverAddress: string;
 
     switch (args.transportStack) {
@@ -119,13 +127,19 @@ function runBenchmark(args: ArgsRunBenchmark): Latencies {
     const dockerCMD = `docker run --rm --network host mxinden/libp2p-perf@sha256:${args.dockerImageId} ${binFlags}`
     const cmd = `ssh ec2-user@${args.clientPublicIP} ${dockerCMD}`;
 
+    const stdout = execCommand(cmd);
+
+    const latencies: Latencies = JSON.parse(stdout.toString());
+    return latencies;
+}
+
+function execCommand(cmd: string): string {
     try {
         const stdout = execSync(cmd, {
             encoding: 'utf8',
             stdio: [process.stdin, 'pipe', process.stderr],
         });
-        const latencies: Latencies = JSON.parse(stdout.toString());
-        return latencies;
+        return stdout;
     } catch (error) {
         console.error((error as Error).message);
         process.exit(1);
