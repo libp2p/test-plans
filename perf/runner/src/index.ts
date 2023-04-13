@@ -82,7 +82,7 @@ function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions): Resul
 
             results.push({
                 result: latencies.latencies,
-                implementation: "",
+                implementation: version.implementation,
                 version: version.id,
                 transportStack: transportStack,
             });
