@@ -12,7 +12,7 @@ export const versions: Array<Version> = [
     },
     {
         id: "go-master",
-        containerImageID: "2406b0778d7655b7eac7c0b448b1bf008c2411b7f128e899d894dcc12abb98fd",
+        containerImageID: "0fb68df50eada9dd10058bd7b6da614f2a31148dc0343be8eb5c7920f7bb4eef",
         transportStacks: ["tcp", "quic-v1"]
     },
 ]
