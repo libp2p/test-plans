@@ -70,7 +70,7 @@ func (ps *PerfService) sendBytes(ctx context.Context, s network.Stream, bytesToS
 
 		n, err := s.Write(toSend)
 		if err != nil {
-			return nil
+			return err
 		}
 		bytesToSend -= uint64(n)
 	}
