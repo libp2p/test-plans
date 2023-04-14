@@ -110,7 +110,7 @@ resource "aws_key_pair" "mxinden" {
 
 resource "aws_instance" "node" {
   ami           = var.ami
-  instance_type = "t2.micro"
+  instance_type = "m5n.8xlarge"
 
   subnet_id = aws_subnet.perf.id
 

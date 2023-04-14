@@ -9,8 +9,8 @@ terraform {
 
 module "server_region" {
   source = "./region"
-  region = "us-west-1"
-  ami = "ami-09c5c62bac0d0634e"
+  region = "us-west-2"
+  ami = "ami-0747e613a2a1ff483"
 
   common_tags = {
     Project = "perf"
@@ -20,7 +20,7 @@ module "server_region" {
 module "client_region" {
   source = "./region"
   region = "us-east-1"
-  ami = "ami-00c39f71452c08778"
+  ami = "ami-06e46074ae430fba6"
 
   common_tags = {
     Project = "perf"
