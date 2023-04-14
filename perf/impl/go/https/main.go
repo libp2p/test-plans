@@ -23,6 +23,10 @@ import (
 	"github.com/multiformats/go-multiaddr"
 )
 
+const (
+	BlockSize = 64 << 10
+)
+
 func handleRequest(w http.ResponseWriter, r *http.Request) {
 	// Read the big-endian bytesToSend value
 	var bytesToSend uint64
@@ -35,18 +39,24 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	// Read and discard the remaining bytes in the request
 	io.Copy(io.Discard, r.Body)
 
-	// Generate random bytes and write the response
-	responseBytes := make([]byte, bytesToSend)
-	_, err = rand.Read(responseBytes)
-	if err != nil {
-		http.Error(w, "Failed to generate random bytes", http.StatusInternalServerError)
-		return
-	}
+	buf := make([]byte, BlockSize)
 
-	w.Write(responseBytes)
+	for bytesToSend > 0 {
+		toSend := buf
+		if bytesToSend < BlockSize {
+			toSend = buf[:bytesToSend]
+		}
+
+		n, err := w.Write(toSend)
+		if err != nil {
+			http.Error(w, "Failed write", http.StatusInternalServerError)
+			return
+		}
+		bytesToSend -= uint64(n)
+	}
 }
 
-func runClient(serverAddr string, uploadBytes, downloadBytes, nTimes int) []time.Duration {
+func runClient(serverAddr string, uploadBytes, downloadBytes, nTimes int) ([]time.Duration, error) {
 	durations := make([]time.Duration, nTimes)
 
 	client := &http.Client{
@@ -57,11 +67,10 @@ func runClient(serverAddr string, uploadBytes, downloadBytes, nTimes int) []time
 		},
 	}
 
-	for i := 0; i < nTimes; i++ {
-		reqBody := make([]byte, 8+uploadBytes)
-		binary.BigEndian.PutUint64(reqBody, uint64(downloadBytes))
-		rand.Read(reqBody[8:])
+	reqBody := make([]byte, 8+uploadBytes)
+	binary.BigEndian.PutUint64(reqBody, uint64(downloadBytes))
 
+	for i := 0; i < nTimes; i++ {
 		startTime := time.Now()
 		resp, err := client.Post(fmt.Sprintf("https://%s/", serverAddr), "application/octet-stream", bytes.NewReader(reqBody))
 		if err != nil {
@@ -72,15 +81,17 @@ func runClient(serverAddr string, uploadBytes, downloadBytes, nTimes int) []time
 		respBody, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			fmt.Printf("Error reading response: %v\n", err)
+			return durations, err
 		} else if len(respBody) != downloadBytes {
 			fmt.Printf("Expected %d bytes in response, but received %d\n", downloadBytes, len(respBody))
+			return durations, err
 		}
 		resp.Body.Close()
 
 		durations[i] = time.Since(startTime)
 	}
 
-	return durations
+	return durations, nil
 }
 
 func generateEphemeralCertificate() (tls.Certificate, error) {
@@ -205,7 +216,10 @@ func main() {
 			return
 		}
 		// Run the client and print the results
-		durations := runClient(fmt.Sprintf("%s:%d", ip.String(), port), *uploadBytes, *downloadBytes, *nTimes)
+		durations, err := runClient(fmt.Sprintf("%s:%d", ip.String(), port), *uploadBytes, *downloadBytes, *nTimes)
+		if err != nil {
+			panic(err)
+		}
 
 		// Convert durations to seconds and marshal as JSON
 		timesS := make([]float32, 0, len(durations))
