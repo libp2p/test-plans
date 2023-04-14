@@ -8,25 +8,25 @@ async function main(clientPublicIP: string, serverPublicIP: string) {
     const benchmarkResults: BenchmarkResults = {
         benchmarks: [
             {
-                name: "Single Connection throughput – Upload 10 MiB",
+                name: "Single Connection throughput – Upload 100 MiB",
                 unit: "s",
                 results: runBenchmarkAcrossVersions({
                     clientPublicIP,
                     serverPublicIP,
-                    uploadBytes: 10 * 1024 * 1024,
+                    uploadBytes: 100 << 20,
                     downloadBytes: 0,
                     nTimes: 1,
                 }),
                 comparisons: [],
             },
             {
-                name: "Single Connection throughput – Download 10 MiB",
+                name: "Single Connection throughput – Download 100 MiB",
                 unit: "s",
                 results: runBenchmarkAcrossVersions({
                     clientPublicIP,
                     serverPublicIP,
                     uploadBytes: 0,
-                    downloadBytes: 10 * 1024 * 1024,
+                    downloadBytes: 100 << 20,
                     nTimes: 1,
                 }),
                 comparisons: [],
