@@ -63,16 +63,19 @@ interface ArgsRunBenchmarkAcrossVersions {
 function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions): Result[] {
     const results: Result[] = [];
     for (const version of versions) {
-        console.error(`Starting ${version.id} server.`);
-        const serverCMD = `ssh ec2-user@${args.serverPublicIP} 'docker stop $(docker ps -aq); docker run -d --restart always --network host --entrypoint /app/server mxinden/libp2p-perf@sha256:${version.containerImageID} --secret-key-seed 0'`;
-        console.error(serverCMD);
-        const serverSTDOUT = execCommand(serverCMD);
-        console.error(serverSTDOUT);
+        if (version.serverAddress == undefined) {
+            console.error(`Starting ${version.id} server.`);
+            const serverCMD = `ssh ec2-user@${args.serverPublicIP} 'docker stop $(docker ps -aq); docker run --init -d --restart always --network host --entrypoint /app/server ${version.containerImageID} --secret-key-seed 0'`;
+            console.error(serverCMD);
+            const serverSTDOUT = execCommand(serverCMD);
+            console.error(serverSTDOUT);
+        }
 
         for (const transportStack of version.transportStacks) {
             const latencies = runBenchmark({
                 clientPublicIP: args.clientPublicIP,
                 serverPublicIP: args.serverPublicIP,
+                serverAddress: version.serverAddress,
                 dockerImageId: version.containerImageID,
                 transportStack: transportStack,
                 uploadBytes: args.uploadBytes,
@@ -95,6 +98,7 @@ function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions): Resul
 interface ArgsRunBenchmark {
     clientPublicIP: string;
     serverPublicIP: string;
+    serverAddress?: string;
     dockerImageId: string;
     transportStack: string,
     uploadBytes: number,
@@ -110,30 +114,41 @@ interface Latencies {
 function runBenchmark(args: ArgsRunBenchmark): Latencies {
     console.error(`Starting ${args.transportStack} client.`);
 
-    let serverAddress: string;
+    let serverAddress = args.serverAddress;
 
-    switch (args.transportStack) {
-        case 'tcp':
-            serverAddress = `/ip4/${args.serverPublicIP}/tcp/4001`;
-            break;
-        case 'quic-v1':
-            serverAddress = `/ip4/${args.serverPublicIP}/udp/4001/quic-v1`;
-            break;
-        default:
-            console.error("Unsupported transport stack ${args.transportStack}");
-            process.exit(1);
+    if (serverAddress == undefined) {
+        switch (args.transportStack) {
+            case 'tcp':
+                serverAddress = `/ip4/${args.serverPublicIP}/tcp/4001`;
+                break;
+            case 'quic-v1':
+                serverAddress = `/ip4/${args.serverPublicIP}/udp/4001/quic-v1`;
+                break;
+            default:
+                console.error("Unsupported transport stack ${args.transportStack}");
+                process.exit(1);
 
+        }
+        serverAddress = serverAddress + "/p2p/12D3KooWDpJ7As7BWAwRMfu1VU2WCqNjvq387JEYKDBj4kx6nXTN";
     }
-    serverAddress = serverAddress + "/p2p/12D3KooWDpJ7As7BWAwRMfu1VU2WCqNjvq387JEYKDBj4kx6nXTN";
 
     const binFlags = `--server-address ${serverAddress} --upload-bytes ${args.uploadBytes} --download-bytes ${args.downloadBytes} --n-times ${args.nTimes}`
     // TODO Take docker hub repository from version.ts
-    const dockerCMD = `docker run --rm --network host mxinden/libp2p-perf@sha256:${args.dockerImageId} ${binFlags}`
+    const dockerCMD = `docker run --init --rm --network host ${args.dockerImageId} ${binFlags}`
     const cmd = `ssh ec2-user@${args.clientPublicIP} ${dockerCMD}`;
+    console.log("Running command:", cmd);
 
     const stdout = execCommand(cmd);
+    console.log("Stdout from client:", stdout.toString(), JSON.parse(stdout.toString()));
+    const parsedStdout = JSON.parse(stdout.toString());
 
-    const latencies: Latencies = JSON.parse(stdout.toString());
+    let latencies: Latencies
+    if (Array.isArray(parsedStdout)) {
+        latencies = { latencies: parsedStdout }
+    } else {
+        latencies = parsedStdout
+    }
+
     return latencies;
 }
 

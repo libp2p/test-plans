@@ -78,15 +78,15 @@ resource "aws_security_group" "restricted_inbound" {
   }
 
   ingress {
-    from_port   = 4001
-    to_port     = 4001
+    from_port   = 1
+    to_port     = 65535
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
   ingress {
-    from_port   = 4001
-    to_port     = 4001
+    from_port   = 1
+    to_port     = 65535
     protocol    = "udp"
     cidr_blocks = ["0.0.0.0/0"]
   }
