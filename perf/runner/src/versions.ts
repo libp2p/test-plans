@@ -10,7 +10,7 @@ export const versions: Array<Version> = [
     {
         id: "rust-master",
         implementation: "rust-libp2p",
-        containerImageID: "mxinden/libp2p-perf@sha256:3078e6a9941952486afe4b417a318ce0c372b6e2ef1e296c85f7811c1f170b09",
+        containerImageID: "mxinden/libp2p-perf@sha256:80ef398de86fbb5be128c51de9900db908341d8ea0a77f9df935f449eb47696b",
         transportStacks: ["tcp", "quic-v1"]
     },
     {
