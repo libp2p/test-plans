@@ -22,9 +22,9 @@ export const versions: Array<Version> = [
     {
         id: "zig-libp2p-v0.0.1",
         implementation: "zig-libp2p",
-        containerImageID: "marcop010/zig-libp2p-perf@sha256:26b174b4ba38b206e216328f6027293f98c1db1e063ec27121609f2e5b9f409a",
+        containerImageID: "marcop010/zig-libp2p-perf@sha256:6a9f11961092cbebef93a55f5160fdd8584b7a11957b37b70d513e0948164353",
         transportStacks: ["quic-v1"],
-        serverAddress: "/ip4/13.56.168.61/udp/35052/quic-v1/p2p/12D3KooWKa5rDq3YhVzvAnvRoCrXhkWpA1CRsfY2hrBt2QYzLWih"
+        // serverAddress: "/ip4/13.56.168.61/udp/35052/quic-v1/p2p/12D3KooWKa5rDq3YhVzvAnvRoCrXhkWpA1CRsfY2hrBt2QYzLWih"
     },
     {
         id: "go-https-v0.0.1",
