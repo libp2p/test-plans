@@ -65,7 +65,13 @@ function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions): Resul
     for (const version of versions) {
         if (version.serverAddress == undefined) {
             console.error(`Starting ${version.id} server.`);
-            const serverCMD = `ssh ec2-user@${args.serverPublicIP} 'docker stop $(docker ps -aq); docker run --init -d --restart always --network host --entrypoint /app/server ${version.containerImageID} --secret-key-seed 0'`;
+            let serverCMD: string
+            if (version.implementation === "zig-libp2p") {
+                // Hack!
+                serverCMD = `ssh ec2-user@${args.serverPublicIP} 'docker stop $(docker ps -aq); docker run --init -d --restart always --network host ${version.containerImageID} --run-server'`;
+            } else {
+                serverCMD = `ssh ec2-user@${args.serverPublicIP} 'docker stop $(docker ps -aq); docker run --init -d --restart always --network host --entrypoint /app/server ${version.containerImageID} --secret-key-seed 0'`;
+            }
             console.error(serverCMD);
             const serverSTDOUT = execCommand(serverCMD);
             console.error(serverSTDOUT);
