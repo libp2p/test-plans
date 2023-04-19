@@ -11,7 +11,6 @@ import jsV042 from "./impl/js/v0.42/node-image.json"
 import nimv10 from "./impl/nim/v1.0/image.json"
 import chromiumJsV041 from "./impl/js/v0.41/chromium-image.json"
 import chromiumJsV042 from "./impl/js/v0.42/chromium-image.json"
-import zigv001 from "./impl/zig/v0.0.1/image.json"
 
 export type Version = {
     id: string,
@@ -114,12 +113,5 @@ export const versions: Array<Version> = [
         transports: ["tcp", "ws"],
         secureChannels: ["noise"],
         muxers: ["mplex", "yamux"],
-    },
-    {
-        id: "zig-v0.0.1",
-        containerImageID: zigv001.imageID,
-        transports: ["quic-v1"],
-        secureChannels: [],
-        muxers: [],
     },
 ]
