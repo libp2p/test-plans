@@ -90,7 +90,7 @@ function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions): Resul
                 // Hack!
                 serverCMD = `ssh ec2-user@${args.serverPublicIP} 'docker stop $(docker ps -aq); docker run --init -d --restart always --network host ${version.containerImageID} --run-server'`;
             } else {
-                serverCMD = `ssh ec2-user@${args.serverPublicIP} 'docker stop $(docker ps -aq); docker run --init -d --restart always --network host --entrypoint /app/server ${version.containerImageID} --secret-key-seed 0'`;
+                serverCMD = `ssh ec2-user@${args.serverPublicIP} 'docker stop $(docker ps -aq); docker run --init -d --restart always --network host ${version.containerImageID} --run-server --secret-key-seed 0'`;
             }
             console.error(serverCMD);
             const serverSTDOUT = execCommand(serverCMD);

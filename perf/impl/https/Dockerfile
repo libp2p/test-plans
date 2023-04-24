@@ -10,6 +10,5 @@ RUN go build -o perf .
 FROM alpine
 
 COPY --from=builder /app/perf /app/perf
-COPY server /app/server
 
 ENTRYPOINT [ "/app/perf" ]
