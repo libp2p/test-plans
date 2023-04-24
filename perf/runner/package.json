@@ -4,14 +4,14 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "tsc",
-    "start": "tsc && node ./dist/index.js"
+    "start": "ts-node src/index.ts"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "@types/node": "^18.15.11",
     "@types/yargs": "^17.0.24",
+    "ts-node": "^10.9.1",
     "typescript": "^5.0.4"
   },
   "dependencies": {

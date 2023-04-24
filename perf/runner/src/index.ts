@@ -4,45 +4,64 @@ import yargs from 'yargs';
 import fs from 'fs';
 import { BenchmarkResults, Benchmark, Result } from './benchmark-result-type';
 
+// TODO: go and zig does multiple requests on a SINGLE connection.
+
 async function main(clientPublicIP: string, serverPublicIP: string) {
+    for (const version of versions) {
+        transferDockerImage(serverPublicIP, version.containerImageID);
+        transferDockerImage(clientPublicIP, version.containerImageID);
+    }
+
     const benchmarkResults: BenchmarkResults = {
         benchmarks: [
             {
-                name: "Single Connection throughput – Upload 100 MiB",
-                unit: "s",
-                results: runBenchmarkAcrossVersions({
-                    clientPublicIP,
-                    serverPublicIP,
-                    uploadBytes: 100 << 20,
-                    downloadBytes: 0,
-                    nTimes: 1,
-                }),
-                comparisons: [],
-            },
-            {
-                name: "Single Connection throughput – Download 100 MiB",
+                name: "Dummy",
                 unit: "s",
                 results: runBenchmarkAcrossVersions({
                     clientPublicIP,
                     serverPublicIP,
                     uploadBytes: 0,
-                    downloadBytes: 100 << 20,
+                    downloadBytes: 0,
                     nTimes: 1,
                 }),
                 comparisons: [],
             },
-            {
-                name: "Single Connection 1 byte round trip latency",
-                unit: "s",
-                results: runBenchmarkAcrossVersions({
-                    clientPublicIP,
-                    serverPublicIP,
-                    uploadBytes: 1,
-                    downloadBytes: 1,
-                    nTimes: 10,
-                }),
-                comparisons: [],
-            }
+            // {
+            //     name: "Single Connection throughput – Upload 100 MiB",
+            //     unit: "s",
+            //     results: runBenchmarkAcrossVersions({
+            //         clientPublicIP,
+            //         serverPublicIP,
+            //         uploadBytes: 100 << 20,
+            //         downloadBytes: 0,
+            //         nTimes: 1,
+            //     }),
+            //     comparisons: [],
+            // },
+            // {
+            //     name: "Single Connection throughput – Download 100 MiB",
+            //     unit: "s",
+            //     results: runBenchmarkAcrossVersions({
+            //         clientPublicIP,
+            //         serverPublicIP,
+            //         uploadBytes: 0,
+            //         downloadBytes: 100 << 20,
+            //         nTimes: 1,
+            //     }),
+            //     comparisons: [],
+            // },
+            // {
+            //     name: "Single Connection 1 byte round trip latency",
+            //     unit: "s",
+            //     results: runBenchmarkAcrossVersions({
+            //         clientPublicIP,
+            //         serverPublicIP,
+            //         uploadBytes: 1,
+            //         downloadBytes: 1,
+            //         nTimes: 10,
+            //     }),
+            //     comparisons: [],
+            // }
         ],
     };
 
@@ -63,6 +82,7 @@ interface ArgsRunBenchmarkAcrossVersions {
 function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions): Result[] {
     const results: Result[] = [];
     for (const version of versions) {
+        // The `if` is a hack for zig.
         if (version.serverAddress == undefined) {
             console.error(`Starting ${version.id} server.`);
             let serverCMD: string
@@ -169,6 +189,20 @@ function execCommand(cmd: string): string {
         console.error((error as Error).message);
         process.exit(1);
     }
+}
+
+async function transferDockerImage(serverIp: string, imageSha256: string): Promise<void> {
+    const imageName = `image-${imageSha256.slice(0, 12)}`;
+    const tarballName = `${imageName}.tar`;
+
+    // Save the Docker image as a tarball, transfer it using rsync, load it on the remote server, and clean up tarball files locally.
+    console.log(`Transferring Docker image ${imageSha256} to ${serverIp}`);
+    execCommand(`docker save -o ${tarballName} ${imageSha256} &&
+               rsync -avz --progress ./${tarballName} ec2-user@${serverIp}:/tmp/ &&
+               ssh ec2-user@${serverIp} 'docker load -i /tmp/${tarballName}' &&
+               rm ${tarballName}`);
+
+    console.log(`Docker image ${imageSha256} transferred successfully to ${serverIp}`);
 }
 
 const argv = yargs
