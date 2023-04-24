@@ -4,8 +4,6 @@ import yargs from 'yargs';
 import fs from 'fs';
 import { BenchmarkResults, Benchmark, Result } from './benchmark-result-type';
 
-// TODO: go and zig does multiple requests on a SINGLE connection.
-
 async function main(clientPublicIP: string, serverPublicIP: string) {
     for (const version of versions) {
         transferDockerImage(serverPublicIP, version.containerImageID);
@@ -14,18 +12,18 @@ async function main(clientPublicIP: string, serverPublicIP: string) {
 
     const benchmarkResults: BenchmarkResults = {
         benchmarks: [
-            {
-                name: "Dummy",
-                unit: "s",
-                results: runBenchmarkAcrossVersions({
-                    clientPublicIP,
-                    serverPublicIP,
-                    uploadBytes: 0,
-                    downloadBytes: 0,
-                    nTimes: 1,
-                }),
-                comparisons: [],
-            },
+            // {
+            //     name: "Dummy",
+            //     unit: "s",
+            //     results: runBenchmarkAcrossVersions({
+            //         clientPublicIP,
+            //         serverPublicIP,
+            //         uploadBytes: 0,
+            //         downloadBytes: 0,
+            //         nTimes: 1,
+            //     }),
+            //     comparisons: [],
+            // },
             // {
             //     name: "Single Connection throughput – Upload 100 MiB",
             //     unit: "s",
@@ -50,18 +48,18 @@ async function main(clientPublicIP: string, serverPublicIP: string) {
             //     }),
             //     comparisons: [],
             // },
-            // {
-            //     name: "Single Connection 1 byte round trip latency",
-            //     unit: "s",
-            //     results: runBenchmarkAcrossVersions({
-            //         clientPublicIP,
-            //         serverPublicIP,
-            //         uploadBytes: 1,
-            //         downloadBytes: 1,
-            //         nTimes: 10,
-            //     }),
-            //     comparisons: [],
-            // }
+            {
+                name: "Single Connection, n 1 byte round trip latencies",
+                unit: "s",
+                results: runBenchmarkAcrossVersions({
+                    clientPublicIP,
+                    serverPublicIP,
+                    uploadBytes: 1,
+                    downloadBytes: 1,
+                    nTimes: 10,
+                }),
+                comparisons: [],
+            }
         ],
     };
 
