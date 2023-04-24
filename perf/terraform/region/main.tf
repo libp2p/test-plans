@@ -69,6 +69,14 @@ resource "aws_security_group" "restricted_inbound" {
   description = "Allow SSH and port 4001 inbound traffic (TCP and UDP), allow all outbound traffic"
   vpc_id      = aws_vpc.perf.id
 
+  # ICMP
+  ingress {
+    from_port   = -1
+    to_port     = -1
+    protocol    = "icmp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   # SSH (TCP)
   ingress {
     from_port   = 22
