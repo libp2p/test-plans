@@ -8,9 +8,11 @@ import rustv050 from "./impl/rust/v0.50/image.json"
 import rustv051 from "./impl/rust/v0.51/image.json"
 import jsV041 from "./impl/js/v0.41/node-image.json"
 import jsV042 from "./impl/js/v0.42/node-image.json"
+import jsV044 from "./impl/js/v0.44/node-image.json"
 import nimv10 from "./impl/nim/v1.0/image.json"
 import chromiumJsV041 from "./impl/js/v0.41/chromium-image.json"
 import chromiumJsV042 from "./impl/js/v0.42/chromium-image.json"
+import chromiumJsV044 from "./impl/js/v0.44/chromium-image.json"
 
 export type Version = {
     id: string,
@@ -66,6 +68,13 @@ export const versions: Array<Version> = [
         muxers: ["mplex", "yamux"],
     },
     {
+        id: "js-v0.44.0",
+        containerImageID: jsV044.imageID,
+        transports: ["tcp", "ws", { name: "wss", onlyDial: true }],
+        secureChannels: ["noise"],
+        muxers: ["mplex", "yamux"],
+    },
+    {
         id: "chromium-js-v0.41.0",
         containerImageID: chromiumJsV041.imageID,
         transports: [{ name: "webtransport", onlyDial: true }],
@@ -76,6 +85,13 @@ export const versions: Array<Version> = [
         id: "chromium-js-v0.42.0",
         containerImageID: chromiumJsV042.imageID,
         transports: [{ name: "webtransport", onlyDial: true }, { name: "wss", onlyDial: true }],
+        secureChannels: ["noise"],
+        muxers: ["mplex", "yamux"]
+    },
+    {
+        id: "chromium-js-v0.44.0",
+        containerImageID: chromiumJsV044.imageID,
+        transports: [{ name: "webtransport", onlyDial: true }, { name: "wss", onlyDial: true }, { name: "webrtc", onlyDial: true }],
         secureChannels: ["noise"],
         muxers: ["mplex", "yamux"]
     },
