@@ -91,7 +91,7 @@ export const versions: Array<Version> = [
     {
         id: "chromium-js-v0.44.0",
         containerImageID: chromiumJsV044.imageID,
-        transports: [{ name: "webtransport", onlyDial: true }, { name: "wss", onlyDial: true }, { name: "webrtc", onlyDial: true }],
+        transports: [{ name: "webtransport", onlyDial: true }, { name: "wss", onlyDial: true }, { name: "webrtc-direct", onlyDial: true }],
         secureChannels: ["noise"],
         muxers: ["mplex", "yamux"]
     },

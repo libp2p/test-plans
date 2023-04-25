@@ -10,7 +10,7 @@ import { noise } from '@chainsafe/libp2p-noise'
 import { mplex } from '@libp2p/mplex'
 import { yamux } from '@chainsafe/libp2p-yamux'
 import { multiaddr } from '@multiformats/multiaddr'
-import { webRTC } from '@libp2p/webrtc'
+import { webRTCDirect } from '@libp2p/webrtc'
 
 async function redisProxy(commands: any[]): Promise<any> {
   const res = await fetch(`http://localhost:${process.env.proxyPort}/`, { body: JSON.stringify(commands), method: "POST" })
@@ -46,10 +46,10 @@ describe('ping test', () => {
           throw new Error("WebTransport is not supported as a listener")
         }
         break
-      case 'webrtc':
-        options.transports = [webRTC()]
+      case 'webrtc-direct':
+        options.transports = [webRTCDirect()]
         options.addresses = {
-          listen: isDialer ? [] : [`/ip4/${IP}/udp/0/webrtc`]
+          listen: isDialer ? [] : [`/ip4/${IP}/udp/0/webrtc-direct`]
         }
         break
       case 'ws':
@@ -73,7 +73,7 @@ describe('ping test', () => {
     let skipMuxer = false
     switch (TRANSPORT) {
       case 'webtransport':
-      case 'webrtc':
+      case 'webrtc-direct':
         skipSecureChannel = true
         skipMuxer = true
     }
