@@ -1,4 +1,4 @@
-image_name := js-v0.42
+image_name := js-v0.44
 TEST_SOURCES := $(wildcard test/*.ts)
 
 all: chromium-image.json node-image.json
