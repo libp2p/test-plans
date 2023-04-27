@@ -1,3 +1,2 @@
 # Ignore built ts files
 dist/**/*
-benchmark-results.json

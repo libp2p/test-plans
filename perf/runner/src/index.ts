@@ -24,32 +24,32 @@ async function main(clientPublicIP: string, serverPublicIP: string) {
             //     }),
             //     comparisons: [],
             // },
-            // {
-            //     name: "Single Connection throughput – Upload 100 MiB",
-            //     unit: "s",
-            //     results: runBenchmarkAcrossVersions({
-            //         clientPublicIP,
-            //         serverPublicIP,
-            //         uploadBytes: 100 << 20,
-            //         downloadBytes: 0,
-            //         nTimes: 1,
-            //     }),
-            //     comparisons: [],
-            // },
-            // {
-            //     name: "Single Connection throughput – Download 100 MiB",
-            //     unit: "s",
-            //     results: runBenchmarkAcrossVersions({
-            //         clientPublicIP,
-            //         serverPublicIP,
-            //         uploadBytes: 0,
-            //         downloadBytes: 100 << 20,
-            //         nTimes: 1,
-            //     }),
-            //     comparisons: [],
-            // },
             {
-                name: "Single Connection, n 1 byte round trip latencies",
+                name: "Single Connection throughput – Upload 100 MiB",
+                unit: "s",
+                results: runBenchmarkAcrossVersions({
+                    clientPublicIP,
+                    serverPublicIP,
+                    uploadBytes: 100 << 20,
+                    downloadBytes: 0,
+                    nTimes: 1,
+                }),
+                comparisons: [],
+            },
+            {
+                name: "Single Connection throughput – Download 100 MiB",
+                unit: "s",
+                results: runBenchmarkAcrossVersions({
+                    clientPublicIP,
+                    serverPublicIP,
+                    uploadBytes: 0,
+                    downloadBytes: 100 << 20,
+                    nTimes: 1,
+                }),
+                comparisons: [],
+            },
+            {
+                name: "Single Connection, n sequential 1 byte round trip latencies",
                 unit: "s",
                 results: runBenchmarkAcrossVersions({
                     clientPublicIP,

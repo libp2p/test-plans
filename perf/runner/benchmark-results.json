@@ -1,0 +1,190 @@
+{
+  "benchmarks": [
+    {
+      "name": "Single Connection throughput – Upload 100 MiB",
+      "unit": "s",
+      "results": [
+        {
+          "result": [
+            41.098043167
+          ],
+          "implementation": "rust-libp2p",
+          "version": "rust-v0.51",
+          "transportStack": "tcp"
+        },
+        {
+          "result": [
+            13.449494152
+          ],
+          "implementation": "rust-libp2p",
+          "version": "rust-v0.51",
+          "transportStack": "quic-v1"
+        },
+        {
+          "result": [
+            2.8256333
+          ],
+          "implementation": "https",
+          "version": "https",
+          "transportStack": "tcp"
+        },
+        {
+          "result": [
+            2.9791832
+          ],
+          "implementation": "go-libp2p",
+          "version": "go-v0.27.0",
+          "transportStack": "tcp"
+        },
+        {
+          "result": [
+            1.3350164
+          ],
+          "implementation": "go-libp2p",
+          "version": "go-v0.27.0",
+          "transportStack": "quic-v1"
+        }
+      ],
+      "comparisons": []
+    },
+    {
+      "name": "Single Connection throughput – Download 100 MiB",
+      "unit": "s",
+      "results": [
+        {
+          "result": [
+            34.715031397
+          ],
+          "implementation": "rust-libp2p",
+          "version": "rust-v0.51",
+          "transportStack": "tcp"
+        },
+        {
+          "result": [
+            14.05263423
+          ],
+          "implementation": "rust-libp2p",
+          "version": "rust-v0.51",
+          "transportStack": "quic-v1"
+        },
+        {
+          "result": [
+            2.8607457
+          ],
+          "implementation": "https",
+          "version": "https",
+          "transportStack": "tcp"
+        },
+        {
+          "result": [
+            3.104271
+          ],
+          "implementation": "go-libp2p",
+          "version": "go-v0.27.0",
+          "transportStack": "tcp"
+        },
+        {
+          "result": [
+            1.355488
+          ],
+          "implementation": "go-libp2p",
+          "version": "go-v0.27.0",
+          "transportStack": "quic-v1"
+        }
+      ],
+      "comparisons": []
+    },
+    {
+      "name": "Single Connection, n sequential 1 byte round trip latencies",
+      "unit": "s",
+      "results": [
+        {
+          "result": [
+            0.12692197,
+            0.126828624,
+            0.126759373,
+            0.126712122,
+            0.126815625,
+            0.126758252,
+            0.126737014,
+            0.126667496,
+            0.126680218,
+            0.12669882
+          ],
+          "implementation": "rust-libp2p",
+          "version": "rust-v0.51",
+          "transportStack": "tcp"
+        },
+        {
+          "result": [
+            0.12562123,
+            0.125127867,
+            0.125152325,
+            0.125205034,
+            0.125154511,
+            0.125183496,
+            0.125154703,
+            0.125141522,
+            0.125191054,
+            0.125227742
+          ],
+          "implementation": "rust-libp2p",
+          "version": "rust-v0.51",
+          "transportStack": "quic-v1"
+        },
+        {
+          "result": [
+            0.19480446,
+            0.063601434,
+            0.0634733,
+            0.06349056,
+            0.06353159,
+            0.06350989,
+            0.06343663,
+            0.06342832,
+            0.063414305,
+            0.063426375
+          ],
+          "implementation": "https",
+          "version": "https",
+          "transportStack": "tcp"
+        },
+        {
+          "result": [
+            0.12248421,
+            0.061669473,
+            0.061632466,
+            0.061567824,
+            0.06166743,
+            0.061573148,
+            0.06154374,
+            0.061550982,
+            0.06156597,
+            0.061559618
+          ],
+          "implementation": "go-libp2p",
+          "version": "go-v0.27.0",
+          "transportStack": "tcp"
+        },
+        {
+          "result": [
+            0.06322579,
+            0.06305969,
+            0.063022934,
+            0.06300724,
+            0.06302576,
+            0.063024364,
+            0.06301455,
+            0.06300056,
+            0.06299013,
+            0.06297389
+          ],
+          "implementation": "go-libp2p",
+          "version": "go-v0.27.0",
+          "transportStack": "quic-v1"
+        }
+      ],
+      "comparisons": []
+    }
+  ]
+}
