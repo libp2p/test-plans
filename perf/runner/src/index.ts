@@ -110,7 +110,7 @@ function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions): Bench
 
     return {
         name: args.name,
-        unit: "bit/s",
+        unit: args.unit,
         results,
     };
 }

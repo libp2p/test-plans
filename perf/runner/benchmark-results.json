@@ -94,7 +94,7 @@
     },
     {
       "name": "Connection establishment + 1 byte round trip latencies",
-      "unit": "bit/s",
+      "unit": "s",
       "results": [
         {
           "result": [
