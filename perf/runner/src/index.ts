@@ -12,58 +12,33 @@ async function main(clientPublicIP: string, serverPublicIP: string) {
 
     const benchmarkResults: BenchmarkResults = {
         benchmarks: [
-            // {
-            //     name: "Dummy",
-            //     unit: "s",
-            //     results: runBenchmarkAcrossVersions({
-            //         clientPublicIP,
-            //         serverPublicIP,
-            //         uploadBytes: 0,
-            //         downloadBytes: 0,
-            //         unit: "s",
-            //         iterations: 1,
-            //     }),
-            //     comparisons: [],
-            // },
-            {
+            runBenchmarkAcrossVersions({
                 name: "Single Connection throughput – Upload 100 MiB",
-                unit: "s",
-                results: runBenchmarkAcrossVersions({
-                    clientPublicIP,
-                    serverPublicIP,
-                    uploadBytes: 100 << 20,
-                    downloadBytes: 0,
-                    unit: "bit/s",
-                    iterations: 1,
-                }),
-                comparisons: [],
-            },
-            {
+                clientPublicIP,
+                serverPublicIP,
+                uploadBytes: 100 << 20,
+                downloadBytes: 0,
+                unit: "bit/s",
+                iterations: 1,
+            }),
+            runBenchmarkAcrossVersions({
                 name: "Single Connection throughput – Download 100 MiB",
-                unit: "s",
-                results: runBenchmarkAcrossVersions({
-                    clientPublicIP,
-                    serverPublicIP,
-                    uploadBytes: 0,
-                    downloadBytes: 100 << 20,
-                    unit: "bit/s",
-                    iterations: 1,
-                }),
-                comparisons: [],
-            },
-            {
+                clientPublicIP,
+                serverPublicIP,
+                uploadBytes: 0,
+                downloadBytes: 100 << 20,
+                unit: "bit/s",
+                iterations: 1,
+            }),
+            runBenchmarkAcrossVersions({
                 name: "Connection establishment + 1 byte round trip latencies",
+                clientPublicIP,
+                serverPublicIP,
+                uploadBytes: 1,
+                downloadBytes: 1,
                 unit: "s",
-                results: runBenchmarkAcrossVersions({
-                    clientPublicIP,
-                    serverPublicIP,
-                    uploadBytes: 1,
-                    downloadBytes: 1,
-                    unit: "s",
-                    iterations: 100,
-                }),
-                comparisons: [],
-            }
+                iterations: 100,
+            }),
         ],
     };
 
@@ -74,6 +49,7 @@ async function main(clientPublicIP: string, serverPublicIP: string) {
 }
 
 interface ArgsRunBenchmarkAcrossVersions {
+    name: string,
     clientPublicIP: string;
     serverPublicIP: string;
     uploadBytes: number,
@@ -82,12 +58,17 @@ interface ArgsRunBenchmarkAcrossVersions {
     iterations: number,
 }
 
-function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions): Result[] {
+function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions): Benchmark {
+    console.error(`= Benchmark ${args.name}`)
+
     const results: Result[] = [];
+
     for (const version of versions) {
+        console.error(`== Version ${version.implementation}/${version.id}`)
+
         // The `if` is a hack for zig.
         if (version.serverAddress == undefined) {
-            console.error(`== Starting ${version.id} server.`);
+            console.error(`=== Starting ${version.id} server.`);
             let serverCMD: string
             if (version.implementation === "zig-libp2p") {
                 // Hack!
@@ -127,7 +108,11 @@ function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions): Resul
         }
     };
 
-    return results;
+    return {
+        name: args.name,
+        unit: "bit/s",
+        results,
+    };
 }
 
 interface ArgsRunBenchmark {

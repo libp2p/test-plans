@@ -8,8 +8,6 @@ export type Benchmark = {
     name: string,
     unit: "bit/s" | "s",
     results: Result[],
-    comparisons: Comparison[],
-
 }
 
 export type Result = {
