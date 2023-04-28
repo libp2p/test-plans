@@ -4,7 +4,7 @@ commitSha := c187e80784a610f333a91bcbdea85994453af8c1
 all: image.json print-cpu-info
 
 print-cpu-info: image.json
-	docker run --rm --entrypoint /app/zig/bin/zig ${image_name} build-exe --show-builtin
+	docker run --rm --entrypoint /app/zig/bin/zig $$(jq -r .imageID image.json) build-exe --show-builtin
 
 image.json:
 	wget -O zig-libp2p-${commitSha}.zip "https://github.com/marcopolo/zig-libp2p/archive/${commitSha}.zip"
