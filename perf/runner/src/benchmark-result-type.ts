@@ -6,7 +6,7 @@ export type BenchmarkResults = {
 
 export type Benchmark = {
     name: string,
-    unit: "bits/s" | "s",
+    unit: "bit/s" | "s",
     results: Result[],
     comparisons: Comparison[],
 

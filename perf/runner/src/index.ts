@@ -21,6 +21,7 @@ async function main(clientPublicIP: string, serverPublicIP: string) {
             //         uploadBytes: 0,
             //         downloadBytes: 0,
             //         nTimes: 1,
+            //         unit: "s",
             //     }),
             //     comparisons: [],
             // },
@@ -33,6 +34,7 @@ async function main(clientPublicIP: string, serverPublicIP: string) {
                     uploadBytes: 100 << 20,
                     downloadBytes: 0,
                     nTimes: 1,
+                    unit: "bit/s",
                 }),
                 comparisons: [],
             },
@@ -45,6 +47,7 @@ async function main(clientPublicIP: string, serverPublicIP: string) {
                     uploadBytes: 0,
                     downloadBytes: 100 << 20,
                     nTimes: 1,
+                    unit: "bit/s",
                 }),
                 comparisons: [],
             },
@@ -57,6 +60,7 @@ async function main(clientPublicIP: string, serverPublicIP: string) {
                     uploadBytes: 1,
                     downloadBytes: 1,
                     nTimes: 10,
+                    unit: "s",
                 }),
                 comparisons: [],
             }
@@ -75,6 +79,7 @@ interface ArgsRunBenchmarkAcrossVersions {
     uploadBytes: number,
     downloadBytes: number,
     nTimes: number,
+    unit: "bit/s" | "s",
 }
 
 function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions): Result[] {
@@ -105,10 +110,17 @@ function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions): Resul
                 uploadBytes: args.uploadBytes,
                 downloadBytes: args.downloadBytes,
                 nTimes: args.nTimes,
+            }).latencies.map(l => {
+                switch(args.unit) {
+                    case "bit/s":
+                        return (args.uploadBytes + args.downloadBytes) * 8 / l;
+                    case "s":
+                        return l;
+                }
             });
 
             results.push({
-                result: latencies.latencies,
+                result: latencies,
                 implementation: version.implementation,
                 version: version.id,
                 transportStack: transportStack,
