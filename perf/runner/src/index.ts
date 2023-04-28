@@ -20,8 +20,8 @@ async function main(clientPublicIP: string, serverPublicIP: string) {
             //         serverPublicIP,
             //         uploadBytes: 0,
             //         downloadBytes: 0,
-            //         nTimes: 1,
             //         unit: "s",
+            //         iterations: 1,
             //     }),
             //     comparisons: [],
             // },
@@ -33,8 +33,8 @@ async function main(clientPublicIP: string, serverPublicIP: string) {
                     serverPublicIP,
                     uploadBytes: 100 << 20,
                     downloadBytes: 0,
-                    nTimes: 1,
                     unit: "bit/s",
+                    iterations: 1,
                 }),
                 comparisons: [],
             },
@@ -46,31 +46,31 @@ async function main(clientPublicIP: string, serverPublicIP: string) {
                     serverPublicIP,
                     uploadBytes: 0,
                     downloadBytes: 100 << 20,
-                    nTimes: 1,
                     unit: "bit/s",
+                    iterations: 1,
                 }),
                 comparisons: [],
             },
             {
-                name: "Single Connection, n sequential 1 byte round trip latencies",
+                name: "Connection establishment + 1 byte round trip latencies",
                 unit: "s",
                 results: runBenchmarkAcrossVersions({
                     clientPublicIP,
                     serverPublicIP,
                     uploadBytes: 1,
                     downloadBytes: 1,
-                    nTimes: 10,
                     unit: "s",
+                    iterations: 100,
                 }),
                 comparisons: [],
             }
         ],
     };
 
-    console.log(JSON.stringify(benchmarkResults, null, 2));
-
     // Save results to benchmark-results.json
     fs.writeFileSync('./benchmark-results.json', JSON.stringify(benchmarkResults, null, 2));
+
+    console.error("== done");
 }
 
 interface ArgsRunBenchmarkAcrossVersions {
@@ -78,8 +78,8 @@ interface ArgsRunBenchmarkAcrossVersions {
     serverPublicIP: string;
     uploadBytes: number,
     downloadBytes: number,
-    nTimes: number,
     unit: "bit/s" | "s",
+    iterations: number,
 }
 
 function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions): Result[] {
@@ -87,7 +87,7 @@ function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions): Resul
     for (const version of versions) {
         // The `if` is a hack for zig.
         if (version.serverAddress == undefined) {
-            console.error(`Starting ${version.id} server.`);
+            console.error(`== Starting ${version.id} server.`);
             let serverCMD: string
             if (version.implementation === "zig-libp2p") {
                 // Hack!
@@ -95,7 +95,6 @@ function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions): Resul
             } else {
                 serverCMD = `ssh ec2-user@${args.serverPublicIP} 'docker stop $(docker ps -aq); docker run --init -d --restart always --network host ${version.containerImageID} --run-server --secret-key-seed 0'`;
             }
-            console.error(serverCMD);
             const serverSTDOUT = execCommand(serverCMD);
             console.error(serverSTDOUT);
         }
@@ -109,7 +108,7 @@ function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions): Resul
                 transportStack: transportStack,
                 uploadBytes: args.uploadBytes,
                 downloadBytes: args.downloadBytes,
-                nTimes: args.nTimes,
+                iterations: args.iterations,
             }).latencies.map(l => {
                 switch(args.unit) {
                     case "bit/s":
@@ -139,7 +138,7 @@ interface ArgsRunBenchmark {
     transportStack: string,
     uploadBytes: number,
     downloadBytes: number,
-    nTimes: number,
+    iterations: number,
 }
 
 interface Latencies {
@@ -148,7 +147,7 @@ interface Latencies {
 
 
 function runBenchmark(args: ArgsRunBenchmark): Latencies {
-    console.error(`Starting ${args.transportStack} client.`);
+    console.error(`=== Starting ${args.transportStack} client.`);
 
     let serverAddress = args.serverAddress;
 
@@ -168,24 +167,25 @@ function runBenchmark(args: ArgsRunBenchmark): Latencies {
         serverAddress = serverAddress + "/p2p/12D3KooWDpJ7As7BWAwRMfu1VU2WCqNjvq387JEYKDBj4kx6nXTN";
     }
 
-    const binFlags = `--server-address ${serverAddress} --upload-bytes ${args.uploadBytes} --download-bytes ${args.downloadBytes} --n-times ${args.nTimes}`
-    // TODO Take docker hub repository from version.ts
+    // TODO: Remove static --n-times.
+    const binFlags = `--server-address ${serverAddress} --upload-bytes ${args.uploadBytes} --download-bytes ${args.downloadBytes} --n-times 1`
     const dockerCMD = `docker run --init --rm --network host ${args.dockerImageId} ${binFlags}`
-    const cmd = `ssh ec2-user@${args.clientPublicIP} ${dockerCMD}`;
-    console.log("Running command:", cmd);
+    const cmd = `ssh ec2-user@${args.clientPublicIP} 'for i in {1..${args.iterations}}; do ${dockerCMD}; done'`
 
     const stdout = execCommand(cmd);
-    console.log("Stdout from client:", stdout.toString(), JSON.parse(stdout.toString()));
-    const parsedStdout = JSON.parse(stdout.toString());
+    // TODO: Does it really still make sense for the binary to return an array?
+    const lines = stdout.toString().trim().split('\n');
 
-    let latencies: Latencies
-    if (Array.isArray(parsedStdout)) {
-        latencies = { latencies: parsedStdout }
-    } else {
-        latencies = parsedStdout
+    const combined: Latencies = {
+        latencies: [],
+    };
+
+    for (const line of lines) {
+        const latencies = JSON.parse(line) as Latencies;
+        combined.latencies.push(...latencies.latencies);
     }
 
-    return latencies;
+    return combined;
 }
 
 function execCommand(cmd: string): string {
@@ -206,13 +206,13 @@ async function transferDockerImage(serverIp: string, imageSha256: string): Promi
     const tarballName = `${imageName}.tar`;
 
     // Save the Docker image as a tarball, transfer it using rsync, load it on the remote server, and clean up tarball files locally.
-    console.log(`Transferring Docker image ${imageSha256} to ${serverIp}`);
+    console.error(`== Transferring Docker image ${imageSha256} to ${serverIp}`);
     execCommand(`docker save -o ${tarballName} ${imageSha256} &&
                rsync -avz --progress ./${tarballName} ec2-user@${serverIp}:/tmp/ &&
                ssh ec2-user@${serverIp} 'docker load -i /tmp/${tarballName}' &&
                rm ${tarballName}`);
 
-    console.log(`Docker image ${imageSha256} transferred successfully to ${serverIp}`);
+    console.error(`=== Docker image ${imageSha256} transferred successfully to ${serverIp}`);
 }
 
 const argv = yargs
