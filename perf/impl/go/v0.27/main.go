@@ -15,15 +15,11 @@ import (
 
 func main() {
 	runServer := flag.Bool("run-server", false, "Should run as server")
-	// --server-address <SERVER_ADDRESS>
-	serverAddr := flag.String("server-address", "", "Server address")
-	// --secret-key-seed <SEED>
+	serverIPAddr := flag.String("server-ip-address", "", "Server address")
+	transport := flag.String("transport", "tcp", "Transport to use")
 	secretKeySeed := flag.Uint64("secret-key-seed", 0, "Server secret key seed")
-	// --upload-bytes <UPLOAD_BYTES>
 	uploadBytes := flag.Int("upload-bytes", 0, "Upload bytes")
-	// --download-bytes <DOWNLOAD_BYTES>
 	downloadBytes := flag.Int("download-bytes", 0, "Download bytes")
-	// --n-times <N_TIMES>
 	nTimes := flag.Int("n-times", 0, "N times")
 	flag.Parse()
 
@@ -54,7 +50,18 @@ func main() {
 		select {} // run forever, exit on interrupt
 	}
 
-	serverInfo, err := peer.AddrInfoFromString(*serverAddr)
+	var multiAddrStr string
+	switch *transport {
+	case "tcp":
+		multiAddrStr = fmt.Sprintf("/ip4/%s/tcp/4001/p2p/12D3KooWDpJ7As7BWAwRMfu1VU2WCqNjvq387JEYKDBj4kx6nXTN", *serverIPAddr)
+	case "quic-v1":
+		multiAddrStr = fmt.Sprintf("/ip4/%s/udp/4001/quic-v1/p2p/12D3KooWDpJ7As7BWAwRMfu1VU2WCqNjvq387JEYKDBj4kx6nXTN", *serverIPAddr)
+	default:
+		fmt.Println("Invalid transport. Accepted values: 'tcp' or 'quic-v1'")
+		return
+	}
+
+	serverInfo, err := peer.AddrInfoFromString(multiAddrStr)
 	if err != nil {
 		panic(err)
 	}

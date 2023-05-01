@@ -134,26 +134,8 @@ interface Latencies {
 function runBenchmark(args: ArgsRunBenchmark): Latencies {
     console.error(`=== Starting ${args.transportStack} client.`);
 
-    let serverAddress = args.serverAddress;
-
-    if (serverAddress == undefined) {
-        switch (args.transportStack) {
-            case 'tcp':
-                serverAddress = `/ip4/${args.serverPublicIP}/tcp/4001`;
-                break;
-            case 'quic-v1':
-                serverAddress = `/ip4/${args.serverPublicIP}/udp/4001/quic-v1`;
-                break;
-            default:
-                console.error("Unsupported transport stack ${args.transportStack}");
-                process.exit(1);
-
-        }
-        serverAddress = serverAddress + "/p2p/12D3KooWDpJ7As7BWAwRMfu1VU2WCqNjvq387JEYKDBj4kx6nXTN";
-    }
-
     // TODO: Remove static --n-times.
-    const binFlags = `--server-address ${serverAddress} --upload-bytes ${args.uploadBytes} --download-bytes ${args.downloadBytes} --n-times 1`
+    const binFlags = `--server-ip-address ${args.serverPublicIP} --transport ${args.transportStack} --upload-bytes ${args.uploadBytes} --download-bytes ${args.downloadBytes} --n-times 1`
     const dockerCMD = `docker run --init --rm --network host ${args.dockerImageId} ${binFlags}`
     const cmd = `ssh ec2-user@${args.clientPublicIP} 'for i in {1..${args.iterations}}; do ${dockerCMD}; done'`
 

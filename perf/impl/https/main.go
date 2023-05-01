@@ -17,10 +17,7 @@ import (
 	"math/big"
 	"net"
 	"net/http"
-	"strconv"
 	"time"
-
-	"github.com/multiformats/go-multiaddr"
 )
 
 const (
@@ -74,8 +71,7 @@ func runClient(serverAddr string, uploadBytes, downloadBytes, nTimes int) ([]tim
 		startTime := time.Now()
 		resp, err := client.Post(fmt.Sprintf("https://%s/", serverAddr), "application/octet-stream", bytes.NewReader(reqBody))
 		if err != nil {
-			fmt.Printf("Error sending request: %v\n", err)
-			continue
+			return durations, err
 		}
 
 		respBody, err := ioutil.ReadAll(resp.Body)
@@ -147,15 +143,11 @@ type Latencies struct {
 
 func main() {
 	runServer := flag.Bool("run-server", false, "Should run as server")
-	// --server-address <SERVER_ADDRESS>
-	serverAddr := flag.String("server-address", "", "Server address")
-	// --secret-key-seed <SEED>
+	serverIPAddr := flag.String("server-ip-address", "", "Server address")
+	_ = flag.String("transport", "", "Transport to use")
 	_ = flag.Uint64("secret-key-seed", 0, "Server secret key seed")
-	// --upload-bytes <UPLOAD_BYTES>
 	uploadBytes := flag.Int("upload-bytes", 0, "Upload bytes")
-	// --download-bytes <DOWNLOAD_BYTES>
 	downloadBytes := flag.Int("download-bytes", 0, "Download bytes")
-	// --n-times <N_TIMES>
 	nTimes := flag.Int("n-times", 0, "N times")
 	flag.Parse()
 
@@ -185,38 +177,13 @@ func main() {
 		}
 	} else {
 		// Client mode
-		if *serverAddr == "" || *nTimes <= 0 {
+		if *serverIPAddr == "" || *nTimes <= 0 {
 			fmt.Println("Error: Please provide valid server-address and n-times flags for client mode.")
 			return
 		}
 
-		// Parse the multiaddr and extract the IP address and TCP port
-		serverAddr, err := multiaddr.NewMultiaddr(*serverAddr)
-		if err != nil {
-			fmt.Printf("Error parsing server-address: %v\n", err)
-			return
-		}
-		ipBytes, err := serverAddr.ValueForProtocol(multiaddr.P_IP4)
-		if err != nil {
-			ipBytes, err = serverAddr.ValueForProtocol(multiaddr.P_IP6)
-			if err != nil {
-				fmt.Printf("Error getting IP address from multiaddr: %v\n", err)
-				return
-			}
-		}
-		ip := net.ParseIP(ipBytes)
-		portStr, err := serverAddr.ValueForProtocol(multiaddr.P_TCP)
-		if err != nil {
-			fmt.Printf("Error getting TCP port from multiaddr: %v\n", err)
-			return
-		}
-		port, err := strconv.Atoi(portStr)
-		if err != nil {
-			fmt.Printf("Error parsing TCP port: %v\n", err)
-			return
-		}
 		// Run the client and print the results
-		durations, err := runClient(fmt.Sprintf("%s:%d", ip.String(), port), *uploadBytes, *downloadBytes, *nTimes)
+		durations, err := runClient(fmt.Sprintf("%s:%d", *serverIPAddr, 4001), *uploadBytes, *downloadBytes, *nTimes)
 		if err != nil {
 			panic(err)
 		}
