@@ -106,10 +106,10 @@ switch (modeStr) {
                     console.log("Building any remaining things from image.json")
                     // We're building using -o image.json. This tells make to
                     // not bother building image.json or anything it depends on.
-                    child_process.execSync(`make -o image.json`, { cwd: implFolder })
+                    child_process.execSync(`make -o image.json`, { cwd: implFolder, stdio: 'inherit' })
                 } else {
                     console.log("No cache, building from scratch")
-                    child_process.execSync(`make`, { cwd: implFolder })
+                    child_process.execSync(`make`, { cwd: implFolder, stdio: "inherit" })
                 }
             }
         }
