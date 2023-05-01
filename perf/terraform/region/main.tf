@@ -111,7 +111,7 @@ resource "aws_security_group" "restricted_inbound" {
   })
 }
 
-resource "aws_key_pair" "mxinden" {
+resource "aws_key_pair" "perf" {
   key_name   = "user-public-key"
   public_key = file("./user.pub")
 }
@@ -122,7 +122,7 @@ resource "aws_instance" "node" {
 
   subnet_id = aws_subnet.perf.id
 
-  key_name = aws_key_pair.mxinden.key_name
+  key_name = aws_key_pair.perf.key_name
 
   vpc_security_group_ids = [aws_security_group.restricted_inbound.id]
 
