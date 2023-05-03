@@ -1,5 +1,5 @@
 image_name := zig-v0.0.1
-commitSha := 7d8949158767de1145e9cdb2c6bf93588413da90
+commitSha := f06e86e06f70cfbd027c981d0e455d9fa5964016
 
 all: image.json print-cpu-info
 
