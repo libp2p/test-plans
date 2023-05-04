@@ -1,5 +1,5 @@
-image_name := go-v0.26
-commitSha := 8313917571fec7d26813ff437013fde6f48659f7
+image_name := go-v0.27
+commitSha := c3096923a0964abf8a606e0b9576e4d7e700dc57
 
 all: image.json
 
