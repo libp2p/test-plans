@@ -5,10 +5,8 @@ import fs from 'fs';
 import { BenchmarkResults, Benchmark, Result } from './benchmark-result-type';
 
 async function main(clientPublicIP: string, serverPublicIP: string) {
-    for (const version of versions) {
-        transferDockerImage(serverPublicIP, version.containerImageID);
-        transferDockerImage(clientPublicIP, version.containerImageID);
-    }
+    copyAndBuildPerfImplementations(serverPublicIP);
+    copyAndBuildPerfImplementations(clientPublicIP);
 
     const benchmarkResults: BenchmarkResults = {
         benchmarks: [
@@ -66,26 +64,25 @@ function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions): Bench
     for (const version of versions) {
         console.error(`== Version ${version.implementation}/${version.id}`)
 
-        // The `if` is a hack for zig.
-        if (version.serverAddress == undefined) {
-            console.error(`=== Starting ${version.id} server.`);
-            let serverCMD: string
-            if (version.implementation === "zig-libp2p") {
-                // Hack!
-                serverCMD = `ssh ec2-user@${args.serverPublicIP} 'docker stop $(docker ps -aq); docker run --init -d --restart always --network host ${version.containerImageID} --run-server'`;
-            } else {
-                serverCMD = `ssh ec2-user@${args.serverPublicIP} 'docker stop $(docker ps -aq); docker run --init -d --restart always --network host ${version.containerImageID} --run-server --secret-key-seed 0'`;
-            }
-            const serverSTDOUT = execCommand(serverCMD);
-            console.error(serverSTDOUT);
-        }
+        // ssh user@your-server "kill \$(cat pidfile) && rm pidfile"
+        // ssh user@your-server "nohup your-command > output.log 2>&1 & echo \$! > pidfile"
+
+        console.error(`=== Starting server ${version.implementation}/${version.id}`);
+
+        let killCMD = `ssh ec2-user@${args.serverPublicIP} 'kill $(cat pidfile); rm pidfile; rm server.log || true'`;
+        const killSTDOUT = execCommand(killCMD);
+        console.error(killSTDOUT);
+
+        let serverCMD = `ssh ec2-user@${args.serverPublicIP} 'nohup ./impl/${version.implementation}/${version.id}/perf --run-server --secret-key-seed 0 > server.log 2>&1 & echo \$! > pidfile '`;
+        const serverSTDOUT = execCommand(serverCMD);
+        console.error(serverSTDOUT);
 
         for (const transportStack of version.transportStacks) {
-            const latencies = runBenchmark({
+            const latencies = runClient({
                 clientPublicIP: args.clientPublicIP,
                 serverPublicIP: args.serverPublicIP,
-                serverAddress: version.serverAddress,
-                dockerImageId: version.containerImageID,
+                id: version.id,
+                implementation: version.implementation,
                 transportStack: transportStack,
                 uploadBytes: args.uploadBytes,
                 downloadBytes: args.downloadBytes,
@@ -119,7 +116,8 @@ interface ArgsRunBenchmark {
     clientPublicIP: string;
     serverPublicIP: string;
     serverAddress?: string;
-    dockerImageId: string;
+    id: string,
+    implementation: string,
     transportStack: string,
     uploadBytes: number,
     downloadBytes: number,
@@ -131,13 +129,12 @@ interface Latencies {
 }
 
 
-function runBenchmark(args: ArgsRunBenchmark): Latencies {
-    console.error(`=== Starting ${args.transportStack} client.`);
+function runClient(args: ArgsRunBenchmark): Latencies {
+    console.error(`=== Starting client ${args.implementation}/${args.id}/${args.transportStack}`);
 
     // TODO: Remove static --n-times.
-    const binFlags = `--server-ip-address ${args.serverPublicIP} --transport ${args.transportStack} --upload-bytes ${args.uploadBytes} --download-bytes ${args.downloadBytes} --n-times 1`
-    const dockerCMD = `docker run --init --rm --network host ${args.dockerImageId} ${binFlags}`
-    const cmd = `ssh ec2-user@${args.clientPublicIP} 'for i in {1..${args.iterations}}; do ${dockerCMD}; done'`
+    const perfCMD = `./impl/${args.implementation}/${args.id}/perf --server-ip-address ${args.serverPublicIP} --transport ${args.transportStack} --upload-bytes ${args.uploadBytes} --download-bytes ${args.downloadBytes} --n-times 1`
+    const cmd = `ssh ec2-user@${args.clientPublicIP} 'for i in {1..${args.iterations}}; do ${perfCMD}; done'`
 
     const stdout = execCommand(cmd);
     // TODO: Does it really still make sense for the binary to return an array?
@@ -168,18 +165,12 @@ function execCommand(cmd: string): string {
     }
 }
 
-async function transferDockerImage(serverIp: string, imageSha256: string): Promise<void> {
-    const imageName = `image-${imageSha256.slice(0, 12)}`;
-    const tarballName = `${imageName}.tar`;
+function copyAndBuildPerfImplementations(ip: string) {
+    const stdout = execCommand(`rsync -avz --progress ../impl ec2-user@${ip}:/home/ec2-user`);
+    console.log(stdout.toString());
 
-    // Save the Docker image as a tarball, transfer it using rsync, load it on the remote server, and clean up tarball files locally.
-    console.error(`== Transferring Docker image ${imageSha256} to ${serverIp}`);
-    execCommand(`docker save -o ${tarballName} ${imageSha256} &&
-               rsync -avz --progress ./${tarballName} ec2-user@${serverIp}:/tmp/ &&
-               ssh ec2-user@${serverIp} 'docker load -i /tmp/${tarballName}' &&
-               rm ${tarballName}`);
-
-    console.error(`=== Docker image ${imageSha256} transferred successfully to ${serverIp}`);
+    const stdout2 = execCommand(`ssh ec2-user@${ip} 'cd impl && make'`);
+    console.log(stdout2.toString());
 }
 
 const argv = yargs
