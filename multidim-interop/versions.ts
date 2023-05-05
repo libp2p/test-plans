@@ -1,3 +1,5 @@
+import gov027 from "./impl/go/v0.27/image.json"
+import gov026 from "./impl/go/v0.26/image.json"
 import gov025 from "./impl/go/v0.25/image.json"
 import gov024 from "./impl/go/v0.24/image.json"
 import gov023 from "./impl/go/v0.23/image.json"
@@ -13,6 +15,7 @@ import nimv10 from "./impl/nim/v1.0/image.json"
 import chromiumJsV041 from "./impl/js/v0.41/chromium-image.json"
 import chromiumJsV042 from "./impl/js/v0.42/chromium-image.json"
 import chromiumJsV044 from "./impl/js/v0.44/chromium-image.json"
+import zigv001 from "./impl/zig/v0.0.1/image.json"
 
 export type Version = {
     id: string,
@@ -94,6 +97,18 @@ export const versions: Array<Version> = [
         transports: [{ name: "webtransport", onlyDial: true }, { name: "wss", onlyDial: true }, { name: "webrtc-direct", onlyDial: true }],
         secureChannels: ["noise"],
         muxers: ["mplex", "yamux"]
+        id: "go-v0.27.1",
+        containerImageID: gov027.imageID,
+        transports: ["tcp", "ws", "quic", "quic-v1", "webtransport"],
+        secureChannels: ["tls", "noise"],
+        muxers: ["mplex", "yamux"],
+    },
+    {
+        id: "go-v0.26.4",
+        containerImageID: gov026.imageID,
+        transports: ["tcp", "ws", "quic", "quic-v1", "webtransport"],
+        secureChannels: ["tls", "noise"],
+        muxers: ["mplex", "yamux"],
     },
     {
         id: "go-v0.25.1",
@@ -129,5 +144,12 @@ export const versions: Array<Version> = [
         transports: ["tcp", "ws"],
         secureChannels: ["noise"],
         muxers: ["mplex", "yamux"],
+    },
+    {
+        id: "zig-v0.0.1",
+        containerImageID: zigv001.imageID,
+        transports: ["quic-v1"],
+        secureChannels: [],
+        muxers: [],
     },
 ]
