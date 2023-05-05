@@ -96,7 +96,9 @@ export const versions: Array<Version> = [
         containerImageID: chromiumJsV044.imageID,
         transports: [{ name: "webtransport", onlyDial: true }, { name: "wss", onlyDial: true }, { name: "webrtc-direct", onlyDial: true }],
         secureChannels: ["noise"],
-        muxers: ["mplex", "yamux"]
+        muxers: ["mplex", "yamux"],
+    },
+    {
         id: "go-v0.27.1",
         containerImageID: gov027.imageID,
         transports: ["tcp", "ws", "quic", "quic-v1", "webtransport"],
