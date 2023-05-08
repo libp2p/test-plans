@@ -64,9 +64,6 @@ function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions): Bench
     for (const version of versions) {
         console.error(`== Version ${version.implementation}/${version.id}`)
 
-        // ssh user@your-server "kill \$(cat pidfile) && rm pidfile"
-        // ssh user@your-server "nohup your-command > output.log 2>&1 & echo \$! > pidfile"
-
         console.error(`=== Starting server ${version.implementation}/${version.id}`);
 
         let killCMD = `ssh ec2-user@${args.serverPublicIP} 'kill $(cat pidfile); rm pidfile; rm server.log || true'`;
