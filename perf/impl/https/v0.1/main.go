@@ -53,7 +53,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func runClient(serverAddr string, uploadBytes, downloadBytes, nTimes int) ([]time.Duration, error) {
+func runClient(serverAddr string, uploadBytes, downloadBytes, nTimes uint64) ([]time.Duration, error) {
 	durations := make([]time.Duration, nTimes)
 
 	client := &http.Client{
@@ -67,7 +67,7 @@ func runClient(serverAddr string, uploadBytes, downloadBytes, nTimes int) ([]tim
 	reqBody := make([]byte, 8+uploadBytes)
 	binary.BigEndian.PutUint64(reqBody, uint64(downloadBytes))
 
-	for i := 0; i < nTimes; i++ {
+	for i := 0; uint64(i) < nTimes; i++ {
 		startTime := time.Now()
 		resp, err := client.Post(fmt.Sprintf("https://%s/", serverAddr), "application/octet-stream", bytes.NewReader(reqBody))
 		if err != nil {
@@ -78,7 +78,7 @@ func runClient(serverAddr string, uploadBytes, downloadBytes, nTimes int) ([]tim
 		if err != nil {
 			fmt.Printf("Error reading response: %v\n", err)
 			return durations, err
-		} else if len(respBody) != downloadBytes {
+		} else if uint64(len(respBody)) != downloadBytes {
 			fmt.Printf("Expected %d bytes in response, but received %d\n", downloadBytes, len(respBody))
 			return durations, err
 		}
@@ -146,9 +146,9 @@ func main() {
 	serverIPAddr := flag.String("server-ip-address", "", "Server address")
 	_ = flag.String("transport", "", "Transport to use")
 	_ = flag.Uint64("secret-key-seed", 0, "Server secret key seed")
-	uploadBytes := flag.Int("upload-bytes", 0, "Upload bytes")
-	downloadBytes := flag.Int("download-bytes", 0, "Download bytes")
-	nTimes := flag.Int("n-times", 0, "N times")
+	uploadBytes := flag.Uint64("upload-bytes", 0, "Upload bytes")
+	downloadBytes := flag.Uint64("download-bytes", 0, "Download bytes")
+	nTimes := flag.Uint64("n-times", 0, "N times")
 	flag.Parse()
 
 	if *runServer {

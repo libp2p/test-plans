@@ -18,9 +18,9 @@ func main() {
 	serverIPAddr := flag.String("server-ip-address", "", "Server address")
 	transport := flag.String("transport", "tcp", "Transport to use")
 	secretKeySeed := flag.Uint64("secret-key-seed", 0, "Server secret key seed")
-	uploadBytes := flag.Int("upload-bytes", 0, "Upload bytes")
-	downloadBytes := flag.Int("download-bytes", 0, "Download bytes")
-	nTimes := flag.Int("n-times", 0, "N times")
+	uploadBytes := flag.Uint64("upload-bytes", 0, "Upload bytes")
+	downloadBytes := flag.Uint64("download-bytes", 0, "Download bytes")
+	nTimes := flag.Uint64("n-times", 0, "N times")
 	flag.Parse()
 
 
@@ -73,7 +73,7 @@ func main() {
 
 	times := make([]time.Duration, 0, *nTimes)
 
-	for i := 0; i < *nTimes; i++ {
+	for i := 0; uint64(i) < *nTimes; i++ {
 		start := time.Now()
 		err := perf.RunPerf(context.Background(), serverInfo.ID, uint64(*uploadBytes), uint64(*downloadBytes))
 		if err != nil {
