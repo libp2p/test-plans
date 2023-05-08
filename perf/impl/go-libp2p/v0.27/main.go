@@ -85,7 +85,7 @@ func main() {
 	// float32 because json
 	timesS := make([]float32, 0, len(times))
 	for _, t := range times {
-		timesS = append(timesS, float32(t.Nanoseconds())/1_000_000_000)
+		timesS = append(timesS, float32(t.Seconds()))
 	}
 
 	latencies := Latencies{
