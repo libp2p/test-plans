@@ -191,7 +191,7 @@ func main() {
 		// Convert durations to seconds and marshal as JSON
 		timesS := make([]float32, 0, len(durations))
 		for _, d := range durations {
-			timesS = append(timesS, float32(d.Nanoseconds())/1_000_000_000)
+			timesS = append(timesS, float32(d.Seconds()))
 		}
 
 		latencies := Latencies{
