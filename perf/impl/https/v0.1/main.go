@@ -2,18 +2,19 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
-	"io/ioutil"
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rand"
-	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/binary"
+	"encoding/json"
 	"encoding/pem"
 	"flag"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"math/big"
 	"net"
 	"net/http"
@@ -91,8 +92,8 @@ func runClient(serverAddr string, uploadBytes, downloadBytes, nTimes uint64) ([]
 }
 
 func generateEphemeralCertificate() (tls.Certificate, error) {
-	// Generate a private key
-	privKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	// Generate an ECDSA private key
+	privKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
 		return tls.Certificate{}, err
 	}
@@ -126,7 +127,11 @@ func generateEphemeralCertificate() (tls.Certificate, error) {
 
 	// PEM encode the certificate and private key
 	certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certDER})
-	privKeyPEM := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(privKey)})
+	privKeyBytes, err := x509.MarshalECPrivateKey(privKey)
+	if err != nil {
+		return tls.Certificate{}, err
+	}
+	privKeyPEM := pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: privKeyBytes})
 
 	// Create a tls.Certificate from the PEM encoded certificate and private key
 	cert, err := tls.X509KeyPair(certPEM, privKeyPEM)
@@ -152,7 +157,6 @@ func main() {
 	flag.Parse()
 
 	if *runServer {
-
 		// Generate an ephemeral TLS certificate and private key
 		cert, err := generateEphemeralCertificate()
 		if err != nil {
