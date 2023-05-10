@@ -17,7 +17,7 @@ async function main(clientPublicIP: string, serverPublicIP: string) {
                 uploadBytes: 100 << 20,
                 downloadBytes: 0,
                 unit: "bit/s",
-                iterations: 1,
+                iterations: 10,
             }),
             runBenchmarkAcrossVersions({
                 name: "Single Connection throughput – Download 100 MiB",
@@ -26,7 +26,7 @@ async function main(clientPublicIP: string, serverPublicIP: string) {
                 uploadBytes: 0,
                 downloadBytes: 100 << 20,
                 unit: "bit/s",
-                iterations: 1,
+                iterations: 10,
             }),
             runBenchmarkAcrossVersions({
                 name: "Connection establishment + 1 byte round trip latencies",
@@ -35,7 +35,7 @@ async function main(clientPublicIP: string, serverPublicIP: string) {
                 uploadBytes: 1,
                 downloadBytes: 1,
                 unit: "s",
-                iterations: 100,
+                iterations: 1000,
             }),
         ],
     };
