@@ -11,6 +11,11 @@ export const versions: Array<Version> = [
         transportStacks: ["tcp", "quic-v1"]
     },
     {
+        id: "v0.52-quinn",
+        implementation: "rust-libp2p",
+        transportStacks: ["tcp", "quic-v1"]
+    },
+    {
         id: "v0.1",
         implementation: "https",
         transportStacks: ["tcp"]
