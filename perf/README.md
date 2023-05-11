@@ -28,5 +28,19 @@ Benchmark results can be visualized with https://observablehq.com/@mxinden-works
 
 ## Adding a new implementation
 
-1. Add implementation to `impl/`.
+1. Add implementation to `impl/`. Requirements for the binary:
+  - Running as a libp2p-perf server
+    - Command line flags
+      - `--run-server`
+      - `--secret-key-seed` unsigned integer to be used as a seed by libp2p-based implementations. Likely to go away in future iterations.
+  - Running as a libp2p-perf client
+      - Input via command line
+        - `--server-ip-address`
+        - `--transport` (see `runner/versions.ts` for possible variants)
+        - `--upload-bytes` number of bytes to upload per stream.
+        - `--download-bytes` number of bytes to upload per stream.
+      - Output
+        - Logging MUST go to stderr.
+        - Measurement output is printed to stdout as JSON in the form of `{ latencies: [ 1.0, 42.0 ]}`.
+
 2. Reference implementation in `runner/src/versions.ts`.
