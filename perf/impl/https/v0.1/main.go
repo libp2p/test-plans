@@ -54,8 +54,8 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func runClient(serverAddr string, uploadBytes, downloadBytes, nTimes uint64) ([]time.Duration, error) {
-	durations := make([]time.Duration, nTimes)
+func runClient(serverAddr string, uploadBytes, downloadBytes uint64) ([]time.Duration, error) {
+	durations := make([]time.Duration, 1)
 
 	client := &http.Client{
 		Transport: &http.Transport{
@@ -68,25 +68,23 @@ func runClient(serverAddr string, uploadBytes, downloadBytes, nTimes uint64) ([]
 	reqBody := make([]byte, 8+uploadBytes)
 	binary.BigEndian.PutUint64(reqBody, uint64(downloadBytes))
 
-	for i := 0; uint64(i) < nTimes; i++ {
-		startTime := time.Now()
-		resp, err := client.Post(fmt.Sprintf("https://%s/", serverAddr), "application/octet-stream", bytes.NewReader(reqBody))
-		if err != nil {
-			return durations, err
-		}
-
-		respBody, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			fmt.Printf("Error reading response: %v\n", err)
-			return durations, err
-		} else if uint64(len(respBody)) != downloadBytes {
-			fmt.Printf("Expected %d bytes in response, but received %d\n", downloadBytes, len(respBody))
-			return durations, err
-		}
-		resp.Body.Close()
-
-		durations[i] = time.Since(startTime)
+	startTime := time.Now()
+	resp, err := client.Post(fmt.Sprintf("https://%s/", serverAddr), "application/octet-stream", bytes.NewReader(reqBody))
+	if err != nil {
+		return durations, err
 	}
+
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Printf("Error reading response: %v\n", err)
+		return durations, err
+	} else if uint64(len(respBody)) != downloadBytes {
+		fmt.Printf("Expected %d bytes in response, but received %d\n", downloadBytes, len(respBody))
+		return durations, err
+	}
+	resp.Body.Close()
+
+	durations[0] = time.Since(startTime)
 
 	return durations, nil
 }
@@ -153,7 +151,6 @@ func main() {
 	_ = flag.Uint64("secret-key-seed", 0, "Server secret key seed")
 	uploadBytes := flag.Uint64("upload-bytes", 0, "Upload bytes")
 	downloadBytes := flag.Uint64("download-bytes", 0, "Download bytes")
-	nTimes := flag.Uint64("n-times", 0, "N times")
 	flag.Parse()
 
 	if *runServer {
@@ -181,13 +178,13 @@ func main() {
 		}
 	} else {
 		// Client mode
-		if *serverIPAddr == "" || *nTimes <= 0 {
-			fmt.Println("Error: Please provide valid server-address and n-times flags for client mode.")
+		if *serverIPAddr == "" {
+			fmt.Println("Error: Please provide valid server-address flags for client mode.")
 			return
 		}
 
 		// Run the client and print the results
-		durations, err := runClient(fmt.Sprintf("%s:%d", *serverIPAddr, 4001), *uploadBytes, *downloadBytes, *nTimes)
+		durations, err := runClient(fmt.Sprintf("%s:%d", *serverIPAddr, 4001), *uploadBytes, *downloadBytes)
 		if err != nil {
 			panic(err)
 		}

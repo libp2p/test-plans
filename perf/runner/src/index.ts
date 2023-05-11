@@ -129,8 +129,7 @@ interface Latencies {
 function runClient(args: ArgsRunBenchmark): Latencies {
     console.error(`=== Starting client ${args.implementation}/${args.id}/${args.transportStack}`);
 
-    // TODO: Remove static --n-times.
-    const perfCMD = `./impl/${args.implementation}/${args.id}/perf --server-ip-address ${args.serverPublicIP} --transport ${args.transportStack} --upload-bytes ${args.uploadBytes} --download-bytes ${args.downloadBytes} --n-times 1`
+    const perfCMD = `./impl/${args.implementation}/${args.id}/perf --server-ip-address ${args.serverPublicIP} --transport ${args.transportStack} --upload-bytes ${args.uploadBytes} --download-bytes ${args.downloadBytes}`
     const cmd = `ssh ec2-user@${args.clientPublicIP} 'for i in {1..${args.iterations}}; do ${perfCMD}; done'`
 
     const stdout = execCommand(cmd);

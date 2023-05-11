@@ -1,5 +1,5 @@
 image_name := rust-v0.51
-commitSha := f515473f7f94597d55056df88cc9f784c35d202f
+commitSha := 59d8f3f02ce0b72320202bf43c84a8060f3db545
 
 all: perf
 

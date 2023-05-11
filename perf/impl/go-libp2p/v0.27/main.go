@@ -20,7 +20,6 @@ func main() {
 	secretKeySeed := flag.Uint64("secret-key-seed", 0, "Server secret key seed")
 	uploadBytes := flag.Uint64("upload-bytes", 0, "Upload bytes")
 	downloadBytes := flag.Uint64("download-bytes", 0, "Download bytes")
-	nTimes := flag.Uint64("n-times", 0, "N times")
 	flag.Parse()
 
 
@@ -71,16 +70,14 @@ func main() {
 		panic(err)
 	}
 
-	times := make([]time.Duration, 0, *nTimes)
+	times := make([]time.Duration, 0, 1)
 
-	for i := 0; uint64(i) < *nTimes; i++ {
-		start := time.Now()
-		err := perf.RunPerf(context.Background(), serverInfo.ID, uint64(*uploadBytes), uint64(*downloadBytes))
-		if err != nil {
-			panic(err)
-		}
-		times = append(times, time.Since(start))
+	start := time.Now()
+	err = perf.RunPerf(context.Background(), serverInfo.ID, uint64(*uploadBytes), uint64(*downloadBytes))
+	if err != nil {
+		panic(err)
 	}
+	times = append(times, time.Since(start))
 
 	// float32 because json
 	timesS := make([]float32, 0, len(times))
