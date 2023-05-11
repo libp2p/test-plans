@@ -3,6 +3,7 @@
 
 import { } from 'aegir/chai'
 import { createLibp2p, Libp2pOptions } from 'libp2p'
+import { pingService } from 'libp2p/ping'
 import { webTransport } from '@libp2p/webtransport'
 import { tcp } from '@libp2p/tcp'
 import { webSockets } from '@libp2p/websockets'
@@ -11,6 +12,7 @@ import { mplex } from '@libp2p/mplex'
 import { yamux } from '@chainsafe/libp2p-yamux'
 import { multiaddr } from '@multiformats/multiaddr'
 import { webRTC } from '@libp2p/webrtc'
+import { logger } from '@libp2p/logger'
 
 async function redisProxy(commands: any[]): Promise<any> {
   const res = await fetch(`http://localhost:${process.env.proxyPort}/`, { body: JSON.stringify(commands), method: "POST" })
@@ -100,7 +102,9 @@ describe('ping test', () => {
           options.streamMuxers = [mplex()]
           break
         case 'yamux':
-          options.streamMuxers = [yamux()]
+          options.streamMuxers = [yamux({
+            log: logger('yamux:JS')
+          })]
           break
         case 'quic':
           break
@@ -109,13 +113,13 @@ describe('ping test', () => {
       }
     }
 
-    const node = await createLibp2p(options)
+    const node = await createLibp2p({ ...options, services: { ping: pingService() }})
 
     try {
       if (isDialer) {
         var otherMa = (await redisProxy(["BLPOP", "listenerAddr", timeoutSecs]).catch(err => { throw new Error("Failed to wait for listener") }))[1]
         // Hack until these are merged:
-        // - https://github.com/multiformats/js-multiaddr/pull/312 
+        // - https://github.com/multiformats/js-multiaddr/pull/312
         // - https://github.com/multiformats/js-multiaddr-to-uri/pull/120
         otherMa = otherMa.replace("/tls/ws", "/wss")
         otherMa = otherMa.replace("/ip4/192.168.5.124", "/dns4/localhost")
@@ -123,7 +127,7 @@ describe('ping test', () => {
         console.error(`node ${node.peerId} pings: ${otherMa}`)
         const handshakeStartInstant = Date.now()
         await node.dial(multiaddr(otherMa))
-        const pingRTT = await node.ping(multiaddr(otherMa))
+        const pingRTT = await node.services.ping.ping(multiaddr(otherMa))
         const handshakePlusOneRTT = Date.now() - handshakeStartInstant
         console.log(JSON.stringify({
           handshakePlusOneRTTMillis: handshakePlusOneRTT,
