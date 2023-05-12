@@ -146,7 +146,7 @@ type Latencies struct {
 
 func main() {
 	runServer := flag.Bool("run-server", false, "Should run as server")
-	serverIPAddr := flag.String("server-ip-address", "", "Server address")
+	serverAddr := flag.String("server-address", "", "Server address")
 	_ = flag.String("transport", "", "Transport to use")
 	_ = flag.Uint64("secret-key-seed", 0, "Server secret key seed")
 	uploadBytes := flag.Uint64("upload-bytes", 0, "Upload bytes")
@@ -178,13 +178,13 @@ func main() {
 		}
 	} else {
 		// Client mode
-		if *serverIPAddr == "" {
+		if *serverAddr == "" {
 			fmt.Println("Error: Please provide valid server-address flags for client mode.")
 			return
 		}
 
 		// Run the client and print the results
-		durations, err := runClient(fmt.Sprintf("%s:%d", *serverIPAddr, 4001), *uploadBytes, *downloadBytes)
+		durations, err := runClient(*serverAddr, *uploadBytes, *downloadBytes)
 		if err != nil {
 			panic(err)
 		}

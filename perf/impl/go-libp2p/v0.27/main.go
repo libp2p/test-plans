@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"time"
+	"strings"
 
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p/core/peer"
@@ -15,7 +16,7 @@ import (
 
 func main() {
 	runServer := flag.Bool("run-server", false, "Should run as server")
-	serverIPAddr := flag.String("server-ip-address", "", "Server address")
+	serverAddr := flag.String("server-address", "", "Server address")
 	transport := flag.String("transport", "tcp", "Transport to use")
 	secretKeySeed := flag.Uint64("secret-key-seed", 0, "Server secret key seed")
 	uploadBytes := flag.Uint64("upload-bytes", 0, "Upload bytes")
@@ -49,12 +50,21 @@ func main() {
 		select {} // run forever, exit on interrupt
 	}
 
+	ipPort := strings.Split(*serverAddr, ":")
+	if len(ipPort) != 2 {
+		fmt.Println("Invalid server address format. Expected format: 'ip:port'")
+		return
+	}
+
+	ip := ipPort[0]
+	port := ipPort[1]
+
 	var multiAddrStr string
 	switch *transport {
 	case "tcp":
-		multiAddrStr = fmt.Sprintf("/ip4/%s/tcp/4001/p2p/12D3KooWDpJ7As7BWAwRMfu1VU2WCqNjvq387JEYKDBj4kx6nXTN", *serverIPAddr)
+		multiAddrStr = fmt.Sprintf("/ip4/%s/tcp/%s/p2p/12D3KooWDpJ7As7BWAwRMfu1VU2WCqNjvq387JEYKDBj4kx6nXTN", ip, port)
 	case "quic-v1":
-		multiAddrStr = fmt.Sprintf("/ip4/%s/udp/4001/quic-v1/p2p/12D3KooWDpJ7As7BWAwRMfu1VU2WCqNjvq387JEYKDBj4kx6nXTN", *serverIPAddr)
+		multiAddrStr = fmt.Sprintf("/ip4/%s/udp/%s/quic-v1/p2p/12D3KooWDpJ7As7BWAwRMfu1VU2WCqNjvq387JEYKDBj4kx6nXTN", ip, port)
 	default:
 		fmt.Println("Invalid transport. Accepted values: 'tcp' or 'quic-v1'")
 		return

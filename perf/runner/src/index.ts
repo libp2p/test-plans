@@ -70,7 +70,7 @@ function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions): Bench
         const killSTDOUT = execCommand(killCMD);
         console.error(killSTDOUT);
 
-        let serverCMD = `ssh ec2-user@${args.serverPublicIP} 'nohup ./impl/${version.implementation}/${version.id}/perf --run-server --secret-key-seed 0 > server.log 2>&1 & echo \$! > pidfile '`;
+        let serverCMD = `ssh ec2-user@${args.serverPublicIP} 'nohup ./impl/${version.implementation}/${version.id}/perf --run-server --server-address 0.0.0.0:4001 --secret-key-seed 0 > server.log 2>&1 & echo \$! > pidfile '`;
         const serverSTDOUT = execCommand(serverCMD);
         console.error(serverSTDOUT);
 
@@ -129,7 +129,7 @@ interface Latencies {
 function runClient(args: ArgsRunBenchmark): Latencies {
     console.error(`=== Starting client ${args.implementation}/${args.id}/${args.transportStack}`);
 
-    const perfCMD = `./impl/${args.implementation}/${args.id}/perf --server-ip-address ${args.serverPublicIP} --transport ${args.transportStack} --upload-bytes ${args.uploadBytes} --download-bytes ${args.downloadBytes}`
+    const perfCMD = `./impl/${args.implementation}/${args.id}/perf --server-address ${args.serverPublicIP}:4001 --transport ${args.transportStack} --upload-bytes ${args.uploadBytes} --download-bytes ${args.downloadBytes}`
     const cmd = `ssh ec2-user@${args.clientPublicIP} 'for i in {1..${args.iterations}}; do ${perfCMD}; done'`
 
     const stdout = execCommand(cmd);
