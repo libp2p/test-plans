@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"math/big"
 	"net"
 	"net/http"
@@ -28,9 +29,8 @@ const (
 func handleRequest(w http.ResponseWriter, r *http.Request) {
 	// Read the big-endian bytesToSend value
 	var bytesToSend uint64
-	err := binary.Read(r.Body, binary.BigEndian, &bytesToSend)
-	if err != nil {
-		http.Error(w, "Failed to read u64 value", http.StatusBadRequest)
+	if err := binary.Read(r.Body, binary.BigEndian, &bytesToSend); err != nil {
+		http.Error(w, "failed to read uint64 value", http.StatusBadRequest)
 		return
 	}
 
@@ -54,9 +54,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func runClient(serverAddr string, uploadBytes, downloadBytes uint64) ([]time.Duration, error) {
-	durations := make([]time.Duration, 1)
-
+func runClient(serverAddr string, uploadBytes, downloadBytes uint64) (time.Duration, error) {
 	client := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
@@ -71,22 +69,19 @@ func runClient(serverAddr string, uploadBytes, downloadBytes uint64) ([]time.Dur
 	startTime := time.Now()
 	resp, err := client.Post(fmt.Sprintf("https://%s/", serverAddr), "application/octet-stream", bytes.NewReader(reqBody))
 	if err != nil {
-		return durations, err
+		return 0, err
 	}
 
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Printf("Error reading response: %v\n", err)
-		return durations, err
-	} else if uint64(len(respBody)) != downloadBytes {
-		fmt.Printf("Expected %d bytes in response, but received %d\n", downloadBytes, len(respBody))
-		return durations, err
+		return 0, fmt.Errorf("error reading response: %w\n", err)
 	}
-	resp.Body.Close()
+	defer resp.Body.Close()
+	if uint64(len(respBody)) != downloadBytes {
+		return 0, fmt.Errorf("expected %d bytes in response, but received %d\n", downloadBytes, len(respBody))
+	}
 
-	durations[0] = time.Since(startTime)
-
-	return durations, nil
+	return time.Since(startTime), nil
 }
 
 func generateEphemeralCertificate() (tls.Certificate, error) {
@@ -141,7 +136,7 @@ func generateEphemeralCertificate() (tls.Certificate, error) {
 }
 
 type Latencies struct {
-	Latencies []float32 `json:"latencies"`
+	Latencies []float64 `json:"latencies"`
 }
 
 func main() {
@@ -157,8 +152,7 @@ func main() {
 		// Generate an ephemeral TLS certificate and private key
 		cert, err := generateEphemeralCertificate()
 		if err != nil {
-			fmt.Printf("Error generating ephemeral certificate: %v\n", err)
-			return
+			log.Fatalf("Error generating ephemeral certificate: %v\n", err)
 		}
 
 		// Create a new HTTPS server with the ephemeral certificate
@@ -179,31 +173,25 @@ func main() {
 	} else {
 		// Client mode
 		if *serverAddr == "" {
-			fmt.Println("Error: Please provide valid server-address flags for client mode.")
-			return
+			flag.Usage()
+			log.Fatal("Error: Please provide valid server-address flags for client mode.")
 		}
 
 		// Run the client and print the results
-		durations, err := runClient(*serverAddr, *uploadBytes, *downloadBytes)
+		d, err := runClient(*serverAddr, *uploadBytes, *downloadBytes)
 		if err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
 
 		// Convert durations to seconds and marshal as JSON
-		timesS := make([]float32, 0, len(durations))
-		for _, d := range durations {
-			timesS = append(timesS, float32(d.Seconds()))
-		}
-
 		latencies := Latencies{
-			Latencies: timesS,
+			Latencies: []float64{d.Seconds()},
 		}
 
 		jsonB, err := json.Marshal(latencies)
 		if err != nil {
 			panic(err)
 		}
-
 		fmt.Println(string(jsonB))
 	}
 }
