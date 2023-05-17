@@ -1,7 +1,19 @@
 export type BenchmarkResults = {
     benchmarks: Benchmark[],
+    pings: PingResults,
+    iperf: IperfResults,
     // For referencing this schema in JSON
     "$schema"?: string
+};
+
+export type PingResults = {
+    unit: "s",
+    results: number[]
+};
+
+export type IperfResults = {
+    unit: "bit/s",
+    results: number[]
 };
 
 export type Benchmark = {
