@@ -1,4 +1,4 @@
-commitSha := b3ed7966a563d528b7aa19265cbca929bf2bc73f
+commitSha := 5ef52595604bee86e75d9692d08441ed6c208668
 
 all: perf
 
@@ -10,8 +10,7 @@ perf-${commitSha}: perf-${commitSha}.zip
 	unzip -o perf-${commitSha}.zip
 
 perf-${commitSha}.zip:
-	# TODO: Depend on upstream, not mxinden
-	wget -O $@ "https://github.com/mxinden/perf/archive/${commitSha}.zip"
+	wget -O $@ "https://github.com/quic-go/perf/archive/${commitSha}.zip"
 
 clean:
 	rm perf-*.zip
