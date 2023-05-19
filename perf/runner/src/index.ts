@@ -220,7 +220,7 @@ function execCommand(cmd: string): string {
 }
 
 function copyAndBuildPerfImplementations(ip: string) {
-    const stdout = execCommand(`rsync -avz --progress ../impl ec2-user@${ip}:/home/ec2-user`);
+    const stdout = execCommand(`rsync -avz --progress --filter=':- .gitignore' ../impl ec2-user@${ip}:/home/ec2-user`);
     console.error(stdout.toString());
 
     const stdout2 = execCommand(`ssh ec2-user@${ip} 'cd impl && make'`);
