@@ -22,14 +22,39 @@ environment variables. The current parameters are:
 | muxer                | The muxer to use                                             | no, except when transport is one of quic, quic-v1, webtransport |
 | security             | The security channel to use                                  | no, except when transport is one of quic, quic-v1, webtransport |
 | is_dialer            | Should you dial or listen                                    | no                                                              |
-| ip                   | IP address to bind the listener to                           | yes, default to "0.0.0.0"                                       |
+| ip                   | IP address to bind the listener to                           | yes, except rust - default to "0.0.0.0"                         |
 | redis_addr           | A different address to connect to redis (default redis:6379) | yes, default to the `redis` host on port 6379                   |
 | test_timeout_seconds | Control the timeout of test.                                 | yes, default to 180 seconds.                                    |
 
 The test should do two different things depending on if it's the dialer or
 listener.
 
-## Dialer
+## Running Locally
+In some cases you may want to run locally when debugging, such as modifying internal dependencies.
+
+1. To run the test locally, you'll also need to have docker installed in order to run the redis instance. Once docker is running, you can run the following command to start the redis instance:
+
+```bash
+docker run --rm -p 6379:6379 redis:7-alpine
+```
+
+This will start a redis instance on port 6379.
+
+2. Next, you'll need to install the dependencies and build the implementation for the test. In the case of a JS implementation, You can do this by running the following command:
+
+```bash
+cd impl/js/v0.xx.xx/ && npm i && npm run build
+```
+
+3. Finally, you can run the test by running the following command, ensure that you pass the required environment variables:
+
+```bash
+DEBUG=*:yamux:trace transport=tcp muxer=yamux security=noise is_dialer=true ip="0.0.0.0" redis_addr=localhost:6379  npm run test -- -t node
+```
+
+For more details on how to run a dialler and a listener, see the sections below.
+
+## Dialler
 
 The dialer should emit all diagnostic logs to `stderr`. Only the final JSON
 string result should be emitted to `stdout`.
@@ -48,7 +73,7 @@ string result should be emitted to `stdout`.
 
 On error, the dialer should return a non-zero exit code.
 
-## Listener
+### Listener
 
 The listener should emit all diagnostic logs to `stderr`.
 
