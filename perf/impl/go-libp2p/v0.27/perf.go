@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"time"
 
 	logging "github.com/ipfs/go-log/v2"
 	pool "github.com/libp2p/go-buffer-pool"
@@ -93,10 +94,10 @@ func (ps *PerfService) drainStream(ctx context.Context, s network.Stream, buf []
 	}
 }
 
-func (ps *PerfService) RunPerf(ctx context.Context, p peer.ID, bytesToSend uint64, bytesToRecv uint64) error {
+func (ps *PerfService) RunPerf(ctx context.Context, p peer.ID, bytesToSend uint64, bytesToRecv uint64) (time.Duration, time.Duration, error) {
 	s, err := ps.Host.NewStream(ctx, p, ID)
 	if err != nil {
-		return err
+		return 0, 0, err
 	}
 
 	buf := pool.Get(BlockSize)
@@ -107,22 +108,26 @@ func (ps *PerfService) RunPerf(ctx context.Context, p peer.ID, bytesToSend uint6
 
 	_, err = s.Write(sizeBuf)
 	if err != nil {
-
-		return err
+		return 0, 0, err
 	}
 
+	sendStart := time.Now()
 	err = ps.sendBytes(ctx, s, bytesToSend, buf)
 	if err != nil {
-		return err
+		return 0, 0, err
 	}
+	sendDuration := time.Since(sendStart)
 
+	recvStart := time.Now()
 	recvd, err := ps.drainStream(ctx, s, buf)
 	if err != nil {
-		return err
+		return sendDuration, 0, err
 	}
+	recvDuration := time.Since(recvStart)
 
 	if recvd != bytesToRecv {
-		return fmt.Errorf("expected to recv %d bytes, got %d", bytesToRecv, recvd)
+		return sendDuration, recvDuration, fmt.Errorf("expected to recv %d bytes, got %d", bytesToRecv, recvd)
 	}
-	return err
+
+	return sendDuration, recvDuration, nil
 }

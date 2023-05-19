@@ -20,13 +20,25 @@ export type Benchmark = {
     name: string,
     unit: "bit/s" | "s",
     results: Result[],
+    parameters:
+}
+
+export type Parameters = {
+    uploadBytes: number,
+    downloadBytes: number,
 }
 
 export type Result = {
-    result: number[],
+    result: ResultValue[],
     implementation: string,
     transportStack: string,
     version: string
+};
+
+export type ResultValue = {
+    connectionEstablishedSeconds: number,
+    uploadSeconds: number,
+    downloadSeconds: number,
 };
 
 export type Comparison = {

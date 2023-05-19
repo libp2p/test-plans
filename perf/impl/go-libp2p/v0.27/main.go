@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"time"
 	"strings"
+	"time"
 
 	"github.com/libp2p/go-libp2p"
-	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/crypto"
+	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/multiformats/go-multiaddr"
 )
 
@@ -23,13 +23,12 @@ func main() {
 	downloadBytes := flag.Uint64("download-bytes", 0, "Download bytes")
 	flag.Parse()
 
-
 	var opts []libp2p.Option
-	if *runServer  {
+	if *runServer {
 		opts = append(opts, libp2p.ListenAddrStrings("/ip4/0.0.0.0/tcp/4001", "/ip4/0.0.0.0/udp/4001/quic-v1"))
 
 		// TODO: Fake identity. For testing only.
-		priv, _, err := crypto.GenerateEd25519Key(&simpleReader{seed:uint8(*secretKeySeed)})
+		priv, _, err := crypto.GenerateEd25519Key(&simpleReader{seed: uint8(*secretKeySeed)})
 		if err != nil {
 			panic(err)
 		}
@@ -75,31 +74,23 @@ func main() {
 		panic(err)
 	}
 
+	start := time.Now()
 	err = h.Connect(context.Background(), *serverInfo)
 	if err != nil {
 		panic(err)
 	}
+	connectionEstablished := time.Since(start)
 
-	times := make([]time.Duration, 0, 1)
-
-	start := time.Now()
-	err = perf.RunPerf(context.Background(), serverInfo.ID, uint64(*uploadBytes), uint64(*downloadBytes))
+	upload, download, err := perf.RunPerf(context.Background(), serverInfo.ID, uint64(*uploadBytes), uint64(*downloadBytes))
 	if err != nil {
 		panic(err)
 	}
-	times = append(times, time.Since(start))
 
-	// float32 because json
-	timesS := make([]float32, 0, len(times))
-	for _, t := range times {
-		timesS = append(timesS, float32(t.Seconds()))
-	}
-
-	latencies := Latencies{
-		Latencies: timesS,
-	}
-
-	jsonB, err := json.Marshal(latencies)
+	jsonB, err := json.Marshal(Result{
+		ConnectionEstablishedSeconds: connectionEstablished.Seconds(),
+		UploadSeconds:                upload.Seconds(),
+		DownloadSeconds:              download.Seconds(),
+	})
 	if err != nil {
 		panic(err)
 	}
@@ -107,8 +98,10 @@ func main() {
 	fmt.Println(string(jsonB))
 }
 
-type Latencies struct {
-	Latencies []float32 `json:"latencies"`
+type Result struct {
+	ConnectionEstablishedSeconds float64 `json:"connectionEstablishedSeconds"`
+	UploadSeconds                float64 `json:"uploadSeconds"`
+	DownloadSeconds              float64 `json: "downloadSeconds"`
 }
 
 type simpleReader struct {

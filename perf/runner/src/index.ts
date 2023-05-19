@@ -2,7 +2,7 @@ import { execSync } from 'child_process';
 import { versions } from './versions';
 import yargs from 'yargs';
 import fs from 'fs';
-import { BenchmarkResults, Benchmark, Result, IperfResults, PingResults } from './benchmark-result-type';
+import { BenchmarkResults, Benchmark, Result, IperfResults, PingResults, ResultValue } from './benchmark-result-type';
 
 async function main(clientPublicIP: string, serverPublicIP: string) {
     const pings = runPing(clientPublicIP, serverPublicIP);
@@ -133,7 +133,7 @@ function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions): Bench
         console.error(serverSTDOUT);
 
         for (const transportStack of version.transportStacks) {
-            const latencies = runClient({
+            const result = runClient({
                 clientPublicIP: args.clientPublicIP,
                 serverPublicIP: args.serverPublicIP,
                 id: version.id,
@@ -142,17 +142,10 @@ function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions): Bench
                 uploadBytes: args.uploadBytes,
                 downloadBytes: args.downloadBytes,
                 iterations: args.iterations,
-            }).latencies.map(l => {
-                switch(args.unit) {
-                    case "bit/s":
-                        return (args.uploadBytes + args.downloadBytes) * 8 / l;
-                    case "s":
-                        return l;
-                }
             });
 
             results.push({
-                result: latencies,
+                result,
                 implementation: version.implementation,
                 version: version.id,
                 transportStack: transportStack,
@@ -164,6 +157,10 @@ function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions): Bench
         name: args.name,
         unit: args.unit,
         results,
+        parameters: {
+            uploadBytes: args.uploadBytes,
+            downloadBytes: args.downloadBytes,
+        }
     };
 }
 
@@ -179,28 +176,21 @@ interface ArgsRunBenchmark {
     iterations: number,
 }
 
-interface Latencies {
-    latencies: number[];
-}
-
-
-function runClient(args: ArgsRunBenchmark): Latencies {
+function runClient(args: ArgsRunBenchmark): ResultValue[] {
     console.error(`=== Starting client ${args.implementation}/${args.id}/${args.transportStack}`);
 
     const perfCMD = `./impl/${args.implementation}/${args.id}/perf --server-address ${args.serverPublicIP}:4001 --transport ${args.transportStack} --upload-bytes ${args.uploadBytes} --download-bytes ${args.downloadBytes}`
     const cmd = `ssh ec2-user@${args.clientPublicIP} 'for i in {1..${args.iterations}}; do ${perfCMD}; done'`
 
     const stdout = execCommand(cmd);
-    // TODO: Does it really still make sense for the binary to return an array?
+
     const lines = stdout.toString().trim().split('\n');
 
-    const combined: Latencies = {
-        latencies: [],
-    };
+    const combined: ResultValue[]= [];
 
     for (const line of lines) {
-        const latencies = JSON.parse(line) as Latencies;
-        combined.latencies.push(...latencies.latencies);
+        const result = JSON.parse(line) as ResultValue;
+        combined.push(result);
     }
 
     return combined;

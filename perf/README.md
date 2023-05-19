@@ -41,6 +41,9 @@ Benchmark results can be visualized with https://observablehq.com/@mxinden-works
         - `--download-bytes` number of bytes to upload per stream.
       - Output
         - Logging MUST go to stderr.
-        - Measurement output is printed to stdout as JSON in the form of `{ latencies: [ 1.0, 42.0 ]}`.
+        - Measurement output is printed to stdout as JSON in the form of:
+          ```json
+          {"connectionEstablishedSeconds":0.246442851,"uploadSeconds":0.000002077,"DownloadSeconds":0.060712241}
+          ```
 
 2. Reference implementation in `runner/src/versions.ts`.
