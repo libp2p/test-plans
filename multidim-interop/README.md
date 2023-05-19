@@ -29,6 +29,37 @@ environment variables. The current parameters are:
 The test should do two different things depending on if it's the dialer or
 listener.
 
+## Running Locally
+In some cases you may want to run locally when debugging, such as modifying internal dependencies.
+
+1. To run the test locally, you'll also need to have docker installed in order to run the redis instance. Once docker is running, you can run the following command to start the redis instance:
+
+```bash
+docker run --rm -p 6379:6379 redis:7-alpine
+```
+
+This will start a redis instance on port 6379.
+
+2. Next, you'll need to install the dependencies and build the implementation for the test.  In this and the next step we are using a JS implementation as an example, so you would run the following command:
+
+```bash
+cd impl/js/v0.xx.xx/ && npm i && npm run build
+```
+
+3. Then you can run a dialer by running the following command, ensure that you pass the required environment variables, as well as any that may be of use for debugging:
+
+```bash
+DEBUG=*:yamux:trace transport=tcp muxer=yamux security=noise is_dialer=true   npm run test -- -t node
+```
+
+4. Finally you can run a listener by running the following command in this case where a running a rust listener:
+
+```bash
+ RUST_LOG=yamux=trace transport=tcp muxer=yamux security=noise is_dialer=false ip="0.0.0.0" redis_addr=localhost:6379  cargo run --package interop-tests
+ ```
+
+For more details on how to run a dialer vs a listener, see the sections below.
+
 ## Dialer
 
 The dialer should emit all diagnostic logs to `stderr`. Only the final JSON
