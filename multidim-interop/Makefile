@@ -5,7 +5,7 @@ NIM_SUBDIRS := $(wildcard impl/nim/*/.)
 ZIG_SUBDIRS := $(wildcard impl/zig/*/.)
 JAVA_SUBDIRS := $(wildcard impl/java/*/.)
 
-all: $(GO_SUBDIRS) $(JS_SUBDIRS) $(RUST_SUBDIRS) $(NIM_SUBDIRS) $(ZIG_SUBDIRS)
+all: $(GO_SUBDIRS) $(JS_SUBDIRS) $(RUST_SUBDIRS) $(NIM_SUBDIRS) $(ZIG_SUBDIRS) $(JAVA_SUBDIRS)
 $(JS_SUBDIRS):
 	$(MAKE) -C $@
 $(GO_SUBDIRS):
