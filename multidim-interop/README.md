@@ -22,7 +22,7 @@ environment variables. The current parameters are:
 | muxer                | The muxer to use                                             | no, except when transport is one of quic, quic-v1, webtransport |
 | security             | The security channel to use                                  | no, except when transport is one of quic, quic-v1, webtransport |
 | is_dialer            | Should you dial or listen                                    | no                                                              |
-| ip                   | IP address to bind the listener to                           | yes, except rust - default to "0.0.0.0"                         |
+| ip                   | IP address to bind the listener to                           | yes, default to "0.0.0.0"                                       |
 | redis_addr           | A different address to connect to redis (default redis:6379) | yes, default to the `redis` host on port 6379                   |
 | test_timeout_seconds | Control the timeout of test.                                 | yes, default to 180 seconds.                                    |
 
@@ -46,15 +46,21 @@ This will start a redis instance on port 6379.
 cd impl/js/v0.xx.xx/ && npm i && npm run build
 ```
 
-3. Finally, you can run the test by running the following command, ensure that you pass the required environment variables, as well as any that may be of use for debugging:
+3. Then you can run a dialer by running the following command, ensure that you pass the required environment variables, as well as any that may be of use for debugging:
 
 ```bash
-DEBUG=*:yamux:trace transport=tcp muxer=yamux security=noise is_dialer=true ip="0.0.0.0" redis_addr=localhost:6379  npm run test -- -t node
+DEBUG=*:yamux:trace transport=tcp muxer=yamux security=noise is_dialer=true   npm run test -- -t node
 ```
 
-For more details on how to run a dialler and a listener, see the sections below.
+4. Finally you can run a listener by running the following command in this case where a running a rust listener:
 
-## Dialler
+```bash
+ RUST_LOG=yamux=trace transport=tcp muxer=yamux security=noise is_dialer=false ip="0.0.0.0" redis_addr=localhost:6379  cargo run --package interop-tests
+ ```
+
+For more details on how to run a dialer vs a listener, see the sections below.
+
+## Dialer
 
 The dialer should emit all diagnostic logs to `stderr`. Only the final JSON
 string result should be emitted to `stdout`.
@@ -73,7 +79,7 @@ string result should be emitted to `stdout`.
 
 On error, the dialer should return a non-zero exit code.
 
-### Listener
+## Listener
 
 The listener should emit all diagnostic logs to `stderr`.
 
