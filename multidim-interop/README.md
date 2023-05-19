@@ -40,13 +40,13 @@ docker run --rm -p 6379:6379 redis:7-alpine
 
 This will start a redis instance on port 6379.
 
-2. Next, you'll need to install the dependencies and build the implementation for the test. In the case of a JS implementation, You can do this by running the following command:
+2. Next, you'll need to install the dependencies and build the implementation for the test.  In this and the next step we are using a JS implementation as an example, so you would run the following command:
 
 ```bash
 cd impl/js/v0.xx.xx/ && npm i && npm run build
 ```
 
-3. Finally, you can run the test by running the following command, ensure that you pass the required environment variables:
+3. Finally, you can run the test by running the following command, ensure that you pass the required environment variables, as well as any that may be of use for debugging:
 
 ```bash
 DEBUG=*:yamux:trace transport=tcp muxer=yamux security=noise is_dialer=true ip="0.0.0.0" redis_addr=localhost:6379  npm run test -- -t node
