@@ -101,7 +101,7 @@ func main() {
 type Result struct {
 	ConnectionEstablishedSeconds float64 `json:"connectionEstablishedSeconds"`
 	UploadSeconds                float64 `json:"uploadSeconds"`
-	DownloadSeconds              float64 `json: "downloadSeconds"`
+	DownloadSeconds              float64 `json:"downloadSeconds"`
 }
 
 type simpleReader struct {

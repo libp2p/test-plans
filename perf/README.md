@@ -43,7 +43,7 @@ Benchmark results can be visualized with https://observablehq.com/@mxinden-works
         - Logging MUST go to stderr.
         - Measurement output is printed to stdout as JSON in the form of:
           ```json
-          {"connectionEstablishedSeconds":0.246442851,"uploadSeconds":0.000002077,"DownloadSeconds":0.060712241}
+          {"connectionEstablishedSeconds":0.246442851,"uploadSeconds":0.000002077,"downloadSeconds":0.060712241}
           ```
 
 2. Reference implementation in `runner/src/versions.ts`.
