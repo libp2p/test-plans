@@ -10,21 +10,36 @@ Benchmark results can be visualized with https://observablehq.com/@mxinden-works
 
 ## Provision infrastructure
 
+### Bootstrap
+
 1. `cd terraform`
 2. Save your public SSH key as the file `./user.pub`.
 3. `terraform init`
 4. `terraform apply`
 
+### Nodes
+
+1. `SERVER_ID=$(make provision-server)`
+2. `CLIENT_ID=$(make provision-client)`
+3. `read SERVER_IP CLIENT_IP <<< $(SERVER_ID=$SERVER_ID CLIENT_ID=$CLIENT_ID make wait)`
+
 ## Build and run implementations
 
 1. `cd runner`
 2. `npm ci`
-3. `npm run start -- --client-public-ip $(terraform output -raw -state ../terraform/terraform.tfstate client_public_ip) --server-public-ip $(terraform output -raw -state ../terraform/terraform.tfstate server_public_ip)`
+3. `npm run start -- --client-public-ip $CLIENT_IP --server-public-ip $SERVER_IP`
 
 ## Deprovision infrastructure
 
+### Nodes
+
+1. `CLIENT_ID=$CLIENT_ID make deprovision-client`
+2. `SERVER_ID=$SERVER_ID make deprovision-server`
+
+### Bootstrap
+
 1. `cd terraform`
-3. `terraform destroy`
+2. `terraform destroy`
 
 ## Adding a new implementation
 

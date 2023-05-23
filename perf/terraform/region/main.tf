@@ -116,8 +116,9 @@ resource "aws_key_pair" "perf" {
   public_key = file("./user.pub")
 }
 
-resource "aws_instance" "node" {
-  ami           = var.ami
+resource "aws_launch_template" "perf" {
+  name = "perf-node"
+  image_id = var.ami
   instance_type = "m5n.8xlarge"
 
   subnet_id = aws_subnet.perf.id
@@ -130,14 +131,14 @@ resource "aws_instance" "node" {
   # - /var/log/cloud-init.log and
   # - /var/log/cloud-init-output.log
   user_data                   = file("./user-data.sh")
-  user_data_replace_on_change = true
 
-  tags = merge(var.common_tags, {
-    Name = "node"
-  })
-}
+  tag_specifications {
+    resource_type = "instance"
 
-output "node_public_ip" {
-  value       = aws_instance.node.public_ip
-  description = "Public IP address of the node instance"
+    tags = merge(var.common_tags, {
+      Name = "node"
+    })
+  }
+
+  instance_initiated_shutdown_behavior = "terminate"
 }
