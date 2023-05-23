@@ -12,6 +12,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/multiformats/go-multiaddr"
+	tls "github.com/libp2p/go-libp2p/p2p/security/tls"
 )
 
 func main() {
@@ -23,7 +24,13 @@ func main() {
 	downloadBytes := flag.Uint64("download-bytes", 0, "Download bytes")
 	flag.Parse()
 
-	var opts []libp2p.Option
+	opts := []libp2p.Option{
+		// Use TLS only instead of both TLS and Noise. Removes the
+		// additional multistream-select security protocol negotiation.
+		// Thus makes it easier to compare with TCP+TLS+HTTP/2
+		libp2p.Security(tls.ID, tls.New),
+	}
+
 	if *runServer {
 		opts = append(opts, libp2p.ListenAddrStrings("/ip4/0.0.0.0/tcp/4001", "/ip4/0.0.0.0/udp/4001/quic-v1"))
 
