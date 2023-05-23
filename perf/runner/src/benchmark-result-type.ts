@@ -29,10 +29,10 @@ export type Parameters = {
 }
 
 export type Result = {
-    result: ResultValue[],
     implementation: string,
     transportStack: string,
     version: string
+    result: ResultValue[],
 };
 
 export type ResultValue = {
