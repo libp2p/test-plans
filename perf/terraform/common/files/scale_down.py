@@ -14,7 +14,7 @@ def is_lost(instance):
 
 def lambda_handler(event, context):
     # iterate over all regions
-    for region in regions.split(','):
+    for region in json.loads(regions):
         ec2 = boto3.client('ec2', region_name=region)
         filter = [{'Name': 'instance-state-name', 'Values': ['running']}]
         filter = filter + [{

@@ -117,8 +117,8 @@ resource "aws_key_pair" "perf" {
 }
 
 resource "aws_launch_template" "perf" {
-  name = "perf-node"
-  image_id = var.ami
+  name          = "perf-node"
+  image_id      = var.ami
   instance_type = "m5n.8xlarge"
 
   subnet_id = aws_subnet.perf.id
@@ -130,7 +130,7 @@ resource "aws_launch_template" "perf" {
   # Debug via:
   # - /var/log/cloud-init.log and
   # - /var/log/cloud-init-output.log
-  user_data                   = file("${path.module}/files/user-data.sh")
+  user_data = file("${path.module}/files/user-data.sh")
 
   tag_specifications {
     resource_type = "instance"
@@ -141,4 +141,8 @@ resource "aws_launch_template" "perf" {
   }
 
   instance_initiated_shutdown_behavior = "terminate"
+
+  iam_instance_profile {
+    name = "perf-node-profile"
+  }
 }

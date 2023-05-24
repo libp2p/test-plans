@@ -13,17 +13,22 @@ locals {
   }
 }
 
+resource "random_id" "bucket_id" {
+  byte_length = 4
+}
+
 module "common" {
   source = "${path.module}/common"
   region = "us-west-2"
 
   common_tags = local.tags
+  bucket_name = "perf-test-bucket-${random_id.bucket_id.hex}"
 }
 
 module "server_region" {
   source = "${path.module}/region"
   region = "us-west-2"
-  ami = "ami-0747e613a2a1ff483"
+  ami    = "ami-0747e613a2a1ff483"
 
   common_tags = local.tags
 }
@@ -31,7 +36,11 @@ module "server_region" {
 module "client_region" {
   source = "${path.module}/region"
   region = "us-east-1"
-  ami = "ami-06e46074ae430fba6"
+  ami    = "ami-06e46074ae430fba6"
 
   common_tags = local.tags
+}
+
+output "bucket_name" {
+  value = module.common.bucket_name
 }
