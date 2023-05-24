@@ -1,3 +1,9 @@
+ssh-keygen:
+	ssh-keygen -t ed25519 -f ./terraform/region/files/user -N ''
+
+ssh-add:
+	ssh-add ./terraform/region/files/user
+
 provision-server:
 	aws ec2 run-instances --region=us-west-2 --launch-template LaunchTemplateName=perf-node --count 1 --query 'Instances[0].InstanceId' --output text
 
