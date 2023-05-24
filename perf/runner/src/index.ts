@@ -210,6 +210,8 @@ function execCommand(cmd: string): string {
 }
 
 function copyAndBuildPerfImplementations(ip: string) {
+    console.error(`= Building implementations on ${ip}`);
+
     const stdout = execCommand(`rsync -avz --progress --filter=':- .gitignore' -e "ssh -o StrictHostKeyChecking=no" ../impl ec2-user@${ip}:/home/ec2-user`);
     console.error(stdout.toString());
 
