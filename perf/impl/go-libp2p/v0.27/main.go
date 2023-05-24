@@ -11,8 +11,9 @@ import (
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/peer"
-	"github.com/multiformats/go-multiaddr"
+	"github.com/libp2p/go-libp2p/core/peerstore"
 	tls "github.com/libp2p/go-libp2p/p2p/security/tls"
+	"github.com/multiformats/go-multiaddr"
 )
 
 func main() {
@@ -82,7 +83,8 @@ func main() {
 	}
 
 	start := time.Now()
-	err = h.Connect(context.Background(), *serverInfo)
+	h.Peerstore().AddAddrs(serverInfo.ID, serverInfo.Addrs, peerstore.TempAddrTTL)
+	_, err = h.Network().DialPeer(context.Background(), serverInfo.ID)
 	if err != nil {
 		panic(err)
 	}
