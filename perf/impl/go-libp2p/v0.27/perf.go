@@ -96,6 +96,8 @@ func (ps *PerfService) drainStream(ctx context.Context, s network.Stream, buf []
 }
 
 func (ps *PerfService) RunPerf(ctx context.Context, p peer.ID, bytesToSend uint64, bytesToRecv uint64) (time.Duration, time.Duration, error) {
+	// Use ps.Host.Network().NewStream() instead of ps.Host.NewStream() to
+	// skip waiting for identify protocol to finish.
 	s, err := ps.Host.Network().NewStream(network.WithNoDial(ctx, "already dialed"), p)
 	if err != nil {
 		return 0, 0, err
@@ -106,11 +108,6 @@ func (ps *PerfService) RunPerf(ctx context.Context, p peer.ID, bytesToSend uint6
 		Stream: s,
 		rw:     lzcon,
 	}
-
-	// s, err := ps.Host.NewStream(ctx, p, ID)
-	// if err != nil {
-	// 	return 0, 0, err
-	// }
 
 	buf := pool.Get(BlockSize)
 	defer pool.Put(buf)

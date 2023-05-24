@@ -84,6 +84,8 @@ func main() {
 
 	start := time.Now()
 	h.Peerstore().AddAddrs(serverInfo.ID, serverInfo.Addrs, peerstore.TempAddrTTL)
+	// Use h.Network().DialPeer() instead of h.Connect to skip waiting for
+	// identify protocol to finish.
 	_, err = h.Network().DialPeer(context.Background(), serverInfo.ID)
 	if err != nil {
 		panic(err)
