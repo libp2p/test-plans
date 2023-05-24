@@ -13,6 +13,8 @@ import (
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/peerstore"
 	tls "github.com/libp2p/go-libp2p/p2p/security/tls"
+	quic "github.com/libp2p/go-libp2p/p2p/transport/quic"
+	"github.com/libp2p/go-libp2p/p2p/transport/tcp"
 	"github.com/multiformats/go-multiaddr"
 )
 
@@ -41,6 +43,16 @@ func main() {
 		// additional multistream-select security protocol negotiation.
 		// Thus makes it easier to compare with TCP+TLS+HTTP/2
 		libp2p.Security(tls.ID, tls.New),
+
+		libp2p.DefaultListenAddrs,
+		libp2p.Transport(tcp.NewTCPTransport),
+		libp2p.Transport(quic.NewTransport),
+		libp2p.DefaultMuxers,
+		libp2p.DefaultPeerstore,
+		libp2p.DefaultResourceManager,
+		libp2p.DefaultConnectionManager,
+		libp2p.DefaultMultiaddrResolver,
+		libp2p.DefaultPrometheusRegisterer,
 	}
 
 	if *runServer {
@@ -52,9 +64,11 @@ func main() {
 			panic(err)
 		}
 		opts = append(opts, libp2p.Identity(priv))
+	} else {
+		opts = append(opts, libp2p.RandomIdentity)
 	}
 
-	h, err := libp2p.New(opts...)
+	h, err := libp2p.NewWithoutDefaults(opts...)
 	if err != nil {
 		panic(err)
 	}
