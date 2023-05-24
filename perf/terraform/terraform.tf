@@ -14,14 +14,14 @@ locals {
 }
 
 module "common" {
-  source = "./common"
+  source = "${path.module}/common"
   region = "us-west-2"
 
   common_tags = local.tags
 }
 
 module "server_region" {
-  source = "./region"
+  source = "${path.module}/region"
   region = "us-west-2"
   ami = "ami-0747e613a2a1ff483"
 
@@ -29,7 +29,7 @@ module "server_region" {
 }
 
 module "client_region" {
-  source = "./region"
+  source = "${path.module}/region"
   region = "us-east-1"
   ami = "ami-06e46074ae430fba6"
 

@@ -13,7 +13,7 @@ Benchmark results can be visualized with https://observablehq.com/@mxinden-works
 ### Bootstrap
 
 1. `cd terraform`
-2. Save your public SSH key as the file `./user.pub`.
+2. Save your public SSH key as the file `./regions/files/user.pub`.
 3. `terraform init`
 4. `terraform apply`
 
