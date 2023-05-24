@@ -2,7 +2,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 4.0"
+      version = "4.67.0"
     }
   }
 }
@@ -18,7 +18,7 @@ resource "random_id" "bucket_id" {
 }
 
 module "common" {
-  source = "${path.module}/common"
+  source = "./common"
   region = "us-west-2"
 
   common_tags = local.tags
@@ -26,7 +26,7 @@ module "common" {
 }
 
 module "server_region" {
-  source = "${path.module}/region"
+  source = "./region"
   region = "us-west-2"
   ami    = "ami-0747e613a2a1ff483"
 
@@ -34,7 +34,7 @@ module "server_region" {
 }
 
 module "client_region" {
-  source = "${path.module}/region"
+  source = "./region"
   region = "us-east-1"
   ami    = "ami-06e46074ae430fba6"
 

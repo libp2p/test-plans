@@ -15,7 +15,7 @@ resource "aws_lambda_function" "scale_down" {
   function_name    = "perf-scale-down"
   role             = aws_iam_role.scale_down.arn
   handler          = "scale_down.lambda_handler"
-  runtime          = "python3.10"
+  runtime          = "python3.9"
   memory_size      = 128
   timeout          = 30
 
@@ -23,7 +23,7 @@ resource "aws_lambda_function" "scale_down" {
     variables = {
       REGIONS         = jsonencode(local.regions)
       TAGS            = jsonencode(local.tags)
-      MAX_AGE_MINUTES = 30
+      MAX_AGE_MINUTES = 90
     }
   }
 }
@@ -35,7 +35,7 @@ resource "aws_cloudwatch_log_group" "scale_down" {
 
 resource "aws_cloudwatch_event_rule" "scale_down" {
   name                = "perf-scale-down-rule"
-  schedule_expression = "rate(1 hour)"
+  schedule_expression = "cron(0 * * * ? *)"
 }
 
 resource "aws_cloudwatch_event_target" "scale_down" {
@@ -51,9 +51,20 @@ resource "aws_lambda_permission" "scale_down" {
   source_arn    = aws_cloudwatch_event_rule.scale_down.arn
 }
 
+data "aws_iam_policy_document" "scale_down_assume_role" {
+  statement {
+    actions = ["sts:AssumeRole"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["lambda.amazonaws.com"]
+    }
+  }
+}
+
 resource "aws_iam_role" "scale_down" {
   name               = "perf-scale-down-lambda-role"
-  assume_role_policy = data.aws_iam_policy_document.lambda_assume_role_policy.json
+  assume_role_policy = data.aws_iam_policy_document.scale_down_assume_role.json
 }
 
 data "aws_iam_policy_document" "scale_down" {
@@ -73,8 +84,8 @@ data "aws_iam_policy_document" "scale_down" {
 
       content {
         test     = "StringEquals"
-        variable = "ec2:ResourceTag/${condition.value.Key}"
-        values   = [condition.value.Value]
+        variable = "ec2:ResourceTag/${condition.key}"
+        values   = [condition.value]
       }
     }
   }

@@ -16,7 +16,9 @@ variable "bucket_name" {
 provider "aws" {
   region = var.region
 
-  tags = var.common_tags
+  default_tags {
+    tags = var.common_tags
+  }
 }
 
 resource "aws_iam_user" "perf" {
@@ -28,6 +30,11 @@ data "aws_iam_policy_document" "perf" {
     actions   = ["ec2:*"]
     resources = ["*"]
     effect    = "Allow"
+  }
+  statement {
+    actions = ["iam:PassRole"]
+    resources = [aws_iam_role.perf_role.arn]
+    effect  = "Allow"
   }
 }
 
@@ -42,7 +49,16 @@ resource "aws_s3_bucket" "perf" {
   bucket = var.bucket_name
 }
 
+resource "aws_s3_bucket_ownership_controls" "perf" {
+  bucket = aws_s3_bucket.perf.id
+  rule {
+    object_ownership = "BucketOwnerPreferred"
+  }
+}
+
 resource "aws_s3_bucket_acl" "perf" {
+  depends_on = [aws_s3_bucket_ownership_controls.perf]
+
   bucket = aws_s3_bucket.perf.id
   acl    = "private"
 }
@@ -86,4 +102,8 @@ resource "aws_iam_role_policy" "perf_bucket" {
   name   = "perf-bucket-policy"
   role   = aws_iam_role.perf_role.name
   policy = data.aws_iam_policy_document.perf_bucket.json
+}
+
+output "bucket_name" {
+  value = aws_s3_bucket.perf.bucket
 }

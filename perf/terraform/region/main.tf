@@ -121,16 +121,12 @@ resource "aws_launch_template" "perf" {
   image_id      = var.ami
   instance_type = "m5n.8xlarge"
 
-  subnet_id = aws_subnet.perf.id
-
   key_name = aws_key_pair.perf.key_name
-
-  vpc_security_group_ids = [aws_security_group.restricted_inbound.id]
 
   # Debug via:
   # - /var/log/cloud-init.log and
   # - /var/log/cloud-init-output.log
-  user_data = file("${path.module}/files/user-data.sh")
+  user_data = filebase64("${path.module}/files/user-data.sh")
 
   tag_specifications {
     resource_type = "instance"
@@ -144,5 +140,11 @@ resource "aws_launch_template" "perf" {
 
   iam_instance_profile {
     name = "perf-node-profile"
+  }
+
+  network_interfaces {
+    subnet_id = aws_subnet.perf.id
+    security_groups = [aws_security_group.restricted_inbound.id]
+    delete_on_termination = true
   }
 }

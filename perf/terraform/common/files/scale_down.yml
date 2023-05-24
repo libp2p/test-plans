@@ -1,0 +1,19 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: An AWS Lambda application.
+
+Resources:
+  ScaleDown:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: scale_down.lambda_handler
+      Runtime: python3.9
+      CodeUri: .
+      Environment:
+        Variables:
+          REGIONS: '["us-west-2", "us-east-1"]'
+          TAGS: '{"Project":"perf", "Name":"node"}'
+          MAX_AGE_MINUTES: '30'
+      Policies:
+        - AmazonEC2FullAccess
+      Timeout: 30
