@@ -113,7 +113,7 @@ resource "aws_security_group" "restricted_inbound" {
 
 resource "aws_key_pair" "perf" {
   key_name   = "user-public-key"
-  public_key = file("./user.pub")
+  public_key = file("${path.module}/files/user.pub")
 }
 
 resource "aws_launch_template" "perf" {
@@ -130,7 +130,7 @@ resource "aws_launch_template" "perf" {
   # Debug via:
   # - /var/log/cloud-init.log and
   # - /var/log/cloud-init-output.log
-  user_data                   = file("./user-data.sh")
+  user_data                   = file("${path.module}/files/user-data.sh")
 
   tag_specifications {
     resource_type = "instance"

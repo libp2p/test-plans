@@ -1,7 +1,7 @@
 data "archive_file" "scale_down" {
   type        = "zip"
-  source_file = "${path.module}/scale_down.py"
-  output_path = "${path.module}/scale_down.zip"
+  source_file = "${path.module}/files/scale_down.py"
+  output_path = "${path.module}/files/scale_down.zip"
 }
 
 resource "aws_lambda_function" "scale_down" {
@@ -17,7 +17,8 @@ resource "aws_lambda_function" "scale_down" {
 
   environment {
     variables = {
-      TAGS            = jsonencode(aws_launch_template.perf.tag_specifications.tags)
+      REGIONS         = ["us-east-1", "us-west-2"]
+      TAGS            = merge(var.common_tags, { "Name" = "node" })
       MAX_AGE_MINUTES = 30
     }
   }
@@ -49,7 +50,7 @@ resource "aws_lambda_permission" "scale_down" {
 }
 
 resource "aws_iam_role" "scale_down" {
-  name               = "perf-${var.region}-scale-down-lambda-role"
+  name               = "perf-scale-down-lambda-role"
   assume_role_policy = data.aws_iam_policy_document.lambda_assume_role_policy.json
   tags               = var.common_tags
 }
@@ -79,7 +80,7 @@ data "aws_iam_policy_document" "scale_down" {
 }
 
 resource "aws_iam_role_policy" "scale_down" {
-  name   = "perf-${var.region}-scale-down-lamda-policy"
+  name   = "perf-scale-down-lamda-policy"
   role   = aws_iam_role.scale_down.name
   policy = data.aws_iam_policy_document.scale_down.json
 }
@@ -94,7 +95,7 @@ data "aws_iam_policy_document" "scale_down_logging" {
 }
 
 resource "aws_iam_role_policy" "scale_down_logging" {
-  name   = "perf-${var.region}-lambda-logging"
+  name   = "perf-lambda-logging"
   role   = aws_iam_role.scale_down.name
   policy = data.aws_iam_policy_document.scale_down_logging.json
 }
