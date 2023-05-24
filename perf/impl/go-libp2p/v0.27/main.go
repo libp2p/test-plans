@@ -25,6 +25,17 @@ func main() {
 	downloadBytes := flag.Uint64("download-bytes", 0, "Download bytes")
 	flag.Parse()
 
+	ipPort := strings.Split(*serverAddr, ":")
+	if len(ipPort) != 2 {
+		fmt.Println("Invalid server address format. Expected format: 'ip:port'")
+		return
+	}
+	ip := ipPort[0]
+	port := ipPort[1]
+
+	tcpMultiAddrStr := fmt.Sprintf("/ip4/%s/tcp/%s", ip, port)
+	quicMultiAddrStr := fmt.Sprintf("/ip4/%s/udp/%s/quic-v1", ip, port)
+
 	opts := []libp2p.Option{
 		// Use TLS only instead of both TLS and Noise. Removes the
 		// additional multistream-select security protocol negotiation.
@@ -33,7 +44,7 @@ func main() {
 	}
 
 	if *runServer {
-		opts = append(opts, libp2p.ListenAddrStrings("/ip4/0.0.0.0/tcp/4001", "/ip4/0.0.0.0/udp/4001/quic-v1"))
+		opts = append(opts, libp2p.ListenAddrStrings(tcpMultiAddrStr, quicMultiAddrStr))
 
 		// TODO: Fake identity. For testing only.
 		priv, _, err := crypto.GenerateEd25519Key(&simpleReader{seed: uint8(*secretKeySeed)})
@@ -57,26 +68,17 @@ func main() {
 		select {} // run forever, exit on interrupt
 	}
 
-	ipPort := strings.Split(*serverAddr, ":")
-	if len(ipPort) != 2 {
-		fmt.Println("Invalid server address format. Expected format: 'ip:port'")
-		return
-	}
-
-	ip := ipPort[0]
-	port := ipPort[1]
-
 	var multiAddrStr string
 	switch *transport {
 	case "tcp":
-		multiAddrStr = fmt.Sprintf("/ip4/%s/tcp/%s/p2p/12D3KooWDpJ7As7BWAwRMfu1VU2WCqNjvq387JEYKDBj4kx6nXTN", ip, port)
+		multiAddrStr = tcpMultiAddrStr
 	case "quic-v1":
-		multiAddrStr = fmt.Sprintf("/ip4/%s/udp/%s/quic-v1/p2p/12D3KooWDpJ7As7BWAwRMfu1VU2WCqNjvq387JEYKDBj4kx6nXTN", ip, port)
+		multiAddrStr = quicMultiAddrStr
 	default:
 		fmt.Println("Invalid transport. Accepted values: 'tcp' or 'quic-v1'")
 		return
 	}
-
+	multiAddrStr = multiAddrStr + "/p2p/12D3KooWDpJ7As7BWAwRMfu1VU2WCqNjvq387JEYKDBj4kx6nXTN"
 	serverInfo, err := peer.AddrInfoFromString(multiAddrStr)
 	if err != nil {
 		panic(err)
