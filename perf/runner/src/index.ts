@@ -56,7 +56,7 @@ async function main(clientPublicIP: string, serverPublicIP: string) {
 function runPing(clientPublicIP: string, serverPublicIP: string): PingResults {
     console.error(`= run 100 pings from client to server`);
 
-    let cmd = `ssh ec2-user@${clientPublicIP} 'ping -c 100 ${serverPublicIP}'`;
+    let cmd = `ssh -o StrictHostKeyChecking=no ec2-user@${clientPublicIP} 'ping -c 100 ${serverPublicIP}'`;
     const stdout = execCommand(cmd).toString();
 
     // Extract the time from each ping
@@ -74,15 +74,15 @@ function runPing(clientPublicIP: string, serverPublicIP: string): PingResults {
 function runIPerf(clientPublicIP: string, serverPublicIP: string): IperfResults {
     console.error(`= run 60 iPerf UDP from client to server`);
 
-    let killCMD = `ssh ec2-user@${serverPublicIP} 'kill $(cat pidfile); rm pidfile; rm server.log || true'`;
+    let killCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${serverPublicIP} 'kill $(cat pidfile); rm pidfile; rm server.log || true'`;
     const killSTDOUT = execCommand(killCMD);
     console.error(killSTDOUT);
 
-    let serverCMD = `ssh ec2-user@${serverPublicIP} 'nohup iperf3 -s > server.log 2>&1 & echo \$! > pidfile '`;
+    let serverCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${serverPublicIP} 'nohup iperf3 -s > server.log 2>&1 & echo \$! > pidfile '`;
     const serverSTDOUT = execCommand(serverCMD);
     console.error(serverSTDOUT);
 
-    let cmd = `ssh ec2-user@${clientPublicIP} 'iperf3 -c ${serverPublicIP} -u -b 25g -t 60'`;
+    let cmd = `ssh -o StrictHostKeyChecking=no ec2-user@${clientPublicIP} 'iperf3 -c ${serverPublicIP} -u -b 25g -t 60'`;
     const stdout = execSync(cmd).toString();
 
     // Extract the bitrate from each relevant line
@@ -124,11 +124,11 @@ function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions): Bench
 
         console.error(`=== Starting server ${version.implementation}/${version.id}`);
 
-        let killCMD = `ssh ec2-user@${args.serverPublicIP} 'kill $(cat pidfile); rm pidfile; rm server.log || true'`;
+        let killCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.serverPublicIP} 'kill $(cat pidfile); rm pidfile; rm server.log || true'`;
         const killSTDOUT = execCommand(killCMD);
         console.error(killSTDOUT);
 
-        let serverCMD = `ssh ec2-user@${args.serverPublicIP} 'nohup ./impl/${version.implementation}/${version.id}/perf --run-server --server-address 0.0.0.0:4001 --secret-key-seed 0 > server.log 2>&1 & echo \$! > pidfile '`;
+        let serverCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.serverPublicIP} 'nohup ./impl/${version.implementation}/${version.id}/perf --run-server --server-address 0.0.0.0:4001 --secret-key-seed 0 > server.log 2>&1 & echo \$! > pidfile '`;
         const serverSTDOUT = execCommand(serverCMD);
         console.error(serverSTDOUT);
 
@@ -180,7 +180,7 @@ function runClient(args: ArgsRunBenchmark): ResultValue[] {
     console.error(`=== Starting client ${args.implementation}/${args.id}/${args.transportStack}`);
 
     const perfCMD = `./impl/${args.implementation}/${args.id}/perf --server-address ${args.serverPublicIP}:4001 --transport ${args.transportStack} --upload-bytes ${args.uploadBytes} --download-bytes ${args.downloadBytes}`
-    const cmd = `ssh ec2-user@${args.clientPublicIP} 'for i in {1..${args.iterations}}; do ${perfCMD}; done'`
+    const cmd = `ssh -o StrictHostKeyChecking=no ec2-user@${args.clientPublicIP} 'for i in {1..${args.iterations}}; do ${perfCMD}; done'`
 
     const stdout = execCommand(cmd);
 
@@ -210,10 +210,10 @@ function execCommand(cmd: string): string {
 }
 
 function copyAndBuildPerfImplementations(ip: string) {
-    const stdout = execCommand(`rsync -avz --progress --filter=':- .gitignore' ../impl ec2-user@${ip}:/home/ec2-user`);
+    const stdout = execCommand(`rsync -avz --progress --filter=':- .gitignore' -e "ssh -o StrictHostKeyChecking=no" ../impl ec2-user@${ip}:/home/ec2-user`);
     console.error(stdout.toString());
 
-    const stdout2 = execCommand(`ssh ec2-user@${ip} 'cd impl && make'`);
+    const stdout2 = execCommand(`ssh -o StrictHostKeyChecking=no ec2-user@${ip} 'cd impl && make'`);
     console.error(stdout2.toString());
 }
 
