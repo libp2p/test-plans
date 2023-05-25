@@ -52,7 +52,7 @@ resource "aws_s3_bucket" "perf" {
 resource "aws_s3_bucket_ownership_controls" "perf" {
   bucket = aws_s3_bucket.perf.id
   rule {
-    object_ownership = "BucketOwnerPreferred"
+    object_ownership = "ObjectWriter"
   }
 }
 
@@ -62,6 +62,16 @@ resource "aws_s3_bucket_acl" "perf" {
   bucket = aws_s3_bucket.perf.id
   acl    = "private"
 }
+
+resource "aws_s3_bucket_public_access_block" "perf" {
+  bucket = aws_s3_bucket.perf.id
+
+  block_public_acls       = false
+  block_public_policy     = false
+  ignore_public_acls      = false
+  restrict_public_buckets = false
+}
+
 
 data "aws_iam_policy_document" "perf_assume_role" {
   statement {
