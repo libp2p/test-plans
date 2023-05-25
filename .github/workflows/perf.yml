@@ -74,8 +74,8 @@ jobs:
         working-directory: perf/runner
       - name: Run tests
         env:
-          SERVER_IP: ${{ steps.ip.outputs.SERVER_IP }}
-          CLIENT_IP: ${{ steps.ip.outputs.CLIENT_IP }}
+          SERVER_IP: ${{ steps.ip.outputs.server }}
+          CLIENT_IP: ${{ steps.ip.outputs.client }}
         run: npm run start -- --client-public-ip $CLIENT_IP --server-public-ip $SERVER_IP
         working-directory: perf/runner
       - name: Archive results
