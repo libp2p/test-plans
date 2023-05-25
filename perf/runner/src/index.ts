@@ -68,25 +68,21 @@ function runPing(clientPublicIP: string, serverPublicIP: string): PingResults {
         })
         .filter((time): time is number => time !== null); // Remove any null values and ensure that array contains only numbers
 
-    console.error(`= done`)
     return { unit: "s", results: times }
 }
 
 function runIPerf(clientPublicIP: string, serverPublicIP: string): IperfResults {
     console.error(`= run 60 iPerf UDP from client to server`);
 
-    console.error(`== kill any existing iPerf server`)
     let killCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${serverPublicIP} 'kill $(cat pidfile); rm pidfile; rm server.log || true'`;
     const killSTDOUT = execCommand(killCMD);
     console.error(killSTDOUT);
 
-    console.error(`== start iPerf server`)
     let serverCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${serverPublicIP} 'nohup iperf3 -s > server.log 2>&1 & echo \$! > pidfile '`;
     const serverSTDOUT = execCommand(serverCMD);
     console.error(serverSTDOUT);
 
-    console.error(`== run iPerf client`)
-    let cmd = `ssh -o StrictHostKeyChecking=no ec2-user@${clientPublicIP} 'iperf3 -c ${serverPublicIP} -u -b 25g -t 1'`;
+    let cmd = `ssh -o StrictHostKeyChecking=no ec2-user@${clientPublicIP} 'iperf3 -c ${serverPublicIP} -u -b 25g -t 60'`;
     const stdout = execSync(cmd).toString();
 
     // Extract the bitrate from each relevant line
@@ -105,7 +101,6 @@ function runIPerf(clientPublicIP: string, serverPublicIP: string): IperfResults 
         })
         .filter((bitrate): bitrate is number => bitrate !== null); // Remove any null values
 
-    console.error(`= done`)
     return { unit: "bit/s", results:  bitrates}
 }
 
@@ -129,12 +124,10 @@ function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions): Bench
 
         console.error(`=== Starting server ${version.implementation}/${version.id}`);
 
-        console.error(`==== kill any existing server`)
         let killCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.serverPublicIP} 'kill $(cat pidfile); rm pidfile; rm server.log || true'`;
         const killSTDOUT = execCommand(killCMD);
         console.error(killSTDOUT);
 
-        console.error(`==== start server`)
         let serverCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.serverPublicIP} 'nohup ./impl/${version.implementation}/${version.id}/perf --run-server --server-address 0.0.0.0:4001 --secret-key-seed 0 > server.log 2>&1 & echo \$! > pidfile '`;
         const serverSTDOUT = execCommand(serverCMD);
         console.error(serverSTDOUT);
