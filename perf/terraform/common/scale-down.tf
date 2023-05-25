@@ -23,7 +23,7 @@ resource "aws_lambda_function" "scale_down" {
     variables = {
       REGIONS         = jsonencode(local.regions)
       TAGS            = jsonencode(local.tags)
-      MAX_AGE_MINUTES = 90
+      MAX_AGE_MINUTES = 50
     }
   }
 }
@@ -35,7 +35,7 @@ resource "aws_cloudwatch_log_group" "scale_down" {
 
 resource "aws_cloudwatch_event_rule" "scale_down" {
   name                = "perf-scale-down-rule"
-  schedule_expression = "cron(0 * * * ? *)"
+  schedule_expression = "cron(37 * * * ? *)" # 00:37, 01:37, 02:37, ..., 23:37
 }
 
 resource "aws_cloudwatch_event_target" "scale_down" {
