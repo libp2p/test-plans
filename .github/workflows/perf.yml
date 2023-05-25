@@ -1,0 +1,107 @@
+name: libp2p perf test
+
+on:
+  workflow_dispatch:
+    # Requires:
+    #   - vars.PERF_AWS_ACCESS_KEY_ID to be set to the AWS access key ID of 'aws_iam_user.perf'
+    #   - secrets.PERF_AWS_SECRET_ACCESS_KEY to be set to the AWS secret access key of 'aws_iam_user.perf'
+    #   - vars.PERF_AWS_BUCKET to be set to the AWS bucket as output by 'output.bucket_name'
+    #   - secrets.PERF_SSH_PRIVATE_KEY to be set to the SSH private key for 'aws_key_pair.perf'
+  workflow_call:
+    inputs:
+      aws-access-key-id:
+        type: string
+        required: true
+        description: The AWS access key ID of 'aws_iam_user.perf'
+      aws-bucket:
+        type: string
+        required: true
+        description: The AWS bucket as output by 'output.bucket_name'
+      runs-on:
+        type: string
+        required: false
+        description: The runs-on value to use for the perf job (defaults to 'ubuntu-latest')
+        default: ubuntu-latest
+      ref:
+        type: string
+        required: false
+        description: The ref of the test-plans repo to use (defaults to 'master')
+        default: master
+    secrets:
+      PERF_AWS_SECRET_ACCESS_KEY: # The AWS secret access key of 'aws_iam_user.perf'
+        required: true
+      PERF_SSH_PRIVATE_KEY: # The SSH private key for 'aws_key_pair.perf'
+        required: true
+
+jobs:
+  perf:
+    name: Perf
+    runs-on: ${{ github.event.inputs.runs-on || 'ubuntu-latest' }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: perf
+    env:
+      AWS_ACCESS_KEY_ID: ${{ github.event.inputs.aws-access-key-id || vars.PERF_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.PERF_AWS_SECRET_ACCESS_KEY }}
+    steps:
+      - name: Configure SSH
+        uses: webfactory/ssh-agent@d4b9b8ff72958532804b70bbe600ad43b36d5f2e # v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.PERF_SSH_PRIVATE_KEY }}
+      - name: Checkout test-plans
+        uses: actions/checkout@v3
+        with:
+          repository: libp2p/test-plans
+          ref: ${{ github.event.inputs.ref || github.ref }}
+      - id: server
+        name: Provision server
+        run: echo "id=$(make provision-server | tail -n 1)" >> $GITHUB_OUTPUT
+      - id: client
+        name: Provision client
+        run: echo "id=$(make provision-client | tail -n 1)" >> $GITHUB_OUTPUT
+      - id: ip
+        name: Wait for client/server IP
+        env:
+          SERVER_ID: ${{ steps.server.outputs.id }}
+          CLIENT_ID: ${{ steps.client.outputs.id }}
+        run: |
+          read SERVER_IP CLIENT_IP <<< $(make wait SERVER_ID=$SERVER_ID CLIENT_ID=$CLIENT_ID | tail -n 1)
+          echo "server=$SERVER_IP" >> $GITHUB_OUTPUT
+          echo "client=$CLIENT_IP" >> $GITHUB_OUTPUT
+      - name: Download dependencies
+        run: npm ci
+        working-directory: perf/runner
+      - name: Run tests
+        env:
+          SERVER_IP: ${{ steps.ip.outputs.SERVER_IP }}
+          CLIENT_IP: ${{ steps.ip.outputs.CLIENT_IP }}
+        run: npm run start -- --client-public-ip $CLIENT_IP --server-public-ip $SERVER_IP
+        working-directory: perf/runner
+      - name: Archive results
+        uses: actions/upload-artifact@v2
+        with:
+          name: results
+          path: perf/runner/benchmark-results.json
+      - id: s3
+        name: Upload results
+        env:
+          AWS_BUCKET: ${{ github.event.inputs.aws-bucket || vars.PERF_AWS_BUCKET }}
+        run: |
+          aws s3 cp benchmark-results.json s3://$AWS_BUCKET/$GITHUB_REPOSITORY/$GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT/benchmark-results.json --acl public-read
+          echo "url=https://$AWS_BUCKET.s3.amazonaws.com/$GITHUB_REPOSITORY/$GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT/benchmark-results.json" >> $GITHUB_OUTPUT
+        working-directory: perf/runner
+      - name: Set summary
+        env:
+          URL: ${{ steps.s3.outputs.url }}
+        run: echo "$URL" >> $GITHUB_STEP_SUMMARY
+      - name: Deprovision client
+        if: always() && steps.client.outputs.id != ''
+        env:
+          CLIENT_ID: ${{ steps.client.outputs.id }}
+        run: make deprovision-client CLIENT_ID=$CLIENT_ID
+      - name: Deprovision server
+        if: always() && steps.server.outputs.id != ''
+        env:
+          SERVER_ID: ${{ steps.server.outputs.id }}
+        run: make deprovision-server SERVER_ID=$SERVER_ID
