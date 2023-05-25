@@ -52,7 +52,7 @@ jobs:
       - name: Checkout test-plans
         uses: actions/checkout@v3
         with:
-          repository: libp2p/test-plans
+          repository: galorgh/test-plans
           ref: ${{ github.event.inputs.ref || github.ref }}
       - id: server
         name: Provision server
