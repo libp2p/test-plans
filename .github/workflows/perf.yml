@@ -87,9 +87,10 @@ jobs:
         name: Upload results
         env:
           AWS_BUCKET: ${{ github.event.inputs.aws-bucket || vars.PERF_AWS_BUCKET }}
+          PATH: ${{ github.repository }}/${{ github.run_id }}/${{ github.run_attempt }}/benchmark-results.json
         run: |
-          aws s3 cp benchmark-results.json s3://$AWS_BUCKET/$GITHUB_REPOSITORY/$GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT/benchmark-results.json --acl public-read
-          echo "url=https://$AWS_BUCKET.s3.amazonaws.com/$GITHUB_REPOSITORY/$GITHUB_RUN_ID/$GITHUB_RUN_ATTEMPT/benchmark-results.json" >> $GITHUB_OUTPUT
+          aws s3 cp benchmark-results.json s3://$AWS_BUCKET/$PATH --acl public-read
+          echo "url=https://$AWS_BUCKET.s3.amazonaws.com/$PATH" >> $GITHUB_OUTPUT
         working-directory: perf/runner
       - name: Set summary
         env:
