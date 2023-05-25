@@ -107,3 +107,10 @@ resource "aws_iam_role_policy" "perf_bucket" {
 output "bucket_name" {
   value = aws_s3_bucket.perf.bucket
 }
+
+resource "aws_iam_user_policy" "perf_bucket" {
+  name = "perf-bucket"
+  user = aws_iam_user.perf.name
+
+  policy = data.aws_iam_policy_document.perf_bucket.json
+}
