@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "ts-json-schema-generator": "^1.2.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.0.2"
+  },
+  "scripts": {
+    "gen-schema": "ts-node main.ts"
+  }
+}
