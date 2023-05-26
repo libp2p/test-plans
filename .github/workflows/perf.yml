@@ -4,47 +4,16 @@ name: libp2p perf test
 # 1. Run 'make ssh-keygen' in 'perf' to generate a new SSH key pair named 'user' in 'perf/terraform/region/files'
 # 2. Export AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY for the account of your choice
 # 3. Run 'terraform apply' in 'perf/terraform' to create the AWS resources
-# 4. Run 'terraform output' in 'perf/terraform' to get the bucket name
-# 5. Go to https://console.aws.amazon.com/iamv2/home?#/users/details/perf?section=security_credentials
-# 6. Click 'Create access key' to get the access key ID and secret access key
-# 7. Go to https://github.com/libp2p/test-plans/settings/secrets/actions
-# 8. Click 'New repository secret', set the name to 'PERF_AWS_SECRET_ACCESS_KEY', and paste the secret access key from step 6
-# 9. Click 'New repository secret', set the name to 'PERF_SSH_PRIVATE_KEY', and paste the private key from step 1
-# 10. Go to https://github.com/libp2p/test-plans/settings/variables/actions
-# 11. Click 'New repository variable', set the name to 'PERF_AWS_ACCESS_KEY_ID', and paste the access key ID from step 6
-# 12. Click 'New repository variable', set the name to 'PERF_AWS_BUCKET', and paste the bucket name from step 4
+# 4. Go to https://console.aws.amazon.com/iamv2/home?#/users/details/perf?section=security_credentials
+# 5. Click 'Create access key' to get the access key ID and secret access key
+# 6. Go to https://github.com/libp2p/test-plans/settings/secrets/actions
+# 7. Click 'New repository secret', set the name to 'PERF_AWS_SECRET_ACCESS_KEY', and paste the secret access key from step 6
+# 8. Click 'New repository secret', set the name to 'PERF_SSH_PRIVATE_KEY', and paste the private key from step 1
+# 9. Go to https://github.com/libp2p/test-plans/settings/variables/actions
+# 10. Click 'New repository variable', set the name to 'PERF_AWS_ACCESS_KEY_ID', and paste the access key ID from step 6
 
 on:
   workflow_dispatch:
-  workflow_call:
-    # Example:
-    # uses: libp2p/test-plans/.github/workflows/perf.yml@master
-    # with:
-    #   aws-access-key-id: ${{ vars.PERF_AWS_ACCESS_KEY_ID }}
-    #   aws-bucket: ${{ vars.PERF_AWS_BUCKET }}
-    #   ref: master
-    # secrets:
-    #   PERF_AWS_SECRET_ACCESS_KEY: ${{ secrets.PERF_AWS_SECRET_ACCESS_KEY }}
-    #   PERF_SSH_PRIVATE_KEY: ${{ secrets.PERF_SSH_PRIVATE_KEY }}
-    inputs:
-      aws-access-key-id:
-        type: string
-        required: true
-        description: The AWS access key ID of 'aws_iam_user.perf'
-      aws-bucket:
-        type: string
-        required: true
-        description: The AWS bucket as output by 'output.bucket_name'
-      ref:
-        type: string
-        required: false
-        description: The ref of the test-plans repo to use (defaults to 'master')
-        default: master
-    secrets:
-      PERF_AWS_SECRET_ACCESS_KEY: # The AWS secret access key of 'aws_iam_user.perf'
-        required: true
-      PERF_SSH_PRIVATE_KEY: # The SSH private key for 'aws_key_pair.perf'
-        required: true
 
 jobs:
   perf:
@@ -56,18 +25,22 @@ jobs:
         shell: bash
         working-directory: perf
     env:
-      AWS_ACCESS_KEY_ID: ${{ inputs.aws-access-key-id || vars.PERF_AWS_ACCESS_KEY_ID }}
+      AWS_ACCESS_KEY_ID: ${{ vars.PERF_AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.PERF_AWS_SECRET_ACCESS_KEY }}
     steps:
       - name: Configure SSH
         uses: webfactory/ssh-agent@d4b9b8ff72958532804b70bbe600ad43b36d5f2e # v0.8.0
         with:
           ssh-private-key: ${{ secrets.PERF_SSH_PRIVATE_KEY }}
+      - name: Configure git
+        run: |
+          git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com>"
+          git config --global user.name "${GITHUB_ACTOR}"
       - name: Checkout test-plans
         uses: actions/checkout@v3
         with:
           repository: libp2p/test-plans
-          ref: ${{ inputs.ref || github.ref }}
+          ref: ${{ github.ref }}
       - id: server
         name: Provision server
         run: echo "id=$(make provision-server | tail -n 1)" >> $GITHUB_OUTPUT
@@ -97,19 +70,11 @@ jobs:
         with:
           name: results
           path: perf/runner/benchmark-results.json
-      - id: s3
-        name: Upload results
-        env:
-          AWS_BUCKET: ${{ inputs.aws-bucket || vars.PERF_AWS_BUCKET }}
-          AWS_BUCKET_PATH: ${{ github.repository }}/${{ github.run_id }}/${{ github.run_attempt }}/benchmark-results.json
+      - name: Push
         run: |
-          aws s3 cp benchmark-results.json s3://$AWS_BUCKET/$AWS_BUCKET_PATH --acl public-read --region us-west-2
-          echo "url=https://$AWS_BUCKET.s3.amazonaws.com/$AWS_BUCKET_PATH" >> $GITHUB_OUTPUT
-        working-directory: perf/runner
-      - name: Set summary
-        env:
-          URL: ${{ steps.s3.outputs.url }}
-        run: echo "$URL" >> $GITHUB_STEP_SUMMARY
+          git add perf/runner/benchmark-results.json
+          git commit -m "perf: update benchmark results"
+          git push
       - name: Deprovision client
         if: always() && steps.client.outputs.id != ''
         env:

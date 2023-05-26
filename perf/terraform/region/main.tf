@@ -138,10 +138,6 @@ resource "aws_launch_template" "perf" {
 
   instance_initiated_shutdown_behavior = "terminate"
 
-  iam_instance_profile {
-    name = "perf-node-profile"
-  }
-
   network_interfaces {
     subnet_id = aws_subnet.perf.id
     security_groups = [aws_security_group.restricted_inbound.id]
