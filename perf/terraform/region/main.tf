@@ -111,6 +111,10 @@ resource "aws_security_group" "restricted_inbound" {
   })
 }
 
+# If one wanted to make the key pair ephemeral, these would be the steps:
+# 1. Move this resource to `perf/terraform/ephemeral/main.tf`
+# 2. Add `make ssh-keygen` run step to `.github/workflows/perf.yml`
+# 3. Add `aws_key_pair` cleanup to `perf/terraform/common/files/scale_down.py`
 resource "aws_key_pair" "perf" {
   key_name   = "user-public-key"
   public_key = file("${path.module}/files/user.pub")

@@ -11,6 +11,7 @@ locals {
   tags = {
     Project = "perf"
   }
+  root = "."
 }
 
 variable "common_enabled" {
@@ -38,7 +39,7 @@ module "common" {
     }
   ]]
 
-  source = "./common"
+  source = "${local.root}/common"
   region = each.value.region
 
   common_tags = local.tags
@@ -55,7 +56,7 @@ module "region" {
     }
   ]]
 
-  source = "./region"
+  source = "${local.root}/region"
   region = each.value.region
   ami    = each.value.ami
 
@@ -71,7 +72,7 @@ module "ephemeral" {
     }
   ]]
 
-  source = "./ephemeral"
+  source = "${local.root}/ephemeral"
   region = each.value.region
 
   common_tags = local.tags
