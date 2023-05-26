@@ -16,25 +16,8 @@ Benchmark results can be visualized with https://observablehq.com/@mxinden-works
 2. `cd terraform`
 3. `terraform init`
 4. `terraform apply`
-
-#### [OPTIONAL] Limited AWS credentials
-
-If you want to limit the AWS credentials used by subsequent steps, you can create Access Keys for the `perf` user that terraform created.
-
-1. Go to https://console.aws.amazon.com/iamv2/home?#/users/details/perf?section=security_credentials
-2. Create access key
-3. Download `perf_accessKeys.csv`
-4. Configure AWS CLI to use the credentials. For example:
-```bash
-export AWS_ACCESS_KEY_ID=$(cat perf_accessKeys.csv | tail -n 1 | cut -d, -f1)
-export AWS_SECRET_ACCESS_KEY=$(cat perf_accessKeys.csv | tail -n 1 | cut -d, -f2)
-```
-
-### Nodes
-
-1. `SERVER_ID=$(make provision-server | tail -n 1)`
-2. `CLIENT_ID=$(make provision-client | tail -n 1)`
-3. `read SERVER_IP CLIENT_IP <<< $(make wait SERVER_ID=$SERVER_ID CLIENT_ID=$CLIENT_ID | tail -n 1)`
+5. `CLIENT_IP=$(terraform output -raw client_ip)`
+6. `SERVER_IP=$(terraform output -raw server_ip)`
 
 ## Build and run implementations
 
@@ -45,13 +28,6 @@ _WARNING_: Running the perf tests might take a while.
 3. `npm run start -- --client-public-ip $CLIENT_IP --server-public-ip $SERVER_IP`
 
 ## Deprovision infrastructure
-
-### Nodes
-
-1. `make deprovision-client CLIENT_ID=$CLIENT_ID`
-2. `make deprovision-server SERVER_ID=$SERVER_ID `
-
-### Bootstrap
 
 1. `cd terraform`
 2. `terraform destroy`

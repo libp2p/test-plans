@@ -27,6 +27,11 @@ jobs:
     env:
       AWS_ACCESS_KEY_ID: ${{ vars.PERF_AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.PERF_AWS_SECRET_ACCESS_KEY }}
+      TF_IN_AUTOMATION: 1
+      TF_INPUT: 0
+      TF_VAR_common_enabled: false
+      TF_VAR_region_enabled: false
+      TF_VAR_ephemeral_enabled: true
     steps:
       - name: Configure SSH
         uses: webfactory/ssh-agent@d4b9b8ff72958532804b70bbe600ad43b36d5f2e # v0.8.0
@@ -36,33 +41,32 @@ jobs:
         run: |
           git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com>"
           git config --global user.name "${GITHUB_ACTOR}"
+      - name: Configure terraform
+        uses: hashicorp/setup-terraform@633666f66e0061ca3b725c73b2ec20cd13a8fdd1 # v2.0.3
       - name: Checkout test-plans
         uses: actions/checkout@v3
         with:
           repository: libp2p/test-plans
           ref: ${{ github.ref }}
+      - name: Init terraform
+        run: terraform init
+        working-directory: perf/terraform
+      - name: Apply terraform
+        run: terraform apply -auto-approve
+        working-directory: perf/terraform
       - id: server
-        name: Provision server
-        run: echo "id=$(make provision-server | tail -n 1)" >> $GITHUB_OUTPUT
+        name: Retrieve server's IP
+        run: echo "ip=$(terraform output -raw server_ip)"
       - id: client
-        name: Provision client
-        run: echo "id=$(make provision-client | tail -n 1)" >> $GITHUB_OUTPUT
-      - id: ip
-        name: Wait for client/server IP
-        env:
-          SERVER_ID: ${{ steps.server.outputs.id }}
-          CLIENT_ID: ${{ steps.client.outputs.id }}
-        run: |
-          read SERVER_IP CLIENT_IP <<< $(make wait SERVER_ID=$SERVER_ID CLIENT_ID=$CLIENT_ID | tail -n 1)
-          echo "server=$SERVER_IP" >> $GITHUB_OUTPUT
-          echo "client=$CLIENT_IP" >> $GITHUB_OUTPUT
+        name: Retrieve client's IP
+        run: echo "ip=$(terraform output -raw client_ip)"
       - name: Download dependencies
         run: npm ci
         working-directory: perf/runner
       - name: Run tests
         env:
-          SERVER_IP: ${{ steps.ip.outputs.server }}
-          CLIENT_IP: ${{ steps.ip.outputs.client }}
+          SERVER_IP: ${{ steps.server.outputs.ip }}
+          CLIENT_IP: ${{ steps.client.outputs.ip }}
         run: npm run start -- --client-public-ip $CLIENT_IP --server-public-ip $SERVER_IP
         working-directory: perf/runner
       - name: Archive results
@@ -75,13 +79,7 @@ jobs:
           git add perf/runner/benchmark-results.json
           git commit -m "perf: update benchmark results"
           git push
-      - name: Deprovision client
-        if: always() && steps.client.outputs.id != ''
-        env:
-          CLIENT_ID: ${{ steps.client.outputs.id }}
-        run: make deprovision-client CLIENT_ID=$CLIENT_ID
-      - name: Deprovision server
-        if: always() && steps.server.outputs.id != ''
-        env:
-          SERVER_ID: ${{ steps.server.outputs.id }}
-        run: make deprovision-server SERVER_ID=$SERVER_ID
+      - name: Destroy terraform
+        if: always()
+        run: terraform destroy -auto-approve
+        working-directory: perf/terraform
