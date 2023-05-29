@@ -30,9 +30,4 @@ export const versions: Array<Version> = [
         implementation: "go-libp2p",
         transportStacks: ["tcp", "quic-v1"]
     },
-    // {
-    //     id: "zig-libp2p-v0.0.1",
-    //     implementation: "zig-libp2p",
-    //     transportStacks: ["quic-v1"],
-    // },
 ]
