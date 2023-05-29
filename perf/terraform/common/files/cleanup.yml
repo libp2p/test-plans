@@ -3,10 +3,10 @@ Transform: AWS::Serverless-2016-10-31
 Description: An AWS Lambda application.
 
 Resources:
-  ScaleDown:
+  Cleanup:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: scale_down.lambda_handler
+      Handler: cleanup.lambda_handler
       Runtime: python3.9
       CodeUri: .
       Environment:
