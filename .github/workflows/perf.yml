@@ -3,7 +3,7 @@ name: libp2p perf test
 # How to configure a repository for running this workflow:
 # 1. Run 'make ssh-keygen' in 'perf' to generate a new SSH key pair named 'user' in 'perf/terraform/region/files'
 # 2. Configure auth for the AWS provider as per https://registry.terraform.io/providers/hashicorp/aws/latest/docs#authentication-and-configuration
-# 3. Run 'terraform init' and 'terraform apply' in 'perf/terraform/remote' to create the long-lived AWS resources
+# 3. Run 'terraform init' and 'terraform apply' in 'perf/terraform/ci_config' to create the resources needed for this workflow
 # 4. Go to https://console.aws.amazon.com/iamv2/home?#/users/details/perf?section=security_credentials
 # 5. Click 'Create access key' to get the access key ID and secret access key
 # 6. Go to https://github.com/libp2p/test-plans/settings/secrets/actions
@@ -29,9 +29,9 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.PERF_AWS_SECRET_ACCESS_KEY }}
       TF_IN_AUTOMATION: 1
       TF_INPUT: 0
-      TF_VAR_common_enabled: false
-      TF_VAR_region_enabled: false
-      TF_VAR_ephemeral_enabled: true
+      TF_VAR_ci_enabled: false
+      TF_VAR_long_lived_enabled: false
+      TF_VAR_short_lived_enabled: true
     steps:
       - name: Configure SSH
         uses: webfactory/ssh-agent@d4b9b8ff72958532804b70bbe600ad43b36d5f2e # v0.8.0

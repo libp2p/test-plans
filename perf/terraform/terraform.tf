@@ -14,39 +14,39 @@ locals {
   root = "."
 }
 
-variable "common_enabled" {
+variable "ci_enabled" {
   type        = bool
-  description = "Whether or not to create common resources"
+  description = "Whether or not to create resources required to automate the setup in CI (e.g. IAM user, cleanup Lambda)"
   default     = false
 }
 
-variable "region_enabled" {
+variable "long_lived_enabled" {
   type        = bool
-  description = "Whether or not to create regional resources"
+  description = "Whether or not to create long lived resources (in CI, used across runs; e.g. VPCs)"
   default     = true
 }
 
-variable "ephemeral_enabled" {
+variable "short_lived_enabled" {
   type        = bool
-  description = "Whether or not to create ephemeral resources"
+  description = "Whether or not to create short lived resources (in CI, specific to each run; e.g. EC2 instances)"
   default     = true
 }
 
-module "common" {
-  for_each = [var.common_enabled ? [] : [
+module "ci" {
+  for_each = [var.ci_enabled ? [] : [
     {
       region = "us-west-2"
     }
   ]]
 
-  source = "${local.root}/common"
+  source = "${local.root}/ci"
   region = each.value.region
 
   common_tags = local.tags
 }
 
-module "region" {
-  for_each = [var.region_enabled ? [] : [
+module "long_lived" {
+  for_each = [var.long_lived_enabled ? [] : [
     {
       region = "us-west-2",
       ami    = "ami-0747e613a2a1ff483"
@@ -56,15 +56,15 @@ module "region" {
     }
   ]]
 
-  source = "${local.root}/region"
+  source = "${local.root}/long_lived"
   region = each.value.region
   ami    = each.value.ami
 
   common_tags = local.tags
 }
 
-module "ephemeral" {
-  for_each = [var.ephemeral_enabled ? [] : [
+module "short_lived" {
+  for_each = [var.short_lived_enabled ? [] : [
     {
       region = "us-west-2"
       }, {
@@ -72,7 +72,7 @@ module "ephemeral" {
     }
   ]]
 
-  source = "${local.root}/ephemeral"
+  source = "${local.root}/short_lived"
   region = each.value.region
 
   common_tags = local.tags
