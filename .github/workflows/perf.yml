@@ -31,6 +31,11 @@ jobs:
       TF_VAR_long_lived_enabled: false
       TF_VAR_short_lived_enabled: true
     steps:
+      - name: Checkout test-plans
+        uses: actions/checkout@v3
+        with:
+          repository: galorgh/test-plans
+          ref: ${{ github.ref }}
       - id: ssh
         name: Generate SSH key
         run: |
@@ -48,11 +53,6 @@ jobs:
           git config --global user.name "${GITHUB_ACTOR}"
       - name: Configure terraform
         uses: hashicorp/setup-terraform@633666f66e0061ca3b725c73b2ec20cd13a8fdd1 # v2.0.3
-      - name: Checkout test-plans
-        uses: actions/checkout@v3
-        with:
-          repository: galorgh/test-plans
-          ref: ${{ github.ref }}
       - name: Init terraform
         run: terraform init
         working-directory: perf/terraform/configs/local
