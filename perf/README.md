@@ -32,7 +32,6 @@ Benchmark results can be visualized with https://observablehq.com/@mxinden-works
   - Running as a libp2p-perf server
     - Command line flags
       - `--run-server`
-      - `--secret-key-seed` unsigned integer to be used as a seed by libp2p-based implementations. Likely to go away in future iterations.
   - Running as a libp2p-perf client
       - Input via command line
         - `--server-ip-address`

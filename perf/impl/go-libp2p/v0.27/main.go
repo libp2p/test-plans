@@ -22,7 +22,6 @@ func main() {
 	runServer := flag.Bool("run-server", false, "Should run as server")
 	serverAddr := flag.String("server-address", "", "Server address")
 	transport := flag.String("transport", "tcp", "Transport to use")
-	secretKeySeed := flag.Uint64("secret-key-seed", 0, "Server secret key seed")
 	uploadBytes := flag.Uint64("upload-bytes", 0, "Upload bytes")
 	downloadBytes := flag.Uint64("download-bytes", 0, "Download bytes")
 	flag.Parse()
@@ -58,8 +57,8 @@ func main() {
 	if *runServer {
 		opts = append(opts, libp2p.ListenAddrStrings(tcpMultiAddrStr, quicMultiAddrStr))
 
-		// TODO: Fake identity. For testing only.
-		priv, _, err := crypto.GenerateEd25519Key(&simpleReader{seed: uint8(*secretKeySeed)})
+		// Generate fake identity.
+		priv, _, err := crypto.GenerateEd25519Key(&simpleReader{seed: 0})
 		if err != nil {
 			panic(err)
 		}
@@ -92,6 +91,7 @@ func main() {
 		fmt.Println("Invalid transport. Accepted values: 'tcp' or 'quic-v1'")
 		return
 	}
+	// Peer ID corresponds to the above fake identity.
 	multiAddrStr = multiAddrStr + "/p2p/12D3KooWDpJ7As7BWAwRMfu1VU2WCqNjvq387JEYKDBj4kx6nXTN"
 	serverInfo, err := peer.AddrInfoFromString(multiAddrStr)
 	if err != nil {

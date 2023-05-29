@@ -146,7 +146,6 @@ func main() {
 	runServer := flag.Bool("run-server", false, "Should run as server")
 	serverAddr := flag.String("server-address", "", "Server address")
 	_ = flag.String("transport", "", "Transport to use")
-	_ = flag.Uint64("secret-key-seed", 0, "Server secret key seed")
 	uploadBytes := flag.Uint64("upload-bytes", 0, "Upload bytes")
 	downloadBytes := flag.Uint64("download-bytes", 0, "Download bytes")
 	flag.Parse()
