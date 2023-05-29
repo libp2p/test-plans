@@ -69,11 +69,6 @@ jobs:
           CLIENT_IP: ${{ steps.client.outputs.ip }}
         run: npm run start -- --client-public-ip $CLIENT_IP --server-public-ip $SERVER_IP
         working-directory: perf/runner
-      - name: Archive results
-        uses: actions/upload-artifact@v2
-        with:
-          name: results
-          path: perf/runner/benchmark-results.json
       - name: Push
         run: |
           git add perf/runner/benchmark-results.json
