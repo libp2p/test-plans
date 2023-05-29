@@ -39,7 +39,7 @@ jobs:
       - name: Checkout test-plans
         uses: actions/checkout@v3
         with:
-          repository: galorgh/test-plans
+          repository: ${{ github.repository }}
           ref: ${{ github.ref }}
       - id: ssh
         name: Generate SSH key
