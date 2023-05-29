@@ -20,5 +20,3 @@ clean:
 	rm v0.27
 
 .PHONY: all clean
-
-
