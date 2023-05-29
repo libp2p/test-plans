@@ -33,7 +33,11 @@ jobs:
     steps:
       - id: ssh
         name: Generate SSH key
-        run: echo "private-key=$(make ssh-keygen | tail -n 1)" >> $GITHUB_OUTPUT
+        run: |
+          make ssh-keygen
+          private-key="$(cat terraform/short_lived/files/perf)"
+          echo ":add-mask:${private-key}"
+          echo "private-key=${private-key}" >> $GITHUB_OUTPUT
       - name: Configure SSH
         uses: webfactory/ssh-agent@d4b9b8ff72958532804b70bbe600ad43b36d5f2e # v0.8.0
         with:

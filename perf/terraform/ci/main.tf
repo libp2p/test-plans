@@ -1,19 +1,20 @@
-variable "region" {
-  type        = string
-  description = "The AWS region to create resources in"
-}
-
-variable "common_tags" {
-  type        = map(string)
-  description = "Common tags to apply to all resources"
-}
-
-provider "aws" {
-  region = var.region
-
-  default_tags {
-    tags = var.common_tags
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "4.67.0"
+    }
   }
+}
+
+variable "tags" {
+  type = map(string)
+  description = "Tags that the perf resources are tagged with"
+}
+
+variable "regions" {
+  type = list(string)
+  description = "Regions that the perf resources are created in"
 }
 
 resource "aws_iam_user" "perf" {

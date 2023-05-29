@@ -1,30 +1,26 @@
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "4.67.0"
+    }
+  }
+}
+
 variable "region" {
-  description = "The AWS region to create resources in"
+  description = "The AWS region of the provider"
 }
 
 variable "ami" {
   description = "The Amazon Machine Image to use"
 }
 
-variable "common_tags" {
-  type        = map(string)
-  description = "Common tags to apply to all resources"
-}
-
 locals {
   availability_zone = "${var.region}a"
 }
 
-provider "aws" {
-  region = var.region
-}
-
 resource "aws_vpc" "perf" {
   cidr_block = "10.0.0.0/16"
-
-  tags = merge(var.common_tags, {
-    Name = "perf"
-  })
 }
 
 resource "aws_subnet" "perf" {
@@ -32,18 +28,10 @@ resource "aws_subnet" "perf" {
   cidr_block              = "10.0.0.0/16"
   availability_zone       = local.availability_zone
   map_public_ip_on_launch = true
-
-  tags = merge(var.common_tags, {
-    Name = "perf"
-  })
 }
 
 resource "aws_internet_gateway" "perf" {
   vpc_id = aws_vpc.perf.id
-
-  tags = merge(var.common_tags, {
-    Name = "perf-igw"
-  })
 }
 
 resource "aws_route_table" "perf" {
@@ -53,10 +41,6 @@ resource "aws_route_table" "perf" {
     cidr_block = "0.0.0.0/0"
     gateway_id = aws_internet_gateway.perf.id
   }
-
-  tags = merge(var.common_tags, {
-    Name = "perf-route-table"
-  })
 }
 
 resource "aws_route_table_association" "perf" {
@@ -105,10 +89,6 @@ resource "aws_security_group" "restricted_inbound" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-
-  tags = merge(var.common_tags, {
-    Name = "restricted_inbound_sg"
-  })
 }
 
 resource "aws_launch_template" "perf" {
@@ -120,14 +100,6 @@ resource "aws_launch_template" "perf" {
   # - /var/log/cloud-init.log and
   # - /var/log/cloud-init-output.log
   user_data = filebase64("${path.module}/files/user-data.sh")
-
-  tag_specifications {
-    resource_type = "instance"
-
-    tags = merge(var.common_tags, {
-      Name = "node"
-    })
-  }
 
   instance_initiated_shutdown_behavior = "terminate"
 

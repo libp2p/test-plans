@@ -1,8 +1,3 @@
-locals {
-  regions = ["us-east-1", "us-west-2"]
-  tags    = merge(var.common_tags, { "Name" = "node" })
-}
-
 data "archive_file" "cleanup" {
   type        = "zip"
   source_file = "${path.module}/files/cleanup.py"
@@ -21,8 +16,8 @@ resource "aws_lambda_function" "cleanup" {
 
   environment {
     variables = {
-      REGIONS         = jsonencode(local.regions)
-      TAGS            = jsonencode(local.tags)
+      REGIONS         = jsonencode(var.regions)
+      TAGS            = jsonencode(var.tags)
       MAX_AGE_MINUTES = 50
     }
   }
@@ -80,7 +75,7 @@ data "aws_iam_policy_document" "cleanup" {
     effect    = "Allow"
 
     dynamic "condition" {
-      for_each = var.common_tags
+      for_each = var.tags
 
       content {
         test     = "StringEquals"
