@@ -7,6 +7,7 @@ regions = json.loads(os.environ['REGIONS'])  # Assuming this is a JSON array
 tags = json.loads(os.environ['TAGS'])  # Assuming this is a JSON object
 max_age_minutes = int(os.environ['MAX_AGE_MINUTES']) # Assuming this is an integer
 
+# TODO: Find and delete unused key pairs
 def lambda_handler(event, context):
     # iterate over all regions
     for region in regions:
@@ -40,3 +41,5 @@ def lambda_handler(event, context):
         if instances:
             ec2.terminate_instances(InstanceIds=instances)
             print(f'Terminating instances: {instances}')
+
+        ec2.describe_

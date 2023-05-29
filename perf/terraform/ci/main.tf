@@ -20,6 +20,7 @@ resource "aws_iam_user" "perf" {
   name = "perf"
 }
 
+# TODO: Make the policy more restrictive; it needs to be able to create/destroy instances and key pairs
 data "aws_iam_policy_document" "perf" {
   statement {
     actions   = ["ec2:*"]

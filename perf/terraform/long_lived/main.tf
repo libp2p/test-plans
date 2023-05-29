@@ -111,23 +111,10 @@ resource "aws_security_group" "restricted_inbound" {
   })
 }
 
-# If one wanted to make the key pair short lived, these would be the steps:
-# 1. Move this resource to `perf/terraform/short_lived/main.tf`
-# 2. Add `make ssh-keygen` run step to `.github/workflows/perf.yml`
-# 3. Add `aws_key_pair` cleanup to `perf/terraform/ci/files/cleanup.py`
-# 4. Allow `aws_iam_user.perf` from `perf/terraform/ci/main.tf` to create/delete/update key pairs
-# 5. Allow `aws_iam_role.cleanup` from `perf/terraform/ci/cleanup.tf` to delete key pairs
-resource "aws_key_pair" "perf" {
-  key_name   = "user-public-key"
-  public_key = file("${path.module}/files/user.pub")
-}
-
 resource "aws_launch_template" "perf" {
   name          = "perf-node"
   image_id      = var.ami
   instance_type = "m5n.8xlarge"
-
-  key_name = aws_key_pair.perf.key_name
 
   # Debug via:
   # - /var/log/cloud-init.log and

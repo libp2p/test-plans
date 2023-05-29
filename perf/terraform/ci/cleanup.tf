@@ -69,18 +69,18 @@ resource "aws_iam_role" "cleanup" {
 
 data "aws_iam_policy_document" "cleanup" {
   statement {
-    actions   = ["ec2:DescribeInstances", "ec2:DescribeTags"]
+    actions   = ["ec2:DescribeInstances", "ec2:DescribeTags", "ec2:DescribeKeyPairs"]
     resources = ["*"]
     effect    = "Allow"
   }
 
   statement {
-    actions   = ["ec2:TerminateInstances"]
+    actions   = ["ec2:TerminateInstances", "ec2:DeleteKeyPair"]
     resources = ["*"]
     effect    = "Allow"
 
     dynamic "condition" {
-      for_each = local.tags
+      for_each = var.common_tags
 
       content {
         test     = "StringEquals"

@@ -1,16 +1,14 @@
 name: libp2p perf test
 
 # How to configure a repository for running this workflow:
-# 1. Run 'make ssh-keygen' in 'perf' to generate a new SSH key pair named 'user' in 'perf/terraform/region/files'
-# 2. Configure auth for the AWS provider as per https://registry.terraform.io/providers/hashicorp/aws/latest/docs#authentication-and-configuration
-# 3. Run 'terraform init' and 'terraform apply' in 'perf/terraform/ci_config' to create the resources needed for this workflow
-# 4. Go to https://console.aws.amazon.com/iamv2/home?#/users/details/perf?section=security_credentials
-# 5. Click 'Create access key' to get the access key ID and secret access key
-# 6. Go to https://github.com/libp2p/test-plans/settings/secrets/actions
-# 7. Click 'New repository secret', set the name to 'PERF_AWS_SECRET_ACCESS_KEY', and paste the secret access key from step 5
-# 8. Click 'New repository secret', set the name to 'PERF_SSH_PRIVATE_KEY', and paste the private key from step 1
-# 9. Go to https://github.com/libp2p/test-plans/settings/variables/actions
-# 10. Click 'New repository variable', set the name to 'PERF_AWS_ACCESS_KEY_ID', and paste the access key ID from step 5
+# 1. Configure auth for the AWS provider as per https://registry.terraform.io/providers/hashicorp/aws/latest/docs#authentication-and-configuration
+# 2. Run 'terraform init' and 'terraform apply' in 'perf/terraform/ci_config' to create the resources needed for this workflow
+# 3. Go to https://console.aws.amazon.com/iamv2/home?#/users/details/perf?section=security_credentials
+# 4. Click 'Create access key' to get the access key ID and secret access key
+# 5. Go to https://github.com/libp2p/test-plans/settings/secrets/actions
+# 6. Click 'New repository secret', set the name to 'PERF_AWS_SECRET_ACCESS_KEY', and paste the secret access key from step 5
+# 7. Go to https://github.com/libp2p/test-plans/settings/variables/actions
+# 8. Click 'New repository variable', set the name to 'PERF_AWS_ACCESS_KEY_ID', and paste the access key ID from step 5
 
 on:
   workflow_dispatch:
@@ -33,10 +31,13 @@ jobs:
       TF_VAR_long_lived_enabled: false
       TF_VAR_short_lived_enabled: true
     steps:
+      - id: ssh
+        name: Generate SSH key
+        run: echo "private-key=$(make ssh-keygen | tail -n 1)" >> $GITHUB_OUTPUT
       - name: Configure SSH
         uses: webfactory/ssh-agent@d4b9b8ff72958532804b70bbe600ad43b36d5f2e # v0.8.0
         with:
-          ssh-private-key: ${{ secrets.PERF_SSH_PRIVATE_KEY }}
+          ssh-private-key: ${{ steps.ssh.outputs.private-key }}
       - name: Configure git
         run: |
           git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com>"

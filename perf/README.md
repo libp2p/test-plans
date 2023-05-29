@@ -12,7 +12,7 @@ Benchmark results can be visualized with https://observablehq.com/@mxinden-works
 
 ### Bootstrap
 
-1. Save your public SSH key as the file `./regions/files/user.pub`; or generate a new key pair with `make ssh-keygen` and add it to your SSH agent with `make ssh-add`.
+1. Save your public SSH key as the file `./short_lived/files/perf.pub`; or generate a new key pair with `make ssh-keygen` and add it to your SSH agent with `make ssh-add`.
 2. `cd terraform`
 3. `terraform init`
 4. `terraform apply`
