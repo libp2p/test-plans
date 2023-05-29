@@ -67,11 +67,11 @@ jobs:
         working-directory: perf/terraform/configs/local
       - id: server
         name: Retrieve server's IP
-        run: echo "ip=$(terraform output -raw server_ip)"
+        run: echo "ip=$(terraform output -raw server_ip)" >> $GITHUB_OUTPUT
         working-directory: perf/terraform/configs/local
       - id: client
         name: Retrieve client's IP
-        run: echo "ip=$(terraform output -raw client_ip)"
+        run: echo "ip=$(terraform output -raw client_ip)" >> $GITHUB_OUTPUT
         working-directory: perf/terraform/configs/local
       - name: Download dependencies
         run: npm ci
