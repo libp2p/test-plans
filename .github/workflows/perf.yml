@@ -58,28 +58,26 @@ jobs:
         uses: hashicorp/setup-terraform@633666f66e0061ca3b725c73b2ec20cd13a8fdd1 # v2.0.3
       - name: Init terraform
         id: init
-        run: |
-          terraform init
-          echo "status=$?" >> $GITHUB_OUTPUT
+        run: terraform init
         working-directory: perf/terraform/configs/local
       - name: Apply terraform
         run: terraform apply -auto-approve
         working-directory: perf/terraform/configs/local
       - id: server
         name: Retrieve server's IP
-        run: echo "ip=$(terraform output -raw server_ip)" >> $GITHUB_OUTPUT
+        run: terraform output -raw server_ip
         working-directory: perf/terraform/configs/local
       - id: client
         name: Retrieve client's IP
-        run: echo "ip=$(terraform output -raw client_ip)" >> $GITHUB_OUTPUT
+        run: terraform output -raw client_ip
         working-directory: perf/terraform/configs/local
       - name: Download dependencies
         run: npm ci
         working-directory: perf/runner
       - name: Run tests
         env:
-          SERVER_IP: ${{ steps.server.outputs.ip }}
-          CLIENT_IP: ${{ steps.client.outputs.ip }}
+          SERVER_IP: ${{ steps.server.outputs.stdout }}
+          CLIENT_IP: ${{ steps.client.outputs.stdout }}
         run: npm run start -- --client-public-ip $CLIENT_IP --server-public-ip $SERVER_IP
         working-directory: perf/runner
       - name: Push
@@ -88,6 +86,6 @@ jobs:
           git commit -m "perf: update benchmark results"
           git push
       - name: Destroy terraform
-        if: always() && steps.init.outputs.status == 0
+        if: always() && steps.init.outputs.exitcode == 0
         run: terraform destroy -auto-approve
         working-directory: perf/terraform/configs/local
