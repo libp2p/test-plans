@@ -38,7 +38,7 @@ Benchmark results can be visualized with https://observablehq.com/@mxinden-works
         - `--server-ip-address`
         - `--transport` (see `runner/versions.ts` for possible variants)
         - `--upload-bytes` number of bytes to upload per stream.
-        - `--download-bytes` number of bytes to upload per stream.
+        - `--download-bytes` number of bytes to download per stream.
       - Output
         - Logging MUST go to stderr.
         - Measurement output is printed to stdout as JSON in the form of:
