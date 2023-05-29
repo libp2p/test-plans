@@ -40,9 +40,12 @@ jobs:
         name: Generate SSH key
         run: |
           make ssh-keygen
-          key="$(cat terraform/modules/short_lived/files/perf)"
-          echo ":add-mask:${key}"
-          echo "key=${key}" >> $GITHUB_OUTPUT
+          echo "key<<EOF" >> $GITHUB_OUTPUT
+          while read -r line; do
+            echo "::add-mask::$line"
+            echo "$line" >> $GITHUB_OUTPUT
+          done < terraform/modules/short_lived/files/perf
+          echo "EOF" >> $GITHUB_OUTPUT
       - name: Configure SSH
         uses: webfactory/ssh-agent@d4b9b8ff72958532804b70bbe600ad43b36d5f2e # v0.8.0
         with:
