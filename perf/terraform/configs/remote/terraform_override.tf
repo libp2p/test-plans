@@ -1,4 +1,5 @@
 terraform {
+  # TODO: Uncomment to start using remote backend
   # backend "s3" {
   #   bucket         = "terraform-tfstate"
   #   key            = "github.com/libp2p/test-plans/perf/terraform/configs/remote/terraform.tfstate"
