@@ -12,6 +12,11 @@ name: libp2p perf test
 
 on:
   workflow_dispatch:
+    inputs:
+      push:
+        description: 'Push the benchmark results to the repository'
+        required: false
+        default: 'true'
 
 jobs:
   perf:
@@ -81,10 +86,18 @@ jobs:
         run: npm run start -- --client-public-ip $CLIENT_IP --server-public-ip $SERVER_IP
         working-directory: perf/runner
       - name: Push
+        if: github.event.inputs.push == 'true'
         run: |
-          git add perf/runner/benchmark-results.json
+          git add benchmark-results.json
           git commit -m "perf: update benchmark results"
           git push
+        working-directory: perf/runner
+      - name: Archive
+        if: github.event.intputs.push == 'false'
+        uses: actions/upload-artifact@v2
+        with:
+          name: benchmark-results
+          path: perf/runner/benchmark-results.json
       - name: Destroy terraform
         if: always() && steps.init.outputs.exitcode == 0
         run: terraform destroy -auto-approve
