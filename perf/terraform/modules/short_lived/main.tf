@@ -23,3 +23,7 @@ resource "aws_instance" "perf" {
 
   key_name = aws_key_pair.perf.key_name
 }
+
+output "public_ip" {
+  value = aws_instance.perf.public_ip
+}

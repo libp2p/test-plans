@@ -110,3 +110,11 @@ module "short_lived_client" {
 
   depends_on = [module.long_lived_client]
 }
+
+output "client_ip" {
+  value = var.short_lived_enabled ? module.short_lived_client[0].public_ip : null
+}
+
+output "server_ip" {
+  value = var.short_lived_enabled ? module.short_lived_server[0].public_ip : null
+}
