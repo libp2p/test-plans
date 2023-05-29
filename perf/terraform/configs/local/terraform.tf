@@ -51,7 +51,7 @@ variable "short_lived_enabled" {
 module "ci" {
   count = var.ci_enabled ? 1 : 0
 
-  source = "./ci"
+  source = "../../modules/ci"
 
   regions = ["us-west-2", "us-east-1"]
   tags = local.tags
@@ -64,7 +64,7 @@ module "ci" {
 module "long_lived_server" {
   count = var.long_lived_enabled ? 1 : 0
 
-  source = "./long_lived"
+  source = "../../modules/long_lived"
 
   region = "us-west-2"
   ami    = "ami-0747e613a2a1ff483"
@@ -77,7 +77,7 @@ module "long_lived_server" {
 module "long_lived_client" {
   count = var.long_lived_enabled ? 1 : 0
 
-  source = "./long_lived"
+  source = "../../modules/long_lived"
 
   region = "us-east-1"
   ami    = "ami-06e46074ae430fba6"
@@ -90,7 +90,7 @@ module "long_lived_client" {
 module "short_lived_server" {
   count = var.short_lived_enabled ? 1 : 0
 
-  source = "./short_lived"
+  source = "../../modules/short_lived"
 
   providers = {
     aws = aws.us-west-2
@@ -102,7 +102,7 @@ module "short_lived_server" {
 module "short_lived_client" {
   count = var.short_lived_enabled ? 1 : 0
 
-  source = "./short_lived"
+  source = "../../modules/short_lived"
 
   providers = {
     aws = aws.us-east-1

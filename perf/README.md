@@ -13,7 +13,7 @@ Benchmark results can be visualized with https://observablehq.com/@mxinden-works
 ### Bootstrap
 
 1. Save your public SSH key as the file `./short_lived/files/perf.pub`; or generate a new key pair with `make ssh-keygen` and add it to your SSH agent with `make ssh-add`.
-2. `cd terraform`
+2. `cd terraform/configs/local`
 3. `terraform init`
 4. `terraform apply`
 5. `CLIENT_IP=$(terraform output -raw client_ip)`
@@ -29,7 +29,7 @@ _WARNING_: Running the perf tests might take a while.
 
 ## Deprovision infrastructure
 
-1. `cd terraform`
+1. `cd terraform/configs/local`
 2. `terraform destroy`
 
 ## Adding a new implementation

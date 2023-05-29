@@ -13,7 +13,9 @@ resource "aws_key_pair" "perf" {
 }
 
 resource "aws_instance" "perf" {
-  name = "perf-node"
+  tags = {
+    Name = "perf-node"
+  }
 
   launch_template {
     name = "perf-node"

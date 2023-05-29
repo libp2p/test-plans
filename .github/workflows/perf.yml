@@ -2,7 +2,7 @@ name: libp2p perf test
 
 # How to configure a repository for running this workflow:
 # 1. Configure auth for the AWS provider as per https://registry.terraform.io/providers/hashicorp/aws/latest/docs#authentication-and-configuration
-# 2. Run 'terraform init' and 'terraform apply' in 'perf/terraform/ci_config' to create the resources needed for this workflow
+# 2. Run 'terraform init' and 'terraform apply' in 'perf/terraform/configs/ci' to create the resources needed for this workflow
 # 3. Go to https://console.aws.amazon.com/iamv2/home?#/users/details/perf?section=security_credentials
 # 4. Click 'Create access key' to get the access key ID and secret access key
 # 5. Go to https://github.com/libp2p/test-plans/settings/secrets/actions
@@ -35,7 +35,7 @@ jobs:
         name: Generate SSH key
         run: |
           make ssh-keygen
-          private-key="$(cat terraform/short_lived/files/perf)"
+          private-key="$(cat terraform/modules/short_lived/files/perf)"
           echo ":add-mask:${private-key}"
           echo "private-key=${private-key}" >> $GITHUB_OUTPUT
       - name: Configure SSH
@@ -55,10 +55,10 @@ jobs:
           ref: ${{ github.ref }}
       - name: Init terraform
         run: terraform init
-        working-directory: perf/terraform
+        working-directory: perf/terraform/configs/ci
       - name: Apply terraform
         run: terraform apply -auto-approve
-        working-directory: perf/terraform
+        working-directory: perf/terraform/configs/ci
       - id: server
         name: Retrieve server's IP
         run: echo "ip=$(terraform output -raw server_ip)"
@@ -82,4 +82,4 @@ jobs:
       - name: Destroy terraform
         if: always()
         run: terraform destroy -auto-approve
-        working-directory: perf/terraform
+        working-directory: perf/terraform/configs/ci
