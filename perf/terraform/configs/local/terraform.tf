@@ -119,6 +119,3 @@ output "server_ip" {
   value = var.short_lived_enabled ? module.short_lived_server[0].public_ip : null
 }
 
-output "test" {
-  value = "hello world"
-}
