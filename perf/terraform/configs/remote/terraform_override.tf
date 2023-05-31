@@ -1,10 +1,9 @@
 terraform {
-  # TODO: Uncomment to start using remote backend
-  # backend "s3" {
-  #   bucket         = "terraform-tfstate"
-  #   key            = "github.com/libp2p/test-plans/perf/terraform/configs/remote/terraform.tfstate"
-  #   region         = "us-west-2"
-  # }
+  backend "s3" {
+    bucket         = "libp2p-terraform-state"
+    key            = "github.com/libp2p/test-plans/perf/terraform/configs/remote/terraform.tfstate"
+    region         = "us-west-2"
+  }
 }
 
 variable "ci_enabled" {
