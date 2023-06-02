@@ -6,8 +6,8 @@ The configs are named after the type of backend they use. The defaults for what 
 
 ## local
 
-Terraform state in this configuration will be stored locally. The defaults are configured for local development i.e. terraform apply will bring up ALL the infrastructure needed to run the perf tests. It will skip the steps required only for the CI environment.
+Terraform state in this configuration will be stored locally. The defaults are configured for a single performance benchmark run, i.e. `terraform apply` will bring up short-lived infrastructure only. It will skip long-lived infrastructure like the clean-up Lambda and the instance launch template.
 
 ## remote
 
-Terraform state here will be stored remotely in an S3 bucket. The defaults are configured for the CI environment i.e. terraform apply will only bring up the long-lived infrastructure needed to run the perf tests in CI. It will skip launching EC2 instances because they will be brought up by the CI environment.
+Terraform state here will be stored remotely in an S3 bucket. `terraform apply` will only bring up the long-lived infrastructure needed to run the performance benchmarks It will skip short-lived infrastructure like launching EC2 instances.
