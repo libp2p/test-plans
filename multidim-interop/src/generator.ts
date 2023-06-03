@@ -62,6 +62,7 @@ export async function buildTestSpecs(versions: Array<Version>): Promise<Array<Co
                      -- quic only uses its own muxer/securechannel
                      AND a.transport != "webtransport"
                      AND a.transport != "webrtc-direct"
+                     AND a.transport != "webrtc"
                      AND a.transport != "quic"
                      AND a.transport != "quic-v1";`);
     const quicQueryResults =
