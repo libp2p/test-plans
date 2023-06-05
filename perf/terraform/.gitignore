@@ -24,7 +24,7 @@ override.tf.json
 *_override.tf.json
 
 # Include override files you do wish to add to version control using negated pattern
-# !example_override.tf
+!configs/remote/terraform_override.tf
 
 # Include tfplan files to ignore the plan output of command: terraform plan -out=tfplan
 # example: *tfplan*
@@ -32,5 +32,3 @@ override.tf.json
 # Ignore CLI configuration files
 .terraformrc
 terraform.rc
-
-*.pub

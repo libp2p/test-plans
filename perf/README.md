@@ -10,21 +10,27 @@ Benchmark results can be visualized with https://observablehq.com/@mxinden-works
 
 ## Provision infrastructure
 
-1. `cd terraform`
-2. Save your public SSH key as the file `./user.pub`.
+### Bootstrap
+
+1. Save your public SSH key as the file `./terraform/modules/short_lived/files/perf.pub`; or generate a new key pair with `make ssh-keygen` and add it to your SSH agent with `make ssh-add`.
+2. `cd terraform/configs/local`
 3. `terraform init`
 4. `terraform apply`
+5. `CLIENT_IP=$(terraform output -raw client_ip)`
+6. `SERVER_IP=$(terraform output -raw server_ip)`
 
 ## Build and run implementations
 
+_WARNING_: Running the perf tests might take a while.
+
 1. `cd runner`
 2. `npm ci`
-3. `npm run start -- --client-public-ip $(terraform output -raw -state ../terraform/terraform.tfstate client_public_ip) --server-public-ip $(terraform output -raw -state ../terraform/terraform.tfstate server_public_ip)`
+3. `npm run start -- --client-public-ip $CLIENT_IP --server-public-ip $SERVER_IP`
 
 ## Deprovision infrastructure
 
-1. `cd terraform`
-3. `terraform destroy`
+1. `cd terraform/configs/local`
+2. `terraform destroy`
 
 ## Adding a new implementation
 
