@@ -34,9 +34,6 @@ func NewPerfService(h host.Host) *PerfService {
 }
 
 func (p *PerfService) PerfHandler(s network.Stream) {
-	buf := pool.Get(BlockSize)
-	defer pool.Put(buf)
-
 	u64Buf := make([]byte, 8)
 	_, err := io.ReadFull(s, u64Buf)
 	if err != nil {
@@ -47,14 +44,14 @@ func (p *PerfService) PerfHandler(s network.Stream) {
 
 	bytesToSend := binary.BigEndian.Uint64(u64Buf)
 
-	_, err = p.drainStream(context.Background(), s, buf)
+	_, err = p.drainStream(context.Background(), s)
 	if err != nil {
 		log.Errorw("err", err)
 		s.Reset()
 		return
 	}
 
-	err = p.sendBytes(context.Background(), s, bytesToSend, buf)
+	err = p.sendBytes(context.Background(), s, bytesToSend)
 	if err != nil {
 		log.Errorw("err", err)
 		s.Reset()
@@ -63,7 +60,10 @@ func (p *PerfService) PerfHandler(s network.Stream) {
 
 }
 
-func (ps *PerfService) sendBytes(ctx context.Context, s network.Stream, bytesToSend uint64, buf []byte) error {
+func (ps *PerfService) sendBytes(ctx context.Context, s network.Stream, bytesToSend uint64) error {
+	buf := pool.Get(BlockSize)
+	defer pool.Put(buf)
+
 	for bytesToSend > 0 {
 		toSend := buf
 		if bytesToSend < BlockSize {
@@ -81,18 +81,14 @@ func (ps *PerfService) sendBytes(ctx context.Context, s network.Stream, bytesToS
 	return nil
 }
 
-func (ps *PerfService) drainStream(ctx context.Context, s network.Stream, buf []byte) (uint64, error) {
-	var recvd uint64
-	for {
-		n, err := s.Read(buf)
-		recvd += uint64(n)
-		if err == io.EOF {
-			return recvd, nil
-		} else if err != nil {
-			s.Reset()
-			return recvd, err
-		}
+func (ps *PerfService) drainStream(ctx context.Context, s network.Stream) (uint64, error) {
+	var recvd int64
+	recvd, err := io.Copy(io.Discard, s)
+	if err != nil && err != io.EOF {
+		s.Reset()
+		return uint64(recvd), err
 	}
+	return uint64(recvd), nil
 }
 
 func (ps *PerfService) RunPerf(ctx context.Context, p peer.ID, bytesToSend uint64, bytesToRecv uint64) (time.Duration, time.Duration, error) {
@@ -109,9 +105,6 @@ func (ps *PerfService) RunPerf(ctx context.Context, p peer.ID, bytesToSend uint6
 		rw:     lzcon,
 	}
 
-	buf := pool.Get(BlockSize)
-	defer pool.Put(buf)
-
 	sizeBuf := make([]byte, 8)
 	binary.BigEndian.PutUint64(sizeBuf, bytesToRecv)
 
@@ -121,14 +114,14 @@ func (ps *PerfService) RunPerf(ctx context.Context, p peer.ID, bytesToSend uint6
 	}
 
 	sendStart := time.Now()
-	err = ps.sendBytes(ctx, s, bytesToSend, buf)
+	err = ps.sendBytes(ctx, s, bytesToSend)
 	if err != nil {
 		return 0, 0, err
 	}
 	sendDuration := time.Since(sendStart)
 
 	recvStart := time.Now()
-	recvd, err := ps.drainStream(ctx, s, buf)
+	recvd, err := ps.drainStream(ctx, s)
 	if err != nil {
 		return sendDuration, 0, err
 	}
