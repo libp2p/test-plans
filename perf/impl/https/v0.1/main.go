@@ -192,7 +192,7 @@ func main() {
 			DownloadSeconds:              download.Seconds(),
 		})
 		if err != nil {
-			panic(err)
+			log.Fatalf("failed to marshal perf result: %s", err)
 		}
 		fmt.Println(string(jsonB))
 	}
