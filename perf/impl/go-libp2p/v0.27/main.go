@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"strings"
+	"net"
 	"time"
 
 	"github.com/libp2p/go-libp2p"
@@ -26,16 +26,13 @@ func main() {
 	downloadBytes := flag.Uint64("download-bytes", 0, "Download bytes")
 	flag.Parse()
 
-	ipPort := strings.Split(*serverAddr, ":")
-	if len(ipPort) != 2 {
-		fmt.Println("Invalid server address format. Expected format: 'ip:port'")
-		return
+	host, port, err := net.SplitHostPort(*serverAddr)
+	if err != nil {
+		log.Fatal(err)
 	}
-	ip := ipPort[0]
-	port := ipPort[1]
 
-	tcpMultiAddrStr := fmt.Sprintf("/ip4/%s/tcp/%s", ip, port)
-	quicMultiAddrStr := fmt.Sprintf("/ip4/%s/udp/%s/quic-v1", ip, port)
+	tcpMultiAddrStr := fmt.Sprintf("/ip4/%s/tcp/%s", host, port)
+	quicMultiAddrStr := fmt.Sprintf("/ip4/%s/udp/%s/quic-v1", host, port)
 
 	opts := []libp2p.Option{
 		// Use TLS only instead of both TLS and Noise. Removes the
