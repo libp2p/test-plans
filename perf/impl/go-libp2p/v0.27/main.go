@@ -36,16 +36,6 @@ func main() {
 		// additional multistream-select security protocol negotiation.
 		// Thus makes it easier to compare with TCP+TLS+HTTP/2
 		libp2p.Security(tls.ID, tls.New),
-
-		libp2p.DefaultListenAddrs,
-		libp2p.Transport(tcp.NewTCPTransport),
-		libp2p.Transport(quic.NewTransport),
-		libp2p.DefaultMuxers,
-		libp2p.DefaultPeerstore,
-		libp2p.DefaultResourceManager,
-		libp2p.DefaultConnectionManager,
-		libp2p.DefaultMultiaddrResolver,
-		libp2p.DefaultPrometheusRegisterer,
 	}
 
 	if *runServer {
@@ -61,11 +51,9 @@ func main() {
 			log.Fatalf("failed to generate key: %s", err)
 		}
 		opts = append(opts, libp2p.Identity(priv))
-	} else {
-		opts = append(opts, libp2p.RandomIdentity)
 	}
 
-	h, err := libp2p.NewWithoutDefaults(opts...)
+	h, err := libp2p.New(opts...)
 	if err != nil {
 		log.Fatalf("failed to instantiate libp2p: %s", err)
 	}
