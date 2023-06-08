@@ -12,7 +12,6 @@ import (
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
-	msmux "github.com/multiformats/go-multistream"
 )
 
 var log = logging.Logger("perf")
@@ -92,17 +91,9 @@ func (ps *PerfService) drainStream(ctx context.Context, s network.Stream) (uint6
 }
 
 func (ps *PerfService) RunPerf(ctx context.Context, p peer.ID, bytesToSend uint64, bytesToRecv uint64) (time.Duration, time.Duration, error) {
-	// Use ps.Host.Network().NewStream() instead of ps.Host.NewStream() to
-	// skip waiting for identify protocol to finish.
-	s, err := ps.Host.Network().NewStream(network.WithNoDial(ctx, "already dialed"), p)
+	s, err := ps.Host.NewStream(ctx, p, ID)
 	if err != nil {
 		return 0, 0, err
-	}
-	s.SetProtocol(ID)
-	lzcon := msmux.NewMSSelect(s, ID)
-	s = &streamWrapper{
-		Stream: s,
-		rw:     lzcon,
 	}
 
 	sizeBuf := make([]byte, 8)
@@ -132,33 +123,4 @@ func (ps *PerfService) RunPerf(ctx context.Context, p peer.ID, bytesToSend uint6
 	}
 
 	return sendDuration, recvDuration, nil
-}
-
-type streamWrapper struct {
-	network.Stream
-	rw io.ReadWriteCloser
-}
-
-func (s *streamWrapper) Read(b []byte) (int, error) {
-	return s.rw.Read(b)
-}
-
-func (s *streamWrapper) Write(b []byte) (int, error) {
-	return s.rw.Write(b)
-}
-
-func (s *streamWrapper) Close() error {
-	return s.rw.Close()
-}
-
-func (s *streamWrapper) CloseWrite() error {
-	// Flush the handshake before closing, but ignore the error. The other
-	// end may have closed their side for reading.
-	//
-	// If something is wrong with the stream, the user will get on error on
-	// read instead.
-	if flusher, ok := s.rw.(interface{ Flush() error }); ok {
-		_ = flusher.Flush()
-	}
-	return s.Stream.CloseWrite()
 }
