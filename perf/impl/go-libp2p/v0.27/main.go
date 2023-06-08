@@ -54,7 +54,11 @@ func main() {
 	if *runServer {
 		opts = append(opts, libp2p.ListenAddrStrings(tcpMultiAddrStr, quicMultiAddrStr))
 
-		// Generate fake identity.
+		// Generate stable fake identity.
+		//
+		// Using a stable identity (i.e. peer ID) allows the client to
+		// connect to the server without a prior exchange of the
+		// server's peer ID.
 		priv, _, err := crypto.GenerateEd25519Key(&simpleReader{seed: 0})
 		if err != nil {
 			log.Fatalf("failed to generate key: %s", err)
