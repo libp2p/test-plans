@@ -12,7 +12,6 @@ import (
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/multiformats/go-multiaddr"
-	tls "github.com/libp2p/go-libp2p/p2p/security/tls"
 )
 
 func main() {
@@ -31,13 +30,7 @@ func main() {
 	tcpMultiAddrStr := fmt.Sprintf("/ip4/%s/tcp/%s", host, port)
 	quicMultiAddrStr := fmt.Sprintf("/ip4/%s/udp/%s/quic-v1", host, port)
 
-	opts := []libp2p.Option{
-		// Use TLS only instead of both TLS and Noise. Removes the
-		// additional multistream-select security protocol negotiation.
-		// Thus makes it easier to compare with TCP+TLS+HTTP/2
-		libp2p.Security(tls.ID, tls.New),
-	}
-
+	var opts []libp2p.Option
 	if *runServer {
 		opts = append(opts, libp2p.ListenAddrStrings(tcpMultiAddrStr, quicMultiAddrStr))
 
