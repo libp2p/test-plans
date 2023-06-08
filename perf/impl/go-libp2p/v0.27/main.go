@@ -11,11 +11,8 @@ import (
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/peer"
-	"github.com/libp2p/go-libp2p/core/peerstore"
-	tls "github.com/libp2p/go-libp2p/p2p/security/tls"
-	quic "github.com/libp2p/go-libp2p/p2p/transport/quic"
-	"github.com/libp2p/go-libp2p/p2p/transport/tcp"
 	"github.com/multiformats/go-multiaddr"
+	tls "github.com/libp2p/go-libp2p/p2p/security/tls"
 )
 
 func main() {
@@ -100,10 +97,7 @@ func main() {
 	}
 
 	start := time.Now()
-	h.Peerstore().AddAddrs(serverInfo.ID, serverInfo.Addrs, peerstore.TempAddrTTL)
-	// Use h.Network().DialPeer() instead of h.Connect to skip waiting for
-	// identify protocol to finish.
-	_, err = h.Network().DialPeer(context.Background(), serverInfo.ID)
+	err = h.Connect(context.Background(), *serverInfo)
 	if err != nil {
 		log.Fatalf("failed to dial peer: %s", err)
 	}
