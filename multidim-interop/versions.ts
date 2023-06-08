@@ -108,18 +108,17 @@ export const versions: Array<Version> = [
         secureChannels: ["noise"],
         muxers: ["mplex", "yamux"],
     },
-    // TODO enable webrtc direct for v0.45
     {
         id: "chromium-js-v0.45.0",
         containerImageID: chromiumJsV045.imageID,
-        transports: [{ name: "webtransport", onlyDial: true }, { name: "wss", onlyDial: true }],
+        transports: [{ name: "webtransport", onlyDial: true }, { name: "wss", onlyDial: true }, { name: "webrtc-direct", onlyDial: true }, "webrtc"],
         secureChannels: ["noise"],
         muxers: ["mplex", "yamux"],
     },
     {
         id: "firefox-js-v0.45.0",
         containerImageID: firefoxJsV045.imageID,
-        transports: [{ name: "wss", onlyDial: true }],
+        transports: [{ name: "wss", onlyDial: true }, { name: "webrtc-direct", onlyDial: true }, "webrtc"],
         secureChannels: ["noise"],
         muxers: ["mplex", "yamux"],
     },
