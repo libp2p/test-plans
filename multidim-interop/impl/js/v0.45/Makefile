@@ -1,5 +1,5 @@
 image_name := js-v0.45
-commitSha := 41641f1a7656aa654234f6f849b1749786867121
+commitSha := 2165bc2a8388316f9a675f86fc08cfdd27c2a84d
 
 # TODO Enable webkit once https://github.com/libp2p/js-libp2p/pull/1627 is in
 all: image.json chromium-image.json firefox-image.json
@@ -8,12 +8,12 @@ all: image.json chromium-image.json firefox-image.json
 load-image-json: image.json
 	docker image tag $$(jq -r .imageID image.json) ${image_name}
 
-chromium-image.json: load-image-json
+chromium-image.json: load-image-json BrowserDockerfile
 	docker build -f BrowserDockerfile --build-arg=BASE_IMAGE=${image_name} --build-arg=BROWSER=chromium -t chromium-${image_name} .
 	docker image inspect chromium-${image_name} -f "{{.Id}}" | \
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
 
-firefox-image.json: load-image-json
+firefox-image.json: load-image-json BrowserDockerfile
 	docker build -f BrowserDockerfile --build-arg=BASE_IMAGE=${image_name} --build-arg=BROWSER=firefox -t firefox-${image_name} .
 	docker image inspect firefox-${image_name} -f "{{.Id}}" | \
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
