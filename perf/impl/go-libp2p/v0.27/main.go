@@ -57,7 +57,7 @@ func main() {
 		// Generate fake identity.
 		priv, _, err := crypto.GenerateEd25519Key(&simpleReader{seed: 0})
 		if err != nil {
-			panic(err)
+			log.Fatalf("failed to generate key: %s", err)
 		}
 		opts = append(opts, libp2p.Identity(priv))
 	} else {
@@ -66,7 +66,7 @@ func main() {
 
 	h, err := libp2p.NewWithoutDefaults(opts...)
 	if err != nil {
-		panic(err)
+		log.Fatalf("failed to instantiate libp2p: %s", err)
 	}
 
 	perf := NewPerfService(h)
@@ -92,7 +92,7 @@ func main() {
 	multiAddrStr = multiAddrStr + "/p2p/12D3KooWDpJ7As7BWAwRMfu1VU2WCqNjvq387JEYKDBj4kx6nXTN"
 	serverInfo, err := peer.AddrInfoFromString(multiAddrStr)
 	if err != nil {
-		panic(err)
+		log.Fatalf("failed to build address info: %s", err)
 	}
 
 	start := time.Now()
@@ -101,13 +101,13 @@ func main() {
 	// identify protocol to finish.
 	_, err = h.Network().DialPeer(context.Background(), serverInfo.ID)
 	if err != nil {
-		panic(err)
+		log.Fatalf("failed to dial peer: %s", err)
 	}
 	connectionEstablished := time.Since(start)
 
 	upload, download, err := perf.RunPerf(context.Background(), serverInfo.ID, uint64(*uploadBytes), uint64(*downloadBytes))
 	if err != nil {
-		panic(err)
+		log.Fatalf("failed to execute perf: %s", err)
 	}
 
 	jsonB, err := json.Marshal(Result{
@@ -116,7 +116,7 @@ func main() {
 		DownloadSeconds:              download.Seconds(),
 	})
 	if err != nil {
-		panic(err)
+		log.Fatalf("failed to marshal perf result: %s", err)
 	}
 
 	fmt.Println(string(jsonB))
