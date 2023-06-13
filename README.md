@@ -3,7 +3,6 @@
 [![Interop Dashboard](https://github.com/libp2p/test-plans/workflows/libp2p%20multidimensional%20interop%20test/badge.svg?branch=master)](https://github.com/libp2p/test-plans/actions/runs/5259171443/attempts/2#summary-14235717665)
 
 [![Made by Protocol Labs](https://img.shields.io/badge/made%20by-Protocol%20Labs-blue.svg?style=flat-square)](http://protocol.ai)
-![Go version](https://img.shields.io/badge/go-%3E%3D1.14.0-blue.svg?style=flat-square)
 
 This repository contains interoperability and end to end tests for libp2p modules across different implementations and versions.
 
