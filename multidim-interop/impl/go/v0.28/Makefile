@@ -1,5 +1,5 @@
-image_name := go-v0.27
-commitSha := 2df518f43fa2c3e937b81c249c2c5b898421df6b
+image_name := go-v0.28
+commitSha := 703c3a4377d1ca2cf3fc93c92c883be1644f3ba6
 
 all: image.json
 
@@ -18,3 +18,4 @@ clean:
 	rm image.json
 	rm go-libp2p-*.zip
 	rm -rf go-libp2p-*
+
