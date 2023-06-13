@@ -124,14 +124,14 @@ export const versions: Array<Version> = [
         muxers: ["mplex", "yamux"],
     },
     {
-        id: "go-v0.27.8",
+        id: "go-v0.28.0",
         containerImageID: gov028.imageID,
         transports: ["tcp", "ws", "quic", "quic-v1", "webtransport"],
         secureChannels: ["tls", "noise"],
         muxers: ["mplex", "yamux"],
     },
     {
-        id: "go-v0.27.1",
+        id: "go-v0.27.6",
         containerImageID: gov027.imageID,
         transports: ["tcp", "ws", "quic", "quic-v1", "webtransport"],
         secureChannels: ["tls", "noise"],
