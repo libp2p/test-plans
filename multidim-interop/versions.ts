@@ -20,6 +20,7 @@ import chromiumJsV044 from "./impl/js/v0.44/chromium-image.json"
 import chromiumJsV045 from "./impl/js/v0.45/chromium-image.json"
 import firefoxJsV045 from "./impl/js/v0.45/firefox-image.json"
 import zigv001 from "./impl/zig/v0.0.1/image.json"
+import javav001 from "./impl/java/v0.0.1/image.json"
 
 export type Version = {
     id: string,
@@ -186,4 +187,11 @@ export const versions: Array<Version> = [
         secureChannels: [],
         muxers: [],
     },
+    {
+        id: "java-v0.0.1",
+        containerImageID: javav001.imageID,
+        transports: ["tcp"],
+        secureChannels: ["tls", "noise"],
+        muxers: ["mplex", "yamux"],
+    },    
 ]
