@@ -56,7 +56,7 @@ async function main(clientPublicIP: string, serverPublicIP: string) {
 function runPing(clientPublicIP: string, serverPublicIP: string): PingResults {
     console.error(`= run 100 pings from client to server`);
 
-    let cmd = `ssh -o StrictHostKeyChecking=no ec2-user@${clientPublicIP} 'ping -c 100 ${serverPublicIP}'`;
+    const cmd = `ssh -o StrictHostKeyChecking=no ec2-user@${clientPublicIP} 'ping -c 100 ${serverPublicIP}'`;
     const stdout = execCommand(cmd).toString();
 
     // Extract the time from each ping
@@ -74,15 +74,15 @@ function runPing(clientPublicIP: string, serverPublicIP: string): PingResults {
 function runIPerf(clientPublicIP: string, serverPublicIP: string): IperfResults {
     console.error(`= run 60 iPerf UDP from client to server`);
 
-    let killCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${serverPublicIP} 'kill $(cat pidfile); rm pidfile; rm server.log || true'`;
+    const killCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${serverPublicIP} 'kill $(cat pidfile); rm pidfile; rm server.log || true'`;
     const killSTDOUT = execCommand(killCMD);
     console.error(killSTDOUT);
 
-    let serverCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${serverPublicIP} 'nohup iperf3 -s > server.log 2>&1 & echo \$! > pidfile '`;
+    const serverCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${serverPublicIP} 'nohup iperf3 -s > server.log 2>&1 & echo \$! > pidfile '`;
     const serverSTDOUT = execCommand(serverCMD);
     console.error(serverSTDOUT);
 
-    let cmd = `ssh -o StrictHostKeyChecking=no ec2-user@${clientPublicIP} 'iperf3 -c ${serverPublicIP} -u -b 25g -t 60'`;
+    const cmd = `ssh -o StrictHostKeyChecking=no ec2-user@${clientPublicIP} 'iperf3 -c ${serverPublicIP} -u -b 25g -t 60'`;
     const stdout = execSync(cmd).toString();
 
     // Extract the bitrate from each relevant line
@@ -124,11 +124,11 @@ function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions): Bench
 
         console.error(`=== Starting server ${version.implementation}/${version.id}`);
 
-        let killCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.serverPublicIP} 'kill $(cat pidfile); rm pidfile; rm server.log || true'`;
+        const killCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.serverPublicIP} 'kill $(cat pidfile); rm pidfile; rm server.log || true'`;
         const killSTDOUT = execCommand(killCMD);
         console.error(killSTDOUT);
 
-        let serverCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.serverPublicIP} 'nohup ./impl/${version.implementation}/${version.id}/perf --run-server --server-address 0.0.0.0:4001 > server.log 2>&1 & echo \$! > pidfile '`;
+        const serverCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.serverPublicIP} 'nohup ./impl/${version.implementation}/${version.id}/perf --run-server --server-address 0.0.0.0:4001 > server.log 2>&1 & echo \$! > pidfile '`;
         const serverSTDOUT = execCommand(serverCMD);
         console.error(serverSTDOUT);
 
