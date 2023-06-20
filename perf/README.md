@@ -3,7 +3,7 @@
 This project includes the following components:
 
 - `terraform/`: a Terraform scripts to provision infrastructure
-- `impl/`: implementations of the [libp2p perf protocol](https://github.com/libp2p/specs/pull/478) running on top of e.g. go-libp2p, rust-libp2p or Go's std-library https stack
+- `impl/`: implementations of the [libp2p perf protocol](https://github.com/libp2p/specs/blob/master/perf/perf.md) running on top of e.g. go-libp2p, rust-libp2p or Go's std-library https stack
 - `runner/`: a set of scripts building and running the above implementations on the above infrastructure, reporting the results in `benchmark-results.json`
 
 Benchmark results can be visualized with https://observablehq.com/@mxinden-workspace/libp2p-performance-dashboard.
