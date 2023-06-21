@@ -74,7 +74,7 @@ func (c *customReader) Read(p []byte) (int, error) {
 		c.position += 8
 		return 8, nil
 	} else if c.position-8 < c.uploadBytes {
-		bytesToWrite := min(len(p), int(c.uploadBytes-(c.position-8)))
+		bytesToWrite := min(min(len(p), int(c.uploadBytes-(c.position-8))), len(zeroSlice))
 		copy(p[:bytesToWrite], zeroSlice[:bytesToWrite]) // zero the slice
 		c.position += uint64(bytesToWrite)
 		return bytesToWrite, nil
