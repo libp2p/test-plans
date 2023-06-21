@@ -115,6 +115,9 @@ func runClient(serverAddr string, uploadBytes, downloadBytes uint64) (time.Durat
 	if err != nil {
 		return 0, 0, err
 	}
+	if resp.StatusCode != http.StatusOK {
+		return 0, 0, fmt.Errorf("server returned non-OK status: %d %s", resp.StatusCode, resp.Status)
+	}
 	uploadDoneTime := time.Now()
 	defer resp.Body.Close()
 
