@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -21,88 +22,71 @@ import (
 	"time"
 )
 
-const (
-	BlockSize = 64 << 10
-)
+const blockSize = 64 << 10
 
 func handleRequest(w http.ResponseWriter, r *http.Request) {
-	// Read the big-endian bytesToSend value
-	var bytesToSend uint64
-	if err := binary.Read(r.Body, binary.BigEndian, &bytesToSend); err != nil {
-		http.Error(w, "failed to read uint64 value", http.StatusBadRequest)
+	u64Buf := make([]byte, 8)
+	if _, err := io.ReadFull(r.Body, u64Buf); err != nil {
+		log.Printf("reading upload size failed: %s", err)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	// Read and discard the remaining bytes in the request
-	io.Copy(io.Discard, r.Body)
+	bytesToSend := binary.BigEndian.Uint64(u64Buf)
 
-	// Set content type and length headers
-	w.Header().Set("Content-Type", "application/octet-stream")
-	w.Header().Set("Content-Length", strconv.FormatUint(bytesToSend, 10))
+	if _, err := drainStream(r.Body); err != nil {
+		log.Printf("draining stream failed: %s", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
-	// Write the status code explicitly
-	w.WriteHeader(http.StatusOK)
+	r.Header.Set("Content-Type", "application/octet-stream")
+	r.Header.Set("Content-Length", strconv.FormatUint(bytesToSend, 10))
 
-	buf := make([]byte, BlockSize)
-
-	for bytesToSend > 0 {
-		toSend := buf
-		if bytesToSend < BlockSize {
-			toSend = buf[:bytesToSend]
-		}
-
-		n, err := w.Write(toSend)
-		if err != nil {
-			http.Error(w, "Failed write", http.StatusInternalServerError)
-			return
-		}
-		bytesToSend -= uint64(n)
+	if err := sendBytes(w, bytesToSend); err != nil {
+		log.Printf("sending response failed: %s", err)
+		return
 	}
 }
 
-var zeroSlice = make([]byte, BlockSize) // Pre-made zero-filled slice
-
-type customReader struct {
-	downloadBytes uint64
-	uploadBytes   uint64
-	position      uint64
+type nullReader struct {
+	N    uint64
+	read uint64
 }
 
-func (c *customReader) Read(p []byte) (int, error) {
-	if c.position < 8 {
-		binary.BigEndian.PutUint64(p, c.downloadBytes)
-		c.position += 8
-		return 8, nil
-	} else if c.position-8 < c.uploadBytes {
-		bytesToWrite := min(min(len(p), int(c.uploadBytes-(c.position-8))), len(zeroSlice))
-		copy(p[:bytesToWrite], zeroSlice[:bytesToWrite]) // zero the slice
-		c.position += uint64(bytesToWrite)
-		return bytesToWrite, nil
-	}
+var _ io.Reader = &nullReader{}
 
-	return 0, io.EOF
-}
-
-// Helper function to get minimum of two integers
-func min(a, b int) int {
-	if a < b {
-		return a
+func (r *nullReader) Read(b []byte) (int, error) {
+	remaining := r.N - r.read
+	l := uint64(len(b))
+	if uint64(len(b)) > remaining {
+		l = remaining
 	}
-	return b
+	r.read += l
+	if r.read == r.N {
+		return int(l), io.EOF
+	}
+	return int(l), nil
 }
 
 func runClient(serverAddr string, uploadBytes, downloadBytes uint64) (time.Duration, time.Duration, error) {
 	client := &http.Client{
 		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		},
 	}
 
-	reqBody := &customReader{downloadBytes: downloadBytes, uploadBytes: uploadBytes}
+	b := make([]byte, 8)
+	binary.BigEndian.PutUint64(b, uploadBytes)
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("https://%s/", serverAddr), reqBody)
+	req, err := http.NewRequest(
+		http.MethodPost,
+		fmt.Sprintf("https://%s/", serverAddr),
+		io.MultiReader(
+			bytes.NewReader(b),
+			&nullReader{N: uploadBytes},
+		),
+	)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -121,11 +105,11 @@ func runClient(serverAddr string, uploadBytes, downloadBytes uint64) (time.Durat
 	uploadDoneTime := time.Now()
 	defer resp.Body.Close()
 
-	n, err := io.Copy(io.Discard, resp.Body)
+	n, err := drainStream(resp.Body)
 	if err != nil {
 		return 0, 0, fmt.Errorf("error reading response: %w", err)
 	}
-	if n != int64(downloadBytes) {
+	if n != downloadBytes {
 		return 0, 0, fmt.Errorf("expected %d bytes in response, but received %d", downloadBytes, n)
 	}
 
@@ -249,4 +233,31 @@ func main() {
 		}
 		fmt.Println(string(jsonB))
 	}
+}
+
+func sendBytes(s io.Writer, bytesToSend uint64) error {
+	buf := make([]byte, blockSize)
+
+	for bytesToSend > 0 {
+		toSend := buf
+		if bytesToSend < blockSize {
+			toSend = buf[:bytesToSend]
+		}
+
+		n, err := s.Write(toSend)
+		if err != nil {
+			return err
+		}
+		bytesToSend -= uint64(n)
+	}
+	return nil
+}
+
+func drainStream(s io.Reader) (uint64, error) {
+	var recvd int64
+	recvd, err := io.Copy(io.Discard, s)
+	if err != nil && err != io.EOF {
+		return uint64(recvd), err
+	}
+	return uint64(recvd), nil
 }
