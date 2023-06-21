@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -14,11 +13,11 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"math/big"
 	"net"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -37,6 +36,13 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	// Read and discard the remaining bytes in the request
 	io.Copy(io.Discard, r.Body)
 
+	// Set content type and length headers
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Header().Set("Content-Length", strconv.FormatUint(bytesToSend, 10))
+
+	// Write the status code explicitly
+	w.WriteHeader(http.StatusOK)
+
 	buf := make([]byte, BlockSize)
 
 	for bytesToSend > 0 {
@@ -54,6 +60,37 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+var zeroSlice = make([]byte, BlockSize) // Pre-made zero-filled slice
+
+type customReader struct {
+	downloadBytes uint64
+	uploadBytes   uint64
+	position      uint64
+}
+
+func (c *customReader) Read(p []byte) (int, error) {
+	if c.position < 8 {
+		binary.BigEndian.PutUint64(p, c.downloadBytes)
+		c.position += 8
+		return 8, nil
+	} else if c.position-8 < c.uploadBytes {
+		bytesToWrite := min(len(p), int(c.uploadBytes-(c.position-8)))
+		copy(p[:bytesToWrite], zeroSlice[:bytesToWrite])  // zero the slice
+		c.position += uint64(bytesToWrite)
+		return bytesToWrite, nil
+	}
+
+	return 0, io.EOF
+}
+
+// Helper function to get minimum of two integers
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
 func runClient(serverAddr string, uploadBytes, downloadBytes uint64) (time.Duration, time.Duration, error) {
 	client := &http.Client{
 		Transport: &http.Transport{
@@ -63,23 +100,30 @@ func runClient(serverAddr string, uploadBytes, downloadBytes uint64) (time.Durat
 		},
 	}
 
-	reqBody := make([]byte, 8+uploadBytes)
-	binary.BigEndian.PutUint64(reqBody, uint64(downloadBytes))
+	reqBody := &customReader{downloadBytes: downloadBytes, uploadBytes: uploadBytes}
+
+	req, err := http.NewRequest("POST", fmt.Sprintf("https://%s/", serverAddr), reqBody)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	req.Header.Set("Content-Type", "application/octet-stream")
+	req.Header.Set("Content-Length", strconv.FormatUint(uploadBytes + 8, 10))
 
 	startTime := time.Now()
-	resp, err := client.Post(fmt.Sprintf("https://%s/", serverAddr), "application/octet-stream", bytes.NewReader(reqBody))
+	resp, err := client.Do(req)
 	if err != nil {
 		return 0, 0, err
 	}
 	uploadDoneTime := time.Now()
-
-	respBody, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return 0, 0, fmt.Errorf("error reading response: %w\n", err)
-	}
 	defer resp.Body.Close()
-	if uint64(len(respBody)) != downloadBytes {
-		return 0, 0, fmt.Errorf("expected %d bytes in response, but received %d\n", downloadBytes, len(respBody))
+
+	n, err := io.Copy(io.Discard, resp.Body)
+	if err != nil {
+		return 0, 0, fmt.Errorf("error reading response: %w", err)
+	}
+	if n != int64(downloadBytes) {
+		return 0, 0, fmt.Errorf("expected %d bytes in response, but received %d", downloadBytes, n)
 	}
 
 	return uploadDoneTime.Sub(startTime), time.Since(uploadDoneTime), nil
