@@ -34,21 +34,24 @@ _WARNING_: Running the perf tests might take a while.
 
 ## Adding a new implementation
 
-1. Add implementation to `impl/`. Requirements for the binary:
-  - Running as a libp2p-perf server
-    - Command line flags
-      - `--run-server`
-  - Running as a libp2p-perf client
-      - Input via command line
-        - `--server-ip-address`
-        - `--transport` (see `runner/versions.ts` for possible variants)
-        - `--upload-bytes` number of bytes to upload per stream.
-        - `--download-bytes` number of bytes to download per stream.
-      - Output
-        - Logging MUST go to stderr.
-        - Measurement output is printed to stdout as JSON in the form of:
-          ```json
-          {"connectionEstablishedSeconds":0.246442851,"uploadSeconds":0.000002077,"downloadSeconds":0.060712241}
-          ```
-
-2. Reference implementation in `runner/src/versions.ts`.
+1. Add implementation to `impl/`.
+  - Create a folder `impl/<your-implementation-name>/<your-implementation-version>`.
+  - In that folder include a `Makefile` that builds an executable and stores it next to the `Makefile` under the name `perf`.
+  - Requirements for the executable:
+    - Running as a libp2p-perf server
+      - Command line flags
+        - `--run-server`
+    - Running as a libp2p-perf client
+        - Input via command line
+          - `--server-ip-address`
+          - `--transport` (see `runner/versions.ts` for possible variants)
+          - `--upload-bytes` number of bytes to upload per stream.
+          - `--download-bytes` number of bytes to download per stream.
+        - Output
+          - Logging MUST go to stderr.
+          - Measurement output is printed to stdout as JSON in the form of:
+            ```json
+            {"connectionEstablishedSeconds":0.246442851,"uploadSeconds":0.000002077,"downloadSeconds":0.060712241}
+            ```
+2. In `impl/Makefile` include your implementation in the `all` target.
+3. Reference implementation in `runner/src/versions.ts`.
