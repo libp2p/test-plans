@@ -75,7 +75,7 @@ func (c *customReader) Read(p []byte) (int, error) {
 		return 8, nil
 	} else if c.position-8 < c.uploadBytes {
 		bytesToWrite := min(len(p), int(c.uploadBytes-(c.position-8)))
-		copy(p[:bytesToWrite], zeroSlice[:bytesToWrite])  // zero the slice
+		copy(p[:bytesToWrite], zeroSlice[:bytesToWrite]) // zero the slice
 		c.position += uint64(bytesToWrite)
 		return bytesToWrite, nil
 	}
@@ -108,7 +108,7 @@ func runClient(serverAddr string, uploadBytes, downloadBytes uint64) (time.Durat
 	}
 
 	req.Header.Set("Content-Type", "application/octet-stream")
-	req.Header.Set("Content-Length", strconv.FormatUint(uploadBytes + 8, 10))
+	req.Header.Set("Content-Length", strconv.FormatUint(uploadBytes+8, 10))
 
 	startTime := time.Now()
 	resp, err := client.Do(req)
