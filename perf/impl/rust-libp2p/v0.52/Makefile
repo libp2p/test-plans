@@ -17,5 +17,6 @@ rust-libp2p-${commitSha}.zip:
 clean:
 	rm rust-libp2p-*.zip
 	rm -rf rust-libp2p-*
+	rm perf
 
-.PHONY: all clean run
+.PHONY: all clean
