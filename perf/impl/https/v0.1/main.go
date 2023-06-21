@@ -201,17 +201,23 @@ func main() {
 			log.Fatalf("Error generating ephemeral certificate: %v\n", err)
 		}
 
+		// Parse the server address
+		_, port, err := net.SplitHostPort(*serverAddr)
+		if err != nil {
+			log.Fatalf("Invalid server address: %v\n", err)
+		}
+
 		// Create a new HTTPS server with the ephemeral certificate
 		tlsConfig := &tls.Config{Certificates: []tls.Certificate{cert}}
 		server := &http.Server{
-			Addr:      ":4001",
+			Addr:      ":" + port,
 			TLSConfig: tlsConfig,
 		}
 
 		http.HandleFunc("/", handleRequest)
 
 		// Start the HTTPS server
-		fmt.Println("Starting HTTPS server on port 4001")
+		fmt.Printf("Starting HTTPS server on port %s\n", port)
 		err = server.ListenAndServeTLS("", "")
 		if err != nil {
 			fmt.Printf("Error starting HTTPS server: %v\n", err)
