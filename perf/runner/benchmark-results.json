@@ -1,0 +1,4203 @@
+{
+  "benchmarks": [
+    {
+      "name": "Single Connection throughput – Upload 100 MiB",
+      "unit": "bit/s",
+      "results": [
+        {
+          "result": [
+            {
+              "connectionEstablishedSeconds": 0.068123765,
+              "uploadSeconds": 0.970456932,
+              "downloadSeconds": 5.3e-8
+            },
+            {
+              "connectionEstablishedSeconds": 0.062713554,
+              "uploadSeconds": 0.975849906,
+              "downloadSeconds": 6.8e-8
+            },
+            {
+              "connectionEstablishedSeconds": 0.065501309,
+              "uploadSeconds": 1.022005129,
+              "downloadSeconds": 6e-8
+            },
+            {
+              "connectionEstablishedSeconds": 0.066928483,
+              "uploadSeconds": 1.041319663,
+              "downloadSeconds": 5.3e-8
+            },
+            {
+              "connectionEstablishedSeconds": 0.064004129,
+              "uploadSeconds": 0.996991871,
+              "downloadSeconds": 5.3e-8
+            }
+          ],
+          "implementation": "quic-go",
+          "version": "v0.34",
+          "transportStack": "quic-v1"
+        },
+        {
+          "result": [
+            {
+              "connectionEstablishedSeconds": 0.131599504,
+              "uploadSeconds": 47.63213805,
+              "downloadSeconds": 0.064913485
+            },
+            {
+              "connectionEstablishedSeconds": 0.127136394,
+              "uploadSeconds": 43.618970957,
+              "downloadSeconds": 0.063410859
+            },
+            {
+              "connectionEstablishedSeconds": 0.127686874,
+              "uploadSeconds": 44.623888682,
+              "downloadSeconds": 0.063648489
+            },
+            {
+              "connectionEstablishedSeconds": 0.128835409,
+              "uploadSeconds": 46.479589264,
+              "downloadSeconds": 0.065293635
+            },
+            {
+              "connectionEstablishedSeconds": 0.128399353,
+              "uploadSeconds": 45.799956017,
+              "downloadSeconds": 0.063969977
+            }
+          ],
+          "implementation": "rust-libp2p",
+          "version": "v0.52",
+          "transportStack": "tcp"
+        },
+        {
+          "result": [
+            {
+              "connectionEstablishedSeconds": 0.064484261,
+              "uploadSeconds": 30.439845709,
+              "downloadSeconds": 0.000163488
+            },
+            {
+              "connectionEstablishedSeconds": 0.06265785,
+              "uploadSeconds": 11.516149765,
+              "downloadSeconds": 0.000129193
+            },
+            {
+              "connectionEstablishedSeconds": 0.065870575,
+              "uploadSeconds": 16.945701847,
+              "downloadSeconds": 0.000083312
+            },
+            {
+              "connectionEstablishedSeconds": 0.066685308,
+              "uploadSeconds": 17.157438746,
+              "downloadSeconds": 0.000134467
+            },
+            {
+              "connectionEstablishedSeconds": 0.06508686,
+              "uploadSeconds": 20.362663014,
+              "downloadSeconds": 0.00021038
+            }
+          ],
+          "implementation": "rust-libp2p",
+          "version": "v0.52",
+          "transportStack": "quic-v1"
+        },
+        {
+          "result": [
+            {
+              "connectionEstablishedSeconds": 0.068856644,
+              "uploadSeconds": 1.402213112,
+              "downloadSeconds": 0.000085133
+            },
+            {
+              "connectionEstablishedSeconds": 0.065518432,
+              "uploadSeconds": 1.445110638,
+              "downloadSeconds": 0.000089192
+            },
+            {
+              "connectionEstablishedSeconds": 0.061399509,
+              "uploadSeconds": 1.347394456,
+              "downloadSeconds": 0.000055885
+            },
+            {
+              "connectionEstablishedSeconds": 0.063340799,
+              "uploadSeconds": 1.3995380339999999,
+              "downloadSeconds": 0.000043643
+            },
+            {
+              "connectionEstablishedSeconds": 0.063240204,
+              "uploadSeconds": 1.393610506,
+              "downloadSeconds": 0.000126388
+            }
+          ],
+          "implementation": "rust-libp2p-quinn",
+          "version": "v0.52",
+          "transportStack": "quic-v1"
+        },
+        {
+          "result": [
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 2.79994608,
+              "downloadSeconds": 0.000001624
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 2.712869064,
+              "downloadSeconds": 0.000004425
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 2.7989140260000003,
+              "downloadSeconds": 0.000001659
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 2.797738943,
+              "downloadSeconds": 0.000003846
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 2.710649859,
+              "downloadSeconds": 0.000004266
+            }
+          ],
+          "implementation": "https",
+          "version": "v0.1",
+          "transportStack": "tcp"
+        },
+        {
+          "result": [
+            {
+              "connectionEstablishedSeconds": 0.257897112,
+              "uploadSeconds": 2.898714608,
+              "downloadSeconds": 0.125947478
+            },
+            {
+              "connectionEstablishedSeconds": 0.253306448,
+              "uploadSeconds": 2.935159906,
+              "downloadSeconds": 0.124808834
+            },
+            {
+              "connectionEstablishedSeconds": 0.257107718,
+              "uploadSeconds": 2.956579177,
+              "downloadSeconds": 0.125826729
+            },
+            {
+              "connectionEstablishedSeconds": 0.261447279,
+              "uploadSeconds": 3.073232105,
+              "downloadSeconds": 0.128016533
+            },
+            {
+              "connectionEstablishedSeconds": 0.256173976,
+              "uploadSeconds": 3.094974155,
+              "downloadSeconds": 0.126269123
+            }
+          ],
+          "implementation": "go-libp2p",
+          "version": "v0.27",
+          "transportStack": "tcp"
+        },
+        {
+          "result": [
+            {
+              "connectionEstablishedSeconds": 0.132941292,
+              "uploadSeconds": 1.3138654889999999,
+              "downloadSeconds": 0.063525917
+            },
+            {
+              "connectionEstablishedSeconds": 0.130994117,
+              "uploadSeconds": 1.480872529,
+              "downloadSeconds": 0.063031466
+            },
+            {
+              "connectionEstablishedSeconds": 0.131776023,
+              "uploadSeconds": 1.303614286,
+              "downloadSeconds": 0.063162675
+            },
+            {
+              "connectionEstablishedSeconds": 0.127950072,
+              "uploadSeconds": 1.282649997,
+              "downloadSeconds": 0.062072209
+            },
+            {
+              "connectionEstablishedSeconds": 0.132015753,
+              "uploadSeconds": 1.308251399,
+              "downloadSeconds": 0.063331159
+            }
+          ],
+          "implementation": "go-libp2p",
+          "version": "v0.27",
+          "transportStack": "quic-v1"
+        }
+      ],
+      "parameters": {
+        "uploadBytes": 104857600,
+        "downloadBytes": 0
+      }
+    },
+    {
+      "name": "Single Connection throughput – Download 100 MiB",
+      "unit": "bit/s",
+      "results": [
+        {
+          "result": [
+            {
+              "connectionEstablishedSeconds": 0.066565584,
+              "uploadSeconds": 4.14e-7,
+              "downloadSeconds": 1.156675842
+            },
+            {
+              "connectionEstablishedSeconds": 0.064892061,
+              "uploadSeconds": 4.79e-7,
+              "downloadSeconds": 1.069297593
+            },
+            {
+              "connectionEstablishedSeconds": 0.065190888,
+              "uploadSeconds": 5.41e-7,
+              "downloadSeconds": 1.597194709
+            },
+            {
+              "connectionEstablishedSeconds": 0.063803854,
+              "uploadSeconds": 6.02e-7,
+              "downloadSeconds": 1.263743063
+            },
+            {
+              "connectionEstablishedSeconds": 0.064557168,
+              "uploadSeconds": 5.93e-7,
+              "downloadSeconds": 1.063204626
+            }
+          ],
+          "implementation": "quic-go",
+          "version": "v0.34",
+          "transportStack": "quic-v1"
+        },
+        {
+          "result": [
+            {
+              "connectionEstablishedSeconds": 0.118973999,
+              "uploadSeconds": 0.00000237,
+              "downloadSeconds": 43.097832521
+            },
+            {
+              "connectionEstablishedSeconds": 0.127215353,
+              "uploadSeconds": 0.000002032,
+              "downloadSeconds": 45.641765158
+            },
+            {
+              "connectionEstablishedSeconds": 0.124596278,
+              "uploadSeconds": 0.000002028,
+              "downloadSeconds": 46.368505073
+            },
+            {
+              "connectionEstablishedSeconds": 0.128120916,
+              "uploadSeconds": 0.000002222,
+              "downloadSeconds": 47.874739863
+            },
+            {
+              "connectionEstablishedSeconds": 0.124931603,
+              "uploadSeconds": 0.000001954,
+              "downloadSeconds": 44.744356376
+            }
+          ],
+          "implementation": "rust-libp2p",
+          "version": "v0.52",
+          "transportStack": "tcp"
+        },
+        {
+          "result": [
+            {
+              "connectionEstablishedSeconds": 0.064101794,
+              "uploadSeconds": 0.062433886,
+              "downloadSeconds": 14.226532904
+            },
+            {
+              "connectionEstablishedSeconds": 0.064768482,
+              "uploadSeconds": 0.063380472,
+              "downloadSeconds": 9.652918476
+            },
+            {
+              "connectionEstablishedSeconds": 0.063089269,
+              "uploadSeconds": 0.061641026,
+              "downloadSeconds": 44.248097576
+            },
+            {
+              "connectionEstablishedSeconds": 0.065786917,
+              "uploadSeconds": 0.064454129,
+              "downloadSeconds": 7.935120556
+            },
+            {
+              "connectionEstablishedSeconds": 0.065490198,
+              "uploadSeconds": 0.064216836,
+              "downloadSeconds": 12.013647805
+            }
+          ],
+          "implementation": "rust-libp2p",
+          "version": "v0.52",
+          "transportStack": "quic-v1"
+        },
+        {
+          "result": [
+            {
+              "connectionEstablishedSeconds": 0.065718437,
+              "uploadSeconds": 0.063958589,
+              "downloadSeconds": 1.5755928510000001
+            },
+            {
+              "connectionEstablishedSeconds": 0.065243916,
+              "uploadSeconds": 0.063788174,
+              "downloadSeconds": 1.374596511
+            },
+            {
+              "connectionEstablishedSeconds": 0.065815979,
+              "uploadSeconds": 0.064431818,
+              "downloadSeconds": 1.406562029
+            },
+            {
+              "connectionEstablishedSeconds": 0.064376266,
+              "uploadSeconds": 0.062916412,
+              "downloadSeconds": 1.395864717
+            },
+            {
+              "connectionEstablishedSeconds": 0.065978775,
+              "uploadSeconds": 0.064501789,
+              "downloadSeconds": 1.412157431
+            }
+          ],
+          "implementation": "rust-libp2p-quinn",
+          "version": "v0.52",
+          "transportStack": "quic-v1"
+        },
+        {
+          "result": [
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.188128181,
+              "downloadSeconds": 2.674302866
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.191556654,
+              "downloadSeconds": 2.862983464
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.1892993,
+              "downloadSeconds": 2.526412433
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.19302405,
+              "downloadSeconds": 3.278985925
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.184218404,
+              "downloadSeconds": 2.509003996
+            }
+          ],
+          "implementation": "https",
+          "version": "v0.1",
+          "transportStack": "tcp"
+        },
+        {
+          "result": [
+            {
+              "connectionEstablishedSeconds": 0.25935759,
+              "uploadSeconds": 0.000044908,
+              "downloadSeconds": 3.076994748
+            },
+            {
+              "connectionEstablishedSeconds": 0.252395091,
+              "uploadSeconds": 0.000023151,
+              "downloadSeconds": 5.499522915
+            },
+            {
+              "connectionEstablishedSeconds": 0.247996802,
+              "uploadSeconds": 0.000049357,
+              "downloadSeconds": 3.000616134
+            },
+            {
+              "connectionEstablishedSeconds": 0.254360687,
+              "uploadSeconds": 0.000014436,
+              "downloadSeconds": 2.998061834
+            },
+            {
+              "connectionEstablishedSeconds": 0.248067035,
+              "uploadSeconds": 0.00002827,
+              "downloadSeconds": 8.412003512
+            }
+          ],
+          "implementation": "go-libp2p",
+          "version": "v0.27",
+          "transportStack": "tcp"
+        },
+        {
+          "result": [
+            {
+              "connectionEstablishedSeconds": 0.129844268,
+              "uploadSeconds": 0.000028622,
+              "downloadSeconds": 17.731692926
+            },
+            {
+              "connectionEstablishedSeconds": 0.126124365,
+              "uploadSeconds": 0.000011456,
+              "downloadSeconds": 33.438663611
+            },
+            {
+              "connectionEstablishedSeconds": 0.125621003,
+              "uploadSeconds": 0.000052524,
+              "downloadSeconds": 1.303201594
+            },
+            {
+              "connectionEstablishedSeconds": 0.127493675,
+              "uploadSeconds": 0.000047776,
+              "downloadSeconds": 1.375030162
+            },
+            {
+              "connectionEstablishedSeconds": 0.126735688,
+              "uploadSeconds": 0.000032102,
+              "downloadSeconds": 1.33293199
+            }
+          ],
+          "implementation": "go-libp2p",
+          "version": "v0.27",
+          "transportStack": "quic-v1"
+        }
+      ],
+      "parameters": {
+        "uploadBytes": 0,
+        "downloadBytes": 104857600
+      }
+    },
+    {
+      "name": "Connection establishment + 1 byte round trip latencies",
+      "unit": "s",
+      "results": [
+        {
+          "result": [
+            {
+              "connectionEstablishedSeconds": 0.065960652,
+              "uploadSeconds": 0.000002015,
+              "downloadSeconds": 0.063855438
+            },
+            {
+              "connectionEstablishedSeconds": 0.065796591,
+              "uploadSeconds": 7.76e-7,
+              "downloadSeconds": 0.06396702
+            },
+            {
+              "connectionEstablishedSeconds": 0.063741155,
+              "uploadSeconds": 7.26e-7,
+              "downloadSeconds": 0.061985858
+            },
+            {
+              "connectionEstablishedSeconds": 0.063623635,
+              "uploadSeconds": 8.74e-7,
+              "downloadSeconds": 0.061928483
+            },
+            {
+              "connectionEstablishedSeconds": 0.065022228,
+              "uploadSeconds": 8.35e-7,
+              "downloadSeconds": 0.063295054
+            },
+            {
+              "connectionEstablishedSeconds": 0.063489342,
+              "uploadSeconds": 8.91e-7,
+              "downloadSeconds": 0.061834942
+            },
+            {
+              "connectionEstablishedSeconds": 0.063839197,
+              "uploadSeconds": 0.000001813,
+              "downloadSeconds": 0.062152462
+            },
+            {
+              "connectionEstablishedSeconds": 0.062052708,
+              "uploadSeconds": 0.00000184,
+              "downloadSeconds": 0.060337044
+            },
+            {
+              "connectionEstablishedSeconds": 0.06652303,
+              "uploadSeconds": 0.000001925,
+              "downloadSeconds": 0.06475633
+            },
+            {
+              "connectionEstablishedSeconds": 0.064486313,
+              "uploadSeconds": 0.000001878,
+              "downloadSeconds": 0.062974785
+            },
+            {
+              "connectionEstablishedSeconds": 0.06602361,
+              "uploadSeconds": 0.000001897,
+              "downloadSeconds": 0.064166513
+            },
+            {
+              "connectionEstablishedSeconds": 0.065900274,
+              "uploadSeconds": 0.00000199,
+              "downloadSeconds": 0.064157587
+            },
+            {
+              "connectionEstablishedSeconds": 0.065483286,
+              "uploadSeconds": 0.000001814,
+              "downloadSeconds": 0.06382869
+            },
+            {
+              "connectionEstablishedSeconds": 0.065826406,
+              "uploadSeconds": 7.81e-7,
+              "downloadSeconds": 0.064117447
+            },
+            {
+              "connectionEstablishedSeconds": 0.063089169,
+              "uploadSeconds": 0.00000184,
+              "downloadSeconds": 0.061341493
+            },
+            {
+              "connectionEstablishedSeconds": 0.063718383,
+              "uploadSeconds": 0.000001888,
+              "downloadSeconds": 0.063655426
+            },
+            {
+              "connectionEstablishedSeconds": 0.066834037,
+              "uploadSeconds": 7.83e-7,
+              "downloadSeconds": 0.065118068
+            },
+            {
+              "connectionEstablishedSeconds": 0.066410017,
+              "uploadSeconds": 7.09e-7,
+              "downloadSeconds": 0.064750831
+            },
+            {
+              "connectionEstablishedSeconds": 0.062099751,
+              "uploadSeconds": 0.000001848,
+              "downloadSeconds": 0.060406111
+            },
+            {
+              "connectionEstablishedSeconds": 0.064540611,
+              "uploadSeconds": 7.44e-7,
+              "downloadSeconds": 0.063029603
+            },
+            {
+              "connectionEstablishedSeconds": 0.062104416,
+              "uploadSeconds": 0.000001775,
+              "downloadSeconds": 0.060452269
+            },
+            {
+              "connectionEstablishedSeconds": 0.065979366,
+              "uploadSeconds": 0.000001828,
+              "downloadSeconds": 0.064631635
+            },
+            {
+              "connectionEstablishedSeconds": 0.064317867,
+              "uploadSeconds": 0.000001728,
+              "downloadSeconds": 0.062680971
+            },
+            {
+              "connectionEstablishedSeconds": 0.066068105,
+              "uploadSeconds": 0.000001847,
+              "downloadSeconds": 0.064407149
+            },
+            {
+              "connectionEstablishedSeconds": 0.066437507,
+              "uploadSeconds": 0.000001732,
+              "downloadSeconds": 0.064739867
+            },
+            {
+              "connectionEstablishedSeconds": 0.063907597,
+              "uploadSeconds": 0.000001816,
+              "downloadSeconds": 0.062924509
+            },
+            {
+              "connectionEstablishedSeconds": 0.064049647,
+              "uploadSeconds": 0.000001732,
+              "downloadSeconds": 0.06234967
+            },
+            {
+              "connectionEstablishedSeconds": 0.063910531,
+              "uploadSeconds": 0.00000186,
+              "downloadSeconds": 0.062329574
+            },
+            {
+              "connectionEstablishedSeconds": 0.065968402,
+              "uploadSeconds": 0.000001923,
+              "downloadSeconds": 0.064255131
+            },
+            {
+              "connectionEstablishedSeconds": 0.063100228,
+              "uploadSeconds": 0.000001812,
+              "downloadSeconds": 0.061423418
+            },
+            {
+              "connectionEstablishedSeconds": 0.066908387,
+              "uploadSeconds": 0.000001842,
+              "downloadSeconds": 0.065233548
+            },
+            {
+              "connectionEstablishedSeconds": 0.066429964,
+              "uploadSeconds": 0.00000185,
+              "downloadSeconds": 0.064721823
+            },
+            {
+              "connectionEstablishedSeconds": 0.064623603,
+              "uploadSeconds": 0.000001847,
+              "downloadSeconds": 0.063768799
+            },
+            {
+              "connectionEstablishedSeconds": 0.064637046,
+              "uploadSeconds": 0.000001848,
+              "downloadSeconds": 0.062864239
+            },
+            {
+              "connectionEstablishedSeconds": 0.066364894,
+              "uploadSeconds": 0.000001886,
+              "downloadSeconds": 0.064992379
+            },
+            {
+              "connectionEstablishedSeconds": 0.066949464,
+              "uploadSeconds": 0.000001917,
+              "downloadSeconds": 0.065019192
+            },
+            {
+              "connectionEstablishedSeconds": 0.064527955,
+              "uploadSeconds": 0.00000189,
+              "downloadSeconds": 0.062822321
+            },
+            {
+              "connectionEstablishedSeconds": 0.065350527,
+              "uploadSeconds": 7.2e-7,
+              "downloadSeconds": 0.063855509
+            },
+            {
+              "connectionEstablishedSeconds": 0.063090567,
+              "uploadSeconds": 0.000001824,
+              "downloadSeconds": 0.061434879
+            },
+            {
+              "connectionEstablishedSeconds": 0.065239703,
+              "uploadSeconds": 0.00000196,
+              "downloadSeconds": 0.063566127
+            },
+            {
+              "connectionEstablishedSeconds": 0.063867134,
+              "uploadSeconds": 0.000001787,
+              "downloadSeconds": 0.062171417
+            },
+            {
+              "connectionEstablishedSeconds": 0.064744197,
+              "uploadSeconds": 0.000001909,
+              "downloadSeconds": 0.063078302
+            },
+            {
+              "connectionEstablishedSeconds": 0.063921323,
+              "uploadSeconds": 0.000001774,
+              "downloadSeconds": 0.062253087
+            },
+            {
+              "connectionEstablishedSeconds": 0.065797461,
+              "uploadSeconds": 0.000001763,
+              "downloadSeconds": 0.064141632
+            },
+            {
+              "connectionEstablishedSeconds": 0.063432254,
+              "uploadSeconds": 7.52e-7,
+              "downloadSeconds": 0.063523257
+            },
+            {
+              "connectionEstablishedSeconds": 0.063448576,
+              "uploadSeconds": 0.000001847,
+              "downloadSeconds": 0.061447665
+            },
+            {
+              "connectionEstablishedSeconds": 0.064840213,
+              "uploadSeconds": 0.000001799,
+              "downloadSeconds": 0.063268648
+            },
+            {
+              "connectionEstablishedSeconds": 0.062984093,
+              "uploadSeconds": 0.000001873,
+              "downloadSeconds": 0.061266251
+            },
+            {
+              "connectionEstablishedSeconds": 0.063835431,
+              "uploadSeconds": 0.000001041,
+              "downloadSeconds": 0.062294655
+            },
+            {
+              "connectionEstablishedSeconds": 0.066513465,
+              "uploadSeconds": 0.000001802,
+              "downloadSeconds": 0.06479643
+            },
+            {
+              "connectionEstablishedSeconds": 0.064597329,
+              "uploadSeconds": 0.000001768,
+              "downloadSeconds": 0.062962919
+            },
+            {
+              "connectionEstablishedSeconds": 0.065778361,
+              "uploadSeconds": 0.00000186,
+              "downloadSeconds": 0.06410771
+            },
+            {
+              "connectionEstablishedSeconds": 0.065951503,
+              "uploadSeconds": 0.000001775,
+              "downloadSeconds": 0.063964319
+            },
+            {
+              "connectionEstablishedSeconds": 0.065201946,
+              "uploadSeconds": 0.000001795,
+              "downloadSeconds": 0.063643639
+            },
+            {
+              "connectionEstablishedSeconds": 0.066076218,
+              "uploadSeconds": 0.000001848,
+              "downloadSeconds": 0.064510646
+            },
+            {
+              "connectionEstablishedSeconds": 0.060682481,
+              "uploadSeconds": 0.000002,
+              "downloadSeconds": 0.059199478
+            },
+            {
+              "connectionEstablishedSeconds": 0.065554049,
+              "uploadSeconds": 0.000001739,
+              "downloadSeconds": 0.06377536
+            },
+            {
+              "connectionEstablishedSeconds": 0.061208203,
+              "uploadSeconds": 0.00000177,
+              "downloadSeconds": 0.059550325
+            },
+            {
+              "connectionEstablishedSeconds": 0.067027502,
+              "uploadSeconds": 0.000001823,
+              "downloadSeconds": 0.065262971
+            },
+            {
+              "connectionEstablishedSeconds": 0.066147698,
+              "uploadSeconds": 0.000001906,
+              "downloadSeconds": 0.064408233
+            },
+            {
+              "connectionEstablishedSeconds": 0.066192563,
+              "uploadSeconds": 0.000001711,
+              "downloadSeconds": 0.064853112
+            },
+            {
+              "connectionEstablishedSeconds": 0.065939828,
+              "uploadSeconds": 0.000001766,
+              "downloadSeconds": 0.064260021
+            },
+            {
+              "connectionEstablishedSeconds": 0.06487606,
+              "uploadSeconds": 0.000001916,
+              "downloadSeconds": 0.063237738
+            },
+            {
+              "connectionEstablishedSeconds": 0.064049202,
+              "uploadSeconds": 0.000001889,
+              "downloadSeconds": 0.062357129
+            },
+            {
+              "connectionEstablishedSeconds": 0.065536679,
+              "uploadSeconds": 0.000001785,
+              "downloadSeconds": 0.064333056
+            },
+            {
+              "connectionEstablishedSeconds": 0.063045093,
+              "uploadSeconds": 0.000001888,
+              "downloadSeconds": 0.061440221
+            },
+            {
+              "connectionEstablishedSeconds": 0.06322189,
+              "uploadSeconds": 0.00000193,
+              "downloadSeconds": 0.06153135
+            },
+            {
+              "connectionEstablishedSeconds": 0.06471423,
+              "uploadSeconds": 0.000001819,
+              "downloadSeconds": 0.063194954
+            },
+            {
+              "connectionEstablishedSeconds": 0.065249297,
+              "uploadSeconds": 0.00000169,
+              "downloadSeconds": 0.064097755
+            },
+            {
+              "connectionEstablishedSeconds": 0.064081193,
+              "uploadSeconds": 7.64e-7,
+              "downloadSeconds": 0.062326683
+            },
+            {
+              "connectionEstablishedSeconds": 0.063041856,
+              "uploadSeconds": 0.000001814,
+              "downloadSeconds": 0.061309187
+            },
+            {
+              "connectionEstablishedSeconds": 0.063910362,
+              "uploadSeconds": 0.00000181,
+              "downloadSeconds": 0.062275784
+            },
+            {
+              "connectionEstablishedSeconds": 0.063506594,
+              "uploadSeconds": 0.000001843,
+              "downloadSeconds": 0.061753042
+            },
+            {
+              "connectionEstablishedSeconds": 0.066419848,
+              "uploadSeconds": 0.000001996,
+              "downloadSeconds": 0.064808717
+            },
+            {
+              "connectionEstablishedSeconds": 0.062470426,
+              "uploadSeconds": 0.000001741,
+              "downloadSeconds": 0.06096953
+            },
+            {
+              "connectionEstablishedSeconds": 0.064943312,
+              "uploadSeconds": 0.000001849,
+              "downloadSeconds": 0.063242568
+            },
+            {
+              "connectionEstablishedSeconds": 0.064688986,
+              "uploadSeconds": 0.000001694,
+              "downloadSeconds": 0.06291107
+            },
+            {
+              "connectionEstablishedSeconds": 0.064706476,
+              "uploadSeconds": 0.00000183,
+              "downloadSeconds": 0.06321239
+            },
+            {
+              "connectionEstablishedSeconds": 0.060864393,
+              "uploadSeconds": 7.13e-7,
+              "downloadSeconds": 0.059260479
+            },
+            {
+              "connectionEstablishedSeconds": 0.064634663,
+              "uploadSeconds": 0.00000181,
+              "downloadSeconds": 0.062899306
+            },
+            {
+              "connectionEstablishedSeconds": 0.062740938,
+              "uploadSeconds": 0.000001724,
+              "downloadSeconds": 0.061089935
+            },
+            {
+              "connectionEstablishedSeconds": 0.06110142,
+              "uploadSeconds": 0.000001824,
+              "downloadSeconds": 0.059406993
+            },
+            {
+              "connectionEstablishedSeconds": 0.065856369,
+              "uploadSeconds": 0.000001818,
+              "downloadSeconds": 0.064210017
+            },
+            {
+              "connectionEstablishedSeconds": 0.063945114,
+              "uploadSeconds": 7.78e-7,
+              "downloadSeconds": 0.06232278
+            },
+            {
+              "connectionEstablishedSeconds": 0.06562598,
+              "uploadSeconds": 0.000001739,
+              "downloadSeconds": 0.063622294
+            },
+            {
+              "connectionEstablishedSeconds": 0.066873176,
+              "uploadSeconds": 0.000001773,
+              "downloadSeconds": 0.065124502
+            },
+            {
+              "connectionEstablishedSeconds": 0.063249351,
+              "uploadSeconds": 0.000002101,
+              "downloadSeconds": 0.061409982
+            },
+            {
+              "connectionEstablishedSeconds": 0.063833002,
+              "uploadSeconds": 7.34e-7,
+              "downloadSeconds": 0.062095569
+            },
+            {
+              "connectionEstablishedSeconds": 0.064269477,
+              "uploadSeconds": 7.34e-7,
+              "downloadSeconds": 0.062764291
+            },
+            {
+              "connectionEstablishedSeconds": 0.063465935,
+              "uploadSeconds": 7.32e-7,
+              "downloadSeconds": 0.061807299
+            },
+            {
+              "connectionEstablishedSeconds": 0.0637097,
+              "uploadSeconds": 0.00000172,
+              "downloadSeconds": 0.062126378
+            },
+            {
+              "connectionEstablishedSeconds": 0.065199418,
+              "uploadSeconds": 0.000001855,
+              "downloadSeconds": 0.063405634
+            },
+            {
+              "connectionEstablishedSeconds": 0.063962776,
+              "uploadSeconds": 0.000001932,
+              "downloadSeconds": 0.062353148
+            },
+            {
+              "connectionEstablishedSeconds": 0.065688074,
+              "uploadSeconds": 7.1e-7,
+              "downloadSeconds": 0.064095358
+            },
+            {
+              "connectionEstablishedSeconds": 0.065177434,
+              "uploadSeconds": 0.000001761,
+              "downloadSeconds": 0.06355402
+            },
+            {
+              "connectionEstablishedSeconds": 0.065289624,
+              "uploadSeconds": 0.000001871,
+              "downloadSeconds": 0.063665141
+            },
+            {
+              "connectionEstablishedSeconds": 0.06637104,
+              "uploadSeconds": 0.000001787,
+              "downloadSeconds": 0.064671943
+            },
+            {
+              "connectionEstablishedSeconds": 0.062665683,
+              "uploadSeconds": 0.000001973,
+              "downloadSeconds": 0.06036064
+            },
+            {
+              "connectionEstablishedSeconds": 0.065424972,
+              "uploadSeconds": 0.000001703,
+              "downloadSeconds": 0.063783958
+            },
+            {
+              "connectionEstablishedSeconds": 0.064705635,
+              "uploadSeconds": 7.31e-7,
+              "downloadSeconds": 0.063094454
+            }
+          ],
+          "implementation": "quic-go",
+          "version": "v0.34",
+          "transportStack": "quic-v1"
+        },
+        {
+          "result": [
+            {
+              "connectionEstablishedSeconds": 0.126942223,
+              "uploadSeconds": 0.000002365,
+              "downloadSeconds": 0.063743985
+            },
+            {
+              "connectionEstablishedSeconds": 0.129295372,
+              "uploadSeconds": 0.00000192,
+              "downloadSeconds": 0.064682509
+            },
+            {
+              "connectionEstablishedSeconds": 0.129768923,
+              "uploadSeconds": 0.000001704,
+              "downloadSeconds": 0.065037798
+            },
+            {
+              "connectionEstablishedSeconds": 0.123600152,
+              "uploadSeconds": 0.000001813,
+              "downloadSeconds": 0.061774496
+            },
+            {
+              "connectionEstablishedSeconds": 0.128035321,
+              "uploadSeconds": 0.000001702,
+              "downloadSeconds": 0.064082694
+            },
+            {
+              "connectionEstablishedSeconds": 0.121026518,
+              "uploadSeconds": 0.000001726,
+              "downloadSeconds": 0.060509221
+            },
+            {
+              "connectionEstablishedSeconds": 0.126800344,
+              "uploadSeconds": 0.000002242,
+              "downloadSeconds": 0.063314286
+            },
+            {
+              "connectionEstablishedSeconds": 0.129647161,
+              "uploadSeconds": 0.000002486,
+              "downloadSeconds": 0.064824471
+            },
+            {
+              "connectionEstablishedSeconds": 0.123199402,
+              "uploadSeconds": 0.000001661,
+              "downloadSeconds": 0.061598863
+            },
+            {
+              "connectionEstablishedSeconds": 0.127989193,
+              "uploadSeconds": 0.000001733,
+              "downloadSeconds": 0.063972541
+            },
+            {
+              "connectionEstablishedSeconds": 0.126010653,
+              "uploadSeconds": 0.000001798,
+              "downloadSeconds": 0.062962346
+            },
+            {
+              "connectionEstablishedSeconds": 0.129831981,
+              "uploadSeconds": 0.000001649,
+              "downloadSeconds": 0.064948712
+            },
+            {
+              "connectionEstablishedSeconds": 0.125489475,
+              "uploadSeconds": 0.000001669,
+              "downloadSeconds": 0.062847671
+            },
+            {
+              "connectionEstablishedSeconds": 0.126238218,
+              "uploadSeconds": 0.000001634,
+              "downloadSeconds": 0.063051357
+            },
+            {
+              "connectionEstablishedSeconds": 0.129056283,
+              "uploadSeconds": 0.000001871,
+              "downloadSeconds": 0.064548455
+            },
+            {
+              "connectionEstablishedSeconds": 0.122463576,
+              "uploadSeconds": 0.000001873,
+              "downloadSeconds": 0.061220602
+            },
+            {
+              "connectionEstablishedSeconds": 0.129516166,
+              "uploadSeconds": 0.000002036,
+              "downloadSeconds": 0.064762367
+            },
+            {
+              "connectionEstablishedSeconds": 0.116596929,
+              "uploadSeconds": 0.000001673,
+              "downloadSeconds": 0.058290019
+            },
+            {
+              "connectionEstablishedSeconds": 0.141630184,
+              "uploadSeconds": 0.000001947,
+              "downloadSeconds": 0.063497261
+            },
+            {
+              "connectionEstablishedSeconds": 0.12986187,
+              "uploadSeconds": 0.000001712,
+              "downloadSeconds": 0.06490279
+            },
+            {
+              "connectionEstablishedSeconds": 0.128644074,
+              "uploadSeconds": 0.000001685,
+              "downloadSeconds": 0.064237667
+            },
+            {
+              "connectionEstablishedSeconds": 0.122887001,
+              "uploadSeconds": 0.000001889,
+              "downloadSeconds": 0.061421422
+            },
+            {
+              "connectionEstablishedSeconds": 0.127039579,
+              "uploadSeconds": 0.000001885,
+              "downloadSeconds": 0.063494302
+            },
+            {
+              "connectionEstablishedSeconds": 0.128683913,
+              "uploadSeconds": 0.000002124,
+              "downloadSeconds": 0.064358518
+            },
+            {
+              "connectionEstablishedSeconds": 0.128384975,
+              "uploadSeconds": 0.000001659,
+              "downloadSeconds": 0.064129054
+            },
+            {
+              "connectionEstablishedSeconds": 0.128997139,
+              "uploadSeconds": 0.000001702,
+              "downloadSeconds": 0.06447986
+            },
+            {
+              "connectionEstablishedSeconds": 0.12793287,
+              "uploadSeconds": 0.000001869,
+              "downloadSeconds": 0.06396775
+            },
+            {
+              "connectionEstablishedSeconds": 0.124082763,
+              "uploadSeconds": 0.000001698,
+              "downloadSeconds": 0.062029126
+            },
+            {
+              "connectionEstablishedSeconds": 0.126708355,
+              "uploadSeconds": 0.000001748,
+              "downloadSeconds": 0.063323382
+            },
+            {
+              "connectionEstablishedSeconds": 0.128975799,
+              "uploadSeconds": 0.000001654,
+              "downloadSeconds": 0.064501399
+            },
+            {
+              "connectionEstablishedSeconds": 0.1292131,
+              "uploadSeconds": 0.000001705,
+              "downloadSeconds": 0.064638372
+            },
+            {
+              "connectionEstablishedSeconds": 0.125226977,
+              "uploadSeconds": 0.000001689,
+              "downloadSeconds": 0.062704776
+            },
+            {
+              "connectionEstablishedSeconds": 0.130452951,
+              "uploadSeconds": 0.000001922,
+              "downloadSeconds": 0.065206671
+            },
+            {
+              "connectionEstablishedSeconds": 0.126270836,
+              "uploadSeconds": 0.000001778,
+              "downloadSeconds": 0.063104478
+            },
+            {
+              "connectionEstablishedSeconds": 0.126167525,
+              "uploadSeconds": 0.000001616,
+              "downloadSeconds": 0.063098974
+            },
+            {
+              "connectionEstablishedSeconds": 0.127841453,
+              "uploadSeconds": 0.000001811,
+              "downloadSeconds": 0.063930787
+            },
+            {
+              "connectionEstablishedSeconds": 0.128939264,
+              "uploadSeconds": 0.000002076,
+              "downloadSeconds": 0.064470581
+            },
+            {
+              "connectionEstablishedSeconds": 0.124303772,
+              "uploadSeconds": 0.000001842,
+              "downloadSeconds": 0.062183724
+            },
+            {
+              "connectionEstablishedSeconds": 0.126348586,
+              "uploadSeconds": 0.000001791,
+              "downloadSeconds": 0.063154844
+            },
+            {
+              "connectionEstablishedSeconds": 0.127755758,
+              "uploadSeconds": 0.000001785,
+              "downloadSeconds": 0.063894459
+            },
+            {
+              "connectionEstablishedSeconds": 0.129457672,
+              "uploadSeconds": 0.000002391,
+              "downloadSeconds": 0.064700609
+            },
+            {
+              "connectionEstablishedSeconds": 0.122909898,
+              "uploadSeconds": 0.000001746,
+              "downloadSeconds": 0.061491456
+            },
+            {
+              "connectionEstablishedSeconds": 0.123784186,
+              "uploadSeconds": 0.000001784,
+              "downloadSeconds": 0.061999664
+            },
+            {
+              "connectionEstablishedSeconds": 0.127851629,
+              "uploadSeconds": 0.000001679,
+              "downloadSeconds": 0.063985385
+            },
+            {
+              "connectionEstablishedSeconds": 0.12932324,
+              "uploadSeconds": 0.000001827,
+              "downloadSeconds": 0.064679131
+            },
+            {
+              "connectionEstablishedSeconds": 0.12660816,
+              "uploadSeconds": 0.000001793,
+              "downloadSeconds": 0.06332388
+            },
+            {
+              "connectionEstablishedSeconds": 0.120871705,
+              "uploadSeconds": 0.00000179,
+              "downloadSeconds": 0.060446085
+            },
+            {
+              "connectionEstablishedSeconds": 0.118100529,
+              "uploadSeconds": 0.00000173,
+              "downloadSeconds": 0.059087264
+            },
+            {
+              "connectionEstablishedSeconds": 0.126572056,
+              "uploadSeconds": 0.000001956,
+              "downloadSeconds": 0.063274223
+            },
+            {
+              "connectionEstablishedSeconds": 0.123841295,
+              "uploadSeconds": 0.000001938,
+              "downloadSeconds": 0.061978309
+            },
+            {
+              "connectionEstablishedSeconds": 0.127973095,
+              "uploadSeconds": 0.000001851,
+              "downloadSeconds": 0.064008529
+            },
+            {
+              "connectionEstablishedSeconds": 0.130283019,
+              "uploadSeconds": 0.000001647,
+              "downloadSeconds": 0.065152012
+            },
+            {
+              "connectionEstablishedSeconds": 0.128841959,
+              "uploadSeconds": 0.000001844,
+              "downloadSeconds": 0.064416521
+            },
+            {
+              "connectionEstablishedSeconds": 0.128233111,
+              "uploadSeconds": 0.000001944,
+              "downloadSeconds": 0.064136145
+            },
+            {
+              "connectionEstablishedSeconds": 0.12914781,
+              "uploadSeconds": 0.000001634,
+              "downloadSeconds": 0.064601974
+            },
+            {
+              "connectionEstablishedSeconds": 0.126026333,
+              "uploadSeconds": 0.000001726,
+              "downloadSeconds": 0.063072496
+            },
+            {
+              "connectionEstablishedSeconds": 0.125242444,
+              "uploadSeconds": 0.000001771,
+              "downloadSeconds": 0.06265885
+            },
+            {
+              "connectionEstablishedSeconds": 0.119356822,
+              "uploadSeconds": 0.00000268,
+              "downloadSeconds": 0.059637042
+            },
+            {
+              "connectionEstablishedSeconds": 0.121396427,
+              "uploadSeconds": 0.000002106,
+              "downloadSeconds": 0.060649707
+            },
+            {
+              "connectionEstablishedSeconds": 0.122918326,
+              "uploadSeconds": 0.000001778,
+              "downloadSeconds": 0.061468633
+            },
+            {
+              "connectionEstablishedSeconds": 0.130501829,
+              "uploadSeconds": 0.000001736,
+              "downloadSeconds": 0.064908113
+            },
+            {
+              "connectionEstablishedSeconds": 0.125249582,
+              "uploadSeconds": 0.000001861,
+              "downloadSeconds": 0.062594996
+            },
+            {
+              "connectionEstablishedSeconds": 0.123120777,
+              "uploadSeconds": 0.000002164,
+              "downloadSeconds": 0.061578881
+            },
+            {
+              "connectionEstablishedSeconds": 0.124396915,
+              "uploadSeconds": 0.000001703,
+              "downloadSeconds": 0.062208624
+            },
+            {
+              "connectionEstablishedSeconds": 0.126273983,
+              "uploadSeconds": 0.000001813,
+              "downloadSeconds": 0.063130063
+            },
+            {
+              "connectionEstablishedSeconds": 0.124430086,
+              "uploadSeconds": 0.000001687,
+              "downloadSeconds": 0.062228188
+            },
+            {
+              "connectionEstablishedSeconds": 0.132043221,
+              "uploadSeconds": 0.000001811,
+              "downloadSeconds": 0.065423374
+            },
+            {
+              "connectionEstablishedSeconds": 0.12127598,
+              "uploadSeconds": 0.000001624,
+              "downloadSeconds": 0.060656771
+            },
+            {
+              "connectionEstablishedSeconds": 0.127779055,
+              "uploadSeconds": 0.000001697,
+              "downloadSeconds": 0.063860988
+            },
+            {
+              "connectionEstablishedSeconds": 0.122487726,
+              "uploadSeconds": 0.000001862,
+              "downloadSeconds": 0.06127068
+            },
+            {
+              "connectionEstablishedSeconds": 0.126731134,
+              "uploadSeconds": 0.000001728,
+              "downloadSeconds": 0.063326428
+            },
+            {
+              "connectionEstablishedSeconds": 0.126230747,
+              "uploadSeconds": 0.00000168,
+              "downloadSeconds": 0.063123085
+            },
+            {
+              "connectionEstablishedSeconds": 0.128350478,
+              "uploadSeconds": 0.000001922,
+              "downloadSeconds": 0.064083463
+            },
+            {
+              "connectionEstablishedSeconds": 0.129744746,
+              "uploadSeconds": 0.000001907,
+              "downloadSeconds": 0.064915135
+            },
+            {
+              "connectionEstablishedSeconds": 0.126254335,
+              "uploadSeconds": 0.000001588,
+              "downloadSeconds": 0.063117523
+            },
+            {
+              "connectionEstablishedSeconds": 0.127972742,
+              "uploadSeconds": 0.000001828,
+              "downloadSeconds": 0.063975961
+            },
+            {
+              "connectionEstablishedSeconds": 0.121895822,
+              "uploadSeconds": 0.000001712,
+              "downloadSeconds": 0.060978954
+            },
+            {
+              "connectionEstablishedSeconds": 0.123748227,
+              "uploadSeconds": 0.000001643,
+              "downloadSeconds": 0.061931251
+            },
+            {
+              "connectionEstablishedSeconds": 0.127796747,
+              "uploadSeconds": 0.000001828,
+              "downloadSeconds": 0.063901984
+            },
+            {
+              "connectionEstablishedSeconds": 0.124894315,
+              "uploadSeconds": 0.000001677,
+              "downloadSeconds": 0.062428592
+            },
+            {
+              "connectionEstablishedSeconds": 0.12745025,
+              "uploadSeconds": 0.000002009,
+              "downloadSeconds": 0.06369987
+            },
+            {
+              "connectionEstablishedSeconds": 0.124998457,
+              "uploadSeconds": 0.000001752,
+              "downloadSeconds": 0.062803771
+            },
+            {
+              "connectionEstablishedSeconds": 0.129756553,
+              "uploadSeconds": 0.000001712,
+              "downloadSeconds": 0.064856409
+            },
+            {
+              "connectionEstablishedSeconds": 0.125216956,
+              "uploadSeconds": 0.000002201,
+              "downloadSeconds": 0.062558495
+            },
+            {
+              "connectionEstablishedSeconds": 0.122515436,
+              "uploadSeconds": 0.000002016,
+              "downloadSeconds": 0.061251861
+            },
+            {
+              "connectionEstablishedSeconds": 0.127974467,
+              "uploadSeconds": 0.000001656,
+              "downloadSeconds": 0.063976319
+            },
+            {
+              "connectionEstablishedSeconds": 0.127917455,
+              "uploadSeconds": 0.000001672,
+              "downloadSeconds": 0.063897681
+            },
+            {
+              "connectionEstablishedSeconds": 0.128319597,
+              "uploadSeconds": 0.000001954,
+              "downloadSeconds": 0.064106765
+            },
+            {
+              "connectionEstablishedSeconds": 0.128624204,
+              "uploadSeconds": 0.000001899,
+              "downloadSeconds": 0.064251524
+            },
+            {
+              "connectionEstablishedSeconds": 0.126486446,
+              "uploadSeconds": 0.000001841,
+              "downloadSeconds": 0.063203465
+            },
+            {
+              "connectionEstablishedSeconds": 0.129833791,
+              "uploadSeconds": 0.000001733,
+              "downloadSeconds": 0.064937319
+            },
+            {
+              "connectionEstablishedSeconds": 0.124898357,
+              "uploadSeconds": 0.000001724,
+              "downloadSeconds": 0.062520609
+            },
+            {
+              "connectionEstablishedSeconds": 0.12929984,
+              "uploadSeconds": 0.000001888,
+              "downloadSeconds": 0.064618047
+            },
+            {
+              "connectionEstablishedSeconds": 0.127874998,
+              "uploadSeconds": 0.000002,
+              "downloadSeconds": 0.063890819
+            },
+            {
+              "connectionEstablishedSeconds": 0.128142932,
+              "uploadSeconds": 0.000001718,
+              "downloadSeconds": 0.06405662
+            },
+            {
+              "connectionEstablishedSeconds": 0.124047196,
+              "uploadSeconds": 0.000001717,
+              "downloadSeconds": 0.062216621
+            },
+            {
+              "connectionEstablishedSeconds": 0.1249445,
+              "uploadSeconds": 0.000001788,
+              "downloadSeconds": 0.062462759
+            },
+            {
+              "connectionEstablishedSeconds": 0.126187799,
+              "uploadSeconds": 0.000001825,
+              "downloadSeconds": 0.063085401
+            },
+            {
+              "connectionEstablishedSeconds": 0.125372997,
+              "uploadSeconds": 0.000001757,
+              "downloadSeconds": 0.062630744
+            },
+            {
+              "connectionEstablishedSeconds": 0.124622638,
+              "uploadSeconds": 0.000001808,
+              "downloadSeconds": 0.061894104
+            }
+          ],
+          "implementation": "rust-libp2p",
+          "version": "v0.52",
+          "transportStack": "tcp"
+        },
+        {
+          "result": [
+            {
+              "connectionEstablishedSeconds": 0.062492165,
+              "uploadSeconds": 0.061112326,
+              "downloadSeconds": 0.000116715
+            },
+            {
+              "connectionEstablishedSeconds": 0.062649228,
+              "uploadSeconds": 0.061280622,
+              "downloadSeconds": 0.000080394
+            },
+            {
+              "connectionEstablishedSeconds": 0.064760828,
+              "uploadSeconds": 0.063351283,
+              "downloadSeconds": 0.000075496
+            },
+            {
+              "connectionEstablishedSeconds": 0.066180837,
+              "uploadSeconds": 0.064932222,
+              "downloadSeconds": 0.00008116
+            },
+            {
+              "connectionEstablishedSeconds": 0.065053382,
+              "uploadSeconds": 0.063823422,
+              "downloadSeconds": 0.000091261
+            },
+            {
+              "connectionEstablishedSeconds": 0.065101606,
+              "uploadSeconds": 0.063815129,
+              "downloadSeconds": 0.000092607
+            },
+            {
+              "connectionEstablishedSeconds": 0.062689717,
+              "uploadSeconds": 0.061288942,
+              "downloadSeconds": 0.000093534
+            },
+            {
+              "connectionEstablishedSeconds": 0.065046629,
+              "uploadSeconds": 0.063763816,
+              "downloadSeconds": 0.000081756
+            },
+            {
+              "connectionEstablishedSeconds": 0.062314766,
+              "uploadSeconds": 0.061037749,
+              "downloadSeconds": 0.000046607
+            },
+            {
+              "connectionEstablishedSeconds": 0.064858603,
+              "uploadSeconds": 0.063540237,
+              "downloadSeconds": 0.000079145
+            },
+            {
+              "connectionEstablishedSeconds": 0.064348321,
+              "uploadSeconds": 0.063027289,
+              "downloadSeconds": 0.000077306
+            },
+            {
+              "connectionEstablishedSeconds": 0.064959839,
+              "uploadSeconds": 0.063622551,
+              "downloadSeconds": 0.00004905
+            },
+            {
+              "connectionEstablishedSeconds": 0.063707615,
+              "uploadSeconds": 0.062420537,
+              "downloadSeconds": 0.000102342
+            },
+            {
+              "connectionEstablishedSeconds": 0.065048512,
+              "uploadSeconds": 0.063737865,
+              "downloadSeconds": 0.000118632
+            },
+            {
+              "connectionEstablishedSeconds": 0.064274475,
+              "uploadSeconds": 0.062903113,
+              "downloadSeconds": 0.000085883
+            },
+            {
+              "connectionEstablishedSeconds": 0.064577741,
+              "uploadSeconds": 0.063251792,
+              "downloadSeconds": 0.000076561
+            },
+            {
+              "connectionEstablishedSeconds": 0.065925377,
+              "uploadSeconds": 0.064583722,
+              "downloadSeconds": 0.000090743
+            },
+            {
+              "connectionEstablishedSeconds": 0.062300157,
+              "uploadSeconds": 0.06105258,
+              "downloadSeconds": 0.000135368
+            },
+            {
+              "connectionEstablishedSeconds": 0.064730107,
+              "uploadSeconds": 0.063349915,
+              "downloadSeconds": 0.000085658
+            },
+            {
+              "connectionEstablishedSeconds": 0.06515572,
+              "uploadSeconds": 0.063910665,
+              "downloadSeconds": 0.000090313
+            },
+            {
+              "connectionEstablishedSeconds": 0.065108686,
+              "uploadSeconds": 0.063750982,
+              "downloadSeconds": 0.000067266
+            },
+            {
+              "connectionEstablishedSeconds": 0.062007928,
+              "uploadSeconds": 0.060723595,
+              "downloadSeconds": 0.000072241
+            },
+            {
+              "connectionEstablishedSeconds": 0.065888524,
+              "uploadSeconds": 0.064580981,
+              "downloadSeconds": 0.000090292
+            },
+            {
+              "connectionEstablishedSeconds": 0.065236289,
+              "uploadSeconds": 0.063932549,
+              "downloadSeconds": 0.000089596
+            },
+            {
+              "connectionEstablishedSeconds": 0.065947026,
+              "uploadSeconds": 0.064630887,
+              "downloadSeconds": 0.000095345
+            },
+            {
+              "connectionEstablishedSeconds": 0.064336634,
+              "uploadSeconds": 0.062985158,
+              "downloadSeconds": 0.000074183
+            },
+            {
+              "connectionEstablishedSeconds": 0.062948996,
+              "uploadSeconds": 0.061767861,
+              "downloadSeconds": 0.000075181
+            },
+            {
+              "connectionEstablishedSeconds": 0.06109396,
+              "uploadSeconds": 0.059701938,
+              "downloadSeconds": 0.000071589
+            },
+            {
+              "connectionEstablishedSeconds": 0.064372236,
+              "uploadSeconds": 0.062974949,
+              "downloadSeconds": 0.000079756
+            },
+            {
+              "connectionEstablishedSeconds": 0.064453895,
+              "uploadSeconds": 0.063101378,
+              "downloadSeconds": 0.00009592
+            },
+            {
+              "connectionEstablishedSeconds": 0.06549708,
+              "uploadSeconds": 0.06415425,
+              "downloadSeconds": 0.000098662
+            },
+            {
+              "connectionEstablishedSeconds": 0.061722141,
+              "uploadSeconds": 0.060439927,
+              "downloadSeconds": 0.000067907
+            },
+            {
+              "connectionEstablishedSeconds": 0.062618168,
+              "uploadSeconds": 0.061334678,
+              "downloadSeconds": 0.000077256
+            },
+            {
+              "connectionEstablishedSeconds": 0.065047814,
+              "uploadSeconds": 0.06367261,
+              "downloadSeconds": 0.000091801
+            },
+            {
+              "connectionEstablishedSeconds": 0.063579779,
+              "uploadSeconds": 0.062226479,
+              "downloadSeconds": 0.000082145
+            },
+            {
+              "connectionEstablishedSeconds": 0.063011302,
+              "uploadSeconds": 0.061565533,
+              "downloadSeconds": 0.000086583
+            },
+            {
+              "connectionEstablishedSeconds": 0.065309634,
+              "uploadSeconds": 0.064046614,
+              "downloadSeconds": 0.000085699
+            },
+            {
+              "connectionEstablishedSeconds": 0.063779301,
+              "uploadSeconds": 0.063372405,
+              "downloadSeconds": 0.000136163
+            },
+            {
+              "connectionEstablishedSeconds": 0.064275774,
+              "uploadSeconds": 0.062967983,
+              "downloadSeconds": 0.000111519
+            },
+            {
+              "connectionEstablishedSeconds": 0.062869924,
+              "uploadSeconds": 0.061522136,
+              "downloadSeconds": 0.000099826
+            },
+            {
+              "connectionEstablishedSeconds": 0.065951048,
+              "uploadSeconds": 0.064701169,
+              "downloadSeconds": 0.000078351
+            },
+            {
+              "connectionEstablishedSeconds": 0.066478972,
+              "uploadSeconds": 0.065097486,
+              "downloadSeconds": 0.000082354
+            },
+            {
+              "connectionEstablishedSeconds": 0.065269249,
+              "uploadSeconds": 0.063912204,
+              "downloadSeconds": 0.000104537
+            },
+            {
+              "connectionEstablishedSeconds": 0.065817256,
+              "uploadSeconds": 0.06446906,
+              "downloadSeconds": 0.00007819
+            },
+            {
+              "connectionEstablishedSeconds": 0.064223987,
+              "uploadSeconds": 0.062801823,
+              "downloadSeconds": 0.000078383
+            },
+            {
+              "connectionEstablishedSeconds": 0.06476724,
+              "uploadSeconds": 0.063393313,
+              "downloadSeconds": 0.000099092
+            },
+            {
+              "connectionEstablishedSeconds": 0.063259049,
+              "uploadSeconds": 0.061967122,
+              "downloadSeconds": 0.000078373
+            },
+            {
+              "connectionEstablishedSeconds": 0.062528862,
+              "uploadSeconds": 0.06046343,
+              "downloadSeconds": 0.000076467
+            },
+            {
+              "connectionEstablishedSeconds": 0.066188334,
+              "uploadSeconds": 0.064863762,
+              "downloadSeconds": 0.000079565
+            },
+            {
+              "connectionEstablishedSeconds": 0.062887682,
+              "uploadSeconds": 0.061551332,
+              "downloadSeconds": 0.000076819
+            },
+            {
+              "connectionEstablishedSeconds": 0.066111253,
+              "uploadSeconds": 0.064702484,
+              "downloadSeconds": 0.000066659
+            },
+            {
+              "connectionEstablishedSeconds": 0.063300491,
+              "uploadSeconds": 0.061926982,
+              "downloadSeconds": 0.000083907
+            },
+            {
+              "connectionEstablishedSeconds": 0.06449862,
+              "uploadSeconds": 0.063121687,
+              "downloadSeconds": 0.000093747
+            },
+            {
+              "connectionEstablishedSeconds": 0.064823713,
+              "uploadSeconds": 0.063492443,
+              "downloadSeconds": 0.000084742
+            },
+            {
+              "connectionEstablishedSeconds": 0.065926331,
+              "uploadSeconds": 0.06454414,
+              "downloadSeconds": 0.000098276
+            },
+            {
+              "connectionEstablishedSeconds": 0.065139319,
+              "uploadSeconds": 0.063690364,
+              "downloadSeconds": 0.000077539
+            },
+            {
+              "connectionEstablishedSeconds": 0.065358817,
+              "uploadSeconds": 0.06400259,
+              "downloadSeconds": 0.00003313
+            },
+            {
+              "connectionEstablishedSeconds": 0.065301446,
+              "uploadSeconds": 0.064061379,
+              "downloadSeconds": 0.000077036
+            },
+            {
+              "connectionEstablishedSeconds": 0.063128633,
+              "uploadSeconds": 0.061784849,
+              "downloadSeconds": 0.000066813
+            },
+            {
+              "connectionEstablishedSeconds": 0.063143836,
+              "uploadSeconds": 0.061849758,
+              "downloadSeconds": 0.00007549
+            },
+            {
+              "connectionEstablishedSeconds": 0.062985418,
+              "uploadSeconds": 0.061620493,
+              "downloadSeconds": 0.000077547
+            },
+            {
+              "connectionEstablishedSeconds": 0.066465888,
+              "uploadSeconds": 0.064557997,
+              "downloadSeconds": 0.000080725
+            },
+            {
+              "connectionEstablishedSeconds": 0.063822981,
+              "uploadSeconds": 0.0624959,
+              "downloadSeconds": 0.000076361
+            },
+            {
+              "connectionEstablishedSeconds": 0.066168641,
+              "uploadSeconds": 0.064885029,
+              "downloadSeconds": 0.000082184
+            },
+            {
+              "connectionEstablishedSeconds": 0.065318529,
+              "uploadSeconds": 0.063980222,
+              "downloadSeconds": 0.000075709
+            },
+            {
+              "connectionEstablishedSeconds": 0.063808287,
+              "uploadSeconds": 0.062508188,
+              "downloadSeconds": 0.00007488
+            },
+            {
+              "connectionEstablishedSeconds": 0.063995944,
+              "uploadSeconds": 0.0627541,
+              "downloadSeconds": 0.000072214
+            },
+            {
+              "connectionEstablishedSeconds": 0.06397866,
+              "uploadSeconds": 0.062611512,
+              "downloadSeconds": 0.00006927
+            },
+            {
+              "connectionEstablishedSeconds": 0.065037845,
+              "uploadSeconds": 0.063947489,
+              "downloadSeconds": 0.000080016
+            },
+            {
+              "connectionEstablishedSeconds": 0.066120082,
+              "uploadSeconds": 0.064685778,
+              "downloadSeconds": 0.000082905
+            },
+            {
+              "connectionEstablishedSeconds": 0.062625315,
+              "uploadSeconds": 0.061221872,
+              "downloadSeconds": 0.000031938
+            },
+            {
+              "connectionEstablishedSeconds": 0.065900539,
+              "uploadSeconds": 0.06464932,
+              "downloadSeconds": 0.000077138
+            },
+            {
+              "connectionEstablishedSeconds": 0.064467677,
+              "uploadSeconds": 0.0630704,
+              "downloadSeconds": 0.000087459
+            },
+            {
+              "connectionEstablishedSeconds": 0.065558181,
+              "uploadSeconds": 0.064390576,
+              "downloadSeconds": 0.000088838
+            },
+            {
+              "connectionEstablishedSeconds": 0.064554054,
+              "uploadSeconds": 0.063124382,
+              "downloadSeconds": 0.000086044
+            },
+            {
+              "connectionEstablishedSeconds": 0.065518499,
+              "uploadSeconds": 0.0642783,
+              "downloadSeconds": 0.000069911
+            },
+            {
+              "connectionEstablishedSeconds": 0.066629516,
+              "uploadSeconds": 0.065206442,
+              "downloadSeconds": 0.000081926
+            },
+            {
+              "connectionEstablishedSeconds": 0.065656045,
+              "uploadSeconds": 0.064359504,
+              "downloadSeconds": 0.000044615
+            },
+            {
+              "connectionEstablishedSeconds": 0.063976017,
+              "uploadSeconds": 0.062635566,
+              "downloadSeconds": 0.000071372
+            },
+            {
+              "connectionEstablishedSeconds": 0.062951525,
+              "uploadSeconds": 0.061702677,
+              "downloadSeconds": 0.000078439
+            },
+            {
+              "connectionEstablishedSeconds": 0.063737264,
+              "uploadSeconds": 0.06236826,
+              "downloadSeconds": 0.00006622
+            },
+            {
+              "connectionEstablishedSeconds": 0.065378439,
+              "uploadSeconds": 0.064143514,
+              "downloadSeconds": 0.000085874
+            },
+            {
+              "connectionEstablishedSeconds": 0.063799799,
+              "uploadSeconds": 0.062465944,
+              "downloadSeconds": 0.000076315
+            },
+            {
+              "connectionEstablishedSeconds": 0.064016785,
+              "uploadSeconds": 0.062693022,
+              "downloadSeconds": 0.000073532
+            },
+            {
+              "connectionEstablishedSeconds": 0.066494306,
+              "uploadSeconds": 0.065370658,
+              "downloadSeconds": 0.000110275
+            },
+            {
+              "connectionEstablishedSeconds": 0.063535833,
+              "uploadSeconds": 0.062204885,
+              "downloadSeconds": 0.000096163
+            },
+            {
+              "connectionEstablishedSeconds": 0.060309504,
+              "uploadSeconds": 0.058998211,
+              "downloadSeconds": 0.000076909
+            },
+            {
+              "connectionEstablishedSeconds": 0.062002445,
+              "uploadSeconds": 0.060868854,
+              "downloadSeconds": 0.000067506
+            },
+            {
+              "connectionEstablishedSeconds": 0.06525739,
+              "uploadSeconds": 0.063977881,
+              "downloadSeconds": 0.000079046
+            },
+            {
+              "connectionEstablishedSeconds": 0.063392018,
+              "uploadSeconds": 0.062113137,
+              "downloadSeconds": 0.000079119
+            },
+            {
+              "connectionEstablishedSeconds": 0.065732927,
+              "uploadSeconds": 0.064370846,
+              "downloadSeconds": 0.000066241
+            },
+            {
+              "connectionEstablishedSeconds": 0.06651007,
+              "uploadSeconds": 0.065177715,
+              "downloadSeconds": 0.000134526
+            },
+            {
+              "connectionEstablishedSeconds": 0.064256641,
+              "uploadSeconds": 0.063039581,
+              "downloadSeconds": 0.000073272
+            },
+            {
+              "connectionEstablishedSeconds": 0.065119473,
+              "uploadSeconds": 0.06376839,
+              "downloadSeconds": 0.000074958
+            },
+            {
+              "connectionEstablishedSeconds": 0.062175277,
+              "uploadSeconds": 0.061104338,
+              "downloadSeconds": 0.000087541
+            },
+            {
+              "connectionEstablishedSeconds": 0.063139385,
+              "uploadSeconds": 0.06214719,
+              "downloadSeconds": 0.000078032
+            },
+            {
+              "connectionEstablishedSeconds": 0.064046091,
+              "uploadSeconds": 0.06271439,
+              "downloadSeconds": 0.000068561
+            },
+            {
+              "connectionEstablishedSeconds": 0.063052851,
+              "uploadSeconds": 0.062245386,
+              "downloadSeconds": 0.000045205
+            },
+            {
+              "connectionEstablishedSeconds": 0.064833757,
+              "uploadSeconds": 0.063268495,
+              "downloadSeconds": 0.000300286
+            },
+            {
+              "connectionEstablishedSeconds": 0.065363519,
+              "uploadSeconds": 0.064063992,
+              "downloadSeconds": 0.00007668
+            }
+          ],
+          "implementation": "rust-libp2p",
+          "version": "v0.52",
+          "transportStack": "quic-v1"
+        },
+        {
+          "result": [
+            {
+              "connectionEstablishedSeconds": 0.064520194,
+              "uploadSeconds": 0.062763047,
+              "downloadSeconds": 0.000311714
+            },
+            {
+              "connectionEstablishedSeconds": 0.061672534,
+              "uploadSeconds": 0.060131542,
+              "downloadSeconds": 0.000290564
+            },
+            {
+              "connectionEstablishedSeconds": 0.06559133,
+              "uploadSeconds": 0.064091439,
+              "downloadSeconds": 0.000220565
+            },
+            {
+              "connectionEstablishedSeconds": 0.06509549,
+              "uploadSeconds": 0.063602653,
+              "downloadSeconds": 0.000232934
+            },
+            {
+              "connectionEstablishedSeconds": 0.066234416,
+              "uploadSeconds": 0.064778126,
+              "downloadSeconds": 0.000224712
+            },
+            {
+              "connectionEstablishedSeconds": 0.063305258,
+              "uploadSeconds": 0.061815194,
+              "downloadSeconds": 0.000211531
+            },
+            {
+              "connectionEstablishedSeconds": 0.065295876,
+              "uploadSeconds": 0.063799653,
+              "downloadSeconds": 0.000215023
+            },
+            {
+              "connectionEstablishedSeconds": 0.066643606,
+              "uploadSeconds": 0.065195529,
+              "downloadSeconds": 0.000278385
+            },
+            {
+              "connectionEstablishedSeconds": 0.063005459,
+              "uploadSeconds": 0.061678785,
+              "downloadSeconds": 0.000260314
+            },
+            {
+              "connectionEstablishedSeconds": 0.065838078,
+              "uploadSeconds": 0.064328347,
+              "downloadSeconds": 0.000289925
+            },
+            {
+              "connectionEstablishedSeconds": 0.06564289,
+              "uploadSeconds": 0.064197027,
+              "downloadSeconds": 0.000239059
+            },
+            {
+              "connectionEstablishedSeconds": 0.064409611,
+              "uploadSeconds": 0.062990114,
+              "downloadSeconds": 0.000220292
+            },
+            {
+              "connectionEstablishedSeconds": 0.062809421,
+              "uploadSeconds": 0.061497011,
+              "downloadSeconds": 0.000217806
+            },
+            {
+              "connectionEstablishedSeconds": 0.063838736,
+              "uploadSeconds": 0.062350353,
+              "downloadSeconds": 0.000285214
+            },
+            {
+              "connectionEstablishedSeconds": 0.064723174,
+              "uploadSeconds": 0.063331722,
+              "downloadSeconds": 0.00020302
+            },
+            {
+              "connectionEstablishedSeconds": 0.064209506,
+              "uploadSeconds": 0.062743849,
+              "downloadSeconds": 0.000228847
+            },
+            {
+              "connectionEstablishedSeconds": 0.065077603,
+              "uploadSeconds": 0.063613483,
+              "downloadSeconds": 0.00028078
+            },
+            {
+              "connectionEstablishedSeconds": 0.062394046,
+              "uploadSeconds": 0.061067573,
+              "downloadSeconds": 0.000201108
+            },
+            {
+              "connectionEstablishedSeconds": 0.065299326,
+              "uploadSeconds": 0.063748553,
+              "downloadSeconds": 0.000242959
+            },
+            {
+              "connectionEstablishedSeconds": 0.064665813,
+              "uploadSeconds": 0.063258611,
+              "downloadSeconds": 0.000290005
+            },
+            {
+              "connectionEstablishedSeconds": 0.063905388,
+              "uploadSeconds": 0.062530847,
+              "downloadSeconds": 0.000234923
+            },
+            {
+              "connectionEstablishedSeconds": 0.06432057,
+              "uploadSeconds": 0.062942497,
+              "downloadSeconds": 0.000227728
+            },
+            {
+              "connectionEstablishedSeconds": 0.065251547,
+              "uploadSeconds": 0.063915261,
+              "downloadSeconds": 0.000286787
+            },
+            {
+              "connectionEstablishedSeconds": 0.065145683,
+              "uploadSeconds": 0.063710432,
+              "downloadSeconds": 0.00019077
+            },
+            {
+              "connectionEstablishedSeconds": 0.066127095,
+              "uploadSeconds": 0.064834648,
+              "downloadSeconds": 0.000209692
+            },
+            {
+              "connectionEstablishedSeconds": 0.062005086,
+              "uploadSeconds": 0.060587007,
+              "downloadSeconds": 0.000143414
+            },
+            {
+              "connectionEstablishedSeconds": 0.064123733,
+              "uploadSeconds": 0.062807069,
+              "downloadSeconds": 0.000197959
+            },
+            {
+              "connectionEstablishedSeconds": 0.062011479,
+              "uploadSeconds": 0.060655504,
+              "downloadSeconds": 0.000273931
+            },
+            {
+              "connectionEstablishedSeconds": 0.063505832,
+              "uploadSeconds": 0.062131307,
+              "downloadSeconds": 0.000204597
+            },
+            {
+              "connectionEstablishedSeconds": 0.063511408,
+              "uploadSeconds": 0.062059862,
+              "downloadSeconds": 0.000246621
+            },
+            {
+              "connectionEstablishedSeconds": 0.06440964,
+              "uploadSeconds": 0.062882752,
+              "downloadSeconds": 0.000228304
+            },
+            {
+              "connectionEstablishedSeconds": 0.060028443,
+              "uploadSeconds": 0.058494391,
+              "downloadSeconds": 0.00028323
+            },
+            {
+              "connectionEstablishedSeconds": 0.066110257,
+              "uploadSeconds": 0.064746388,
+              "downloadSeconds": 0.00023999
+            },
+            {
+              "connectionEstablishedSeconds": 0.065221789,
+              "uploadSeconds": 0.06388649,
+              "downloadSeconds": 0.000282664
+            },
+            {
+              "connectionEstablishedSeconds": 0.064010908,
+              "uploadSeconds": 0.062539179,
+              "downloadSeconds": 0.000293821
+            },
+            {
+              "connectionEstablishedSeconds": 0.066279266,
+              "uploadSeconds": 0.06482569,
+              "downloadSeconds": 0.000189668
+            },
+            {
+              "connectionEstablishedSeconds": 0.064467997,
+              "uploadSeconds": 0.062964242,
+              "downloadSeconds": 0.000205917
+            },
+            {
+              "connectionEstablishedSeconds": 0.063683088,
+              "uploadSeconds": 0.062621114,
+              "downloadSeconds": 0.000225339
+            },
+            {
+              "connectionEstablishedSeconds": 0.065295598,
+              "uploadSeconds": 0.063874133,
+              "downloadSeconds": 0.000301366
+            },
+            {
+              "connectionEstablishedSeconds": 0.066577362,
+              "uploadSeconds": 0.065280399,
+              "downloadSeconds": 0.000195606
+            },
+            {
+              "connectionEstablishedSeconds": 0.063268171,
+              "uploadSeconds": 0.061804848,
+              "downloadSeconds": 0.000296705
+            },
+            {
+              "connectionEstablishedSeconds": 0.065474833,
+              "uploadSeconds": 0.064150838,
+              "downloadSeconds": 0.000243106
+            },
+            {
+              "connectionEstablishedSeconds": 0.064503497,
+              "uploadSeconds": 0.063037301,
+              "downloadSeconds": 0.000240357
+            },
+            {
+              "connectionEstablishedSeconds": 0.063228496,
+              "uploadSeconds": 0.061711898,
+              "downloadSeconds": 0.0002308
+            },
+            {
+              "connectionEstablishedSeconds": 0.065222472,
+              "uploadSeconds": 0.063772095,
+              "downloadSeconds": 0.000225858
+            },
+            {
+              "connectionEstablishedSeconds": 0.064831753,
+              "uploadSeconds": 0.063397533,
+              "downloadSeconds": 0.000249322
+            },
+            {
+              "connectionEstablishedSeconds": 0.064904029,
+              "uploadSeconds": 0.063438406,
+              "downloadSeconds": 0.000198988
+            },
+            {
+              "connectionEstablishedSeconds": 0.064007547,
+              "uploadSeconds": 0.062655107,
+              "downloadSeconds": 0.000226498
+            },
+            {
+              "connectionEstablishedSeconds": 0.06389538,
+              "uploadSeconds": 0.062495956,
+              "downloadSeconds": 0.000296354
+            },
+            {
+              "connectionEstablishedSeconds": 0.065208755,
+              "uploadSeconds": 0.063847459,
+              "downloadSeconds": 0.000176159
+            },
+            {
+              "connectionEstablishedSeconds": 0.06254477,
+              "uploadSeconds": 0.061182311,
+              "downloadSeconds": 0.000191264
+            },
+            {
+              "connectionEstablishedSeconds": 0.065895003,
+              "uploadSeconds": 0.064422187,
+              "downloadSeconds": 0.000201304
+            },
+            {
+              "connectionEstablishedSeconds": 0.066959431,
+              "uploadSeconds": 0.06549081,
+              "downloadSeconds": 0.000201391
+            },
+            {
+              "connectionEstablishedSeconds": 0.065483631,
+              "uploadSeconds": 0.064122764,
+              "downloadSeconds": 0.000199658
+            },
+            {
+              "connectionEstablishedSeconds": 0.065869684,
+              "uploadSeconds": 0.064596755,
+              "downloadSeconds": 0.000252607
+            },
+            {
+              "connectionEstablishedSeconds": 0.065208161,
+              "uploadSeconds": 0.063724092,
+              "downloadSeconds": 0.000326259
+            },
+            {
+              "connectionEstablishedSeconds": 0.063874435,
+              "uploadSeconds": 0.062467287,
+              "downloadSeconds": 0.000189696
+            },
+            {
+              "connectionEstablishedSeconds": 0.062529457,
+              "uploadSeconds": 0.061205657,
+              "downloadSeconds": 0.000263333
+            },
+            {
+              "connectionEstablishedSeconds": 0.065449242,
+              "uploadSeconds": 0.064066552,
+              "downloadSeconds": 0.000276344
+            },
+            {
+              "connectionEstablishedSeconds": 0.064139182,
+              "uploadSeconds": 0.06264439,
+              "downloadSeconds": 0.000202631
+            },
+            {
+              "connectionEstablishedSeconds": 0.061921946,
+              "uploadSeconds": 0.060384157,
+              "downloadSeconds": 0.000226218
+            },
+            {
+              "connectionEstablishedSeconds": 0.066197629,
+              "uploadSeconds": 0.06483258,
+              "downloadSeconds": 0.000237098
+            },
+            {
+              "connectionEstablishedSeconds": 0.064473701,
+              "uploadSeconds": 0.063108909,
+              "downloadSeconds": 0.000208065
+            },
+            {
+              "connectionEstablishedSeconds": 0.06539491,
+              "uploadSeconds": 0.063917182,
+              "downloadSeconds": 0.00027215
+            },
+            {
+              "connectionEstablishedSeconds": 0.065071228,
+              "uploadSeconds": 0.063778824,
+              "downloadSeconds": 0.000238865
+            },
+            {
+              "connectionEstablishedSeconds": 0.064651975,
+              "uploadSeconds": 0.063283752,
+              "downloadSeconds": 0.000156891
+            },
+            {
+              "connectionEstablishedSeconds": 0.064982133,
+              "uploadSeconds": 0.063516095,
+              "downloadSeconds": 0.000200867
+            },
+            {
+              "connectionEstablishedSeconds": 0.062978826,
+              "uploadSeconds": 0.061688863,
+              "downloadSeconds": 0.000188278
+            },
+            {
+              "connectionEstablishedSeconds": 0.062295427,
+              "uploadSeconds": 0.060913366,
+              "downloadSeconds": 0.000255438
+            },
+            {
+              "connectionEstablishedSeconds": 0.064525031,
+              "uploadSeconds": 0.063123822,
+              "downloadSeconds": 0.000226088
+            },
+            {
+              "connectionEstablishedSeconds": 0.062325794,
+              "uploadSeconds": 0.061063754,
+              "downloadSeconds": 0.000218165
+            },
+            {
+              "connectionEstablishedSeconds": 0.064822543,
+              "uploadSeconds": 0.063304121,
+              "downloadSeconds": 0.000251781
+            },
+            {
+              "connectionEstablishedSeconds": 0.061440857,
+              "uploadSeconds": 0.059937803,
+              "downloadSeconds": 0.000269138
+            },
+            {
+              "connectionEstablishedSeconds": 0.065088219,
+              "uploadSeconds": 0.063709099,
+              "downloadSeconds": 0.00022092
+            },
+            {
+              "connectionEstablishedSeconds": 0.062920135,
+              "uploadSeconds": 0.061504746,
+              "downloadSeconds": 0.000207534
+            },
+            {
+              "connectionEstablishedSeconds": 0.065019389,
+              "uploadSeconds": 0.063622874,
+              "downloadSeconds": 0.000219459
+            },
+            {
+              "connectionEstablishedSeconds": 0.065977009,
+              "uploadSeconds": 0.064597124,
+              "downloadSeconds": 0.000250198
+            },
+            {
+              "connectionEstablishedSeconds": 0.062422976,
+              "uploadSeconds": 0.060975136,
+              "downloadSeconds": 0.000214674
+            },
+            {
+              "connectionEstablishedSeconds": 0.064642922,
+              "uploadSeconds": 0.063189755,
+              "downloadSeconds": 0.00029799
+            },
+            {
+              "connectionEstablishedSeconds": 0.065682327,
+              "uploadSeconds": 0.064287936,
+              "downloadSeconds": 0.000292814
+            },
+            {
+              "connectionEstablishedSeconds": 0.063473996,
+              "uploadSeconds": 0.062029369,
+              "downloadSeconds": 0.000231583
+            },
+            {
+              "connectionEstablishedSeconds": 0.063469822,
+              "uploadSeconds": 0.061954741,
+              "downloadSeconds": 0.000246131
+            },
+            {
+              "connectionEstablishedSeconds": 0.064851128,
+              "uploadSeconds": 0.063434178,
+              "downloadSeconds": 0.000213867
+            },
+            {
+              "connectionEstablishedSeconds": 0.062144428,
+              "uploadSeconds": 0.060606703,
+              "downloadSeconds": 0.000217533
+            },
+            {
+              "connectionEstablishedSeconds": 0.065986455,
+              "uploadSeconds": 0.064577873,
+              "downloadSeconds": 0.000206804
+            },
+            {
+              "connectionEstablishedSeconds": 0.064726192,
+              "uploadSeconds": 0.063332243,
+              "downloadSeconds": 0.000239735
+            },
+            {
+              "connectionEstablishedSeconds": 0.064632716,
+              "uploadSeconds": 0.063309348,
+              "downloadSeconds": 0.000265871
+            },
+            {
+              "connectionEstablishedSeconds": 0.066051432,
+              "uploadSeconds": 0.064603075,
+              "downloadSeconds": 0.000279868
+            },
+            {
+              "connectionEstablishedSeconds": 0.064319152,
+              "uploadSeconds": 0.062978197,
+              "downloadSeconds": 0.000267011
+            },
+            {
+              "connectionEstablishedSeconds": 0.065578875,
+              "uploadSeconds": 0.064210311,
+              "downloadSeconds": 0.000312327
+            },
+            {
+              "connectionEstablishedSeconds": 0.06249902,
+              "uploadSeconds": 0.061115234,
+              "downloadSeconds": 0.000208288
+            },
+            {
+              "connectionEstablishedSeconds": 0.064433692,
+              "uploadSeconds": 0.063065887,
+              "downloadSeconds": 0.000199075
+            },
+            {
+              "connectionEstablishedSeconds": 0.063908527,
+              "uploadSeconds": 0.062421652,
+              "downloadSeconds": 0.000192921
+            },
+            {
+              "connectionEstablishedSeconds": 0.065314004,
+              "uploadSeconds": 0.063971269,
+              "downloadSeconds": 0.000224887
+            },
+            {
+              "connectionEstablishedSeconds": 0.066661819,
+              "uploadSeconds": 0.065122878,
+              "downloadSeconds": 0.000303099
+            },
+            {
+              "connectionEstablishedSeconds": 0.062946918,
+              "uploadSeconds": 0.061544363,
+              "downloadSeconds": 0.000211652
+            },
+            {
+              "connectionEstablishedSeconds": 0.061860653,
+              "uploadSeconds": 0.060460049,
+              "downloadSeconds": 0.000195749
+            },
+            {
+              "connectionEstablishedSeconds": 0.065215099,
+              "uploadSeconds": 0.063931388,
+              "downloadSeconds": 0.000234829
+            },
+            {
+              "connectionEstablishedSeconds": 0.06453588,
+              "uploadSeconds": 0.06308244,
+              "downloadSeconds": 0.000227521
+            },
+            {
+              "connectionEstablishedSeconds": 0.06571602,
+              "uploadSeconds": 0.064277054,
+              "downloadSeconds": 0.000233697
+            }
+          ],
+          "implementation": "rust-libp2p-quinn",
+          "version": "v0.52",
+          "transportStack": "quic-v1"
+        },
+        {
+          "result": [
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.185053145,
+              "downloadSeconds": 0.000042529
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.186749887,
+              "downloadSeconds": 0.000034788
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.177589981,
+              "downloadSeconds": 0.000034141
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.186222307,
+              "downloadSeconds": 0.000023625
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.190720809,
+              "downloadSeconds": 0.000035193
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.193406136,
+              "downloadSeconds": 0.000035356
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.192963271,
+              "downloadSeconds": 0.00003445
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.195476643,
+              "downloadSeconds": 0.000036906
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.187020122,
+              "downloadSeconds": 0.000030902
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.190978917,
+              "downloadSeconds": 0.000035416
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.18895168,
+              "downloadSeconds": 0.000030577
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.19280074,
+              "downloadSeconds": 0.000034784
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.194281643,
+              "downloadSeconds": 0.00003553
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.188287778,
+              "downloadSeconds": 0.000037338
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.195430346,
+              "downloadSeconds": 0.000037072
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.194384239,
+              "downloadSeconds": 0.000034565
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.191915218,
+              "downloadSeconds": 0.000031388
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.190814481,
+              "downloadSeconds": 0.000033409
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.188226132,
+              "downloadSeconds": 0.000031379
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.188944544,
+              "downloadSeconds": 0.000037297
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.192830669,
+              "downloadSeconds": 0.000031164
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.191889106,
+              "downloadSeconds": 0.00003192
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.184959513,
+              "downloadSeconds": 0.000032864
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.19342802,
+              "downloadSeconds": 0.000032484
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.193531339,
+              "downloadSeconds": 0.000024694
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.191605955,
+              "downloadSeconds": 0.000039426
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.188998617,
+              "downloadSeconds": 0.000031029
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.188507885,
+              "downloadSeconds": 0.00002276
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.196444295,
+              "downloadSeconds": 0.000025062
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.193288603,
+              "downloadSeconds": 0.000022276
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.190196478,
+              "downloadSeconds": 0.000035304
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.19101996,
+              "downloadSeconds": 0.000031468
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.18771346,
+              "downloadSeconds": 0.000034425
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.192304997,
+              "downloadSeconds": 0.000033108
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.182804295,
+              "downloadSeconds": 0.000034492
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.191296398,
+              "downloadSeconds": 0.000035555
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.183664688,
+              "downloadSeconds": 0.000034473
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.192932606,
+              "downloadSeconds": 0.000034101
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.191965651,
+              "downloadSeconds": 0.00004048
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.193361465,
+              "downloadSeconds": 0.000037094
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.182595081,
+              "downloadSeconds": 0.000026521
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.193753749,
+              "downloadSeconds": 0.000031588
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.191619186,
+              "downloadSeconds": 0.000034298
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.186816459,
+              "downloadSeconds": 0.00003413
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.19257261,
+              "downloadSeconds": 0.000033194
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.189630143,
+              "downloadSeconds": 0.000025527
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.182871119,
+              "downloadSeconds": 0.000035417
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.187070763,
+              "downloadSeconds": 0.000039682
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.182966939,
+              "downloadSeconds": 0.000034868
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.19029279,
+              "downloadSeconds": 0.000032821
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.189312151,
+              "downloadSeconds": 0.000023169
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.191229498,
+              "downloadSeconds": 0.000030995
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.18908621,
+              "downloadSeconds": 0.000024805
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.190969054,
+              "downloadSeconds": 0.000035044
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.182805951,
+              "downloadSeconds": 0.000035045
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.184211676,
+              "downloadSeconds": 0.00003118
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.190939334,
+              "downloadSeconds": 0.00003687
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.190777691,
+              "downloadSeconds": 0.000035732
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.187917115,
+              "downloadSeconds": 0.000034899
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.190072014,
+              "downloadSeconds": 0.000039331
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.191356984,
+              "downloadSeconds": 0.000036338
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.191103454,
+              "downloadSeconds": 0.000035841
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.176751719,
+              "downloadSeconds": 0.000034908
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.19357032,
+              "downloadSeconds": 0.000027657
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.185481567,
+              "downloadSeconds": 0.000034332
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.190641535,
+              "downloadSeconds": 0.000033533
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.191202351,
+              "downloadSeconds": 0.000034829
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.186108976,
+              "downloadSeconds": 0.000023441
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.191705913,
+              "downloadSeconds": 0.000023135
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.186858248,
+              "downloadSeconds": 0.000033264
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.186761576,
+              "downloadSeconds": 0.000037166
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.191750803,
+              "downloadSeconds": 0.000025621
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.186545117,
+              "downloadSeconds": 0.000035984
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.182424793,
+              "downloadSeconds": 0.00003531
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.19095818,
+              "downloadSeconds": 0.00003541
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.193940523,
+              "downloadSeconds": 0.000034823
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.19126552,
+              "downloadSeconds": 0.000030258
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.192959396,
+              "downloadSeconds": 0.00003533
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.191230252,
+              "downloadSeconds": 0.00003462
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.191606432,
+              "downloadSeconds": 0.000035102
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.190014888,
+              "downloadSeconds": 0.000029117
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.190648226,
+              "downloadSeconds": 0.000025677
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.189448378,
+              "downloadSeconds": 0.000033677
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.195077934,
+              "downloadSeconds": 0.000034017
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.181657919,
+              "downloadSeconds": 0.000034153
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.189491676,
+              "downloadSeconds": 0.000027625
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.191770687,
+              "downloadSeconds": 0.000031336
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.189495974,
+              "downloadSeconds": 0.000034939
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.190744158,
+              "downloadSeconds": 0.000036604
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.188132312,
+              "downloadSeconds": 0.000034402
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.177152609,
+              "downloadSeconds": 0.000035554
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.180191044,
+              "downloadSeconds": 0.000027139
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.188539768,
+              "downloadSeconds": 0.000035181
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.188009218,
+              "downloadSeconds": 0.000028091
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.190402823,
+              "downloadSeconds": 0.000034882
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.176183458,
+              "downloadSeconds": 0.000027937
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.185653132,
+              "downloadSeconds": 0.000035795
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.19374182,
+              "downloadSeconds": 0.000035146
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.180572218,
+              "downloadSeconds": 0.00003475
+            },
+            {
+              "connectionEstablishedSeconds": 0,
+              "uploadSeconds": 0.192778229,
+              "downloadSeconds": 0.00002868
+            }
+          ],
+          "implementation": "https",
+          "version": "v0.1",
+          "transportStack": "tcp"
+        },
+        {
+          "result": [
+            {
+              "connectionEstablishedSeconds": 0.255564771,
+              "uploadSeconds": 0.000058962,
+              "downloadSeconds": 0.124655922
+            },
+            {
+              "connectionEstablishedSeconds": 0.240628743,
+              "uploadSeconds": 0.000031327,
+              "downloadSeconds": 0.059283787
+            },
+            {
+              "connectionEstablishedSeconds": 0.246060026,
+              "uploadSeconds": 0.000032811,
+              "downloadSeconds": 0.120545382
+            },
+            {
+              "connectionEstablishedSeconds": 0.257898273,
+              "uploadSeconds": 0.000061307,
+              "downloadSeconds": 0.063628717
+            },
+            {
+              "connectionEstablishedSeconds": 0.256797484,
+              "uploadSeconds": 0.000015293,
+              "downloadSeconds": 0.126097157
+            },
+            {
+              "connectionEstablishedSeconds": 0.257655875,
+              "uploadSeconds": 0.000031895,
+              "downloadSeconds": 0.063533893
+            },
+            {
+              "connectionEstablishedSeconds": 0.256532527,
+              "uploadSeconds": 0.000034072,
+              "downloadSeconds": 0.063442454
+            },
+            {
+              "connectionEstablishedSeconds": 0.256347155,
+              "uploadSeconds": 0.000047138,
+              "downloadSeconds": 0.125774714
+            },
+            {
+              "connectionEstablishedSeconds": 0.259335178,
+              "uploadSeconds": 0.000049483,
+              "downloadSeconds": 0.063913947
+            },
+            {
+              "connectionEstablishedSeconds": 0.233717447,
+              "uploadSeconds": 0.00002658,
+              "downloadSeconds": 0.058006432
+            },
+            {
+              "connectionEstablishedSeconds": 0.258911012,
+              "uploadSeconds": 0.000050582,
+              "downloadSeconds": 0.126864314
+            },
+            {
+              "connectionEstablishedSeconds": 0.256092791,
+              "uploadSeconds": 0.00005145,
+              "downloadSeconds": 0.063076668
+            },
+            {
+              "connectionEstablishedSeconds": 0.253528586,
+              "uploadSeconds": 0.000035863,
+              "downloadSeconds": 0.12516235
+            },
+            {
+              "connectionEstablishedSeconds": 0.250931815,
+              "uploadSeconds": 0.000048435,
+              "downloadSeconds": 0.061765651
+            },
+            {
+              "connectionEstablishedSeconds": 0.258632992,
+              "uploadSeconds": 0.000051462,
+              "downloadSeconds": 0.126959835
+            },
+            {
+              "connectionEstablishedSeconds": 0.257017873,
+              "uploadSeconds": 0.000049839,
+              "downloadSeconds": 0.126077058
+            },
+            {
+              "connectionEstablishedSeconds": 0.259292194,
+              "uploadSeconds": 0.000050133,
+              "downloadSeconds": 0.127185628
+            },
+            {
+              "connectionEstablishedSeconds": 0.240883048,
+              "uploadSeconds": 0.000029202,
+              "downloadSeconds": 0.117895391
+            },
+            {
+              "connectionEstablishedSeconds": 0.238878753,
+              "uploadSeconds": 0.000055267,
+              "downloadSeconds": 0.116871413
+            },
+            {
+              "connectionEstablishedSeconds": 0.252530614,
+              "uploadSeconds": 0.000053341,
+              "downloadSeconds": 0.124574708
+            },
+            {
+              "connectionEstablishedSeconds": 0.248543388,
+              "uploadSeconds": 0.000035107,
+              "downloadSeconds": 0.061000007
+            },
+            {
+              "connectionEstablishedSeconds": 0.252642228,
+              "uploadSeconds": 0.000022627,
+              "downloadSeconds": 0.062691633
+            },
+            {
+              "connectionEstablishedSeconds": 0.244578188,
+              "uploadSeconds": 0.000031248,
+              "downloadSeconds": 0.120452768
+            },
+            {
+              "connectionEstablishedSeconds": 0.255823597,
+              "uploadSeconds": 0.000045341,
+              "downloadSeconds": 0.125369052
+            },
+            {
+              "connectionEstablishedSeconds": 0.255313133,
+              "uploadSeconds": 0.000054953,
+              "downloadSeconds": 0.123889423
+            },
+            {
+              "connectionEstablishedSeconds": 0.25583746,
+              "uploadSeconds": 0.000049329,
+              "downloadSeconds": 0.06339297
+            },
+            {
+              "connectionEstablishedSeconds": 0.256002126,
+              "uploadSeconds": 0.000057044,
+              "downloadSeconds": 0.126471927
+            },
+            {
+              "connectionEstablishedSeconds": 0.252109507,
+              "uploadSeconds": 0.00005592,
+              "downloadSeconds": 0.062519518
+            },
+            {
+              "connectionEstablishedSeconds": 0.251913238,
+              "uploadSeconds": 0.000028096,
+              "downloadSeconds": 0.123525763
+            },
+            {
+              "connectionEstablishedSeconds": 0.254943314,
+              "uploadSeconds": 0.000027106,
+              "downloadSeconds": 0.12496839
+            },
+            {
+              "connectionEstablishedSeconds": 0.247363092,
+              "uploadSeconds": 0.000046956,
+              "downloadSeconds": 0.122142147
+            },
+            {
+              "connectionEstablishedSeconds": 0.252327697,
+              "uploadSeconds": 0.000032412,
+              "downloadSeconds": 0.062109734
+            },
+            {
+              "connectionEstablishedSeconds": 0.25467206,
+              "uploadSeconds": 0.000051041,
+              "downloadSeconds": 0.062652737
+            },
+            {
+              "connectionEstablishedSeconds": 0.252011661,
+              "uploadSeconds": 0.000028809,
+              "downloadSeconds": 0.062551701
+            },
+            {
+              "connectionEstablishedSeconds": 0.256222493,
+              "uploadSeconds": 0.000049471,
+              "downloadSeconds": 0.063473614
+            },
+            {
+              "connectionEstablishedSeconds": 0.249629093,
+              "uploadSeconds": 0.000015106,
+              "downloadSeconds": 0.061868423
+            },
+            {
+              "connectionEstablishedSeconds": 0.256758085,
+              "uploadSeconds": 0.000046705,
+              "downloadSeconds": 0.126453964
+            },
+            {
+              "connectionEstablishedSeconds": 0.246384913,
+              "uploadSeconds": 0.000046164,
+              "downloadSeconds": 0.061167599
+            },
+            {
+              "connectionEstablishedSeconds": 0.253809944,
+              "uploadSeconds": 0.000046954,
+              "downloadSeconds": 0.06251466
+            },
+            {
+              "connectionEstablishedSeconds": 0.252680571,
+              "uploadSeconds": 0.00004862,
+              "downloadSeconds": 0.124903987
+            },
+            {
+              "connectionEstablishedSeconds": 0.260555268,
+              "uploadSeconds": 0.000024659,
+              "downloadSeconds": 0.06422256
+            },
+            {
+              "connectionEstablishedSeconds": 0.253972966,
+              "uploadSeconds": 0.000030325,
+              "downloadSeconds": 0.062968215
+            },
+            {
+              "connectionEstablishedSeconds": 0.251677426,
+              "uploadSeconds": 0.000058083,
+              "downloadSeconds": 0.123469886
+            },
+            {
+              "connectionEstablishedSeconds": 0.255464321,
+              "uploadSeconds": 0.000030361,
+              "downloadSeconds": 0.063452473
+            },
+            {
+              "connectionEstablishedSeconds": 0.257554731,
+              "uploadSeconds": 0.000047156,
+              "downloadSeconds": 0.126325713
+            },
+            {
+              "connectionEstablishedSeconds": 0.254332788,
+              "uploadSeconds": 0.000053547,
+              "downloadSeconds": 0.062627469
+            },
+            {
+              "connectionEstablishedSeconds": 0.24463752,
+              "uploadSeconds": 0.000029926,
+              "downloadSeconds": 0.060626808
+            },
+            {
+              "connectionEstablishedSeconds": 0.251500685,
+              "uploadSeconds": 0.000034964,
+              "downloadSeconds": 0.062436547
+            },
+            {
+              "connectionEstablishedSeconds": 0.248732914,
+              "uploadSeconds": 0.000031966,
+              "downloadSeconds": 0.061784867
+            },
+            {
+              "connectionEstablishedSeconds": 0.254063006,
+              "uploadSeconds": 0.000060283,
+              "downloadSeconds": 0.124453353
+            },
+            {
+              "connectionEstablishedSeconds": 0.254678345,
+              "uploadSeconds": 0.000029515,
+              "downloadSeconds": 0.063197481
+            },
+            {
+              "connectionEstablishedSeconds": 0.256487616,
+              "uploadSeconds": 0.000028327,
+              "downloadSeconds": 0.063529376
+            },
+            {
+              "connectionEstablishedSeconds": 0.254123118,
+              "uploadSeconds": 0.000030113,
+              "downloadSeconds": 0.124538531
+            },
+            {
+              "connectionEstablishedSeconds": 0.25159968,
+              "uploadSeconds": 0.000030301,
+              "downloadSeconds": 0.061926504
+            },
+            {
+              "connectionEstablishedSeconds": 0.25943308,
+              "uploadSeconds": 0.00002747,
+              "downloadSeconds": 0.064337808
+            },
+            {
+              "connectionEstablishedSeconds": 0.256212381,
+              "uploadSeconds": 0.000051275,
+              "downloadSeconds": 0.063474669
+            },
+            {
+              "connectionEstablishedSeconds": 0.253068728,
+              "uploadSeconds": 0.000031105,
+              "downloadSeconds": 0.062774459
+            },
+            {
+              "connectionEstablishedSeconds": 0.25281207,
+              "uploadSeconds": 0.000032473,
+              "downloadSeconds": 0.062257546
+            },
+            {
+              "connectionEstablishedSeconds": 0.245992583,
+              "uploadSeconds": 0.000047141,
+              "downloadSeconds": 0.060600227
+            },
+            {
+              "connectionEstablishedSeconds": 0.248401528,
+              "uploadSeconds": 0.000051407,
+              "downloadSeconds": 0.061628242
+            },
+            {
+              "connectionEstablishedSeconds": 0.254361874,
+              "uploadSeconds": 0.000032809,
+              "downloadSeconds": 0.063058271
+            },
+            {
+              "connectionEstablishedSeconds": 0.25985272,
+              "uploadSeconds": 0.000048011,
+              "downloadSeconds": 0.064490936
+            },
+            {
+              "connectionEstablishedSeconds": 0.251897611,
+              "uploadSeconds": 0.000045946,
+              "downloadSeconds": 0.062066764
+            },
+            {
+              "connectionEstablishedSeconds": 0.248299434,
+              "uploadSeconds": 0.000042741,
+              "downloadSeconds": 0.061555421
+            },
+            {
+              "connectionEstablishedSeconds": 0.240883312,
+              "uploadSeconds": 0.000043219,
+              "downloadSeconds": 0.117887156
+            },
+            {
+              "connectionEstablishedSeconds": 0.253741863,
+              "uploadSeconds": 0.00004853,
+              "downloadSeconds": 0.125259598
+            },
+            {
+              "connectionEstablishedSeconds": 0.259493548,
+              "uploadSeconds": 0.000050997,
+              "downloadSeconds": 0.064455196
+            },
+            {
+              "connectionEstablishedSeconds": 0.257220143,
+              "uploadSeconds": 0.000030118,
+              "downloadSeconds": 0.063426681
+            },
+            {
+              "connectionEstablishedSeconds": 0.246216063,
+              "uploadSeconds": 0.000028691,
+              "downloadSeconds": 0.060675077
+            },
+            {
+              "connectionEstablishedSeconds": 0.246821242,
+              "uploadSeconds": 0.000028037,
+              "downloadSeconds": 0.061043753
+            },
+            {
+              "connectionEstablishedSeconds": 0.249273925,
+              "uploadSeconds": 0.000046106,
+              "downloadSeconds": 0.061133894
+            },
+            {
+              "connectionEstablishedSeconds": 0.246100615,
+              "uploadSeconds": 0.000027492,
+              "downloadSeconds": 0.060683507
+            },
+            {
+              "connectionEstablishedSeconds": 0.254584769,
+              "uploadSeconds": 0.000029223,
+              "downloadSeconds": 0.063075631
+            },
+            {
+              "connectionEstablishedSeconds": 0.251221668,
+              "uploadSeconds": 0.000019521,
+              "downloadSeconds": 0.061797471
+            },
+            {
+              "connectionEstablishedSeconds": 0.261594006,
+              "uploadSeconds": 0.000047526,
+              "downloadSeconds": 0.064500959
+            },
+            {
+              "connectionEstablishedSeconds": 0.255117473,
+              "uploadSeconds": 0.000034003,
+              "downloadSeconds": 0.062865607
+            },
+            {
+              "connectionEstablishedSeconds": 0.259363593,
+              "uploadSeconds": 0.000025603,
+              "downloadSeconds": 0.064428592
+            },
+            {
+              "connectionEstablishedSeconds": 0.256991666,
+              "uploadSeconds": 0.000038121,
+              "downloadSeconds": 0.126587719
+            },
+            {
+              "connectionEstablishedSeconds": 0.256222985,
+              "uploadSeconds": 0.000034028,
+              "downloadSeconds": 0.063668828
+            },
+            {
+              "connectionEstablishedSeconds": 0.246441053,
+              "uploadSeconds": 0.000054022,
+              "downloadSeconds": 0.060693367
+            },
+            {
+              "connectionEstablishedSeconds": 0.250188094,
+              "uploadSeconds": 0.000047133,
+              "downloadSeconds": 0.122659442
+            },
+            {
+              "connectionEstablishedSeconds": 0.250006049,
+              "uploadSeconds": 0.000029392,
+              "downloadSeconds": 0.061585645
+            },
+            {
+              "connectionEstablishedSeconds": 0.257920889,
+              "uploadSeconds": 0.000032591,
+              "downloadSeconds": 0.063517178
+            },
+            {
+              "connectionEstablishedSeconds": 0.250465138,
+              "uploadSeconds": 0.000029506,
+              "downloadSeconds": 0.061617335
+            },
+            {
+              "connectionEstablishedSeconds": 0.245868712,
+              "uploadSeconds": 0.000027911,
+              "downloadSeconds": 0.060637803
+            },
+            {
+              "connectionEstablishedSeconds": 0.25524009,
+              "uploadSeconds": 0.000035514,
+              "downloadSeconds": 0.125044365
+            },
+            {
+              "connectionEstablishedSeconds": 0.261456952,
+              "uploadSeconds": 0.00005156,
+              "downloadSeconds": 0.064948587
+            },
+            {
+              "connectionEstablishedSeconds": 0.238494124,
+              "uploadSeconds": 0.000055281,
+              "downloadSeconds": 0.117753391
+            },
+            {
+              "connectionEstablishedSeconds": 0.254645427,
+              "uploadSeconds": 0.000029023,
+              "downloadSeconds": 0.063098551
+            },
+            {
+              "connectionEstablishedSeconds": 0.260883166,
+              "uploadSeconds": 0.000030938,
+              "downloadSeconds": 0.06422298
+            },
+            {
+              "connectionEstablishedSeconds": 0.245937147,
+              "uploadSeconds": 0.000052181,
+              "downloadSeconds": 0.120588066
+            },
+            {
+              "connectionEstablishedSeconds": 0.246092408,
+              "uploadSeconds": 0.000043654,
+              "downloadSeconds": 0.060575934
+            },
+            {
+              "connectionEstablishedSeconds": 0.252276353,
+              "uploadSeconds": 0.000052674,
+              "downloadSeconds": 0.062225078
+            },
+            {
+              "connectionEstablishedSeconds": 0.254035258,
+              "uploadSeconds": 0.000029773,
+              "downloadSeconds": 0.063026433
+            },
+            {
+              "connectionEstablishedSeconds": 0.244492974,
+              "uploadSeconds": 0.000048903,
+              "downloadSeconds": 0.060129062
+            },
+            {
+              "connectionEstablishedSeconds": 0.248731287,
+              "uploadSeconds": 0.000054764,
+              "downloadSeconds": 0.061207054
+            },
+            {
+              "connectionEstablishedSeconds": 0.25220207,
+              "uploadSeconds": 0.00002132,
+              "downloadSeconds": 0.062101733
+            },
+            {
+              "connectionEstablishedSeconds": 0.259540618,
+              "uploadSeconds": 0.000029737,
+              "downloadSeconds": 0.06402198
+            },
+            {
+              "connectionEstablishedSeconds": 0.259530792,
+              "uploadSeconds": 0.000036374,
+              "downloadSeconds": 0.064350389
+            },
+            {
+              "connectionEstablishedSeconds": 0.256305199,
+              "uploadSeconds": 0.000032371,
+              "downloadSeconds": 0.063607602
+            }
+          ],
+          "implementation": "go-libp2p",
+          "version": "v0.27",
+          "transportStack": "tcp"
+        },
+        {
+          "result": [
+            {
+              "connectionEstablishedSeconds": 0.127014114,
+              "uploadSeconds": 0.0000599,
+              "downloadSeconds": 0.061673031
+            },
+            {
+              "connectionEstablishedSeconds": 0.131064058,
+              "uploadSeconds": 0.000050908,
+              "downloadSeconds": 0.062537019
+            },
+            {
+              "connectionEstablishedSeconds": 0.135060958,
+              "uploadSeconds": 0.000017065,
+              "downloadSeconds": 0.064952383
+            },
+            {
+              "connectionEstablishedSeconds": 0.130469846,
+              "uploadSeconds": 0.000049737,
+              "downloadSeconds": 0.063554424
+            },
+            {
+              "connectionEstablishedSeconds": 0.131299513,
+              "uploadSeconds": 0.000026493,
+              "downloadSeconds": 0.063977902
+            },
+            {
+              "connectionEstablishedSeconds": 0.130389784,
+              "uploadSeconds": 0.000040725,
+              "downloadSeconds": 0.063581044
+            },
+            {
+              "connectionEstablishedSeconds": 0.129796216,
+              "uploadSeconds": 0.000051097,
+              "downloadSeconds": 0.06321556
+            },
+            {
+              "connectionEstablishedSeconds": 0.124704159,
+              "uploadSeconds": 0.000049439,
+              "downloadSeconds": 0.059809119
+            },
+            {
+              "connectionEstablishedSeconds": 0.132066235,
+              "uploadSeconds": 0.000055003,
+              "downloadSeconds": 0.063481356
+            },
+            {
+              "connectionEstablishedSeconds": 0.131711288,
+              "uploadSeconds": 0.000027967,
+              "downloadSeconds": 0.06333515
+            },
+            {
+              "connectionEstablishedSeconds": 0.127610138,
+              "uploadSeconds": 0.000027948,
+              "downloadSeconds": 0.061228341
+            },
+            {
+              "connectionEstablishedSeconds": 0.126055326,
+              "uploadSeconds": 0.000021998,
+              "downloadSeconds": 0.06142716
+            },
+            {
+              "connectionEstablishedSeconds": 0.123515801,
+              "uploadSeconds": 0.000009845,
+              "downloadSeconds": 0.060132657
+            },
+            {
+              "connectionEstablishedSeconds": 0.124995443,
+              "uploadSeconds": 0.000030619,
+              "downloadSeconds": 0.060910578
+            },
+            {
+              "connectionEstablishedSeconds": 0.131803299,
+              "uploadSeconds": 0.00004698,
+              "downloadSeconds": 0.064321877
+            },
+            {
+              "connectionEstablishedSeconds": 0.132100006,
+              "uploadSeconds": 0.000031614,
+              "downloadSeconds": 0.064446827
+            },
+            {
+              "connectionEstablishedSeconds": 0.131765427,
+              "uploadSeconds": 0.000031545,
+              "downloadSeconds": 0.064305327
+            },
+            {
+              "connectionEstablishedSeconds": 0.131987682,
+              "uploadSeconds": 0.000047611,
+              "downloadSeconds": 0.063545341
+            },
+            {
+              "connectionEstablishedSeconds": 0.13084145,
+              "uploadSeconds": 0.000031347,
+              "downloadSeconds": 0.064606754
+            },
+            {
+              "connectionEstablishedSeconds": 0.126397034,
+              "uploadSeconds": 0.000055546,
+              "downloadSeconds": 0.060616997
+            },
+            {
+              "connectionEstablishedSeconds": 0.133111555,
+              "uploadSeconds": 0.000027453,
+              "downloadSeconds": 0.064002229
+            },
+            {
+              "connectionEstablishedSeconds": 0.130509598,
+              "uploadSeconds": 0.000024595,
+              "downloadSeconds": 0.063286999
+            },
+            {
+              "connectionEstablishedSeconds": 0.124489373,
+              "uploadSeconds": 0.000020358,
+              "downloadSeconds": 0.060647534
+            },
+            {
+              "connectionEstablishedSeconds": 0.130411284,
+              "uploadSeconds": 0.000032773,
+              "downloadSeconds": 0.063491236
+            },
+            {
+              "connectionEstablishedSeconds": 0.128244464,
+              "uploadSeconds": 0.000031167,
+              "downloadSeconds": 0.061581905
+            },
+            {
+              "connectionEstablishedSeconds": 0.134535364,
+              "uploadSeconds": 0.0000261,
+              "downloadSeconds": 0.064805122
+            },
+            {
+              "connectionEstablishedSeconds": 0.13128741,
+              "uploadSeconds": 0.000050089,
+              "downloadSeconds": 0.063958387
+            },
+            {
+              "connectionEstablishedSeconds": 0.131984212,
+              "uploadSeconds": 0.000048742,
+              "downloadSeconds": 0.063452836
+            },
+            {
+              "connectionEstablishedSeconds": 0.130849195,
+              "uploadSeconds": 0.000027516,
+              "downloadSeconds": 0.062873869
+            },
+            {
+              "connectionEstablishedSeconds": 0.132367723,
+              "uploadSeconds": 0.000028605,
+              "downloadSeconds": 0.063657122
+            },
+            {
+              "connectionEstablishedSeconds": 0.131658661,
+              "uploadSeconds": 0.000033672,
+              "downloadSeconds": 0.064163204
+            },
+            {
+              "connectionEstablishedSeconds": 0.12824671,
+              "uploadSeconds": 0.000054562,
+              "downloadSeconds": 0.061647757
+            },
+            {
+              "connectionEstablishedSeconds": 0.126312532,
+              "uploadSeconds": 0.000048885,
+              "downloadSeconds": 0.0607011
+            },
+            {
+              "connectionEstablishedSeconds": 0.131843825,
+              "uploadSeconds": 0.000051974,
+              "downloadSeconds": 0.063365075
+            },
+            {
+              "connectionEstablishedSeconds": 0.134680989,
+              "uploadSeconds": 0.00005269,
+              "downloadSeconds": 0.064523439
+            },
+            {
+              "connectionEstablishedSeconds": 0.131149962,
+              "uploadSeconds": 0.00002484,
+              "downloadSeconds": 0.063040136
+            },
+            {
+              "connectionEstablishedSeconds": 0.131163906,
+              "uploadSeconds": 0.00002525,
+              "downloadSeconds": 0.062826936
+            },
+            {
+              "connectionEstablishedSeconds": 0.131417191,
+              "uploadSeconds": 0.000033475,
+              "downloadSeconds": 0.063211569
+            },
+            {
+              "connectionEstablishedSeconds": 0.129321818,
+              "uploadSeconds": 0.000021761,
+              "downloadSeconds": 0.062047175
+            },
+            {
+              "connectionEstablishedSeconds": 0.133113708,
+              "uploadSeconds": 0.000042621,
+              "downloadSeconds": 0.064113658
+            },
+            {
+              "connectionEstablishedSeconds": 0.13301228,
+              "uploadSeconds": 0.000047067,
+              "downloadSeconds": 0.063916395
+            },
+            {
+              "connectionEstablishedSeconds": 0.12935223,
+              "uploadSeconds": 0.000055131,
+              "downloadSeconds": 0.06210632
+            },
+            {
+              "connectionEstablishedSeconds": 0.127551422,
+              "uploadSeconds": 0.000028851,
+              "downloadSeconds": 0.062295024
+            },
+            {
+              "connectionEstablishedSeconds": 0.126331834,
+              "uploadSeconds": 0.000045101,
+              "downloadSeconds": 0.061509655
+            },
+            {
+              "connectionEstablishedSeconds": 0.131532682,
+              "uploadSeconds": 0.000052301,
+              "downloadSeconds": 0.062588573
+            },
+            {
+              "connectionEstablishedSeconds": 0.127919054,
+              "uploadSeconds": 0.000026387,
+              "downloadSeconds": 0.062280304
+            },
+            {
+              "connectionEstablishedSeconds": 0.129176435,
+              "uploadSeconds": 0.000052084,
+              "downloadSeconds": 0.062872466
+            },
+            {
+              "connectionEstablishedSeconds": 0.128833594,
+              "uploadSeconds": 0.000031408,
+              "downloadSeconds": 0.06280984
+            },
+            {
+              "connectionEstablishedSeconds": 0.131885794,
+              "uploadSeconds": 0.000048593,
+              "downloadSeconds": 0.063311591
+            },
+            {
+              "connectionEstablishedSeconds": 0.127375808,
+              "uploadSeconds": 0.000049019,
+              "downloadSeconds": 0.061146478
+            },
+            {
+              "connectionEstablishedSeconds": 0.12153029,
+              "uploadSeconds": 0.0000186,
+              "downloadSeconds": 0.059066564
+            },
+            {
+              "connectionEstablishedSeconds": 0.126343007,
+              "uploadSeconds": 0.000023853,
+              "downloadSeconds": 0.061518531
+            },
+            {
+              "connectionEstablishedSeconds": 0.130463081,
+              "uploadSeconds": 0.000024353,
+              "downloadSeconds": 0.062718483
+            },
+            {
+              "connectionEstablishedSeconds": 0.130155148,
+              "uploadSeconds": 0.00003375,
+              "downloadSeconds": 0.062584006
+            },
+            {
+              "connectionEstablishedSeconds": 0.127377421,
+              "uploadSeconds": 0.000050033,
+              "downloadSeconds": 0.061144804
+            },
+            {
+              "connectionEstablishedSeconds": 0.132263716,
+              "uploadSeconds": 0.000053572,
+              "downloadSeconds": 0.064441815
+            },
+            {
+              "connectionEstablishedSeconds": 0.130906676,
+              "uploadSeconds": 0.000050526,
+              "downloadSeconds": 0.062900437
+            },
+            {
+              "connectionEstablishedSeconds": 0.132053669,
+              "uploadSeconds": 0.000020333,
+              "downloadSeconds": 0.063625907
+            },
+            {
+              "connectionEstablishedSeconds": 0.126343969,
+              "uploadSeconds": 0.000048602,
+              "downloadSeconds": 0.061562747
+            },
+            {
+              "connectionEstablishedSeconds": 0.13059195,
+              "uploadSeconds": 0.000038032,
+              "downloadSeconds": 0.06359932
+            },
+            {
+              "connectionEstablishedSeconds": 0.125306765,
+              "uploadSeconds": 0.000025331,
+              "downloadSeconds": 0.06024974
+            },
+            {
+              "connectionEstablishedSeconds": 0.131732246,
+              "uploadSeconds": 0.000054432,
+              "downloadSeconds": 0.063232591
+            },
+            {
+              "connectionEstablishedSeconds": 0.135945769,
+              "uploadSeconds": 0.000030859,
+              "downloadSeconds": 0.064563121
+            },
+            {
+              "connectionEstablishedSeconds": 0.130211557,
+              "uploadSeconds": 0.000045455,
+              "downloadSeconds": 0.063471773
+            },
+            {
+              "connectionEstablishedSeconds": 0.131806838,
+              "uploadSeconds": 0.00004764,
+              "downloadSeconds": 0.063356395
+            },
+            {
+              "connectionEstablishedSeconds": 0.126735568,
+              "uploadSeconds": 0.000050096,
+              "downloadSeconds": 0.060697868
+            },
+            {
+              "connectionEstablishedSeconds": 0.131880335,
+              "uploadSeconds": 0.000049507,
+              "downloadSeconds": 0.064224812
+            },
+            {
+              "connectionEstablishedSeconds": 0.128441843,
+              "uploadSeconds": 0.000047943,
+              "downloadSeconds": 0.06163169
+            },
+            {
+              "connectionEstablishedSeconds": 0.132509961,
+              "uploadSeconds": 0.000028055,
+              "downloadSeconds": 0.06452755
+            },
+            {
+              "connectionEstablishedSeconds": 0.125300073,
+              "uploadSeconds": 0.000028357,
+              "downloadSeconds": 0.060982066
+            },
+            {
+              "connectionEstablishedSeconds": 0.128716768,
+              "uploadSeconds": 0.00004992,
+              "downloadSeconds": 0.061736618
+            },
+            {
+              "connectionEstablishedSeconds": 0.129722375,
+              "uploadSeconds": 0.000027386,
+              "downloadSeconds": 0.063147505
+            },
+            {
+              "connectionEstablishedSeconds": 0.132837561,
+              "uploadSeconds": 0.000049241,
+              "downloadSeconds": 0.063550104
+            },
+            {
+              "connectionEstablishedSeconds": 0.133588995,
+              "uploadSeconds": 0.00003146,
+              "downloadSeconds": 0.065113178
+            },
+            {
+              "connectionEstablishedSeconds": 0.125069476,
+              "uploadSeconds": 0.000043879,
+              "downloadSeconds": 0.060026593
+            },
+            {
+              "connectionEstablishedSeconds": 0.128337827,
+              "uploadSeconds": 0.000030024,
+              "downloadSeconds": 0.062603579
+            },
+            {
+              "connectionEstablishedSeconds": 0.129434388,
+              "uploadSeconds": 0.00002842,
+              "downloadSeconds": 0.062977058
+            },
+            {
+              "connectionEstablishedSeconds": 0.131637561,
+              "uploadSeconds": 0.000052806,
+              "downloadSeconds": 0.064200689
+            },
+            {
+              "connectionEstablishedSeconds": 0.128330334,
+              "uploadSeconds": 0.000027132,
+              "downloadSeconds": 0.061569876
+            },
+            {
+              "connectionEstablishedSeconds": 0.130216018,
+              "uploadSeconds": 0.000029266,
+              "downloadSeconds": 0.063386904
+            },
+            {
+              "connectionEstablishedSeconds": 0.127663856,
+              "uploadSeconds": 0.000025337,
+              "downloadSeconds": 0.062249422
+            },
+            {
+              "connectionEstablishedSeconds": 0.130767875,
+              "uploadSeconds": 0.000048326,
+              "downloadSeconds": 0.062960272
+            },
+            {
+              "connectionEstablishedSeconds": 0.13139533,
+              "uploadSeconds": 0.000045884,
+              "downloadSeconds": 0.063091639
+            },
+            {
+              "connectionEstablishedSeconds": 0.132284539,
+              "uploadSeconds": 0.000046307,
+              "downloadSeconds": 0.064433543
+            },
+            {
+              "connectionEstablishedSeconds": 0.128954497,
+              "uploadSeconds": 0.000046395,
+              "downloadSeconds": 0.061946524
+            },
+            {
+              "connectionEstablishedSeconds": 0.13195501,
+              "uploadSeconds": 0.000028593,
+              "downloadSeconds": 0.064321822
+            },
+            {
+              "connectionEstablishedSeconds": 0.129169046,
+              "uploadSeconds": 0.000051974,
+              "downloadSeconds": 0.062097421
+            },
+            {
+              "connectionEstablishedSeconds": 0.131516378,
+              "uploadSeconds": 0.000018617,
+              "downloadSeconds": 0.064170442
+            },
+            {
+              "connectionEstablishedSeconds": 0.126709992,
+              "uploadSeconds": 0.000047803,
+              "downloadSeconds": 0.061721005
+            },
+            {
+              "connectionEstablishedSeconds": 0.134914003,
+              "uploadSeconds": 0.000027086,
+              "downloadSeconds": 0.064980719
+            },
+            {
+              "connectionEstablishedSeconds": 0.130706472,
+              "uploadSeconds": 0.000028876,
+              "downloadSeconds": 0.062787784
+            },
+            {
+              "connectionEstablishedSeconds": 0.132152472,
+              "uploadSeconds": 0.000058598,
+              "downloadSeconds": 0.063518087
+            },
+            {
+              "connectionEstablishedSeconds": 0.132736855,
+              "uploadSeconds": 0.000040063,
+              "downloadSeconds": 0.06371304
+            },
+            {
+              "connectionEstablishedSeconds": 0.125053099,
+              "uploadSeconds": 0.000049355,
+              "downloadSeconds": 0.060821904
+            },
+            {
+              "connectionEstablishedSeconds": 0.130546318,
+              "uploadSeconds": 0.000049924,
+              "downloadSeconds": 0.062680299
+            },
+            {
+              "connectionEstablishedSeconds": 0.119719828,
+              "uploadSeconds": 0.0000306,
+              "downloadSeconds": 0.058134544
+            },
+            {
+              "connectionEstablishedSeconds": 0.126296963,
+              "uploadSeconds": 0.000025112,
+              "downloadSeconds": 0.060554586
+            },
+            {
+              "connectionEstablishedSeconds": 0.128162133,
+              "uploadSeconds": 0.000048249,
+              "downloadSeconds": 0.061574806
+            },
+            {
+              "connectionEstablishedSeconds": 0.13229105,
+              "uploadSeconds": 0.00005374,
+              "downloadSeconds": 0.063552066
+            },
+            {
+              "connectionEstablishedSeconds": 0.129765991,
+              "uploadSeconds": 0.000046291,
+              "downloadSeconds": 0.063203821
+            }
+          ],
+          "implementation": "go-libp2p",
+          "version": "v0.27",
+          "transportStack": "quic-v1"
+        }
+      ],
+      "parameters": {
+        "uploadBytes": 1,
+        "downloadBytes": 1
+      }
+    }
+  ],
+  "pings": {
+    "unit": "s",
+    "results": [
+      0.0615,
+      0.061399999999999996,
+      0.061399999999999996,
+      0.061399999999999996,
+      0.0615,
+      0.061399999999999996,
+      0.0616,
+      0.0615,
+      0.061399999999999996,
+      0.061799999999999994,
+      0.0615,
+      0.061399999999999996,
+      0.0615,
+      0.061399999999999996,
+      0.061399999999999996,
+      0.0616,
+      0.061399999999999996,
+      0.061399999999999996,
+      0.0616,
+      0.061399999999999996,
+      0.0615,
+      0.062,
+      0.061399999999999996,
+      0.0625,
+      0.061399999999999996,
+      0.061399999999999996,
+      0.0616,
+      0.061799999999999994,
+      0.061399999999999996,
+      0.061399999999999996,
+      0.061399999999999996,
+      0.062200000000000005,
+      0.061399999999999996,
+      0.0615,
+      0.0627,
+      0.062200000000000005,
+      0.061399999999999996,
+      0.061399999999999996,
+      0.061399999999999996,
+      0.061399999999999996,
+      0.061399999999999996,
+      0.061399999999999996,
+      0.061399999999999996,
+      0.061399999999999996,
+      0.061399999999999996,
+      0.0615,
+      0.061399999999999996,
+      0.0615,
+      0.061399999999999996,
+      0.061399999999999996,
+      0.061399999999999996,
+      0.0619,
+      0.061399999999999996,
+      0.061399999999999996,
+      0.0615,
+      0.061399999999999996,
+      0.0615,
+      0.061799999999999994,
+      0.0615,
+      0.061399999999999996,
+      0.062299999999999994,
+      0.061399999999999996,
+      0.061700000000000005,
+      0.061399999999999996,
+      0.062,
+      0.0616,
+      0.061399999999999996,
+      0.061399999999999996,
+      0.0615,
+      0.061399999999999996,
+      0.0616,
+      0.0615,
+      0.061399999999999996,
+      0.0616,
+      0.061399999999999996,
+      0.061399999999999996,
+      0.061399999999999996,
+      0.061399999999999996,
+      0.061399999999999996,
+      0.061399999999999996,
+      0.061399999999999996,
+      0.061399999999999996,
+      0.061399999999999996,
+      0.061399999999999996,
+      0.061399999999999996,
+      0.061399999999999996,
+      0.061399999999999996,
+      0.0615,
+      0.061399999999999996,
+      0.061399999999999996,
+      0.061399999999999996,
+      0.061399999999999996,
+      0.061399999999999996,
+      0.061399999999999996,
+      0.061399999999999996,
+      0.061399999999999996,
+      0.061399999999999996,
+      0.061399999999999996,
+      0.061399999999999996,
+      0.061399999999999996
+    ]
+  },
+  "iperf": {
+    "unit": "bit/s",
+    "results": [
+      3330000000,
+      3340000000,
+      3330000000,
+      3340000000,
+      3340000000,
+      3340000000,
+      3340000000,
+      3340000000,
+      3340000000,
+      3330000000,
+      3330000000,
+      3330000000,
+      3330000000,
+      3330000000,
+      3330000000,
+      3340000000,
+      3330000000,
+      3340000000,
+      3340000000,
+      3330000000,
+      3330000000,
+      3340000000,
+      3340000000,
+      3340000000,
+      3340000000,
+      3340000000,
+      3340000000,
+      3340000000,
+      3340000000,
+      3340000000,
+      3340000000,
+      3340000000,
+      3340000000,
+      3340000000,
+      3340000000,
+      3340000000,
+      3340000000,
+      3340000000,
+      3340000000,
+      3340000000,
+      3300000000,
+      3290000000,
+      3280000000,
+      3280000000,
+      3280000000,
+      3320000000,
+      3290000000,
+      3350000000,
+      3350000000,
+      3350000000,
+      3350000000,
+      3350000000,
+      3350000000,
+      3350000000,
+      3350000000,
+      3350000000,
+      3350000000,
+      3350000000,
+      3350000000,
+      3350000000,
+      3330000000,
+      2830000000
+    ]
+  }
+}
