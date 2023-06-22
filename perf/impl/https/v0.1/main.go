@@ -82,7 +82,7 @@ func (z *zeroReader) Read(p []byte) (n int, err error) {
 	// calculate the number of zeros to write
 	n = len(p)
 	if n > z.n {
-		n = int(z.n)
+		n = z.n
 	}
 	if n > len(zeroSlice) {
 		n = len(zeroSlice)
