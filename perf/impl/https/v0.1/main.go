@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -61,43 +60,35 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func newRequestReader(downloadBytes uint64, uploadBytes uint64) io.Reader {
-	p := make([]byte, 8)
-	binary.BigEndian.PutUint64(p, downloadBytes)
+var zeroSlice = make([]byte, BlockSize) // Pre-made zero-filled slice
 
-	return io.MultiReader(bytes.NewReader(p), &zeroReader{n: int(uploadBytes)})
+type customReader struct {
+	downloadBytes uint64
+	uploadBytes   uint64
+	position      uint64
 }
 
-var zeroSlice = make([]byte, BlockSize)
+func (c *customReader) Read(p []byte) (int, error) {
+	if c.position < 8 {
+		binary.BigEndian.PutUint64(p, c.downloadBytes)
+		c.position += 8
+		return 8, nil
+	} else if c.position-8 < c.uploadBytes {
+		bytesToWrite := min(min(len(p), int(c.uploadBytes-(c.position-8))), len(zeroSlice))
+		copy(p[:bytesToWrite], zeroSlice[:bytesToWrite]) // zero the slice
+		c.position += uint64(bytesToWrite)
+		return bytesToWrite, nil
+	}
 
-type zeroReader struct {
-	n int
+	return 0, io.EOF
 }
 
-func (z *zeroReader) Read(p []byte) (n int, err error) {
-	if z.n <= 0 {
-		return 0, io.EOF
+// Helper function to get minimum of two integers
+func min(a, b int) int {
+	if a < b {
+		return a
 	}
-
-	// calculate the number of zeros to write
-	n = len(p)
-	if n > z.n {
-		n = int(z.n)
-	}
-	if n > len(zeroSlice) {
-		n = len(zeroSlice)
-	}
-
-	// set the necessary bytes to zero
-	copy(p, zeroSlice[:n])
-
-	z.n -= n
-
-	if z.n == 0 {
-		err = io.EOF
-	}
-
-	return n, err
+	return b
 }
 
 func runClient(serverAddr string, uploadBytes, downloadBytes uint64) (time.Duration, time.Duration, error) {
@@ -109,7 +100,7 @@ func runClient(serverAddr string, uploadBytes, downloadBytes uint64) (time.Durat
 		},
 	}
 
-	reqBody := newRequestReader(downloadBytes, uploadBytes)
+	reqBody := &customReader{downloadBytes: downloadBytes, uploadBytes: uploadBytes}
 
 	req, err := http.NewRequest("POST", fmt.Sprintf("https://%s/", serverAddr), reqBody)
 	if err != nil {
