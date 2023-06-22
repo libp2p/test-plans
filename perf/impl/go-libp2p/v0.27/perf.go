@@ -17,9 +17,8 @@ import (
 var log = logging.Logger("perf")
 
 const (
-	BlockSize = 64 << 10
-
-	ID = "/perf/1.0.0"
+	ID        = "/perf/1.0.0"
+	blockSize = 64 << 10
 )
 
 type PerfService struct {
@@ -32,10 +31,9 @@ func NewPerfService(h host.Host) *PerfService {
 	return ps
 }
 
-func (p *PerfService) PerfHandler(s network.Stream) {
+func (ps *PerfService) PerfHandler(s network.Stream) {
 	u64Buf := make([]byte, 8)
-	_, err := io.ReadFull(s, u64Buf)
-	if err != nil {
+	if _, err := io.ReadFull(s, u64Buf); err != nil {
 		log.Errorw("err", err)
 		s.Reset()
 		return
@@ -43,51 +41,18 @@ func (p *PerfService) PerfHandler(s network.Stream) {
 
 	bytesToSend := binary.BigEndian.Uint64(u64Buf)
 
-	_, err = p.drainStream(context.Background(), s)
-	if err != nil {
+	if _, err := drainStream(s); err != nil {
 		log.Errorw("err", err)
 		s.Reset()
 		return
 	}
 
-	err = p.sendBytes(context.Background(), s, bytesToSend)
-	if err != nil {
+	if err := sendBytes(s, bytesToSend); err != nil {
 		log.Errorw("err", err)
 		s.Reset()
 		return
-	}
-
-}
-
-func (ps *PerfService) sendBytes(ctx context.Context, s network.Stream, bytesToSend uint64) error {
-	buf := pool.Get(BlockSize)
-	defer pool.Put(buf)
-
-	for bytesToSend > 0 {
-		toSend := buf
-		if bytesToSend < BlockSize {
-			toSend = buf[:bytesToSend]
-		}
-
-		n, err := s.Write(toSend)
-		if err != nil {
-			return err
-		}
-		bytesToSend -= uint64(n)
 	}
 	s.CloseWrite()
-
-	return nil
-}
-
-func (ps *PerfService) drainStream(ctx context.Context, s network.Stream) (uint64, error) {
-	var recvd int64
-	recvd, err := io.Copy(io.Discard, s)
-	if err != nil && err != io.EOF {
-		s.Reset()
-		return uint64(recvd), err
-	}
-	return uint64(recvd), nil
 }
 
 func (ps *PerfService) RunPerf(ctx context.Context, p peer.ID, bytesToSend uint64, bytesToRecv uint64) (time.Duration, time.Duration, error) {
@@ -105,14 +70,13 @@ func (ps *PerfService) RunPerf(ctx context.Context, p peer.ID, bytesToSend uint6
 	}
 
 	sendStart := time.Now()
-	err = ps.sendBytes(ctx, s, bytesToSend)
-	if err != nil {
+	if err := sendBytes(s, bytesToSend); err != nil {
 		return 0, 0, err
 	}
 	sendDuration := time.Since(sendStart)
 
 	recvStart := time.Now()
-	recvd, err := ps.drainStream(ctx, s)
+	recvd, err := drainStream(s)
 	if err != nil {
 		return sendDuration, 0, err
 	}
@@ -123,4 +87,32 @@ func (ps *PerfService) RunPerf(ctx context.Context, p peer.ID, bytesToSend uint6
 	}
 
 	return sendDuration, recvDuration, nil
+}
+
+func sendBytes(s io.Writer, bytesToSend uint64) error {
+	buf := pool.Get(blockSize)
+	defer pool.Put(buf)
+
+	for bytesToSend > 0 {
+		toSend := buf
+		if bytesToSend < blockSize {
+			toSend = buf[:bytesToSend]
+		}
+
+		n, err := s.Write(toSend)
+		if err != nil {
+			return err
+		}
+		bytesToSend -= uint64(n)
+	}
+	return nil
+}
+
+func drainStream(s io.Reader) (uint64, error) {
+	var recvd int64
+	recvd, err := io.Copy(io.Discard, s)
+	if err != nil && err != io.EOF {
+		return uint64(recvd), err
+	}
+	return uint64(recvd), nil
 }
