@@ -77,7 +77,7 @@ func runClient(serverAddr string, uploadBytes, downloadBytes uint64) (time.Durat
 	}
 
 	b := make([]byte, 8)
-	binary.BigEndian.PutUint64(b, uploadBytes)
+	binary.BigEndian.PutUint64(b, downloadBytes)
 
 	req, err := http.NewRequest(
 		http.MethodPost,
