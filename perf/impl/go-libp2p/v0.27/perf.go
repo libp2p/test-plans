@@ -73,6 +73,7 @@ func (ps *PerfService) RunPerf(ctx context.Context, p peer.ID, bytesToSend uint6
 	if err := sendBytes(s, bytesToSend); err != nil {
 		return 0, 0, err
 	}
+	s.CloseWrite()
 	sendDuration := time.Since(sendStart)
 
 	recvStart := time.Now()
