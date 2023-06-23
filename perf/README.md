@@ -53,7 +53,7 @@ _WARNING_: Running the perf tests might take a while.
             ```json
             {"latency": 0.246442851}
             ```
-             Note that the measurement includes the time to (1) establish the
-             connection, (2) upload the bytes and (3) download the bytes.
+            Note that the measurement includes the time to (1) establish the
+            connection, (2) upload the bytes and (3) download the bytes.
 2. In `impl/Makefile` include your implementation in the `all` target.
 3. Reference implementation in `runner/src/versions.ts`.
