@@ -3,8 +3,9 @@ JS_SUBDIRS := $(wildcard impl/js/*/.)
 RUST_SUBDIRS := $(wildcard impl/rust/*/.)
 NIM_SUBDIRS := $(wildcard impl/nim/*/.)
 ZIG_SUBDIRS := $(wildcard impl/zig/*/.)
+JAVA_SUBDIRS := $(wildcard impl/java/*/.)
 
-all: $(GO_SUBDIRS) $(JS_SUBDIRS) $(RUST_SUBDIRS) $(NIM_SUBDIRS) $(ZIG_SUBDIRS)
+all: $(GO_SUBDIRS) $(JS_SUBDIRS) $(RUST_SUBDIRS) $(NIM_SUBDIRS) $(ZIG_SUBDIRS) $(JAVA_SUBDIRS)
 $(JS_SUBDIRS):
 	$(MAKE) -C $@
 $(GO_SUBDIRS):
@@ -15,6 +16,7 @@ $(NIM_SUBDIRS):
 	$(MAKE) -C $@
 $(ZIG_SUBDIRS):
 	$(MAKE) -C $@
+$(JAVA_SUBDIRS):
+	$(MAKE) -C $@
 
-
-.PHONY: $(GO_SUBDIRS) $(JS_SUBDIRS) $(RUST_SUBDIRS) $(NIM_SUBDIRS) $(ZIG_SUBDIRS) all
+.PHONY: $(GO_SUBDIRS) $(JS_SUBDIRS) $(RUST_SUBDIRS) $(NIM_SUBDIRS) $(ZIG_SUBDIRS) $(JAVA_SUBDIRS) all
