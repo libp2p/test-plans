@@ -62,6 +62,13 @@ export const versions: Array<Version> = [
         muxers: ["mplex", "yamux"],
     },
     {
+        id: "rust-v0.52.0",
+        containerImageID: rustv051.imageID,
+        transports: ["ws", "tcp", "quic-v1", "webrtc-direct"],
+        secureChannels: ["tls", "noise"],
+        muxers: ["mplex", "yamux"],
+    },
+    {
         id: "js-v0.41.0",
         containerImageID: jsV041.imageID,
         transports: ["tcp", "ws"],
