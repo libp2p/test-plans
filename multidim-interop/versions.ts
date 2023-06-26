@@ -5,10 +5,10 @@ import gov025 from "./impl/go/v0.25/image.json"
 import gov024 from "./impl/go/v0.24/image.json"
 import gov023 from "./impl/go/v0.23/image.json"
 import gov022 from "./impl/go/v0.22/image.json"
-import rustv048 from "./impl/rust/v0.48/image.json"
 import rustv049 from "./impl/rust/v0.49/image.json"
 import rustv050 from "./impl/rust/v0.50/image.json"
 import rustv051 from "./impl/rust/v0.51/image.json"
+import rustv052 from "./impl/rust/v0.52/image.json"
 import jsV041 from "./impl/js/v0.41/node-image.json"
 import jsV042 from "./impl/js/v0.42/node-image.json"
 import jsV044 from "./impl/js/v0.44/node-image.json"
@@ -34,13 +34,6 @@ export type Version = {
 
 export const versions: Array<Version> = [
     {
-        id: "rust-v0.48.0",
-        containerImageID: rustv048.imageID,
-        transports: ["ws", "tcp"],
-        secureChannels: ["noise"],
-        muxers: ["mplex", "yamux"],
-    },
-    {
         id: "rust-v0.49.0",
         containerImageID: rustv049.imageID,
         transports: ["ws", "tcp"],
@@ -57,6 +50,13 @@ export const versions: Array<Version> = [
     {
         id: "rust-v0.51.0",
         containerImageID: rustv051.imageID,
+        transports: ["ws", "tcp", "quic-v1", "webrtc-direct"],
+        secureChannels: ["tls", "noise"],
+        muxers: ["mplex", "yamux"],
+    },
+    {
+        id: "rust-v0.52.0",
+        containerImageID: rustv052.imageID,
         transports: ["ws", "tcp", "quic-v1", "webrtc-direct"],
         secureChannels: ["tls", "noise"],
         muxers: ["mplex", "yamux"],
