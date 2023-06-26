@@ -55,12 +55,12 @@ import path from "path";
         extraVersions.push(JSON.parse(contents.toString()))
     }
 
-    let testSpecs = await buildTestSpecs(versions.concat(extraVersions))
 
-    const nameFilter = argv["name-filter"]
-    if (nameFilter !== "") {
-        testSpecs = testSpecs.filter((testSpec) => testSpec.name?.includes(nameFilter))
+    let nameFilter: string | null = argv["name-filter"]
+    if (nameFilter === "") {
+        nameFilter = null
     }
+    let testSpecs = await buildTestSpecs(versions.concat(extraVersions), nameFilter)
 
 
     if (argv["emit-only"]) {
