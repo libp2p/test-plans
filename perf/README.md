@@ -51,7 +51,9 @@ _WARNING_: Running the perf tests might take a while.
           - Logging MUST go to stderr.
           - Measurement output is printed to stdout as JSON in the form of:
             ```json
-            {"connectionEstablishedSeconds":0.246442851,"uploadSeconds":0.000002077,"downloadSeconds":0.060712241}
+            {"latency": 0.246442851}
             ```
+            Note that the measurement includes the time to (1) establish the
+            connection, (2) upload the bytes and (3) download the bytes.
 2. In `impl/Makefile` include your implementation in the `all` target.
 3. Reference implementation in `runner/src/versions.ts`.

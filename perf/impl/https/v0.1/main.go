@@ -69,7 +69,7 @@ func (r *nullReader) Read(b []byte) (int, error) {
 	return int(l), nil
 }
 
-func runClient(serverAddr string, uploadBytes, downloadBytes uint64) (time.Duration, time.Duration, error) {
+func runClient(serverAddr string, uploadBytes, downloadBytes uint64) (time.Duration, error) {
 	client := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -88,7 +88,7 @@ func runClient(serverAddr string, uploadBytes, downloadBytes uint64) (time.Durat
 		),
 	)
 	if err != nil {
-		return 0, 0, err
+		return 0, err
 	}
 
 	req.Header.Set("Content-Type", "application/octet-stream")
@@ -97,23 +97,22 @@ func runClient(serverAddr string, uploadBytes, downloadBytes uint64) (time.Durat
 	startTime := time.Now()
 	resp, err := client.Do(req)
 	if err != nil {
-		return 0, 0, err
+		return 0, err
 	}
 	if resp.StatusCode != http.StatusOK {
-		return 0, 0, fmt.Errorf("server returned non-OK status: %d %s", resp.StatusCode, resp.Status)
+		return 0, fmt.Errorf("server returned non-OK status: %d %s", resp.StatusCode, resp.Status)
 	}
-	uploadDoneTime := time.Now()
 	defer resp.Body.Close()
 
 	n, err := drainStream(resp.Body)
 	if err != nil {
-		return 0, 0, fmt.Errorf("error reading response: %w", err)
+		return 0, fmt.Errorf("error reading response: %w", err)
 	}
 	if n != downloadBytes {
-		return 0, 0, fmt.Errorf("expected %d bytes in response, but received %d", downloadBytes, n)
+		return 0, fmt.Errorf("expected %d bytes in response, but received %d", downloadBytes, n)
 	}
 
-	return uploadDoneTime.Sub(startTime), time.Since(uploadDoneTime), nil
+	return time.Since(startTime), nil
 }
 
 func generateEphemeralCertificate() (tls.Certificate, error) {
@@ -168,9 +167,7 @@ func generateEphemeralCertificate() (tls.Certificate, error) {
 }
 
 type Result struct {
-	ConnectionEstablishedSeconds float64 `json:"connectionEstablishedSeconds"`
-	UploadSeconds                float64 `json:"uploadSeconds"`
-	DownloadSeconds              float64 `json:"downloadSeconds"`
+	Latency float64 `json:"latency"`
 }
 
 func main() {
@@ -217,16 +214,13 @@ func main() {
 		}
 
 		// Run the client and print the results
-		upload, download, err := runClient(*serverAddr, *uploadBytes, *downloadBytes)
+		latency, err := runClient(*serverAddr, *uploadBytes, *downloadBytes)
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		jsonB, err := json.Marshal(Result{
-			// TODO: Ideally we would be able to measure the Go std TCP+TLS connection establishment time.
-			ConnectionEstablishedSeconds: 0,
-			UploadSeconds:                upload.Seconds(),
-			DownloadSeconds:              download.Seconds(),
+			Latency: latency.Seconds(),
 		})
 		if err != nil {
 			log.Fatalf("failed to marshal perf result: %s", err)

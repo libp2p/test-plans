@@ -82,17 +82,14 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to dial peer: %s", err)
 	}
-	connectionEstablished := time.Since(start)
 
-	upload, download, err := perf.RunPerf(context.Background(), serverInfo.ID, uint64(*uploadBytes), uint64(*downloadBytes))
+	err = perf.RunPerf(context.Background(), serverInfo.ID, uint64(*uploadBytes), uint64(*downloadBytes))
 	if err != nil {
 		log.Fatalf("failed to execute perf: %s", err)
 	}
 
 	jsonB, err := json.Marshal(Result{
-		ConnectionEstablishedSeconds: connectionEstablished.Seconds(),
-		UploadSeconds:                upload.Seconds(),
-		DownloadSeconds:              download.Seconds(),
+		Latency: time.Since(start).Seconds(),
 	})
 	if err != nil {
 		log.Fatalf("failed to marshal perf result: %s", err)
@@ -102,9 +99,7 @@ func main() {
 }
 
 type Result struct {
-	ConnectionEstablishedSeconds float64 `json:"connectionEstablishedSeconds"`
-	UploadSeconds                float64 `json:"uploadSeconds"`
-	DownloadSeconds              float64 `json:"downloadSeconds"`
+	Latency float64 `json:"latency"`
 }
 
 type simpleReader struct {
