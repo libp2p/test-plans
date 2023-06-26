@@ -1,4 +1,4 @@
-commitSha := 82a80f5174ba4f84f99cdbbf119b0bfe1e1f971b
+commitSha := a5cd126c97b6d8d8328141bfa84cc57e74ebc57c
 
 all: perf
 
@@ -10,7 +10,7 @@ perf-${commitSha}: perf-${commitSha}.zip
 	unzip -o perf-${commitSha}.zip
 
 perf-${commitSha}.zip:
-	wget -O $@ "https://github.com/mxinden/perf/archive/${commitSha}.zip"
+	wget -O $@ "https://github.com/quic-go/perf/archive/${commitSha}.zip"
 
 clean:
 	rm perf-*.zip
