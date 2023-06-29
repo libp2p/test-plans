@@ -8,10 +8,16 @@ function buildExtraEnv(timeoutOverride: { [key: string]: number }, test1ID: stri
     return maxTimeout > 0 ? { "test_timeout_seconds": maxTimeout.toString(10) } : {}
 }
 
-export async function buildTestSpecs(versions: Array<Version>): Promise<Array<ComposeSpecification>> {
-    const containerImages: { [key: string]: string } = {}
+export async function buildTestSpecs(versions: Array<Version>, nameFilter: string | null): Promise<Array<ComposeSpecification>> {
+    const containerImages: { [key: string]: () => string } = {}
     const timeoutOverride: { [key: string]: number } = {}
-    versions.forEach(v => containerImages[v.id] = v.containerImageID)
+    versions.forEach(v => containerImages[v.id] = () => {
+        if (typeof v.containerImageID === "string") {
+            return v.containerImageID
+        }
+
+        return v.containerImageID(v.id)
+    })
     versions.forEach(v => {
         if (v.timeoutSecs) {
             timeoutOverride[v.id] = v.timeoutSecs
@@ -111,7 +117,7 @@ export async function buildTestSpecs(versions: Array<Version>): Promise<Array<Co
             muxer: test.muxer,
             security: test.sec,
             extraEnv: buildExtraEnv(timeoutOverride, test.id1, test.id2)
-        })
+        }, nameFilter)
     )).concat(
         quicQueryResults
             .concat(quicV1QueryResults)
@@ -124,17 +130,21 @@ export async function buildTestSpecs(versions: Array<Version>): Promise<Array<Co
                 listenerID: test.id2,
                 transport: test.transport,
                 extraEnv: buildExtraEnv(timeoutOverride, test.id1, test.id2)
-            })))
+            }, nameFilter)))
+    .filter((spec): spec is ComposeSpecification => spec !== null)
 
     return testSpecs
 }
 
-function buildSpec(containerImages: { [key: string]: string }, { name, dialerID, listenerID, transport, muxer, security, extraEnv }: { name: string, dialerID: string, listenerID: string, transport: string, muxer?: string, security?: string, extraEnv?: { [key: string]: string } }): ComposeSpecification {
+function buildSpec(containerImages: { [key: string]: () => string }, { name, dialerID, listenerID, transport, muxer, security, extraEnv }: { name: string, dialerID: string, listenerID: string, transport: string, muxer?: string, security?: string, extraEnv?: { [key: string]: string } }, nameFilter: string | null): ComposeSpecification | null {
+    if (nameFilter && !name.includes(nameFilter)) {
+        return null
+    }
     return {
         name,
         services: {
             dialer: {
-                image: containerImages[dialerID],
+                image: containerImages[dialerID](),
                 depends_on: ["redis"],
                 environment: {
                     version: dialerID,
@@ -150,7 +160,7 @@ function buildSpec(containerImages: { [key: string]: string }, { name, dialerID,
                 // Add init process to be PID 1 to proxy signals. Rust doesn't
                 // handle SIGINT without this
                 init: true,
-                image: containerImages[listenerID],
+                image: containerImages[listenerID](),
                 depends_on: ["redis"],
                 environment: {
                     version: listenerID,
