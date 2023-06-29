@@ -54,6 +54,7 @@ export async function buildTestSpecs(versions: Array<Version>, nameFilter: strin
     // Generate the testing combinations by SELECT'ing from both transports
     // and muxers tables the distinct combinations where the transport and the muxer
     // of the different libp2p implementations match.
+    const standaloneTransports = ["quic", "quic-v1", "webtransport", "webrtc", "webrtc-direct"]
     const queryResults =
         await db.all(`SELECT DISTINCT a.id as id1, b.id as id2, a.transport, ma.muxer, sa.sec
                      FROM transports a, transports b, muxers ma, muxers mb, secureChannels sa, secureChannels sb
@@ -65,47 +66,15 @@ export async function buildTestSpecs(versions: Array<Version>, nameFilter: strin
                      AND a.transport == b.transport
                      AND sa.sec == sb.sec
                      AND ma.muxer == mb.muxer
-                     -- quic only uses its own muxer/securechannel
-                     AND a.transport != "webtransport"
-                     AND a.transport != "webrtc-direct"
-                     AND a.transport != "webrtc"
-                     AND a.transport != "quic"
-                     AND a.transport != "quic-v1";`);
-    const quicQueryResults =
+                     -- These transports don't define muxers/securechannels
+                     AND a.transport NOT IN ($standaloneTransports);`, { $standaloneTransports: standaloneTransports });
+    const standaloneTransportsQueryResults =
         await db.all(`SELECT DISTINCT a.id as id1, b.id as id2, a.transport
                      FROM transports a, transports b
                      WHERE a.transport == b.transport
                      AND NOT b.onlyDial
-                     -- Only quic transports
-                     AND a.transport == "quic";`);
-    const quicV1QueryResults =
-        await db.all(`SELECT DISTINCT a.id as id1, b.id as id2, a.transport
-                     FROM transports a, transports b
-                     WHERE a.transport == b.transport
-                     AND NOT b.onlyDial
-                     -- Only quic transports
-                     AND a.transport == "quic-v1";`);
-    const webtransportQueryResults =
-        await db.all(`SELECT DISTINCT a.id as id1, b.id as id2, a.transport
-                     FROM transports a, transports b
-                     WHERE a.transport == b.transport
-                     AND NOT b.onlyDial
-                     -- Only webtransport transports
-                     AND a.transport == "webtransport";`);
-    const webrtcQueryResults =
-        await db.all(`SELECT DISTINCT a.id as id1, b.id as id2, a.transport
-                     FROM transports a, transports b
-                     WHERE a.transport == b.transport
-                     AND NOT b.onlyDial
-                     -- Only webrtc transports
-                     AND a.transport == "webrtc";`);
-    const webrtcDirectQueryResults =
-        await db.all(`SELECT DISTINCT a.id as id1, b.id as id2, a.transport
-                     FROM transports a, transports b
-                     WHERE a.transport == b.transport
-                     AND NOT b.onlyDial
-                     -- Only webrtc-direct transports
-                     AND a.transport == "webrtc-direct";`);
+                     -- These transports don't define muxers/securechannels
+                     AND a.transport IN ($standaloneTransports);`, { $standaloneTransports: standaloneTransports });
     await db.close();
 
     const testSpecs = queryResults.map((test): ComposeSpecification => (
@@ -119,19 +88,14 @@ export async function buildTestSpecs(versions: Array<Version>, nameFilter: strin
             extraEnv: buildExtraEnv(timeoutOverride, test.id1, test.id2)
         }, nameFilter)
     )).concat(
-        quicQueryResults
-            .concat(quicV1QueryResults)
-            .concat(webtransportQueryResults)
-            .concat(webrtcDirectQueryResults)
-            .concat(webrtcQueryResults)
+        standaloneTransportsQueryResults
             .map((test): ComposeSpecification => buildSpec(containerImages, {
                 name: `${test.id1} x ${test.id2} (${test.transport})`,
                 dialerID: test.id1,
                 listenerID: test.id2,
                 transport: test.transport,
                 extraEnv: buildExtraEnv(timeoutOverride, test.id1, test.id2)
-            }, nameFilter)))
-    .filter((spec): spec is ComposeSpecification => spec !== null)
+            }, nameFilter))).filter((spec): spec is ComposeSpecification => spec !== null)
 
     return testSpecs
 }
