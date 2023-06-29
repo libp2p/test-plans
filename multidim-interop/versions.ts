@@ -1,4 +1,5 @@
 import fs from "fs"
+import path from "path"
 
 export type Version = {
     id: string,
@@ -12,10 +13,7 @@ export type Version = {
     muxers: string[]
 }
 
-// Loads the container image id for the given version id. Expects the form of
-// "<impl>-vX.Y.Z" or "<impl>vX.Y" and the image id to be in the file
-// "./impl/<impl>/vX.Y/image.json" or "./impl/<impl>/v0.0.Z/image.json"
-function canonicalImageIDLookup(id: string): string {
+function canonicalImagePath(id: string): string {
     // Split by implementation and version
     const [impl, version] = id.split("-v")
     // Drop the patch version
@@ -26,7 +24,27 @@ function canonicalImageIDLookup(id: string): string {
         versionFolder = `v0.0.${patch}`
     }
     // Read the image ID from the JSON file on the filesystem
-    const imageIDJSON = fs.readFileSync(`./impl/${impl}/${versionFolder}/image.json`, "utf8")
+    return `./impl/${impl}/${versionFolder}/image.json`
+}
+
+// Loads the container image id for the given version id. Expects the form of
+// "<impl>-vX.Y.Z" or "<impl>vX.Y" and the image id to be in the file
+// "./impl/<impl>/vX.Y/image.json" or "./impl/<impl>/v0.0.Z/image.json"
+function canonicalImageIDLookup(id: string): string {
+    const imageIDJSON = fs.readFileSync(canonicalImagePath(id), "utf8")
+    const imageID = JSON.parse(imageIDJSON).imageID
+    return imageID
+}
+
+// Loads the container image id for the given browser version id. Expects the
+// form of "<browser>-<impl>-vX.Y.Z" or "<impl>vX.Y" and the image id to be in the file
+// "./impl/<impl>/vX.Y/<browser>-image.json" or "./impl/<impl>/v0.0.Z/<browser>-image.json"
+function browserImageIDLookup(id: string): string {
+    const [browser, ...rest] = id.split("-")
+    const parentDir = path.dirname(canonicalImagePath(rest.join("-")))
+
+    // Read the image ID from the JSON file on the filesystem
+    const imageIDJSON = fs.readFileSync(path.join(parentDir, `${browser}-image.json`), "utf8")
     const imageID = JSON.parse(imageIDJSON).imageID
     return imageID
 }
@@ -82,30 +100,35 @@ export const versions: Array<Version> = [
     },
     {
         id: "chromium-js-v0.41.0",
+        containerImageID: browserImageIDLookup,
         transports: [{ name: "webtransport", onlyDial: true }],
         secureChannels: [],
         muxers: []
     },
     {
         id: "chromium-js-v0.42.0",
+        containerImageID: browserImageIDLookup,
         transports: [{ name: "webtransport", onlyDial: true }, { name: "wss", onlyDial: true }],
         secureChannels: ["noise"],
         muxers: ["mplex", "yamux"]
     },
     {
         id: "chromium-js-v0.44.0",
+        containerImageID: browserImageIDLookup,
         transports: [{ name: "webtransport", onlyDial: true }, { name: "wss", onlyDial: true }, { name: "webrtc-direct", onlyDial: true }],
         secureChannels: ["noise"],
         muxers: ["mplex", "yamux"],
     },
     {
         id: "chromium-js-v0.45.0",
+        containerImageID: browserImageIDLookup,
         transports: [{ name: "webtransport", onlyDial: true }, { name: "wss", onlyDial: true }, { name: "webrtc-direct", onlyDial: true }, "webrtc"],
         secureChannels: ["noise"],
         muxers: ["mplex", "yamux"],
     },
     {
         id: "firefox-js-v0.45.0",
+        containerImageID: browserImageIDLookup,
         transports: [{ name: "wss", onlyDial: true }, { name: "webrtc-direct", onlyDial: true }, "webrtc"],
         secureChannels: ["noise"],
         muxers: ["mplex", "yamux"],
