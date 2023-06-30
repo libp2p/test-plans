@@ -8,9 +8,16 @@ This project includes the following components:
 
 Benchmark results can be visualized with https://observablehq.com/@mxinden-workspace/libp2p-performance-dashboard.
 
-## Provision infrastructure
+## Running via GitHub Action
 
-### Bootstrap
+1. Create a pull request with your changes on https://github.com/libp2p/test-plans/.
+2. Trigger GitHub Action for branch on https://github.com/libp2p/test-plans/actions/workflows/perf.yml (see _Run workflow_ button).
+3. Wait for action run to finish and to push a commit to your branch.
+4. Visualize results on https://observablehq.com/@libp2p-workspace/performance-dashboard.
+
+## Running via local machine
+
+### Provision infrastructure
 
 1. Save your public SSH key as the file `./terraform/modules/short_lived/files/perf.pub`; or generate a new key pair with `make ssh-keygen` and add it to your SSH agent with `make ssh-add`.
 2. `cd terraform/configs/local`
@@ -19,7 +26,7 @@ Benchmark results can be visualized with https://observablehq.com/@mxinden-works
 5. `CLIENT_IP=$(terraform output -raw client_ip)`
 6. `SERVER_IP=$(terraform output -raw server_ip)`
 
-## Build and run implementations
+### Build and run implementations
 
 _WARNING_: Running the perf tests might take a while.
 
@@ -27,7 +34,7 @@ _WARNING_: Running the perf tests might take a while.
 2. `npm ci`
 3. `npm run start -- --client-public-ip $CLIENT_IP --server-public-ip $SERVER_IP`
 
-## Deprovision infrastructure
+### Deprovision infrastructure
 
 1. `cd terraform/configs/local`
 2. `terraform destroy`
