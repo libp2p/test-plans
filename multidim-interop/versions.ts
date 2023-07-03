@@ -75,7 +75,8 @@ export const versions: Array<Version> = [
         muxers: ["mplex", "yamux"],
     },
     {
-        id: "rust-chromium-v0.52",
+        id: "chromium-rust-v0.52",
+        containerImageID: browserImageIDLookup,
         transports: [{ name: "webtransport", onlyDial: true }],
         secureChannels: [],
         muxers: [],
