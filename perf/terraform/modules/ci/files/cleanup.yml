@@ -13,7 +13,7 @@ Resources:
         Variables:
           REGIONS: '["us-west-2", "us-east-1"]'
           TAGS: '{"Project":"perf", "Name":"node"}'
-          MAX_AGE_MINUTES: '30'
+          MAX_AGE_MINUTES: '120'
       Policies:
         - AmazonEC2FullAccess
       Timeout: 30
