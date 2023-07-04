@@ -15,6 +15,6 @@ RUN \
 
 COPY main.nim main.nim
 RUN \
-  nim c --NimblePath:nim-libp2p/nimbledeps/pkgs -p:nim-libp2p -d:chronicles_log_level=WARN --threads:off main.nim
+  nim c --NimblePath:nim-libp2p/nimbledeps/pkgs -p:nim-libp2p -d:chronicles_log_level=DEBUG --threads:off main.nim
 
 ENTRYPOINT ["/app/main"]
