@@ -49,7 +49,7 @@ cd impl/js/v0.xx.xx/ && npm i && npm run build
 3. Then you can run a dialer by running the following command, ensure that you pass the required environment variables, as well as any that may be of use for debugging:
 
 ```bash
-DEBUG=*:yamux:trace transport=tcp muxer=yamux security=noise is_dialer=true   npm run test -- -t node
+DEBUG=*:yamux:trace transport=tcp muxer=yamux security=noise is_dialer=true redis_addr=localhost:6379 npm run test:interop:multidim -- -t node
 ```
 
 4. Finally you can run a listener by running the following command in this case where a running a rust listener:
