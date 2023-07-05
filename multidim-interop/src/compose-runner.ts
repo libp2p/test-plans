@@ -4,8 +4,9 @@ import path from 'path';
 import { exec as execStd } from 'child_process';
 import util from 'util';
 import { env } from 'process';
-import { ComposeSpecification, PropertiesServices } from "../compose-spec/compose-spec"
+import { ComposeSpecification, PropertiesServices } from "../compose-spec/compose-spec";
 import { stringify } from 'yaml';
+import { dialerStdout } from './compose-stdout-helper';
 
 const exec = util.promisify(execStd);
 const timeoutSecs = 3 * 60
@@ -35,7 +36,7 @@ export async function run(namespace: string, compose: ComposeSpecification, opts
     // Create compose.yaml file
     // Some docker compose environments don't like the name field to have special characters
     const sanitizedComposeName = compose?.name.replace(/[^a-zA-Z0-9_-]/g, "_")
-    await fs.writeFile(path.join(dir, "compose.yaml"), stringify({...compose, name: sanitizedComposeName}))
+    await fs.writeFile(path.join(dir, "compose.yaml"), stringify({ ...compose, name: sanitizedComposeName }))
 
     const upFlags: Array<string> = []
     if (opts.up.exitCodeFrom) {
@@ -51,15 +52,12 @@ export async function run(namespace: string, compose: ComposeSpecification, opts
         const { signal } = controller;
         const { stdout, stderr } = await exec(`docker compose -f ${path.join(dir, "compose.yaml")} up ${upFlags.join(" ")}`, { signal })
         clearTimeout(timeoutId)
-        const testResults = stdout.match(/.*dialer.*({.*)/)
-        if (testResults === null || testResults.length < 2) {
-            throw new Error("Test JSON results not found")
-        }
+        const testResults = dialerStdout(stdout)
         try {
-            const testResultsParsed = JSON.parse(testResults[1])
+            const testResultsParsed = JSON.parse(testResults)
             console.log("Finished:", namespace, testResultsParsed)
         } catch (e) {
-            console.log("Failed to parse test results:", testResults[1])
+            console.log("Failed to parse test results:", testResults)
             console.log("stdout:")
             console.log(stdout)
             console.log("")

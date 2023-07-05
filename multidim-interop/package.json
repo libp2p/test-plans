@@ -4,7 +4,7 @@
     "description": "Tests libp2p implementations against each other across various dimensions.",
     "main": "testplans.ts",
     "scripts": {
-        "test": "ts-node testplans.ts",
+        "test": "ts-node src/compose-stdout-helper.ts && ts-node testplans.ts",
         "renderResults": "ts-node renderResults.ts",
         "cache": "ts-node helpers/cache.ts"
     },
