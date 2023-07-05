@@ -55,8 +55,19 @@ export async function run(namespace: string, compose: ComposeSpecification, opts
         if (testResults === null || testResults.length < 2) {
             throw new Error("Test JSON results not found")
         }
-        const testResultsParsed = JSON.parse(testResults[1])
-        console.log("Finished:", namespace, testResultsParsed)
+        try {
+            const testResultsParsed = JSON.parse(testResults[1])
+            console.log("Finished:", namespace, testResultsParsed)
+        } catch (e) {
+            console.log("Failed to parse test results:", testResults[1])
+            console.log("stdout:")
+            console.log(stdout)
+            console.log("")
+            console.log("stderr:")
+            console.log(stderr)
+            console.log("")
+            throw e
+        }
     } catch (e: any) {
         console.log("Failure", e)
         return e
