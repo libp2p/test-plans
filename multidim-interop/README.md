@@ -23,6 +23,7 @@ environment variables. The current parameters are:
 | security             | The security channel to use                                  | no, except when transport is one of quic, quic-v1, webtransport |
 | is_dialer            | Should you dial or listen                                    | no                                                              |
 | ip                   | IP address to bind the listener to                           | yes, default to "0.0.0.0"                                       |
+| port                 | TCP/UDP (transport-dependent) port to bind the listener to   | yes, default to "0"                                       |
 | redis_addr           | A different address to connect to redis (default redis:6379) | yes, default to the `redis` host on port 6379                   |
 | test_timeout_seconds | Control the timeout of test.                                 | yes, default to 180 seconds.                                    |
 
