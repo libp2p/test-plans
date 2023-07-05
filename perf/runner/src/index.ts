@@ -82,7 +82,7 @@ function runIPerf(clientPublicIP: string, serverPublicIP: string): IperfResults 
     const serverSTDOUT = execCommand(serverCMD);
     console.error(serverSTDOUT);
 
-    const cmd = `ssh -o StrictHostKeyChecking=no ec2-user@${clientPublicIP} 'iperf3 -c ${serverPublicIP} -u -b 25g -t 60'`;
+    const cmd = `ssh -o StrictHostKeyChecking=no ec2-user@${clientPublicIP} 'iperf3 -c ${serverPublicIP} -u -b 50g -t 60'`;
     const stdout = execSync(cmd).toString();
 
     // Extract the bitrate from each relevant line
