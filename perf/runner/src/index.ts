@@ -37,7 +37,7 @@ async function main(clientPublicIP: string, serverPublicIP: string) {
                  uploadBytes: 1,
                  downloadBytes: 1,
                  unit: "s",
-                 iterations: 1000,
+                 iterations: 100,
              }),
     ];
 
