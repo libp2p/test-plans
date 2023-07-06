@@ -12,6 +12,14 @@ export function dialerStdout(composeStdout: string): string {
     return dialerLines.join("\n")
 }
 
+export function dialerTimings(dialerStdout: string): Object {
+    const openBracket = dialerStdout.indexOf("{")
+    if (openBracket === -1) throw new Error("Invalid JSON. No opening curly bracket found")
+    const closeBracket = dialerStdout.indexOf("}", openBracket)
+    if (closeBracket === -1) throw new Error("Invalid JSON. No closing curly bracket found")
+    return JSON.parse(dialerStdout.substring(openBracket, closeBracket + 1))
+}
+
 // simple test case - avoids bringing in a whole test framework
 function test() {
     const assert = (b: boolean) => { if (!b) throw new Error("assertion failed") }
@@ -36,6 +44,7 @@ function test() {
 
         const expectedParsed = JSON.stringify({ "handshakePlusOneRTTMillis": 7.342, "pingRTTMilllis": 7.113 })
         assert(JSON.stringify(JSON.parse(dialerStdout(exampleComposeStdout))) === expectedParsed)
+        assert(JSON.stringify(dialerTimings(dialerStdout(exampleComposeStdout))) === expectedParsed)
     }
 
     {
@@ -56,7 +65,37 @@ function test() {
 
         const expectedParsed = JSON.stringify({ "handshakePlusOneRTTMillis": 8.849, "pingRTTMilllis": 7.897 })
         assert(JSON.stringify(JSON.parse(dialerStdout(exampleComposeStdout))) === expectedParsed)
+        assert(JSON.stringify(dialerTimings(dialerStdout(exampleComposeStdout))) === expectedParsed)
+    }
 
+    {
+        const exampleComposeStdout = `
+        2023-07-06T00:36:52.6198781Z firefox-js-v0_45_x_firefox-js-v0_45__webrtc__noise__yamux_-redis-1     | 1:M 06 Jul 2023 00:36:19.136 * Ready to accept connections
+2023-07-06T00:36:52.6199494Z firefox-js-v0_45_x_firefox-js-v0_45__webrtc__noise__yamux_-listener-1  | 
+2023-07-06T00:36:52.6200270Z firefox-js-v0_45_x_firefox-js-v0_45__webrtc__noise__yamux_-listener-1  | > multidim-interop@1.0.0 test
+2023-07-06T00:36:52.6201247Z firefox-js-v0_45_x_firefox-js-v0_45__webrtc__noise__yamux_-listener-1  | > aegir test --build false --types false -t browser -- --browser firefox
+2023-07-06T00:36:52.6202009Z firefox-js-v0_45_x_firefox-js-v0_45__webrtc__noise__yamux_-listener-1  | 
+2023-07-06T00:36:52.6202659Z firefox-js-v0_45_x_firefox-js-v0_45__webrtc__noise__yamux_-listener-1  | 
+2023-07-06T00:36:52.6203296Z firefox-js-v0_45_x_firefox-js-v0_45__webrtc__noise__yamux_-dialer-1    | 
+2023-07-06T00:36:52.6204045Z firefox-js-v0_45_x_firefox-js-v0_45__webrtc__noise__yamux_-dialer-1    | > multidim-interop@1.0.0 test
+2023-07-06T00:36:52.6205016Z firefox-js-v0_45_x_firefox-js-v0_45__webrtc__noise__yamux_-dialer-1    | > aegir test --build false --types false -t browser -- --browser firefox
+2023-07-06T00:36:52.6205760Z firefox-js-v0_45_x_firefox-js-v0_45__webrtc__noise__yamux_-dialer-1    | 
+2023-07-06T00:36:52.6206397Z firefox-js-v0_45_x_firefox-js-v0_45__webrtc__noise__yamux_-dialer-1    | 
+2023-07-06T00:36:52.6207074Z firefox-js-v0_45_x_firefox-js-v0_45__webrtc__noise__yamux_-listener-1  | test browser
+2023-07-06T00:36:52.6207782Z firefox-js-v0_45_x_firefox-js-v0_45__webrtc__noise__yamux_-dialer-1    | test browser
+2023-07-06T00:36:52.6208473Z firefox-js-v0_45_x_firefox-js-v0_45__webrtc__noise__yamux_-dialer-1    | [0m[0m
+2023-07-06T00:36:52.6209191Z firefox-js-v0_45_x_firefox-js-v0_45__webrtc__noise__yamux_-dialer-1    | [0m  ping test[0m
+2023-07-06T00:36:52.6209998Z firefox-js-v0_45_x_firefox-js-v0_45__webrtc__noise__yamux_-dialer-1    |   [36m  - should listen for ping[0m
+2023-07-06T00:36:52.6210724Z firefox-js-v0_45_x_firefox-js-v0_45__webrtc__noise__yamux_-listener-1  | [0m[0m
+2023-07-06T00:36:52.6211440Z firefox-js-v0_45_x_firefox-js-v0_45__webrtc__noise__yamux_-listener-1  | [0m  ping test[0m
+2023-07-06T00:36:52.6212401Z firefox-js-v0_45_x_firefox-js-v0_45__webrtc__noise__yamux_-dialer-1    | {"handshakePlusOneRTTMillis":4155,"pingRTTMilllis":781}
+2023-07-06T00:36:52.6213383Z firefox-js-v0_45_x_firefox-js-v0_45__webrtc__noise__yamux_-dialer-1    |   [32m  ✅[0m[90m should dial and ping[0m[31m (5939ms)[0m
+2023-07-06T00:36:52.6214272Z firefox-js-v0_45_x_firefox-js-v0_45__webrtc__noise__yamux_-dialer-1    | [92m [0m[32m 1 passing[0m[90m (7s)[0m
+2023-07-06T00:36:52.6214968Z firefox-js-v0_45_x_firefox-js-v0_45__webrtc__noise__yamux_-dialer-1    | [36m [0m[36m 1 pending[0m
+2023-07-06T00:36:52.6215606Z firefox-js-v0_45_x_firefox-js-v0_45__webrtc__noise__yamux_-dialer-1 exited with code 0`
+
+        const expectedParsed = JSON.stringify({ "handshakePlusOneRTTMillis": 4155, "pingRTTMilllis": 781 })
+        assert(JSON.stringify(dialerTimings(dialerStdout(exampleComposeStdout))) === expectedParsed)
     }
 }
 

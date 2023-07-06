@@ -6,7 +6,7 @@ import util from 'util';
 import { env } from 'process';
 import { ComposeSpecification, PropertiesServices } from "../compose-spec/compose-spec";
 import { stringify } from 'yaml';
-import { dialerStdout } from './compose-stdout-helper';
+import { dialerStdout, dialerTimings } from './compose-stdout-helper';
 
 const exec = util.promisify(execStd);
 const timeoutSecs = 3 * 60
@@ -52,12 +52,11 @@ export async function run(namespace: string, compose: ComposeSpecification, opts
         const { signal } = controller;
         const { stdout, stderr } = await exec(`docker compose -f ${path.join(dir, "compose.yaml")} up ${upFlags.join(" ")}`, { signal })
         clearTimeout(timeoutId)
-        const testResults = dialerStdout(stdout)
         try {
-            const testResultsParsed = JSON.parse(testResults)
+            const testResultsParsed = dialerTimings(dialerStdout(stdout))
             console.log("Finished:", namespace, testResultsParsed)
         } catch (e) {
-            console.log("Failed to parse test results:", testResults)
+            console.log("Failed to parse test results.")
             console.log("stdout:")
             console.log(stdout)
             console.log("")
