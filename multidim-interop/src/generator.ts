@@ -54,7 +54,7 @@ export async function buildTestSpecs(versions: Array<Version>, nameFilter: strin
     // Generate the testing combinations by SELECT'ing from both transports
     // and muxers tables the distinct combinations where the transport and the muxer
     // of the different libp2p implementations match.
-    const standaloneTransports = ["quic", "quic-v1", "webtransport", "webrtc", "webrtc-direct"]
+    const standaloneTransports = ["quic", "quic-v1", "webtransport", "webrtc", "webrtc-direct"].map(x => `"${x}"`).join(", ")
     const queryResults =
         await db.all(`SELECT DISTINCT a.id as id1, b.id as id2, a.transport, ma.muxer, sa.sec
                      FROM transports a, transports b, muxers ma, muxers mb, secureChannels sa, secureChannels sb
@@ -67,14 +67,14 @@ export async function buildTestSpecs(versions: Array<Version>, nameFilter: strin
                      AND sa.sec == sb.sec
                      AND ma.muxer == mb.muxer
                      -- These transports don't define muxers/securechannels
-                     AND a.transport NOT IN ($standaloneTransports);`, { $standaloneTransports: standaloneTransports });
+                     AND a.transport NOT IN (${standaloneTransports});`);
     const standaloneTransportsQueryResults =
         await db.all(`SELECT DISTINCT a.id as id1, b.id as id2, a.transport
                      FROM transports a, transports b
                      WHERE a.transport == b.transport
                      AND NOT b.onlyDial
                      -- These transports don't define muxers/securechannels
-                     AND a.transport IN ($standaloneTransports);`, { $standaloneTransports: standaloneTransports });
+                     AND a.transport IN (${standaloneTransports});`);
     await db.close();
 
     const testSpecs = queryResults.map((test): ComposeSpecification => (
