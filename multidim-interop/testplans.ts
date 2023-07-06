@@ -15,6 +15,10 @@ import path from "path";
                 description: 'Only run named test',
                 default: "",
             },
+            'name-ignore': {
+                description: 'Ignore named test',
+                default: "",
+            },
             'emit-only': {
                 alias: 'e',
                 description: 'Only print the compose.yaml file',
@@ -60,7 +64,11 @@ import path from "path";
     if (nameFilter === "") {
         nameFilter = null
     }
-    let testSpecs = await buildTestSpecs(versions.concat(extraVersions), nameFilter)
+    let nameIgnore: string | null = argv["name-ignore"]
+    if (nameIgnore === "") {
+        nameIgnore = null
+    }
+    let testSpecs = await buildTestSpecs(versions.concat(extraVersions), nameFilter, nameIgnore)
 
 
     if (argv["emit-only"]) {
