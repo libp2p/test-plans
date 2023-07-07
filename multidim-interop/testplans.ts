@@ -12,11 +12,11 @@ import path from "path";
     const argv = await yargs(process.argv.slice(2))
         .options({
             'name-filter': {
-                description: 'Only run named test',
+                description: 'Only run tests including this name',
                 default: "",
             },
             'name-ignore': {
-                description: 'Ignore named test',
+                description: 'Do not run any tests including this name ',
                 default: "",
             },
             'emit-only': {
