@@ -25,33 +25,23 @@ inputs:
     description: "Which AWS region to use"
     required: false
     default: "us-east-1"
+  worker-count:
+    description: "How many workers to use for the test"
+    required: false
+    default: "2"
 runs:
   using: "composite"
   steps:
-    - if: inputs.s3-access-key-id != '' && inputs.s3-secret-access-key != ''
-      run: |
-        echo "AWS_BUCKET=${{ inputs.s3-cache-bucket }}" >> $GITHUB_ENV
-        echo "AWS_REGION=${{ inputs.aws-region }}" >> $GITHUB_ENV
-      shell: bash
-
     - name: Configure AWS credentials for S3 build cache
       if: inputs.s3-access-key-id != '' && inputs.s3-secret-access-key != ''
       run: |
         echo "PUSH_CACHE=true" >> $GITHUB_ENV
       shell: bash
 
-    - name: Configure AWS credentials for S3 build cache
-      if: inputs.s3-access-key-id != '' && inputs.s3-secret-access-key != ''
-      uses: aws-actions/configure-aws-credentials@v1
-      with:
-        aws-access-key-id: ${{ inputs.s3-access-key-id }}
-        aws-secret-access-key: ${{ inputs.s3-secret-access-key}}
-        aws-region: ${{ env.AWS_REGION }}
-
     # This depends on where this file is within this repository. This walks up
     # from here to the multidim-interop folder
     - run: |
-        WORK_DIR=$(realpath "${{ github.action_path }}/../../../multidim-interop")
+        WORK_DIR=$(realpath "$GITHUB_ACTION_PATH/../../../multidim-interop")
         echo "WORK_DIR=$WORK_DIR" >> $GITHUB_OUTPUT
       shell: bash
       id: find-workdir
@@ -60,9 +50,22 @@ runs:
       with:
         node-version: 18
 
+    # Existence of /etc/buildkit/buildkitd.toml indicates that this is a
+    # self-hosted runner. If so, we need to pass the config to the buildx
+    # action. The config enables docker.io proxy which is required to
+    # work around docker hub rate limiting.
+    - run: |
+        if test -f /etc/buildkit/buildkitd.toml; then
+          echo "config=/etc/buildkit/buildkitd.toml" >> $GITHUB_OUTPUT
+        fi
+      shell: bash
+      id: buildkit
+
     - name: Set up Docker Buildx
       id: buildx
       uses: docker/setup-buildx-action@v2
+      with:
+        config: ${{ steps.buildkit.outputs.config }}
 
     - name: Install deps
       working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
@@ -77,12 +80,21 @@ runs:
     - name: Push the image cache
       if: env.PUSH_CACHE == 'true'
       working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
+      env:
+        AWS_BUCKET: ${{ inputs.s3-cache-bucket }}
+        AWS_REGION: ${{ inputs.aws-region }}
+        AWS_ACCESS_KEY_ID: ${{ inputs.s3-access-key-id }}
+        AWS_SECRET_ACCESS_KEY: ${{ inputs.s3-secret-access-key }}
       run: npm run cache -- push
       shell: bash
 
     - name: Run the test
       working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
-      run: WORKER_COUNT=2 npm run test -- --extra-version=${{ inputs.extra-versions }} --name-filter=${{ inputs.test-filter }}
+      env:
+        WORKER_COUNT: ${{ inputs.worker-count }}
+        EXTRA_VERSION: ${{ inputs.extra-versions }}
+        NAME_FILTER: ${{ inputs.test-filter }}
+      run: npm run test -- --extra-version=$EXTRA_VERSION --name-filter=$NAME_FILTER
       shell: bash
 
     - name: Print the results
