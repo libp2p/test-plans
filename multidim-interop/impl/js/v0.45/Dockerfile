@@ -7,5 +7,6 @@ RUN npm i && npm run build
 
 WORKDIR /app/interop
 RUN npm i && npm run build
+RUN ./node_modules/.bin/playwright install
 
 ENTRYPOINT [ "npm", "test", "--", "--build", "false", "--types", "false", "-t", "node" ]
