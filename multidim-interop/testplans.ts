@@ -1,7 +1,9 @@
 import { buildTestSpecs } from "./src/generator"
+import { tmpdir } from 'os'
 import { Version, versions } from "./versions"
 import { promises as fs } from "fs";
-import { run, RunFailure } from "./src/compose-runner"
+// import { run, RunFailure } from "./src/compose-runner"
+import { run, RunFailure } from "./src/manual-compose-runner"
 import { stringify } from "csv-stringify/sync"
 import { stringify as YAMLStringify } from "yaml"
 import yargs from "yargs/yargs"
@@ -82,7 +84,10 @@ import path from "path";
                 return
             }
             console.log("Running test spec: " + testSpec.name)
-            const failure = await run(testSpec.name || "unknown test", testSpec, { up: { exitCodeFrom: "dialer", renewAnonVolumes: true }, })
+            // const failure = await run(testSpec.name || "unknown test", testSpec, { up: { exitCodeFrom: "dialer", renewAnonVolumes: true }, })
+            const failure = await run(testSpec.name || "unknown test", testSpec, {
+                abortSignal: new AbortController().signal, workingDir: path.join(tmpdir(), "compose-runner", "hello-world")
+            })
             if (failure != null) {
                 failures.push(failure)
                 statuses.push([testSpec.name || "unknown test", "failure"])
