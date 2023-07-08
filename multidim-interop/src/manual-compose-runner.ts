@@ -43,7 +43,9 @@ async function expandService(abortSignal: AbortSignal, workingDir: string, servi
     try {
         // return early if image.tar exists
         await fs.access(path.join(workingDir, `${image}.tar`))
-        // await fs.rm(workingDir, { recursive: true, force: true })
+        // await fs.rm(path.join(workingDir, `${image}.tar`), { recursive: true, force: true })
+        // await fs.rm(path.join(workingDir, `${image}-image`), { recursive: true, force: true })
+        // await fs.rm(path.join(workingDir, `${image}-container`), { recursive: true, force: true })
         return
     } catch { }
 
@@ -53,7 +55,7 @@ async function expandService(abortSignal: AbortSignal, workingDir: string, servi
     await exec(`docker save ${image} > ${image}.tar`, { cwd: workingDir, signal: abortSignal })
     console.error("docker save took", Date.now() - start, "ms")
     start = Date.now()
-    await exec(`tar -xvf './${image}.tar' -C ./${image}-image`, { cwd: workingDir, signal: abortSignal })
+    await exec(`tar --delay-directory-restore  -xvf './${image}.tar' -C ./${image}-image`, { cwd: workingDir, signal: abortSignal })
     console.error("extraction took", Date.now() - start, "ms")
     start = Date.now()
 
@@ -66,7 +68,7 @@ async function expandService(abortSignal: AbortSignal, workingDir: string, servi
 
     // Extract the layers
     for (const layer of layers) {
-        await exec(`tar -xvf './${image}-image/${layer}' -C ${image}-container`, { cwd: workingDir, signal: abortSignal })
+        await exec(`tar --delay-directory-restore -xvf './${image}-image/${layer}' -C ${image}-container`, { cwd: workingDir, signal: abortSignal })
     }
 }
 
@@ -101,28 +103,71 @@ async function runService(abortSignal: AbortSignal, workingDir: string, service:
         throw new Error("No command or entrypoint found")
     }
 
+    if (service.image.includes("redis")) {
+        cmd = "redis-server"
+    }
+
 
     // parse env array
     const env = {}
 
-    for (const [k, v] of Object.entries(service.image)) {
+    env["redis_addr"] = "127.0.0.1:6379"
+
+    for (const [k, v] of Object.entries(service.environment)) {
         env[k] = v.toString()
     }
 
 
     for (const e of config["config"]["Env"]) {
+        console.log("Env is", e)
         const [k, v] = e.split("=")
+        console.log("k,v", k, v)
         env[k] = v
     }
 
-    // Run chroot with user namespace
-    const { stdout, stderr } = await exec(`unshare --user --map-root-user chroot ${image}-container ${cmd}`, {
-        cwd: workingDir,
-        signal: abortSignal,
-        env,
-    })
-    console.error(cmd, "command took", Date.now() - start, "ms")
-    return { stdout, stderr }
+    try {
+        // Mount the `/dev` directory
+        try {
+            // Do we have a mount?
+            await exec(`mount | grep ${path.join(workingDir, `${image}-container/dev`)}`, {
+                cwd: workingDir,
+                signal: abortSignal,
+            })
+
+        } catch {
+            // No mount already
+            await exec(`sudo mount -t devtmpfs none ${image}-container/dev`, {
+                cwd: workingDir,
+                signal: abortSignal,
+            })
+
+        }
+
+        // Run chroot with user namespace
+        console.error("running cmd", `unshare --user --map-root-user chroot ${image}-container ${cmd}`)
+        console.error("Env is", env)
+        const { stdout, stderr } = await exec(`unshare --user --map-root-user chroot ${image}-container ${cmd}`, {
+            cwd: workingDir,
+            signal: abortSignal,
+            env,
+        })
+        console.error(cmd, "command took", Date.now() - start, "ms")
+        return { stdout, stderr }
+    } catch (e) {
+        console.log("Failed at running", cmd, env)
+        throw e
+    } finally {
+        // unmount /dev
+        try {
+
+            await exec(`sudo umount ${image}-container/dev`, {
+                cwd: workingDir,
+                signal: abortSignal,
+                env,
+            })
+        } catch { }
+
+    }
 }
 
 if (typeof require !== 'undefined' && require.main === module) {
