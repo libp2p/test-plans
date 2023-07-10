@@ -12,7 +12,11 @@ import path from "path";
     const argv = await yargs(process.argv.slice(2))
         .options({
             'name-filter': {
-                description: 'Only run named test',
+                description: 'Only run tests including this name',
+                default: "",
+            },
+            'name-ignore': {
+                description: 'Do not run any tests including this name ',
                 default: "",
             },
             'emit-only': {
@@ -60,7 +64,11 @@ import path from "path";
     if (nameFilter === "") {
         nameFilter = null
     }
-    let testSpecs = await buildTestSpecs(versions.concat(extraVersions), nameFilter)
+    let nameIgnore: string | null = argv["name-ignore"]
+    if (nameIgnore === "") {
+        nameIgnore = null
+    }
+    let testSpecs = await buildTestSpecs(versions.concat(extraVersions), nameFilter, nameIgnore)
 
 
     if (argv["emit-only"]) {

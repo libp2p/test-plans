@@ -8,7 +8,7 @@ function buildExtraEnv(timeoutOverride: { [key: string]: number }, test1ID: stri
     return maxTimeout > 0 ? { "test_timeout_seconds": maxTimeout.toString(10) } : {}
 }
 
-export async function buildTestSpecs(versions: Array<Version>, nameFilter: string | null): Promise<Array<ComposeSpecification>> {
+export async function buildTestSpecs(versions: Array<Version>, nameFilter: string | null, nameIgnore: string | null): Promise<Array<ComposeSpecification>> {
     const containerImages: { [key: string]: () => string } = {}
     const timeoutOverride: { [key: string]: number } = {}
     versions.forEach(v => containerImages[v.id] = () => {
@@ -86,7 +86,7 @@ export async function buildTestSpecs(versions: Array<Version>, nameFilter: strin
             muxer: test.muxer,
             security: test.sec,
             extraEnv: buildExtraEnv(timeoutOverride, test.id1, test.id2)
-        }, nameFilter)
+        }, nameFilter, nameIgnore)
     )).concat(
         standaloneTransportsQueryResults
             .map((test): ComposeSpecification => buildSpec(containerImages, {
@@ -95,13 +95,16 @@ export async function buildTestSpecs(versions: Array<Version>, nameFilter: strin
                 listenerID: test.id2,
                 transport: test.transport,
                 extraEnv: buildExtraEnv(timeoutOverride, test.id1, test.id2)
-            }, nameFilter))).filter((spec): spec is ComposeSpecification => spec !== null)
+            }, nameFilter, nameIgnore))).filter((spec): spec is ComposeSpecification => spec !== null)
 
     return testSpecs
 }
 
-function buildSpec(containerImages: { [key: string]: () => string }, { name, dialerID, listenerID, transport, muxer, security, extraEnv }: { name: string, dialerID: string, listenerID: string, transport: string, muxer?: string, security?: string, extraEnv?: { [key: string]: string } }, nameFilter: string | null): ComposeSpecification | null {
+function buildSpec(containerImages: { [key: string]: () => string }, { name, dialerID, listenerID, transport, muxer, security, extraEnv }: { name: string, dialerID: string, listenerID: string, transport: string, muxer?: string, security?: string, extraEnv?: { [key: string]: string } }, nameFilter: string | null, nameIgnore: string | null): ComposeSpecification | null {
     if (nameFilter && !name.includes(nameFilter)) {
+        return null
+    }
+    if (nameIgnore && name.includes(nameIgnore)) {
         return null
     }
     return {
