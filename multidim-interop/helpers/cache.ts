@@ -91,7 +91,12 @@ switch (modeStr) {
                         const dockerLoadedMsg = child_process.execSync(`curl https://s3.amazonaws.com/${AWS_BUCKET}/imageCache/${cacheKey}-${arch}.tar.gz  | docker image load`).toString();
                         const loadedImageId = dockerLoadedMsg.match(/Loaded image( ID)?: (.*)/)[2];
                         if (loadedImageId) {
-                            console.log(`Cache hit for ${loadedImageId}`);
+                            let imageSize = "unknown"
+                            try {
+                                const imageSizeBytes = child_process.execSync(`docker image inspect ${loadedImageId} -f "{.Size}"`).toString().trim();
+                                imageSize = `${Math.round(parseInt(imageSizeBytes) / 1024 / 1024)}MB`
+                            } catch { }
+                            console.log(`Cache hit for ${loadedImageId}. Size ${imageSize}.`);
                             fs.writeFileSync(path.join(implFolder, 'image.json'), JSON.stringify({ imageID: loadedImageId }) + "\n");
                             cacheHit = true
                         }
