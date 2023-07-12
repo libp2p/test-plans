@@ -21,6 +21,7 @@ export type RunOpts = {
 export type RunFailure = any
 
 export async function run(namespace: string, compose: ComposeSpecification, opts: RunOpts): Promise<RunFailure | null> {
+    const start = Date.now()
     // sanitize namespace
     const sanitizedNamespace = namespace.replace(/[^a-zA-Z0-9]/g, "-")
     const dir = path.join(tmpdir(), "compose-runner", sanitizedNamespace)
@@ -54,7 +55,18 @@ export async function run(namespace: string, compose: ComposeSpecification, opts
         clearTimeout(timeoutId)
         try {
             const testResultsParsed = dialerTimings(dialerStdout(stdout))
-            console.log("Finished:", namespace, testResultsParsed)
+            const elapsed = (Date.now() - start) / 1000
+            console.log(`Finished in ${elapsed}s:`, namespace, testResultsParsed)
+            if (elapsed > 10) {
+                // Really slow, why?
+                console.log("Slow interop test. Debugging info:")
+                console.log("stdout:")
+                console.log(stdout)
+                console.log("")
+                console.log("stderr:")
+                console.log(stderr)
+                console.log("")
+            }
         } catch (e) {
             console.log("Failed to parse test results.")
             console.log("stdout:")
