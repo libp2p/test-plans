@@ -11,6 +11,7 @@ FROM mcr.microsoft.com/playwright
 
 COPY --from=js-libp2p-base /app/ /app/
 WORKDIR /app/interop
+RUN ./node_modules/.bin/playwright install
 ARG BROWSER=chromium # Options: chromium, firefox, webkit
 ENV BROWSER=$BROWSER
 
