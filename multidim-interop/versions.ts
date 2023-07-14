@@ -82,18 +82,6 @@ export const versions: Array<Version> = [
         muxers: [],
     },
     {
-        id: "js-v0.41",
-        transports: ["tcp", "ws"],
-        secureChannels: ["noise"],
-        muxers: ["mplex", "yamux"],
-    },
-    {
-        id: "js-v0.42",
-        transports: ["tcp", "ws", { name: "wss", onlyDial: true }],
-        secureChannels: ["noise"],
-        muxers: ["mplex", "yamux"],
-    },
-    {
         id: "js-v0.44",
         transports: ["tcp", "ws", { name: "wss", onlyDial: true }],
         secureChannels: ["noise"],
@@ -104,20 +92,6 @@ export const versions: Array<Version> = [
         transports: ["tcp", "ws", { name: "wss", onlyDial: true }],
         secureChannels: ["noise"],
         muxers: ["mplex", "yamux"],
-    },
-    {
-        id: "chromium-js-v0.41",
-        containerImageID: browserImageIDLookup,
-        transports: [{ name: "webtransport", onlyDial: true }],
-        secureChannels: [],
-        muxers: []
-    },
-    {
-        id: "chromium-js-v0.42",
-        containerImageID: browserImageIDLookup,
-        transports: [{ name: "webtransport", onlyDial: true }, { name: "wss", onlyDial: true }],
-        secureChannels: ["noise"],
-        muxers: ["mplex", "yamux"]
     },
     {
         id: "chromium-js-v0.44",
@@ -161,24 +135,6 @@ export const versions: Array<Version> = [
     {
         id: "go-v0.25",
         transports: ["tcp", "ws", "quic", "quic-v1", "webtransport"],
-        secureChannels: ["tls", "noise"],
-        muxers: ["mplex", "yamux"],
-    },
-    {
-        id: "go-v0.24",
-        transports: ["tcp", "ws", "quic", "quic-v1", "webtransport", "wss"],
-        secureChannels: ["tls", "noise"],
-        muxers: ["mplex", "yamux"],
-    },
-    {
-        id: "go-v0.23",
-        transports: ["tcp", "ws", "quic"],
-        secureChannels: ["tls", "noise"],
-        muxers: ["mplex", "yamux"],
-    },
-    {
-        id: "go-v0.22",
-        transports: ["tcp", "ws", "quic"],
         secureChannels: ["tls", "noise"],
         muxers: ["mplex", "yamux"],
     },
