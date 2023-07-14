@@ -57,7 +57,7 @@ export async function run(namespace: string, compose: ComposeSpecification, opts
             const testResultsParsed = dialerTimings(dialerStdout(stdout))
             const elapsed = (Date.now() - start) / 1000
             console.log(`Finished in ${elapsed}s:`, namespace, testResultsParsed)
-            if (elapsed > 10) {
+            if (elapsed > 30) {
                 // Really slow, why?
                 console.log("Slow interop test. Debugging info:")
                 console.log("stdout:")
