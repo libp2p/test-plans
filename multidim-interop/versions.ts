@@ -94,20 +94,6 @@ export const versions: Array<Version> = [
         muxers: ["mplex", "yamux"],
     },
     {
-        id: "chromium-js-v0.41",
-        containerImageID: browserImageIDLookup,
-        transports: [{ name: "webtransport", onlyDial: true }],
-        secureChannels: [],
-        muxers: []
-    },
-    {
-        id: "chromium-js-v0.42",
-        containerImageID: browserImageIDLookup,
-        transports: [{ name: "webtransport", onlyDial: true }, { name: "wss", onlyDial: true }],
-        secureChannels: ["noise"],
-        muxers: ["mplex", "yamux"]
-    },
-    {
         id: "chromium-js-v0.44",
         containerImageID: browserImageIDLookup,
         transports: [{ name: "webtransport", onlyDial: true }, { name: "wss", onlyDial: true }, { name: "webrtc-direct", onlyDial: true }],
