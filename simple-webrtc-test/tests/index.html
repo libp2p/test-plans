@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+<head>
+  <title>WebRTC: Simple RTCDataChannel sample</title>
+  <meta charset="utf-8">
+  <script src="main.js"></script>
+</head>
+<body>
+  <div class="controlbox">
+    <button data-testid="connectButton" id="connectButton" name="connectButton" class="buttonleft">
+      Connect
+    </button>
+    <button data-testid="disconnectButton" id="disconnectButton" name="disconnectButton" class="buttonright" disabled>
+      Disconnect
+    </button>
+  </div>
+
+  <div class="messagebox">
+    <label for="message">Enter a message:
+      <input type="text" name="message" data-testid="message" id="message" placeholder="Message text"
+              inputmode="latin" size=60 maxlength=120 disabled>
+    </label>
+    <button data-testid="sendButton" id="sendButton" name="sendButton" class="buttonright" disabled>
+    </button>
+  </div>
+  <div class="messagebox" data-testid="receivebox" id="receivebox">
+    <p>Messages received:</p>
+  </div>
+</body>
+</html>

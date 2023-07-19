@@ -1,0 +1,14 @@
+{
+  "name": "simple-playwright-webrtc-test",
+  "version": "1.0.0",
+  "description": "A test of basic RTC datachannels on playwright",
+  "main": "index.js",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "author": "maschad",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.36.1"
+  }
+}

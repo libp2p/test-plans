@@ -5,14 +5,14 @@ on:
     branches:
       - "master"
 
-name: libp2p multidimensional interop test
+name: libp2p simple webrtc test
 
 jobs:
   run-multidim-interop:
-    runs-on: ['self-hosted', 'linux', 'x64', '4xlarge'] # https://github.com/pl-strflt/tf-aws-gh-runner/blob/main/runners.tf
+    runs-on: ["self-hosted", "linux", "x64", "4xlarge"] # https://github.com/pl-strflt/tf-aws-gh-runner/blob/main/runners.tf
     steps:
       - uses: actions/checkout@v3
-      - uses: ./.github/actions/run-interop-ping-test
+      - uses: ./.github/actions/simple-webrtc-test
         with:
           s3-cache-bucket: libp2p-by-tf-aws-bootstrap
           s3-access-key-id: ${{ vars.S3_AWS_ACCESS_KEY_ID }}
@@ -23,7 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       # Purposely not using secrets to replicate how forks will behave.
-      - uses: ./.github/actions/run-interop-ping-test
+      - uses: ./.github/actions/simple-webrtc-test
         with:
           # It's okay to not run the tests, we only care to check if the tests build without cache.
           test-filter: '"no test matches this, skip all"'
