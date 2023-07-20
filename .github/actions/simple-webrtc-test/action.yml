@@ -92,7 +92,6 @@ runs:
 
     - uses: actions/upload-artifact@v3
       if: always()
-      working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
       with:
         name: playwright-report
         path: playwright-report/
