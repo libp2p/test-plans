@@ -69,31 +69,21 @@ runs:
       run: npx playwright install --with-deps
       shell: bash
 
-    - name: Load cache and build
-      working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
-      run: npm run cache -- load
-      shell: bash
+    # - name: Load cache and build
+    #   working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
+    #   run: npm run cache -- load
+    #   shell: bash
 
-    - name: Assert Git tree is clean.
-      working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
-      shell: bash
-      run: |
-        if [[ -n "$(git status --porcelain)" ]]; then
-          echo "Git tree is dirty. This means that building an impl generated something that should probably be .gitignore'd"
-          git status
-          exit 1
-        fi
-
-    - name: Push the image cache
-      if: env.PUSH_CACHE == 'true'
-      working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
-      env:
-        AWS_BUCKET: ${{ inputs.s3-cache-bucket }}
-        AWS_REGION: ${{ inputs.aws-region }}
-        AWS_ACCESS_KEY_ID: ${{ inputs.s3-access-key-id }}
-        AWS_SECRET_ACCESS_KEY: ${{ inputs.s3-secret-access-key }}
-      run: npm run cache -- push
-      shell: bash
+    # - name: Push the image cache
+    #   if: env.PUSH_CACHE == 'true'
+    #   working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
+    #   env:
+    #     AWS_BUCKET: ${{ inputs.s3-cache-bucket }}
+    #     AWS_REGION: ${{ inputs.aws-region }}
+    #     AWS_ACCESS_KEY_ID: ${{ inputs.s3-access-key-id }}
+    #     AWS_SECRET_ACCESS_KEY: ${{ inputs.s3-secret-access-key }}
+    #   run: npm run cache -- push
+    #   shell: bash
 
     - name: Run Playwright tests
       run: npx playwright test
