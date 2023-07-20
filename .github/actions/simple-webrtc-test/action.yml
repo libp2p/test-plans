@@ -31,7 +31,7 @@ runs:
       shell: bash
 
     # This depends on where this file is within this repository. This walks up
-    # from here to the multidim-interop folder
+    # from here to the simple wertc folder
     - run: |
         WORK_DIR=$(realpath "$GITHUB_ACTION_PATH/../../../simple-webrtc-test")
         echo "WORK_DIR=$WORK_DIR" >> $GITHUB_OUTPUT
