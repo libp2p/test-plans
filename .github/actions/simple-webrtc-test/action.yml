@@ -86,11 +86,13 @@ runs:
     #   shell: bash
 
     - name: Run Playwright tests
-      run: npx playwright test
+      working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
+      run: npm run test
       shell: bash
 
     - uses: actions/upload-artifact@v3
       if: always()
+      working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
       with:
         name: playwright-report
         path: playwright-report/
