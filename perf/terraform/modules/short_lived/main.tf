@@ -19,6 +19,7 @@ resource "aws_instance" "perf" {
 
   launch_template {
     name = "perf-node"
+    version = "2"
   }
 
   key_name = aws_key_pair.perf.key_name
