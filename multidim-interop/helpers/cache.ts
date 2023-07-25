@@ -94,7 +94,7 @@ switch (modeStr) {
                             let imageSize = "unknown"
                             try {
                                 const imageSizeBytes = child_process.execSync(`docker image inspect ${loadedImageId} -f "{.Size}"`).toString().trim();
-                                imageSize = `${Math.round(parseInt(imageSizeBytes) / 1024 / 1024)}MB`
+                                imageSize = imageSizeBytes
                             } catch { }
                             console.log(`Cache hit for ${loadedImageId}. Size ${imageSize}.`);
                             fs.writeFileSync(path.join(implFolder, 'image.json'), JSON.stringify({ imageID: loadedImageId }) + "\n");
