@@ -69,12 +69,6 @@ export const versions: Array<Version> = [
         muxers: ["mplex", "yamux"],
     },
     {
-        id: "rust-v0.52",
-        transports: ["ws", "tcp", "quic-v1", "webrtc-direct"],
-        secureChannels: ["tls", "noise"],
-        muxers: ["mplex", "yamux"],
-    },
-    {
         id: "chromium-rust-v0.52",
         containerImageID: browserImageIDLookup,
         transports: [{ name: "webtransport", onlyDial: true }],
@@ -82,21 +76,8 @@ export const versions: Array<Version> = [
         muxers: [],
     },
     {
-        id: "js-v0.44",
-        transports: ["tcp", "ws", { name: "wss", onlyDial: true }],
-        secureChannels: ["noise"],
-        muxers: ["mplex", "yamux"],
-    },
-    {
         id: "js-v0.45",
         transports: ["tcp", "ws", { name: "wss", onlyDial: true }],
-        secureChannels: ["noise"],
-        muxers: ["mplex", "yamux"],
-    },
-    {
-        id: "chromium-js-v0.44",
-        containerImageID: browserImageIDLookup,
-        transports: [{ name: "webtransport", onlyDial: true }, { name: "wss", onlyDial: true }, { name: "webrtc-direct", onlyDial: true }],
         secureChannels: ["noise"],
         muxers: ["mplex", "yamux"],
     },
