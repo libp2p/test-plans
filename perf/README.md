@@ -39,28 +39,29 @@ _WARNING_: Running the perf tests might take a while.
 1. `cd terraform/configs/local`
 2. `terraform destroy`
 
-## Adding a new implementation
+## Adding a new implementation or a new version
 
 1. Add implementation to `impl/`.
-  - Create a folder `impl/<your-implementation-name>/<your-implementation-version>`.
-  - In that folder include a `Makefile` that builds an executable and stores it next to the `Makefile` under the name `perf`.
-  - Requirements for the executable:
-    - Running as a libp2p-perf server
-      - Command line flags
-        - `--run-server`
-    - Running as a libp2p-perf client
-        - Input via command line
-          - `--server-ip-address`
-          - `--transport` (see `runner/versions.ts` for possible variants)
-          - `--upload-bytes` number of bytes to upload per stream.
-          - `--download-bytes` number of bytes to download per stream.
-        - Output
-          - Logging MUST go to stderr.
-          - Measurement output is printed to stdout as JSON in the form of:
-            ```json
-            {"latency": 0.246442851}
-            ```
-            Note that the measurement includes the time to (1) establish the
-            connection, (2) upload the bytes and (3) download the bytes.
-2. In `impl/Makefile` include your implementation in the `all` target.
-3. Reference implementation in `runner/src/versions.ts`.
+    - For a new implementation, create a folder `impl/<your-implementation-name>/`
+    - For a new version of an existing implementation, create a folder `impl/<your-implementation-name>/<your-implementation-version>`.
+    - In that folder include a `Makefile` that builds an executable and stores it next to the `Makefile` under the name `perf`.
+    - Requirements for the executable:
+      - Running as a libp2p-perf server
+        - Command line flags
+          - `--run-server`
+      - Running as a libp2p-perf client
+          - Input via command line
+            - `--server-ip-address`
+            - `--transport` (see `runner/versions.ts` for possible variants)
+            - `--upload-bytes` number of bytes to upload per stream.
+            - `--download-bytes` number of bytes to download per stream.
+          - Output
+            - Logging MUST go to stderr.
+            - Measurement output is printed to stdout as JSON in the form of:
+              ```json
+              {"latency": 0.246442851}
+              ```
+              Note that the measurement includes the time to (1) establish the
+              connection, (2) upload the bytes and (3) download the bytes.
+2. For a new implementation, in `impl/Makefile` include your implementation in the `all` target.
+3. For a new version, reference version in `runner/src/versions.ts`.
