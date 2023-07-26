@@ -5,6 +5,10 @@ inputs:
     description: "Filter which tests to run out of the created matrix"
     required: false
     default: ""
+  test-ignore:
+    description: "Exclude tests from the created matrix that include this string in their name"
+    required: false
+    default: ""
   extra-versions:
     description: "Space-separated paths to JSON files describing additional images"
     required: false
@@ -104,7 +108,8 @@ runs:
         WORKER_COUNT: ${{ inputs.worker-count }}
         EXTRA_VERSION: ${{ inputs.extra-versions }}
         NAME_FILTER: ${{ inputs.test-filter }}
-      run: npm run test -- --extra-version=$EXTRA_VERSION --name-filter=$NAME_FILTER
+        NAME_IGNORE: ${{ inputs.test-ignore }}
+      run: npm run test -- --extra-version=$EXTRA_VERSION --name-filter=$NAME_FILTER --name-ignore=$NAME_IGNORE
       shell: bash
 
     - name: Print the results
