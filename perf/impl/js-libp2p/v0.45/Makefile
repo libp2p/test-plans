@@ -1,26 +1,22 @@
-image_name := js-v0.45
 commitSha := b1d89bda6c7952b7d60f560894aadc1544cc53ce
 
 all: perf
 
-# Necessary because multistage builds require a docker image name rather than a digest to be used
-perf: js-libp2p-${commitSha}/perf
-	cp ./js-libp2p-${commitSha}/perf .
+perf: js-libp2p-${commitSha}/packages/perf
+      cp ./js-libp2p-${commitSha}/packages/perf .
 
-load-image-json: image.json
-	docker image tag $$(jq -r .imageID image.json) ${image_name}
+js-libp2p-${commitSha}/packages/perf: js-libp2p-${commitSha}
+	docker run --rm --use "$(shell id -u):$(shell id -g)" -v "$(shell pwd)/js-libp2p-${commitSha}":/usr/src/myapp -w /usr/src/myapp node:18.17.0 npm run build
 
-image.json: js-libp2p-${commitSha}
-	cd js-libp2p-${commitSha} && docker build -t ${image_name} -f ../Dockerfile .
-	docker image inspect ${image_name} -f "{{.Id}}" | \
-		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
-
-js-libp2p-${commitSha}:
-	wget -O js-libp2p-${commitSha}.zip "https://github.com/libp2p/js-libp2p/archive/${commitSha}.zip"
+js-libp2p-${commitSha}: js-libp2p-${commitSha}.zip
 	unzip -o js-libp2p-${commitSha}.zip
-	unzip -o js-libp2p-${commitSha}.zip
+
+js-libp2p-${commitSha}.zip:
+	wget -O $@ "https://github.com/libp2p/js-libp2p/archive/${commitSha}.zip"
 
 clean:
-	rm -rf image.json js-libp2p-*.zip js-libp2p-* *-image.json
+	rm -rf js-libp2p-*.zip
+	rm -rf js-libp2p-*
+	rm perf
 
 .PHONY: all clean
