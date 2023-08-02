@@ -7,71 +7,34 @@
         {
           "result": [
             {
-              "latency": 1.119317393
+              "latency": 45.092536495
             },
             {
-              "latency": 1.061339551
+              "latency": 46.453431708
             },
             {
-              "latency": 1.073162733
+              "latency": 43.121363126
             },
             {
-              "latency": 1.116781619
+              "latency": 48.073782698
             },
             {
-              "latency": 1.067092997
+              "latency": 42.536567245
             },
             {
-              "latency": 1.04480886
+              "latency": 44.800777137
             },
             {
-              "latency": 1.070393747
+              "latency": 44.966946722
             },
             {
-              "latency": 1.095237863
+              "latency": 44.561705775
             },
             {
-              "latency": 1.08700749
+              "latency": 43.186601544
             },
             {
-              "latency": 1.087060379
-            }
-          ],
-          "implementation": "quic-go",
-          "version": "v0.34",
-          "transportStack": "quic-v1"
-        },
-        {
-          "result": [
-            {
-              "latency": 48.35341178
-            },
-            {
-              "latency": 43.458040168
-            },
-            {
-              "latency": 45.194342751
-            },
-            {
-              "latency": 45.707101384
-            },
-            {
-              "latency": 46.127135854
-            },
-            {
-              "latency": 47.716637857
-            },
-            {
-              "latency": 43.369151368
-            },
-            {
-              "latency": 47.294599368
-            },
-            {
-              "latency": 42.969153298
-            },
-            {
-              "latency": 47.461757931
+              "latency": 44.93694798
             }
           ],
           "implementation": "rust-libp2p",
@@ -81,34 +44,34 @@
         {
           "result": [
             {
-              "latency": 18.2283439
+              "latency": 8.495456571
             },
             {
-              "latency": 11.75501484
+              "latency": 11.472445784
             },
             {
-              "latency": 10.120741066
+              "latency": 9.741050265
             },
             {
-              "latency": 10.036856915
+              "latency": 9.163787686
             },
             {
-              "latency": 10.568076672
+              "latency": 8.148348882
             },
             {
-              "latency": 16.370198727000002
+              "latency": 9.509698471
             },
             {
-              "latency": 10.329517232
+              "latency": 13.757054301
             },
             {
-              "latency": 12.934512173
+              "latency": 7.583551141
             },
             {
-              "latency": 15.846306855
+              "latency": 11.238833091
             },
             {
-              "latency": 12.467649039
+              "latency": 16.747418797999998
             }
           ],
           "implementation": "rust-libp2p",
@@ -118,298 +81,113 @@
         {
           "result": [
             {
-              "latency": 1.505765928
+              "latency": 48.057414564
             },
             {
-              "latency": 1.457213318
+              "latency": 47.202178013
             },
             {
-              "latency": 1.438691721
+              "latency": 42.322233752
             },
             {
-              "latency": 1.468684848
+              "latency": 45.005421319
             },
             {
-              "latency": 1.437543998
+              "latency": 43.054052422
             },
             {
-              "latency": 1.487655169
+              "latency": 45.590736535
             },
             {
-              "latency": 1.507879043
+              "latency": 44.077195583
             },
             {
-              "latency": 1.438185069
+              "latency": 45.755572248
             },
             {
-              "latency": 1.496899499
+              "latency": 47.014848413
             },
             {
-              "latency": 1.430120698
+              "latency": 47.191932921
             }
           ],
-          "implementation": "rust-libp2p-quinn",
-          "version": "v0.52",
+          "implementation": "rust-libp2p",
+          "version": "yamux-v0.12",
+          "transportStack": "tcp"
+        },
+        {
+          "result": [
+            {
+              "latency": 1.524185264
+            },
+            {
+              "latency": 1.3736797379999999
+            },
+            {
+              "latency": 1.516046419
+            },
+            {
+              "latency": 1.376752869
+            },
+            {
+              "latency": 1.469939982
+            },
+            {
+              "latency": 1.426427751
+            },
+            {
+              "latency": 1.446004874
+            },
+            {
+              "latency": 1.460116073
+            },
+            {
+              "latency": 1.436123722
+            },
+            {
+              "latency": 1.4754992630000001
+            }
+          ],
+          "implementation": "rust-libp2p",
+          "version": "yamux-v0.12",
           "transportStack": "quic-v1"
         },
         {
           "result": [
             {
-              "latency": 2.850614266
+              "latency": 2.6996075470000003
             },
             {
-              "latency": 2.729654279
+              "latency": 2.711429499
             },
             {
-              "latency": 2.86092833
+              "latency": 2.6223131840000002
             },
             {
-              "latency": 2.750045296
+              "latency": 2.963115831
             },
             {
-              "latency": 2.835661527
+              "latency": 2.739897008
             },
             {
-              "latency": 2.869588694
+              "latency": 3.088685177
             },
             {
-              "latency": 2.835006436
+              "latency": 2.772029105
             },
             {
-              "latency": 2.718045184
+              "latency": 2.758396014
             },
             {
-              "latency": 2.870315014
+              "latency": 2.7386825249999998
             },
             {
-              "latency": 2.832639076
+              "latency": 2.9236962010000003
             }
           ],
           "implementation": "https",
           "version": "v0.1",
           "transportStack": "tcp"
-        },
-        {
-          "result": [
-            {
-              "latency": 3.452302587
-            },
-            {
-              "latency": 3.124202442
-            },
-            {
-              "latency": 3.29012837
-            },
-            {
-              "latency": 3.283977078
-            },
-            {
-              "latency": 3.525963892
-            },
-            {
-              "latency": 3.549878368
-            },
-            {
-              "latency": 3.477260165
-            },
-            {
-              "latency": 3.071118227
-            },
-            {
-              "latency": 3.261845049
-            },
-            {
-              "latency": 3.29196215
-            }
-          ],
-          "implementation": "go-libp2p",
-          "version": "v0.27",
-          "transportStack": "tcp"
-        },
-        {
-          "result": [
-            {
-              "latency": 1.468323921
-            },
-            {
-              "latency": 1.457121951
-            },
-            {
-              "latency": 1.476822358
-            },
-            {
-              "latency": 1.47064745
-            },
-            {
-              "latency": 1.458459472
-            },
-            {
-              "latency": 1.491683941
-            },
-            {
-              "latency": 1.502665054
-            },
-            {
-              "latency": 1.502545693
-            },
-            {
-              "latency": 1.515709589
-            },
-            {
-              "latency": 1.42591768
-            }
-          ],
-          "implementation": "go-libp2p",
-          "version": "v0.27",
-          "transportStack": "quic-v1"
-        },
-        {
-          "result": [
-            {
-              "latency": 3.2393314970000002
-            },
-            {
-              "latency": 3.1142028489999998
-            },
-            {
-              "latency": 3.289936834
-            },
-            {
-              "latency": 3.249665263
-            },
-            {
-              "latency": 3.214272895
-            },
-            {
-              "latency": 3.551539806
-            },
-            {
-              "latency": 3.386085931
-            },
-            {
-              "latency": 3.212475208
-            },
-            {
-              "latency": 3.323604997
-            },
-            {
-              "latency": 3.294251089
-            }
-          ],
-          "implementation": "go-libp2p",
-          "version": "v0.28",
-          "transportStack": "tcp"
-        },
-        {
-          "result": [
-            {
-              "latency": 1.502595569
-            },
-            {
-              "latency": 1.541647306
-            },
-            {
-              "latency": 1.523905536
-            },
-            {
-              "latency": 1.537072211
-            },
-            {
-              "latency": 1.504821002
-            },
-            {
-              "latency": 1.470969925
-            },
-            {
-              "latency": 1.529134035
-            },
-            {
-              "latency": 1.383132673
-            },
-            {
-              "latency": 1.482091836
-            },
-            {
-              "latency": 1.49106631
-            }
-          ],
-          "implementation": "go-libp2p",
-          "version": "v0.28",
-          "transportStack": "quic-v1"
-        },
-        {
-          "result": [
-            {
-              "latency": 3.183002943
-            },
-            {
-              "latency": 3.236248308
-            },
-            {
-              "latency": 3.289971385
-            },
-            {
-              "latency": 3.14987272
-            },
-            {
-              "latency": 3.166591529
-            },
-            {
-              "latency": 3.42006974
-            },
-            {
-              "latency": 3.5508771599999998
-            },
-            {
-              "latency": 3.495660751
-            },
-            {
-              "latency": 3.352867466
-            },
-            {
-              "latency": 3.537381881
-            }
-          ],
-          "implementation": "go-libp2p",
-          "version": "v0.29",
-          "transportStack": "tcp"
-        },
-        {
-          "result": [
-            {
-              "latency": 1.5163504890000001
-            },
-            {
-              "latency": 1.414613172
-            },
-            {
-              "latency": 1.492597091
-            },
-            {
-              "latency": 1.457305198
-            },
-            {
-              "latency": 1.522280266
-            },
-            {
-              "latency": 1.461606821
-            },
-            {
-              "latency": 1.509332297
-            },
-            {
-              "latency": 1.476892382
-            },
-            {
-              "latency": 1.460950462
-            },
-            {
-              "latency": 1.450176747
-            }
-          ],
-          "implementation": "go-libp2p",
-          "version": "v0.29",
-          "transportStack": "quic-v1"
         }
       ],
       "parameters": {
@@ -424,71 +202,34 @@
         {
           "result": [
             {
-              "latency": 1.113733857
+              "latency": 43.575969238
             },
             {
-              "latency": 1.186931339
+              "latency": 45.628524316
             },
             {
-              "latency": 1.139574048
+              "latency": 44.30165423
             },
             {
-              "latency": 1.154293308
+              "latency": 46.540453577
             },
             {
-              "latency": 1.141692673
+              "latency": 46.840493824
             },
             {
-              "latency": 1.136820558
+              "latency": 44.197385751
             },
             {
-              "latency": 1.15284637
+              "latency": 44.260333818
             },
             {
-              "latency": 1.146901071
+              "latency": 44.719508722
             },
             {
-              "latency": 1.090703925
+              "latency": 44.51321745
             },
             {
-              "latency": 1.12367308
-            }
-          ],
-          "implementation": "quic-go",
-          "version": "v0.34",
-          "transportStack": "quic-v1"
-        },
-        {
-          "result": [
-            {
-              "latency": 44.608929758
-            },
-            {
-              "latency": 45.627491398
-            },
-            {
-              "latency": 46.914176179
-            },
-            {
-              "latency": 45.934846181
-            },
-            {
-              "latency": 45.922485891
-            },
-            {
-              "latency": 43.904977435
-            },
-            {
-              "latency": 45.101204288
-            },
-            {
-              "latency": 44.38345355
-            },
-            {
-              "latency": 48.318403484
-            },
-            {
-              "latency": 47.413625762
+              "latency": 47.607288264
             }
           ],
           "implementation": "rust-libp2p",
@@ -498,34 +239,34 @@
         {
           "result": [
             {
-              "latency": 13.087998139
+              "latency": 14.993774254
             },
             {
-              "latency": 9.414624639
+              "latency": 4.561683294
             },
             {
-              "latency": 11.169983073
+              "latency": 6.339533455
             },
             {
-              "latency": 15.897624136
+              "latency": 7.062847188
             },
             {
-              "latency": 11.344068815
+              "latency": 14.609007504000001
             },
             {
-              "latency": 19.905686887
+              "latency": 12.776962405
             },
             {
-              "latency": 8.556504397
+              "latency": 18.813787752
             },
             {
-              "latency": 11.084949853
+              "latency": 15.870549508
             },
             {
-              "latency": 16.257618974
+              "latency": 5.570558253
             },
             {
-              "latency": 9.35844919
+              "latency": 7.823134049
             }
           ],
           "implementation": "rust-libp2p",
@@ -535,298 +276,113 @@
         {
           "result": [
             {
-              "latency": 1.491312384
+              "latency": 48.245411818
             },
             {
-              "latency": 1.501673566
+              "latency": 45.560790911
             },
             {
-              "latency": 1.486578968
+              "latency": 45.837396552
             },
             {
-              "latency": 1.383807166
+              "latency": 42.901660832
             },
             {
-              "latency": 1.5062145980000001
+              "latency": 42.743471655
             },
             {
-              "latency": 1.514003662
+              "latency": 47.435402134
             },
             {
-              "latency": 1.509967842
+              "latency": 47.662100807
             },
             {
-              "latency": 1.45112646
+              "latency": 44.373877221
             },
             {
-              "latency": 1.4617444019999999
+              "latency": 45.970554469
             },
             {
-              "latency": 1.427452103
+              "latency": 45.173578984
             }
           ],
-          "implementation": "rust-libp2p-quinn",
-          "version": "v0.52",
+          "implementation": "rust-libp2p",
+          "version": "yamux-v0.12",
+          "transportStack": "tcp"
+        },
+        {
+          "result": [
+            {
+              "latency": 1.480891079
+            },
+            {
+              "latency": 1.441559709
+            },
+            {
+              "latency": 1.455311644
+            },
+            {
+              "latency": 1.504553934
+            },
+            {
+              "latency": 1.474827278
+            },
+            {
+              "latency": 1.5686272890000001
+            },
+            {
+              "latency": 1.46147404
+            },
+            {
+              "latency": 1.47724678
+            },
+            {
+              "latency": 1.6300972219999998
+            },
+            {
+              "latency": 1.431532673
+            }
+          ],
+          "implementation": "rust-libp2p",
+          "version": "yamux-v0.12",
           "transportStack": "quic-v1"
         },
         {
           "result": [
             {
-              "latency": 2.996812603
+              "latency": 2.739919608
             },
             {
-              "latency": 2.81759166
+              "latency": 2.609348775
             },
             {
-              "latency": 2.802781272
+              "latency": 2.718553672
             },
             {
-              "latency": 2.785405218
+              "latency": 2.764364612
             },
             {
-              "latency": 2.813839335
+              "latency": 2.747233032
             },
             {
-              "latency": 3.134166252
+              "latency": 2.74915086
             },
             {
-              "latency": 2.780777154
+              "latency": 2.835463066
             },
             {
-              "latency": 2.771718296
+              "latency": 2.733870248
             },
             {
-              "latency": 5.92087085
+              "latency": 2.491605498
             },
             {
-              "latency": 2.8905507310000003
+              "latency": 2.957233884
             }
           ],
           "implementation": "https",
           "version": "v0.1",
           "transportStack": "tcp"
-        },
-        {
-          "result": [
-            {
-              "latency": 3.484200219
-            },
-            {
-              "latency": 3.28002645
-            },
-            {
-              "latency": 3.318344814
-            },
-            {
-              "latency": 3.344669199
-            },
-            {
-              "latency": 3.38886286
-            },
-            {
-              "latency": 3.243262928
-            },
-            {
-              "latency": 3.215063525
-            },
-            {
-              "latency": 3.244220415
-            },
-            {
-              "latency": 3.353526843
-            },
-            {
-              "latency": 3.189026432
-            }
-          ],
-          "implementation": "go-libp2p",
-          "version": "v0.27",
-          "transportStack": "tcp"
-        },
-        {
-          "result": [
-            {
-              "latency": 1.518331596
-            },
-            {
-              "latency": 1.493780624
-            },
-            {
-              "latency": 1.452156594
-            },
-            {
-              "latency": 1.4867321740000001
-            },
-            {
-              "latency": 1.487940164
-            },
-            {
-              "latency": 1.50728901
-            },
-            {
-              "latency": 1.450286922
-            },
-            {
-              "latency": 1.758013315
-            },
-            {
-              "latency": 1.452423797
-            },
-            {
-              "latency": 1.486544344
-            }
-          ],
-          "implementation": "go-libp2p",
-          "version": "v0.27",
-          "transportStack": "quic-v1"
-        },
-        {
-          "result": [
-            {
-              "latency": 3.2482150499999998
-            },
-            {
-              "latency": 3.469313825
-            },
-            {
-              "latency": 3.504648028
-            },
-            {
-              "latency": 3.318285944
-            },
-            {
-              "latency": 3.487191476
-            },
-            {
-              "latency": 3.3381424
-            },
-            {
-              "latency": 3.44535924
-            },
-            {
-              "latency": 3.579426265
-            },
-            {
-              "latency": 3.510041138
-            },
-            {
-              "latency": 3.330350758
-            }
-          ],
-          "implementation": "go-libp2p",
-          "version": "v0.28",
-          "transportStack": "tcp"
-        },
-        {
-          "result": [
-            {
-              "latency": 1.444644383
-            },
-            {
-              "latency": 1.458594483
-            },
-            {
-              "latency": 1.452083826
-            },
-            {
-              "latency": 1.499718831
-            },
-            {
-              "latency": 1.484293265
-            },
-            {
-              "latency": 1.378321395
-            },
-            {
-              "latency": 1.470631103
-            },
-            {
-              "latency": 1.5211577269999998
-            },
-            {
-              "latency": 1.5234650159999998
-            },
-            {
-              "latency": 1.5113830780000002
-            }
-          ],
-          "implementation": "go-libp2p",
-          "version": "v0.28",
-          "transportStack": "quic-v1"
-        },
-        {
-          "result": [
-            {
-              "latency": 3.244875936
-            },
-            {
-              "latency": 3.379472819
-            },
-            {
-              "latency": 3.476934629
-            },
-            {
-              "latency": 3.362801753
-            },
-            {
-              "latency": 3.357929455
-            },
-            {
-              "latency": 3.498679577
-            },
-            {
-              "latency": 3.224017689
-            },
-            {
-              "latency": 3.558169861
-            },
-            {
-              "latency": 3.408431518
-            },
-            {
-              "latency": 3.392717755
-            }
-          ],
-          "implementation": "go-libp2p",
-          "version": "v0.29",
-          "transportStack": "tcp"
-        },
-        {
-          "result": [
-            {
-              "latency": 1.521571066
-            },
-            {
-              "latency": 1.549975357
-            },
-            {
-              "latency": 1.483654336
-            },
-            {
-              "latency": 1.460878121
-            },
-            {
-              "latency": 1.468950966
-            },
-            {
-              "latency": 1.48059447
-            },
-            {
-              "latency": 1.629053189
-            },
-            {
-              "latency": 1.521217915
-            },
-            {
-              "latency": 1.481942796
-            },
-            {
-              "latency": 1.502277482
-            }
-          ],
-          "implementation": "go-libp2p",
-          "version": "v0.29",
-          "transportStack": "quic-v1"
         }
       ],
       "parameters": {
@@ -841,611 +397,304 @@
         {
           "result": [
             {
-              "latency": 0.131032932
+              "latency": 0.177253301
             },
             {
-              "latency": 0.124901967
+              "latency": 0.182866803
             },
             {
-              "latency": 0.126790221
+              "latency": 0.185416125
             },
             {
-              "latency": 0.123296135
+              "latency": 0.186218969
             },
             {
-              "latency": 0.122773368
+              "latency": 0.180881248
             },
             {
-              "latency": 0.1266372
+              "latency": 0.181590701
             },
             {
-              "latency": 0.123483457
+              "latency": 0.194069244
             },
             {
-              "latency": 0.130634015
+              "latency": 0.188592366
             },
             {
-              "latency": 0.124626715
+              "latency": 0.176127749
             },
             {
-              "latency": 0.120118938
+              "latency": 0.193232473
             },
             {
-              "latency": 0.11927271
+              "latency": 0.192243342
             },
             {
-              "latency": 0.131245619
+              "latency": 0.188981704
             },
             {
-              "latency": 0.127656681
+              "latency": 0.170855857
             },
             {
-              "latency": 0.12500289
+              "latency": 0.178921469
             },
             {
-              "latency": 0.130494434
+              "latency": 0.187513706
             },
             {
-              "latency": 0.122492216
+              "latency": 0.19114701
             },
             {
-              "latency": 0.132438562
+              "latency": 0.191864636
             },
             {
-              "latency": 0.121997317
+              "latency": 0.181739929
             },
             {
-              "latency": 0.13006516
+              "latency": 0.18916344
             },
             {
-              "latency": 0.127585166
+              "latency": 0.189211193
             },
             {
-              "latency": 0.128585806
+              "latency": 0.180427285
             },
             {
-              "latency": 0.129476316
+              "latency": 0.185985399
             },
             {
-              "latency": 0.129123272
+              "latency": 0.188864599
             },
             {
-              "latency": 0.123335845
+              "latency": 0.185759099
             },
             {
-              "latency": 0.129222196
+              "latency": 0.194063064
             },
             {
-              "latency": 0.130669884
+              "latency": 0.190508628
             },
             {
-              "latency": 0.128319583
+              "latency": 0.187027238
             },
             {
-              "latency": 0.128205039
+              "latency": 0.178823669
             },
             {
-              "latency": 0.13024851
+              "latency": 0.193042063
             },
             {
-              "latency": 0.129146879
+              "latency": 0.184985199
             },
             {
-              "latency": 0.125805814
+              "latency": 0.186520291
             },
             {
-              "latency": 0.124380444
+              "latency": 0.184594352
             },
             {
-              "latency": 0.127296437
+              "latency": 0.195783643
             },
             {
-              "latency": 0.128515901
+              "latency": 0.183421388
             },
             {
-              "latency": 0.124702021
+              "latency": 0.18279463
             },
             {
-              "latency": 0.12381876
+              "latency": 0.191881007
             },
             {
-              "latency": 0.128358333
+              "latency": 0.183218146
             },
             {
-              "latency": 0.127537199
+              "latency": 0.190457967
             },
             {
-              "latency": 0.128320915
+              "latency": 0.180325395
             },
             {
-              "latency": 0.130119909
+              "latency": 0.178520565
             },
             {
-              "latency": 0.119435599
+              "latency": 0.179838309
             },
             {
-              "latency": 0.12653396
+              "latency": 0.187391807
             },
             {
-              "latency": 0.124490838
+              "latency": 0.18348656
             },
             {
-              "latency": 0.130726633
+              "latency": 0.183291329
             },
             {
-              "latency": 0.127823639
+              "latency": 0.18817533
             },
             {
-              "latency": 0.121446989
+              "latency": 0.19044723
             },
             {
-              "latency": 0.128720013
+              "latency": 0.184358861
             },
             {
-              "latency": 0.125976036
+              "latency": 0.178265908
             },
             {
-              "latency": 0.118912508
+              "latency": 0.183086864
             },
             {
-              "latency": 0.125806378
+              "latency": 0.185451065
             },
             {
-              "latency": 0.129025286
+              "latency": 0.184055994
             },
             {
-              "latency": 0.124006814
+              "latency": 0.193244057
             },
             {
-              "latency": 0.12653518
+              "latency": 0.182832855
             },
             {
-              "latency": 0.127253012
+              "latency": 0.187757716
             },
             {
-              "latency": 0.121638677
+              "latency": 0.178221633
             },
             {
-              "latency": 0.128690108
+              "latency": 0.18737898
             },
             {
-              "latency": 0.126973343
+              "latency": 0.190293735
             },
             {
-              "latency": 0.129288516
+              "latency": 0.192706194
             },
             {
-              "latency": 0.12542012
+              "latency": 0.185353561
             },
             {
-              "latency": 0.125348309
+              "latency": 0.186800163
             },
             {
-              "latency": 0.128418775
+              "latency": 0.185333429
             },
             {
-              "latency": 0.125670329
+              "latency": 0.186025578
             },
             {
-              "latency": 0.13165203
+              "latency": 0.185939385
             },
             {
-              "latency": 0.12527331
+              "latency": 0.18976715
             },
             {
-              "latency": 0.122740179
+              "latency": 0.175798922
             },
             {
-              "latency": 0.128681298
+              "latency": 0.184647355
             },
             {
-              "latency": 0.128473544
+              "latency": 0.192643819
             },
             {
-              "latency": 0.124609881
+              "latency": 0.185858967
             },
             {
-              "latency": 0.124855949
+              "latency": 0.185054938
             },
             {
-              "latency": 0.128259239
+              "latency": 0.193940987
             },
             {
-              "latency": 0.128073825
+              "latency": 0.190495826
             },
             {
-              "latency": 0.123812296
+              "latency": 0.18872911
             },
             {
-              "latency": 0.123417677
+              "latency": 0.18611618
             },
             {
-              "latency": 0.130241751
+              "latency": 0.18833217
             },
             {
-              "latency": 0.125264079
+              "latency": 0.187620405
             },
             {
-              "latency": 0.130057067
+              "latency": 0.191223576
             },
             {
-              "latency": 0.124767243
+              "latency": 0.187660335
             },
             {
-              "latency": 0.125807773
+              "latency": 0.190149495
             },
             {
-              "latency": 0.127379042
+              "latency": 0.191464565
             },
             {
-              "latency": 0.124475286
+              "latency": 0.182852717
             },
             {
-              "latency": 0.130758575
+              "latency": 0.183386592
             },
             {
-              "latency": 0.125587881
+              "latency": 0.180553683
             },
             {
-              "latency": 0.129119717
+              "latency": 0.178824846
             },
             {
-              "latency": 0.129456903
+              "latency": 0.18589494
             },
             {
-              "latency": 0.127369654
+              "latency": 0.190696035
             },
             {
-              "latency": 0.130745339
+              "latency": 0.190332906
             },
             {
-              "latency": 0.122627031
+              "latency": 0.185991844
             },
             {
-              "latency": 0.1246124
+              "latency": 0.182326746
             },
             {
-              "latency": 0.124874615
+              "latency": 0.1806992
             },
             {
-              "latency": 0.12956773
+              "latency": 0.181144744
             },
             {
-              "latency": 0.129611391
+              "latency": 0.176014254
             },
             {
-              "latency": 0.124598257
+              "latency": 0.189366229
             },
             {
-              "latency": 0.131234272
+              "latency": 0.187069297
             },
             {
-              "latency": 0.127633034
+              "latency": 0.186378433
             },
             {
-              "latency": 0.127630588
+              "latency": 0.189190766
             },
             {
-              "latency": 0.125492365
+              "latency": 0.178500869
             },
             {
-              "latency": 0.123438532
+              "latency": 0.189649258
             },
             {
-              "latency": 0.130203661
+              "latency": 0.183212796
             },
             {
-              "latency": 0.126904619
+              "latency": 0.190785886
             },
             {
-              "latency": 0.127447313
-            }
-          ],
-          "implementation": "quic-go",
-          "version": "v0.34",
-          "transportStack": "quic-v1"
-        },
-        {
-          "result": [
-            {
-              "latency": 0.188749376
-            },
-            {
-              "latency": 0.195669567
-            },
-            {
-              "latency": 0.191184998
-            },
-            {
-              "latency": 0.187620287
-            },
-            {
-              "latency": 0.178527613
-            },
-            {
-              "latency": 0.187803774
-            },
-            {
-              "latency": 0.183649895
-            },
-            {
-              "latency": 0.189156575
-            },
-            {
-              "latency": 0.194460813
-            },
-            {
-              "latency": 0.184811036
-            },
-            {
-              "latency": 0.180254714
-            },
-            {
-              "latency": 0.188931139
-            },
-            {
-              "latency": 0.192543544
-            },
-            {
-              "latency": 0.192549519
-            },
-            {
-              "latency": 0.184983139
-            },
-            {
-              "latency": 0.195936646
-            },
-            {
-              "latency": 0.181875117
-            },
-            {
-              "latency": 0.18842783
-            },
-            {
-              "latency": 0.182320356
-            },
-            {
-              "latency": 0.185416277
-            },
-            {
-              "latency": 0.193518818
-            },
-            {
-              "latency": 0.188493533
-            },
-            {
-              "latency": 0.190613274
-            },
-            {
-              "latency": 0.186486996
-            },
-            {
-              "latency": 0.177754713
-            },
-            {
-              "latency": 0.183311076
-            },
-            {
-              "latency": 0.192262261
-            },
-            {
-              "latency": 0.189670339
-            },
-            {
-              "latency": 0.183350187
-            },
-            {
-              "latency": 0.191735292
-            },
-            {
-              "latency": 0.190819121
-            },
-            {
-              "latency": 0.189487948
-            },
-            {
-              "latency": 0.181742505
-            },
-            {
-              "latency": 0.189943556
-            },
-            {
-              "latency": 0.182116262
-            },
-            {
-              "latency": 0.183890512
-            },
-            {
-              "latency": 0.186840385
-            },
-            {
-              "latency": 0.189661646
-            },
-            {
-              "latency": 0.19375072
-            },
-            {
-              "latency": 0.187245437
-            },
-            {
-              "latency": 0.193389961
-            },
-            {
-              "latency": 0.185212539
-            },
-            {
-              "latency": 0.189459902
-            },
-            {
-              "latency": 0.18778919
-            },
-            {
-              "latency": 0.190789177
-            },
-            {
-              "latency": 0.188013425
-            },
-            {
-              "latency": 0.184686984
-            },
-            {
-              "latency": 0.195522093
-            },
-            {
-              "latency": 0.188038598
-            },
-            {
-              "latency": 0.180156895
-            },
-            {
-              "latency": 0.191792851
-            },
-            {
-              "latency": 0.193848691
-            },
-            {
-              "latency": 0.192247241
-            },
-            {
-              "latency": 0.188229022
-            },
-            {
-              "latency": 0.189176913
-            },
-            {
-              "latency": 0.189364012
-            },
-            {
-              "latency": 0.177160657
-            },
-            {
-              "latency": 0.192178312
-            },
-            {
-              "latency": 0.193827927
-            },
-            {
-              "latency": 0.193511698
-            },
-            {
-              "latency": 0.18915854
-            },
-            {
-              "latency": 0.189631448
-            },
-            {
-              "latency": 0.193524527
-            },
-            {
-              "latency": 0.191318917
-            },
-            {
-              "latency": 0.18934195
-            },
-            {
-              "latency": 0.194445121
-            },
-            {
-              "latency": 0.184053486
-            },
-            {
-              "latency": 0.186240375
-            },
-            {
-              "latency": 0.190696325
-            },
-            {
-              "latency": 0.189211836
-            },
-            {
-              "latency": 0.189258786
-            },
-            {
-              "latency": 0.191131386
-            },
-            {
-              "latency": 0.192414388
-            },
-            {
-              "latency": 0.191849674
-            },
-            {
-              "latency": 0.182521272
-            },
-            {
-              "latency": 0.190156839
-            },
-            {
-              "latency": 0.180335934
-            },
-            {
-              "latency": 0.18662462
-            },
-            {
-              "latency": 0.183541938
-            },
-            {
-              "latency": 0.193960215
-            },
-            {
-              "latency": 0.18830371
-            },
-            {
-              "latency": 0.192969972
-            },
-            {
-              "latency": 0.190309356
-            },
-            {
-              "latency": 0.192122429
-            },
-            {
-              "latency": 0.188011115
-            },
-            {
-              "latency": 0.191478705
-            },
-            {
-              "latency": 0.183330438
-            },
-            {
-              "latency": 0.187203611
-            },
-            {
-              "latency": 0.186369628
-            },
-            {
-              "latency": 0.18480542
-            },
-            {
-              "latency": 0.183553254
-            },
-            {
-              "latency": 0.188014555
-            },
-            {
-              "latency": 0.189256615
-            },
-            {
-              "latency": 0.18593065
-            },
-            {
-              "latency": 0.190675495
-            },
-            {
-              "latency": 0.19023683
-            },
-            {
-              "latency": 0.185703961
-            },
-            {
-              "latency": 0.180552935
-            },
-            {
-              "latency": 0.177255451
-            },
-            {
-              "latency": 0.191757773
+              "latency": 0.18639355
             }
           ],
           "implementation": "rust-libp2p",
@@ -1455,304 +704,304 @@
         {
           "result": [
             {
-              "latency": 0.125018277
+              "latency": 0.127514953
             },
             {
-              "latency": 0.124788826
+              "latency": 0.125630954
             },
             {
-              "latency": 0.118429925
+              "latency": 0.121437908
             },
             {
-              "latency": 0.125870692
+              "latency": 0.121258188
             },
             {
-              "latency": 0.127916941
+              "latency": 0.120701213
             },
             {
-              "latency": 0.125702139
+              "latency": 0.124121657
             },
             {
-              "latency": 0.126137034
+              "latency": 0.128492993
             },
             {
-              "latency": 0.122222809
+              "latency": 0.127896459
             },
             {
-              "latency": 0.129037108
+              "latency": 0.124469979
             },
             {
-              "latency": 0.130468395
+              "latency": 0.124071713
             },
             {
-              "latency": 0.127349309
+              "latency": 0.131729985
             },
             {
-              "latency": 0.126713366
+              "latency": 0.123605773
             },
             {
-              "latency": 0.129498369
+              "latency": 0.125531668
             },
             {
-              "latency": 0.132246813
+              "latency": 0.122295394
             },
             {
-              "latency": 0.123438563
+              "latency": 0.125954721
             },
             {
-              "latency": 0.128324503
+              "latency": 0.126909338
             },
             {
-              "latency": 0.122167719
+              "latency": 0.128188568
             },
             {
-              "latency": 0.125150921
+              "latency": 0.123408217
             },
             {
-              "latency": 0.129384793
+              "latency": 0.124868146
             },
             {
-              "latency": 0.125794008
+              "latency": 0.129355744
             },
             {
-              "latency": 0.132253588
+              "latency": 0.124249543
             },
             {
-              "latency": 0.127033758
+              "latency": 0.131561344
             },
             {
-              "latency": 0.128213012
+              "latency": 0.124608749
             },
             {
-              "latency": 0.130005543
+              "latency": 0.126061021
             },
             {
-              "latency": 0.125104992
+              "latency": 0.130842544
             },
             {
-              "latency": 0.132273344
+              "latency": 0.127265664
             },
             {
-              "latency": 0.128020806
+              "latency": 0.123679948
             },
             {
-              "latency": 0.125300533
+              "latency": 0.129694242
             },
             {
-              "latency": 0.126561252
+              "latency": 0.12352541
             },
             {
-              "latency": 0.125285328
+              "latency": 0.127341873
             },
             {
-              "latency": 0.129790295
+              "latency": 0.12348272
             },
             {
-              "latency": 0.128494997
+              "latency": 0.12877961
             },
             {
-              "latency": 0.126718793
+              "latency": 0.122417601
             },
             {
-              "latency": 0.126996447
+              "latency": 0.12756258
             },
             {
-              "latency": 0.120781861
+              "latency": 0.129339359
             },
             {
-              "latency": 0.126714561
+              "latency": 0.126959201
             },
             {
-              "latency": 0.125627142
+              "latency": 0.119760744
             },
             {
-              "latency": 0.125063559
+              "latency": 0.127091585
             },
             {
-              "latency": 0.132097142
+              "latency": 0.125129309
             },
             {
-              "latency": 0.132114224
+              "latency": 0.12530446
             },
             {
-              "latency": 0.129341552
+              "latency": 0.130177272
             },
             {
-              "latency": 0.127811853
+              "latency": 0.127295465
             },
             {
-              "latency": 0.124760761
+              "latency": 0.128981829
             },
             {
-              "latency": 0.128389978
+              "latency": 0.122633959
             },
             {
-              "latency": 0.123456254
+              "latency": 0.119919538
             },
             {
-              "latency": 0.127711957
+              "latency": 0.128749318
             },
             {
-              "latency": 0.123610134
+              "latency": 0.125939335
             },
             {
-              "latency": 0.131349671
+              "latency": 0.12354917
             },
             {
-              "latency": 0.131072087
+              "latency": 0.126824234
             },
             {
-              "latency": 0.129364492
+              "latency": 0.126305102
             },
             {
-              "latency": 0.127456221
+              "latency": 0.129308797
             },
             {
-              "latency": 0.128739395
+              "latency": 0.130557198
             },
             {
-              "latency": 0.127830444
+              "latency": 0.130050484
             },
             {
-              "latency": 0.130331398
+              "latency": 0.125252217
             },
             {
-              "latency": 0.125560903
+              "latency": 0.119257831
             },
             {
-              "latency": 0.125844527
+              "latency": 0.12210011
             },
             {
-              "latency": 0.124864274
+              "latency": 0.126102087
             },
             {
-              "latency": 0.126644975
+              "latency": 0.126244428
             },
             {
-              "latency": 0.126191503
+              "latency": 0.123050351
             },
             {
-              "latency": 0.128008833
+              "latency": 0.125728064
             },
             {
-              "latency": 0.130196063
+              "latency": 0.123720579
             },
             {
-              "latency": 0.119888952
+              "latency": 0.124098882
             },
             {
-              "latency": 0.124092718
+              "latency": 0.129918686
             },
             {
-              "latency": 0.129467728
+              "latency": 0.124606848
             },
             {
-              "latency": 0.127054708
+              "latency": 0.130471492
             },
             {
-              "latency": 0.123957874
+              "latency": 0.13025819
             },
             {
-              "latency": 0.124706655
+              "latency": 0.124165
             },
             {
-              "latency": 0.12693401
+              "latency": 0.126576445
             },
             {
-              "latency": 0.125214373
+              "latency": 0.124499592
             },
             {
-              "latency": 0.122730587
+              "latency": 0.125409414
             },
             {
-              "latency": 0.125586635
+              "latency": 0.12751134
             },
             {
-              "latency": 0.128971119
+              "latency": 0.123635331
             },
             {
-              "latency": 0.129403103
+              "latency": 0.12925087
             },
             {
-              "latency": 0.12668338
+              "latency": 0.122774136
             },
             {
-              "latency": 0.124157449
+              "latency": 0.123219125
             },
             {
-              "latency": 0.125195595
+              "latency": 0.127830522
             },
             {
-              "latency": 0.127752489
+              "latency": 0.127229792
             },
             {
-              "latency": 0.128027186
+              "latency": 0.128882176
             },
             {
-              "latency": 0.12731634
+              "latency": 0.116119182
             },
             {
-              "latency": 0.125209535
+              "latency": 0.127672383
             },
             {
-              "latency": 0.123399407
+              "latency": 0.118384383
             },
             {
-              "latency": 0.12587641
+              "latency": 0.125292442
             },
             {
-              "latency": 0.124895319
+              "latency": 0.123277861
             },
             {
-              "latency": 0.12751118
+              "latency": 0.122988401
             },
             {
-              "latency": 0.130445831
+              "latency": 0.118034165
             },
             {
-              "latency": 0.123663131
+              "latency": 0.127282379
             },
             {
-              "latency": 0.125604258
+              "latency": 0.130310684
             },
             {
-              "latency": 0.126207816
+              "latency": 0.123215405
             },
             {
-              "latency": 0.13035307
+              "latency": 0.126939421
             },
             {
-              "latency": 0.122412562
+              "latency": 0.129126416
             },
             {
-              "latency": 0.128408601
+              "latency": 0.122265237
             },
             {
-              "latency": 0.12648898
+              "latency": 0.126386887
             },
             {
-              "latency": 0.12447082
+              "latency": 0.121629699
             },
             {
-              "latency": 0.123459712
+              "latency": 0.120468183
             },
             {
-              "latency": 0.125690117
+              "latency": 0.122502783
             },
             {
-              "latency": 0.125365943
+              "latency": 0.119134596
             },
             {
-              "latency": 0.124525638
+              "latency": 0.124296895
             },
             {
-              "latency": 0.120733921
+              "latency": 0.122433737
             },
             {
-              "latency": 0.129363796
+              "latency": 0.128241875
             },
             {
-              "latency": 0.126651991
+              "latency": 0.127448005
             }
           ],
           "implementation": "rust-libp2p",
@@ -1762,2458 +1011,923 @@
         {
           "result": [
             {
-              "latency": 0.128326195
+              "latency": 0.183369306
             },
             {
-              "latency": 0.131356113
+              "latency": 0.183797076
             },
             {
-              "latency": 0.12728156
+              "latency": 0.193225406
             },
             {
-              "latency": 0.126657579
+              "latency": 0.18725163
             },
             {
-              "latency": 0.130697878
+              "latency": 0.185411731
             },
             {
-              "latency": 0.128723033
+              "latency": 0.184337372
             },
             {
-              "latency": 0.122550377
+              "latency": 0.189220554
             },
             {
-              "latency": 0.125886393
+              "latency": 0.180584123
             },
             {
-              "latency": 0.125996265
+              "latency": 0.18777281
             },
             {
-              "latency": 0.128886759
+              "latency": 0.191151084
             },
             {
-              "latency": 0.124211507
+              "latency": 0.18437194
             },
             {
-              "latency": 0.124918957
+              "latency": 0.187538401
             },
             {
-              "latency": 0.127547808
+              "latency": 0.184640789
             },
             {
-              "latency": 0.119817565
+              "latency": 0.191127439
             },
             {
-              "latency": 0.131857562
+              "latency": 0.193278447
             },
             {
-              "latency": 0.126682264
+              "latency": 0.184412655
             },
             {
-              "latency": 0.124190726
+              "latency": 0.182980896
             },
             {
-              "latency": 0.126243729
+              "latency": 0.189432685
             },
             {
-              "latency": 0.128375377
+              "latency": 0.173344096
             },
             {
-              "latency": 0.128809807
+              "latency": 0.17712454
             },
             {
-              "latency": 0.126662703
+              "latency": 0.188187943
             },
             {
-              "latency": 0.12408615
+              "latency": 0.194656674
             },
             {
-              "latency": 0.129948409
+              "latency": 0.190157228
             },
             {
-              "latency": 0.127901827
+              "latency": 0.193552389
             },
             {
-              "latency": 0.119651883
+              "latency": 0.179384231
             },
             {
-              "latency": 0.125630781
+              "latency": 0.188269923
             },
             {
-              "latency": 0.129631625
+              "latency": 0.189532762
             },
             {
-              "latency": 0.131028804
+              "latency": 0.187272329
             },
             {
-              "latency": 0.121616405
+              "latency": 0.186419211
             },
             {
-              "latency": 0.132098234
+              "latency": 0.180076885
             },
             {
-              "latency": 0.126834884
+              "latency": 0.185641137
             },
             {
-              "latency": 0.131125649
+              "latency": 0.175449965
             },
             {
-              "latency": 0.127815303
+              "latency": 0.191449633
             },
             {
-              "latency": 0.120070909
+              "latency": 0.185056803
             },
             {
-              "latency": 0.123595323
+              "latency": 0.188109188
             },
             {
-              "latency": 0.122272483
+              "latency": 0.191366507
             },
             {
-              "latency": 0.123747679
+              "latency": 0.180692369
             },
             {
-              "latency": 0.129020313
+              "latency": 0.188958524
             },
             {
-              "latency": 0.122518379
+              "latency": 0.181819225
             },
             {
-              "latency": 0.122513157
+              "latency": 0.187572428
             },
             {
-              "latency": 0.130466484
+              "latency": 0.183683349
             },
             {
-              "latency": 0.126914314
+              "latency": 0.18304133
             },
             {
-              "latency": 0.131361431
+              "latency": 0.177339179
             },
             {
-              "latency": 0.129173392
+              "latency": 0.187508004
             },
             {
-              "latency": 0.127464303
+              "latency": 0.186169091
             },
             {
-              "latency": 0.130257877
+              "latency": 0.182237927
             },
             {
-              "latency": 0.128608351
+              "latency": 0.191395835
             },
             {
-              "latency": 0.122006176
+              "latency": 0.178568551
             },
             {
-              "latency": 0.128764444
+              "latency": 0.17818059
             },
             {
-              "latency": 0.126785401
+              "latency": 0.182127745
             },
             {
-              "latency": 0.129494524
+              "latency": 0.185268059
             },
             {
-              "latency": 0.123760631
+              "latency": 0.194346818
             },
             {
-              "latency": 0.128290431
+              "latency": 0.188649893
             },
             {
-              "latency": 0.128971566
+              "latency": 0.194810127
             },
             {
-              "latency": 0.124983409
+              "latency": 0.193446727
             },
             {
-              "latency": 0.123710973
+              "latency": 0.186091108
             },
             {
-              "latency": 0.131459767
+              "latency": 0.189029584
             },
             {
-              "latency": 0.127631091
+              "latency": 0.187288579
             },
             {
-              "latency": 0.12761858
+              "latency": 0.191859505
             },
             {
-              "latency": 0.128566154
+              "latency": 0.18107415
             },
             {
-              "latency": 0.126682479
+              "latency": 0.181866138
             },
             {
-              "latency": 0.127790926
+              "latency": 0.183843031
             },
             {
-              "latency": 0.130305676
+              "latency": 0.189282852
             },
             {
-              "latency": 0.125490527
+              "latency": 0.193222702
             },
             {
-              "latency": 0.130748933
+              "latency": 0.184593795
             },
             {
-              "latency": 0.123111471
+              "latency": 0.188057926
             },
             {
-              "latency": 0.130601319
+              "latency": 0.188695549
             },
             {
-              "latency": 0.126975718
+              "latency": 0.185225843
             },
             {
-              "latency": 0.128240932
+              "latency": 0.183681722
             },
             {
-              "latency": 0.124941778
+              "latency": 0.178246494
             },
             {
-              "latency": 0.129494545
+              "latency": 0.187270066
             },
             {
-              "latency": 0.127919125
+              "latency": 0.185877945
             },
             {
-              "latency": 0.126216187
+              "latency": 0.186350855
             },
             {
-              "latency": 0.127658743
+              "latency": 0.192987673
             },
             {
-              "latency": 0.126990635
+              "latency": 0.184412357
             },
             {
-              "latency": 0.129895229
+              "latency": 0.185017425
             },
             {
-              "latency": 0.129573822
+              "latency": 0.18311889
             },
             {
-              "latency": 0.12413744
+              "latency": 0.187345989
             },
             {
-              "latency": 0.127464804
+              "latency": 0.191860104
             },
             {
-              "latency": 0.130100836
+              "latency": 0.186241216
             },
             {
-              "latency": 0.123804277
+              "latency": 0.187005064
             },
             {
-              "latency": 0.121837409
+              "latency": 0.18983375
             },
             {
-              "latency": 0.127733187
+              "latency": 0.18621898
             },
             {
-              "latency": 0.128643625
+              "latency": 0.191346104
             },
             {
-              "latency": 0.124842168
+              "latency": 0.17717627
             },
             {
-              "latency": 0.127603216
+              "latency": 0.188548152
             },
             {
-              "latency": 0.127286881
+              "latency": 0.174490901
             },
             {
-              "latency": 0.130448846
+              "latency": 0.196023809
             },
             {
-              "latency": 0.1289888
+              "latency": 0.182900836
             },
             {
-              "latency": 0.124919191
+              "latency": 0.184750024
             },
             {
-              "latency": 0.120639026
+              "latency": 0.187369738
             },
             {
-              "latency": 0.123505335
+              "latency": 0.172344706
             },
             {
-              "latency": 0.123833822
+              "latency": 0.184654375
             },
             {
-              "latency": 0.132481559
+              "latency": 0.182071871
             },
             {
-              "latency": 0.125951724
+              "latency": 0.196231278
             },
             {
-              "latency": 0.127924647
+              "latency": 0.190080646
             },
             {
-              "latency": 0.124665645
+              "latency": 0.194036298
             },
             {
-              "latency": 0.123881062
+              "latency": 0.184352825
             },
             {
-              "latency": 0.12669117
+              "latency": 0.190358354
             },
             {
-              "latency": 0.128383523
+              "latency": 0.189790097
             }
           ],
-          "implementation": "rust-libp2p-quinn",
-          "version": "v0.52",
+          "implementation": "rust-libp2p",
+          "version": "yamux-v0.12",
+          "transportStack": "tcp"
+        },
+        {
+          "result": [
+            {
+              "latency": 0.12291293
+            },
+            {
+              "latency": 0.129005136
+            },
+            {
+              "latency": 0.120588475
+            },
+            {
+              "latency": 0.123655219
+            },
+            {
+              "latency": 0.121059663
+            },
+            {
+              "latency": 0.125257883
+            },
+            {
+              "latency": 0.122220447
+            },
+            {
+              "latency": 0.130234497
+            },
+            {
+              "latency": 0.125090152
+            },
+            {
+              "latency": 0.127191748
+            },
+            {
+              "latency": 0.127498209
+            },
+            {
+              "latency": 0.127620232
+            },
+            {
+              "latency": 0.123648707
+            },
+            {
+              "latency": 0.13133918
+            },
+            {
+              "latency": 0.124227209
+            },
+            {
+              "latency": 0.128695793
+            },
+            {
+              "latency": 0.130402718
+            },
+            {
+              "latency": 0.127427318
+            },
+            {
+              "latency": 0.126420585
+            },
+            {
+              "latency": 0.125430645
+            },
+            {
+              "latency": 0.121844006
+            },
+            {
+              "latency": 0.125166306
+            },
+            {
+              "latency": 0.124960876
+            },
+            {
+              "latency": 0.124525618
+            },
+            {
+              "latency": 0.130253206
+            },
+            {
+              "latency": 0.119844057
+            },
+            {
+              "latency": 0.128774539
+            },
+            {
+              "latency": 0.128702711
+            },
+            {
+              "latency": 0.127269674
+            },
+            {
+              "latency": 0.127857719
+            },
+            {
+              "latency": 0.121696121
+            },
+            {
+              "latency": 0.127460653
+            },
+            {
+              "latency": 0.123511133
+            },
+            {
+              "latency": 0.129536623
+            },
+            {
+              "latency": 0.122879906
+            },
+            {
+              "latency": 0.130565099
+            },
+            {
+              "latency": 0.129510691
+            },
+            {
+              "latency": 0.124633568
+            },
+            {
+              "latency": 0.119149029
+            },
+            {
+              "latency": 0.128908517
+            },
+            {
+              "latency": 0.124456158
+            },
+            {
+              "latency": 0.124282379
+            },
+            {
+              "latency": 0.129084541
+            },
+            {
+              "latency": 0.130861306
+            },
+            {
+              "latency": 0.121629371
+            },
+            {
+              "latency": 0.130584055
+            },
+            {
+              "latency": 0.122978234
+            },
+            {
+              "latency": 0.127366055
+            },
+            {
+              "latency": 0.132315743
+            },
+            {
+              "latency": 0.125587605
+            },
+            {
+              "latency": 0.120228741
+            },
+            {
+              "latency": 0.119315754
+            },
+            {
+              "latency": 0.130312772
+            },
+            {
+              "latency": 0.124190852
+            },
+            {
+              "latency": 0.123488646
+            },
+            {
+              "latency": 0.127069013
+            },
+            {
+              "latency": 0.125773814
+            },
+            {
+              "latency": 0.132150961
+            },
+            {
+              "latency": 0.127984465
+            },
+            {
+              "latency": 0.12627416
+            },
+            {
+              "latency": 0.127476203
+            },
+            {
+              "latency": 0.126732077
+            },
+            {
+              "latency": 0.128887968
+            },
+            {
+              "latency": 0.11863241
+            },
+            {
+              "latency": 0.127601571
+            },
+            {
+              "latency": 0.121777642
+            },
+            {
+              "latency": 0.119326841
+            },
+            {
+              "latency": 0.127391525
+            },
+            {
+              "latency": 0.132160222
+            },
+            {
+              "latency": 0.125291828
+            },
+            {
+              "latency": 0.125287969
+            },
+            {
+              "latency": 0.125456126
+            },
+            {
+              "latency": 0.130009254
+            },
+            {
+              "latency": 0.133602497
+            },
+            {
+              "latency": 0.124887081
+            },
+            {
+              "latency": 0.130159167
+            },
+            {
+              "latency": 0.12908516
+            },
+            {
+              "latency": 0.129558579
+            },
+            {
+              "latency": 0.13069698
+            },
+            {
+              "latency": 0.123280198
+            },
+            {
+              "latency": 0.118164324
+            },
+            {
+              "latency": 0.118104888
+            },
+            {
+              "latency": 0.124090964
+            },
+            {
+              "latency": 0.146228278
+            },
+            {
+              "latency": 0.124361693
+            },
+            {
+              "latency": 0.122397252
+            },
+            {
+              "latency": 0.129378542
+            },
+            {
+              "latency": 0.129282972
+            },
+            {
+              "latency": 0.129568415
+            },
+            {
+              "latency": 0.128461065
+            },
+            {
+              "latency": 0.123715639
+            },
+            {
+              "latency": 0.125623632
+            },
+            {
+              "latency": 0.126143486
+            },
+            {
+              "latency": 0.126701433
+            },
+            {
+              "latency": 0.127659447
+            },
+            {
+              "latency": 0.128852821
+            },
+            {
+              "latency": 0.125662809
+            },
+            {
+              "latency": 0.130927296
+            },
+            {
+              "latency": 0.130490835
+            },
+            {
+              "latency": 0.131782105
+            }
+          ],
+          "implementation": "rust-libp2p",
+          "version": "yamux-v0.12",
           "transportStack": "quic-v1"
         },
         {
           "result": [
             {
-              "latency": 0.184419219
+              "latency": 0.191556987
             },
             {
-              "latency": 0.180971054
+              "latency": 0.189480339
             },
             {
-              "latency": 0.191016565
+              "latency": 0.182705568
             },
             {
-              "latency": 0.193784138
+              "latency": 0.183881471
             },
             {
-              "latency": 0.189562435
+              "latency": 0.192224428
             },
             {
-              "latency": 0.183088088
+              "latency": 0.19222946
             },
             {
-              "latency": 0.191428894
+              "latency": 0.186538976
             },
             {
-              "latency": 0.191756494
+              "latency": 0.188732818
             },
             {
-              "latency": 0.183130595
+              "latency": 0.184763113
             },
             {
-              "latency": 0.181720705
+              "latency": 0.190044589
             },
             {
-              "latency": 0.191753704
+              "latency": 0.185614827
             },
             {
-              "latency": 0.18266035
+              "latency": 0.186118234
             },
             {
-              "latency": 0.187937397
+              "latency": 0.171946828
             },
             {
-              "latency": 0.184276476
+              "latency": 0.195927996
             },
             {
-              "latency": 0.193897401
+              "latency": 0.186009714
             },
             {
-              "latency": 0.195520397
+              "latency": 0.190020288
             },
             {
-              "latency": 0.19406871
+              "latency": 0.177949174
             },
             {
-              "latency": 0.192064848
+              "latency": 0.187559609
             },
             {
-              "latency": 0.190656038
+              "latency": 0.19127307
             },
             {
-              "latency": 0.179790229
+              "latency": 0.185124718
             },
             {
-              "latency": 0.191630504
+              "latency": 0.192835258
             },
             {
-              "latency": 0.193149996
+              "latency": 0.187301263
             },
             {
-              "latency": 0.191659826
+              "latency": 0.187351697
             },
             {
-              "latency": 0.19083674
+              "latency": 0.195562163
             },
             {
-              "latency": 0.192340017
+              "latency": 0.195392505
             },
             {
-              "latency": 0.180072079
+              "latency": 0.193977147
             },
             {
-              "latency": 0.186408408
+              "latency": 0.177214367
             },
             {
-              "latency": 0.193539161
+              "latency": 0.186719448
             },
             {
-              "latency": 0.188499919
+              "latency": 0.187287024
             },
             {
-              "latency": 0.183070921
+              "latency": 0.188825741
             },
             {
-              "latency": 0.190168204
+              "latency": 0.192506775
             },
             {
-              "latency": 0.191702251
+              "latency": 0.1857409
             },
             {
-              "latency": 0.189003278
+              "latency": 0.190397922
             },
             {
-              "latency": 0.18897296
+              "latency": 0.180920394
             },
             {
-              "latency": 0.193448419
+              "latency": 0.183961464
             },
             {
-              "latency": 0.192971531
+              "latency": 0.18682375
             },
             {
-              "latency": 0.184686691
+              "latency": 0.182761757
             },
             {
-              "latency": 0.188615201
+              "latency": 0.188312114
             },
             {
-              "latency": 0.190452223
+              "latency": 0.190916416
             },
             {
-              "latency": 0.183713933
+              "latency": 0.189615428
             },
             {
-              "latency": 0.174925468
+              "latency": 0.186649375
             },
             {
-              "latency": 0.191316261
+              "latency": 0.193283341
             },
             {
-              "latency": 0.191279925
+              "latency": 0.187869827
             },
             {
-              "latency": 0.193222453
+              "latency": 0.18043873
             },
             {
-              "latency": 0.19077753
+              "latency": 0.189706768
             },
             {
-              "latency": 0.189543315
+              "latency": 0.188123717
             },
             {
-              "latency": 0.184498658
+              "latency": 0.195846034
             },
             {
-              "latency": 0.18296163
+              "latency": 0.180559985
             },
             {
-              "latency": 0.18752592
+              "latency": 0.182977266
             },
             {
-              "latency": 0.195720772
+              "latency": 0.180189946
             },
             {
-              "latency": 0.18469122
+              "latency": 0.194091713
             },
             {
-              "latency": 0.193329794
+              "latency": 0.1931413
             },
             {
-              "latency": 0.191224475
+              "latency": 0.175869947
             },
             {
-              "latency": 0.19023318
+              "latency": 0.189635271
             },
             {
-              "latency": 0.190428311
+              "latency": 0.186841915
             },
             {
-              "latency": 0.194314875
+              "latency": 0.182605631
             },
             {
-              "latency": 0.178758508
+              "latency": 0.18024338
             },
             {
-              "latency": 0.178150966
+              "latency": 0.185385803
             },
             {
-              "latency": 0.190083348
+              "latency": 0.192868763
             },
             {
-              "latency": 0.178381778
+              "latency": 0.18742755
             },
             {
-              "latency": 0.185899039
+              "latency": 0.180850186
             },
             {
-              "latency": 0.187657077
+              "latency": 0.182762144
             },
             {
-              "latency": 0.181942779
+              "latency": 0.191780194
             },
             {
-              "latency": 0.182759872
+              "latency": 0.183738422
             },
             {
-              "latency": 0.192676743
+              "latency": 0.188155676
             },
             {
-              "latency": 0.187100535
+              "latency": 0.191042348
             },
             {
-              "latency": 0.182788648
+              "latency": 0.184885738
             },
             {
-              "latency": 0.181782604
+              "latency": 0.187381498
             },
             {
-              "latency": 0.191373115
+              "latency": 0.192496539
             },
             {
-              "latency": 0.195528525
+              "latency": 0.1865527
             },
             {
-              "latency": 0.184394112
+              "latency": 0.180314787
             },
             {
-              "latency": 0.195233015
+              "latency": 0.183636307
             },
             {
-              "latency": 0.192921509
+              "latency": 0.185757763
             },
             {
-              "latency": 0.195302499
+              "latency": 0.184950988
             },
             {
-              "latency": 0.187534556
+              "latency": 0.192255607
             },
             {
-              "latency": 0.187295405
+              "latency": 0.1908552
             },
             {
-              "latency": 0.18551666
+              "latency": 0.190702081
             },
             {
-              "latency": 0.190003576
+              "latency": 0.187056571
             },
             {
-              "latency": 0.193740285
+              "latency": 0.19136406
             },
             {
-              "latency": 0.189796513
+              "latency": 0.185219605
             },
             {
-              "latency": 0.194326561
+              "latency": 0.192645738
             },
             {
-              "latency": 0.187290959
+              "latency": 0.192498673
             },
             {
-              "latency": 0.191761078
+              "latency": 0.190807771
             },
             {
-              "latency": 0.19189991
+              "latency": 0.18302001
             },
             {
-              "latency": 0.181634339
+              "latency": 0.177388461
             },
             {
-              "latency": 0.189947922
+              "latency": 0.179847746
             },
             {
-              "latency": 0.193566701
+              "latency": 0.18063766
             },
             {
-              "latency": 0.186062165
+              "latency": 0.181632724
             },
             {
-              "latency": 0.185710883
+              "latency": 0.18668822
             },
             {
-              "latency": 0.189157857
+              "latency": 0.184062931
             },
             {
-              "latency": 0.185697532
+              "latency": 0.191791743
             },
             {
-              "latency": 0.192156523
+              "latency": 0.182947391
             },
             {
-              "latency": 0.192811579
+              "latency": 0.193204585
             },
             {
-              "latency": 0.191221824
+              "latency": 0.180862517
             },
             {
-              "latency": 0.192165357
+              "latency": 0.1759581
             },
             {
-              "latency": 0.193727125
+              "latency": 0.194241009
             },
             {
-              "latency": 0.179638787
+              "latency": 0.185423655
             },
             {
-              "latency": 0.18457511
+              "latency": 0.195330362
             },
             {
-              "latency": 0.18306312
+              "latency": 0.18822698
             },
             {
-              "latency": 0.194025578
+              "latency": 0.178681113
             }
           ],
           "implementation": "https",
           "version": "v0.1",
           "transportStack": "tcp"
-        },
-        {
-          "result": [
-            {
-              "latency": 0.374041791
-            },
-            {
-              "latency": 0.374016609
-            },
-            {
-              "latency": 0.316373078
-            },
-            {
-              "latency": 0.297989831
-            },
-            {
-              "latency": 0.315143451
-            },
-            {
-              "latency": 0.383992302
-            },
-            {
-              "latency": 0.318173942
-            },
-            {
-              "latency": 0.305813346
-            },
-            {
-              "latency": 0.382025752
-            },
-            {
-              "latency": 0.378754989
-            },
-            {
-              "latency": 0.322063932
-            },
-            {
-              "latency": 0.377708801
-            },
-            {
-              "latency": 0.309901039
-            },
-            {
-              "latency": 0.319388105
-            },
-            {
-              "latency": 0.319868167
-            },
-            {
-              "latency": 0.316985016
-            },
-            {
-              "latency": 0.370261484
-            },
-            {
-              "latency": 0.373522606
-            },
-            {
-              "latency": 0.321301171
-            },
-            {
-              "latency": 0.297457868
-            },
-            {
-              "latency": 0.377429374
-            },
-            {
-              "latency": 0.314279502
-            },
-            {
-              "latency": 0.361386066
-            },
-            {
-              "latency": 0.319110982
-            },
-            {
-              "latency": 0.299302967
-            },
-            {
-              "latency": 0.369818854
-            },
-            {
-              "latency": 0.377736774
-            },
-            {
-              "latency": 0.363712839
-            },
-            {
-              "latency": 0.304681447
-            },
-            {
-              "latency": 0.319210884
-            },
-            {
-              "latency": 0.300872173
-            },
-            {
-              "latency": 0.367545973
-            },
-            {
-              "latency": 0.31019849
-            },
-            {
-              "latency": 0.329030964
-            },
-            {
-              "latency": 0.313984607
-            },
-            {
-              "latency": 0.371652722
-            },
-            {
-              "latency": 0.382678501
-            },
-            {
-              "latency": 0.326412912
-            },
-            {
-              "latency": 0.366267022
-            },
-            {
-              "latency": 0.314523357
-            },
-            {
-              "latency": 0.361650545
-            },
-            {
-              "latency": 0.38396371
-            },
-            {
-              "latency": 0.310868086
-            },
-            {
-              "latency": 0.32380073
-            },
-            {
-              "latency": 0.315393453
-            },
-            {
-              "latency": 0.318666998
-            },
-            {
-              "latency": 0.319956482
-            },
-            {
-              "latency": 0.376597086
-            },
-            {
-              "latency": 0.317538718
-            },
-            {
-              "latency": 0.374049551
-            },
-            {
-              "latency": 0.310205646
-            },
-            {
-              "latency": 0.390855568
-            },
-            {
-              "latency": 0.311547267
-            },
-            {
-              "latency": 0.392584411
-            },
-            {
-              "latency": 0.309811676
-            },
-            {
-              "latency": 0.312567776
-            },
-            {
-              "latency": 0.316157808
-            },
-            {
-              "latency": 0.306477598
-            },
-            {
-              "latency": 0.304979089
-            },
-            {
-              "latency": 0.372338485
-            },
-            {
-              "latency": 0.310509348
-            },
-            {
-              "latency": 0.301982981
-            },
-            {
-              "latency": 0.302306724
-            },
-            {
-              "latency": 0.374141201
-            },
-            {
-              "latency": 0.388877814
-            },
-            {
-              "latency": 0.322323144
-            },
-            {
-              "latency": 0.317246115
-            },
-            {
-              "latency": 0.321333836
-            },
-            {
-              "latency": 0.317990302
-            },
-            {
-              "latency": 0.324798027
-            },
-            {
-              "latency": 0.325512316
-            },
-            {
-              "latency": 0.325653978
-            },
-            {
-              "latency": 0.383317937
-            },
-            {
-              "latency": 0.302798948
-            },
-            {
-              "latency": 0.304304433
-            },
-            {
-              "latency": 0.373306209
-            },
-            {
-              "latency": 0.372092628
-            },
-            {
-              "latency": 0.349886173
-            },
-            {
-              "latency": 0.316546445
-            },
-            {
-              "latency": 0.373341341
-            },
-            {
-              "latency": 0.304851674
-            },
-            {
-              "latency": 0.314696984
-            },
-            {
-              "latency": 0.375739389
-            },
-            {
-              "latency": 0.320485402
-            },
-            {
-              "latency": 0.304888698
-            },
-            {
-              "latency": 0.31338185
-            },
-            {
-              "latency": 0.388448093
-            },
-            {
-              "latency": 0.317195471
-            },
-            {
-              "latency": 0.374270559
-            },
-            {
-              "latency": 0.302237337
-            },
-            {
-              "latency": 0.299804785
-            },
-            {
-              "latency": 0.313745
-            },
-            {
-              "latency": 0.309972829
-            },
-            {
-              "latency": 0.384343487
-            },
-            {
-              "latency": 0.313368931
-            },
-            {
-              "latency": 0.313963468
-            },
-            {
-              "latency": 0.322464978
-            },
-            {
-              "latency": 0.31975633
-            },
-            {
-              "latency": 0.373939561
-            },
-            {
-              "latency": 0.299590191
-            }
-          ],
-          "implementation": "go-libp2p",
-          "version": "v0.27",
-          "transportStack": "tcp"
-        },
-        {
-          "result": [
-            {
-              "latency": 0.191798423
-            },
-            {
-              "latency": 0.191540251
-            },
-            {
-              "latency": 0.192972656
-            },
-            {
-              "latency": 0.188422846
-            },
-            {
-              "latency": 0.196881725
-            },
-            {
-              "latency": 0.198010249
-            },
-            {
-              "latency": 0.191596548
-            },
-            {
-              "latency": 0.186032879
-            },
-            {
-              "latency": 0.196410461
-            },
-            {
-              "latency": 0.192882016
-            },
-            {
-              "latency": 0.19703792
-            },
-            {
-              "latency": 0.192560978
-            },
-            {
-              "latency": 0.196887987
-            },
-            {
-              "latency": 0.179051328
-            },
-            {
-              "latency": 0.194524476
-            },
-            {
-              "latency": 0.182934111
-            },
-            {
-              "latency": 0.186570547
-            },
-            {
-              "latency": 0.192786321
-            },
-            {
-              "latency": 0.194154946
-            },
-            {
-              "latency": 0.195097769
-            },
-            {
-              "latency": 0.194103214
-            },
-            {
-              "latency": 0.189613322
-            },
-            {
-              "latency": 0.192052588
-            },
-            {
-              "latency": 0.185318649
-            },
-            {
-              "latency": 0.193195998
-            },
-            {
-              "latency": 0.188477589
-            },
-            {
-              "latency": 0.18751488
-            },
-            {
-              "latency": 0.197216315
-            },
-            {
-              "latency": 0.180881957
-            },
-            {
-              "latency": 0.196866933
-            },
-            {
-              "latency": 0.193936293
-            },
-            {
-              "latency": 0.191044904
-            },
-            {
-              "latency": 0.181811766
-            },
-            {
-              "latency": 0.195224782
-            },
-            {
-              "latency": 0.184109957
-            },
-            {
-              "latency": 0.195783432
-            },
-            {
-              "latency": 0.189997197
-            },
-            {
-              "latency": 0.192753372
-            },
-            {
-              "latency": 0.195689484
-            },
-            {
-              "latency": 0.195635761
-            },
-            {
-              "latency": 0.190661756
-            },
-            {
-              "latency": 0.195475056
-            },
-            {
-              "latency": 0.184208312
-            },
-            {
-              "latency": 0.186273204
-            },
-            {
-              "latency": 0.189982473
-            },
-            {
-              "latency": 0.193253884
-            },
-            {
-              "latency": 0.189319734
-            },
-            {
-              "latency": 0.190485222
-            },
-            {
-              "latency": 0.188173105
-            },
-            {
-              "latency": 0.191206161
-            },
-            {
-              "latency": 0.194673825
-            },
-            {
-              "latency": 0.193410363
-            },
-            {
-              "latency": 0.195724513
-            },
-            {
-              "latency": 0.177019309
-            },
-            {
-              "latency": 0.189516545
-            },
-            {
-              "latency": 0.193789358
-            },
-            {
-              "latency": 0.187712926
-            },
-            {
-              "latency": 0.19217178
-            },
-            {
-              "latency": 0.185910293
-            },
-            {
-              "latency": 0.189666705
-            },
-            {
-              "latency": 0.198208772
-            },
-            {
-              "latency": 0.19741593
-            },
-            {
-              "latency": 0.19870444
-            },
-            {
-              "latency": 0.194991187
-            },
-            {
-              "latency": 0.192670134
-            },
-            {
-              "latency": 0.190012627
-            },
-            {
-              "latency": 0.188726702
-            },
-            {
-              "latency": 0.197361933
-            },
-            {
-              "latency": 0.198333467
-            },
-            {
-              "latency": 0.197308737
-            },
-            {
-              "latency": 0.189727644
-            },
-            {
-              "latency": 0.195462792
-            },
-            {
-              "latency": 0.191820298
-            },
-            {
-              "latency": 0.195933086
-            },
-            {
-              "latency": 0.194279121
-            },
-            {
-              "latency": 0.187061614
-            },
-            {
-              "latency": 0.191019619
-            },
-            {
-              "latency": 0.190423434
-            },
-            {
-              "latency": 0.185083565
-            },
-            {
-              "latency": 0.192686027
-            },
-            {
-              "latency": 0.190088452
-            },
-            {
-              "latency": 0.193399276
-            },
-            {
-              "latency": 0.186657063
-            },
-            {
-              "latency": 0.193369232
-            },
-            {
-              "latency": 0.18884125
-            },
-            {
-              "latency": 0.190388861
-            },
-            {
-              "latency": 0.184857715
-            },
-            {
-              "latency": 0.187074317
-            },
-            {
-              "latency": 0.187495703
-            },
-            {
-              "latency": 0.193776977
-            },
-            {
-              "latency": 0.192927619
-            },
-            {
-              "latency": 0.196305052
-            },
-            {
-              "latency": 0.190702143
-            },
-            {
-              "latency": 0.19752598
-            },
-            {
-              "latency": 0.199238805
-            },
-            {
-              "latency": 0.191189185
-            },
-            {
-              "latency": 0.190610414
-            },
-            {
-              "latency": 0.19137264
-            },
-            {
-              "latency": 0.186075265
-            },
-            {
-              "latency": 0.196269683
-            }
-          ],
-          "implementation": "go-libp2p",
-          "version": "v0.27",
-          "transportStack": "quic-v1"
-        },
-        {
-          "result": [
-            {
-              "latency": 0.316488134
-            },
-            {
-              "latency": 0.312329987
-            },
-            {
-              "latency": 0.358526523
-            },
-            {
-              "latency": 0.313908475
-            },
-            {
-              "latency": 0.318184644
-            },
-            {
-              "latency": 0.316073516
-            },
-            {
-              "latency": 0.296735422
-            },
-            {
-              "latency": 0.357497933
-            },
-            {
-              "latency": 0.29663203
-            },
-            {
-              "latency": 0.32110897
-            },
-            {
-              "latency": 0.317196079
-            },
-            {
-              "latency": 0.315106237
-            },
-            {
-              "latency": 0.32368492
-            },
-            {
-              "latency": 0.378414613
-            },
-            {
-              "latency": 0.310322499
-            },
-            {
-              "latency": 0.317099768
-            },
-            {
-              "latency": 0.315641898
-            },
-            {
-              "latency": 0.357275503
-            },
-            {
-              "latency": 0.298640154
-            },
-            {
-              "latency": 0.292552643
-            },
-            {
-              "latency": 0.311005716
-            },
-            {
-              "latency": 0.325989801
-            },
-            {
-              "latency": 0.310814899
-            },
-            {
-              "latency": 0.378745613
-            },
-            {
-              "latency": 0.313479501
-            },
-            {
-              "latency": 0.388142704
-            },
-            {
-              "latency": 0.35316602
-            },
-            {
-              "latency": 0.3903332
-            },
-            {
-              "latency": 0.308236409
-            },
-            {
-              "latency": 0.310680105
-            },
-            {
-              "latency": 0.312843276
-            },
-            {
-              "latency": 0.307490665
-            },
-            {
-              "latency": 0.365785552
-            },
-            {
-              "latency": 0.352999804
-            },
-            {
-              "latency": 0.387493079
-            },
-            {
-              "latency": 0.322176962
-            },
-            {
-              "latency": 0.317747921
-            },
-            {
-              "latency": 0.367866727
-            },
-            {
-              "latency": 0.32416758
-            },
-            {
-              "latency": 0.367128195
-            },
-            {
-              "latency": 0.296201089
-            },
-            {
-              "latency": 0.38262402
-            },
-            {
-              "latency": 0.306652776
-            },
-            {
-              "latency": 0.379829006
-            },
-            {
-              "latency": 0.368420715
-            },
-            {
-              "latency": 0.38533359
-            },
-            {
-              "latency": 0.301575986
-            },
-            {
-              "latency": 0.367570327
-            },
-            {
-              "latency": 0.314787277
-            },
-            {
-              "latency": 0.362723303
-            },
-            {
-              "latency": 0.307423362
-            },
-            {
-              "latency": 0.32088184
-            },
-            {
-              "latency": 0.321512763
-            },
-            {
-              "latency": 0.318063116
-            },
-            {
-              "latency": 0.386551647
-            },
-            {
-              "latency": 0.303925581
-            },
-            {
-              "latency": 0.316307232
-            },
-            {
-              "latency": 0.313392837
-            },
-            {
-              "latency": 0.318658546
-            },
-            {
-              "latency": 0.317197906
-            },
-            {
-              "latency": 0.321956938
-            },
-            {
-              "latency": 0.376894967
-            },
-            {
-              "latency": 0.310775668
-            },
-            {
-              "latency": 0.315097146
-            },
-            {
-              "latency": 0.383031227
-            },
-            {
-              "latency": 0.313587083
-            },
-            {
-              "latency": 0.386162955
-            },
-            {
-              "latency": 0.379896974
-            },
-            {
-              "latency": 0.31271196
-            },
-            {
-              "latency": 0.305508256
-            },
-            {
-              "latency": 0.324913983
-            },
-            {
-              "latency": 0.384609239
-            },
-            {
-              "latency": 0.314566262
-            },
-            {
-              "latency": 0.314496241
-            },
-            {
-              "latency": 0.322286382
-            },
-            {
-              "latency": 0.362504957
-            },
-            {
-              "latency": 0.326098808
-            },
-            {
-              "latency": 0.31640562
-            },
-            {
-              "latency": 0.318618228
-            },
-            {
-              "latency": 0.382160015
-            },
-            {
-              "latency": 0.389533592
-            },
-            {
-              "latency": 0.315537355
-            },
-            {
-              "latency": 0.384784766
-            },
-            {
-              "latency": 0.316413621
-            },
-            {
-              "latency": 0.317225911
-            },
-            {
-              "latency": 0.384810056
-            },
-            {
-              "latency": 0.321581324
-            },
-            {
-              "latency": 0.317087502
-            },
-            {
-              "latency": 0.316814505
-            },
-            {
-              "latency": 0.321614686
-            },
-            {
-              "latency": 0.303592972
-            },
-            {
-              "latency": 0.301570224
-            },
-            {
-              "latency": 0.38028375
-            },
-            {
-              "latency": 0.381930647
-            },
-            {
-              "latency": 0.379376847
-            },
-            {
-              "latency": 0.316770621
-            },
-            {
-              "latency": 0.374476151
-            },
-            {
-              "latency": 0.373691425
-            },
-            {
-              "latency": 0.381322529
-            },
-            {
-              "latency": 0.317591492
-            }
-          ],
-          "implementation": "go-libp2p",
-          "version": "v0.28",
-          "transportStack": "tcp"
-        },
-        {
-          "result": [
-            {
-              "latency": 0.189413843
-            },
-            {
-              "latency": 0.196039372
-            },
-            {
-              "latency": 0.186122861
-            },
-            {
-              "latency": 0.195613237
-            },
-            {
-              "latency": 0.193546606
-            },
-            {
-              "latency": 0.188232193
-            },
-            {
-              "latency": 0.186407781
-            },
-            {
-              "latency": 0.194354099
-            },
-            {
-              "latency": 0.195575121
-            },
-            {
-              "latency": 0.193809165
-            },
-            {
-              "latency": 0.191381844
-            },
-            {
-              "latency": 0.196386469
-            },
-            {
-              "latency": 0.192732185
-            },
-            {
-              "latency": 0.193367106
-            },
-            {
-              "latency": 0.194116939
-            },
-            {
-              "latency": 0.182661309
-            },
-            {
-              "latency": 0.19023857
-            },
-            {
-              "latency": 0.189842268
-            },
-            {
-              "latency": 0.199305639
-            },
-            {
-              "latency": 0.192913805
-            },
-            {
-              "latency": 0.187966729
-            },
-            {
-              "latency": 0.192422577
-            },
-            {
-              "latency": 0.189182645
-            },
-            {
-              "latency": 0.195826243
-            },
-            {
-              "latency": 0.18824197
-            },
-            {
-              "latency": 0.192107855
-            },
-            {
-              "latency": 0.197533285
-            },
-            {
-              "latency": 0.1922893
-            },
-            {
-              "latency": 0.195615708
-            },
-            {
-              "latency": 0.19142354
-            },
-            {
-              "latency": 0.190613641
-            },
-            {
-              "latency": 0.193759865
-            },
-            {
-              "latency": 0.189060103
-            },
-            {
-              "latency": 0.193959061
-            },
-            {
-              "latency": 0.189421376
-            },
-            {
-              "latency": 0.190241879
-            },
-            {
-              "latency": 0.194543633
-            },
-            {
-              "latency": 0.194205603
-            },
-            {
-              "latency": 0.191430727
-            },
-            {
-              "latency": 0.187014658
-            },
-            {
-              "latency": 0.190150488
-            },
-            {
-              "latency": 0.185969042
-            },
-            {
-              "latency": 0.181535566
-            },
-            {
-              "latency": 0.199283688
-            },
-            {
-              "latency": 0.193939104
-            },
-            {
-              "latency": 0.191374185
-            },
-            {
-              "latency": 0.194046587
-            },
-            {
-              "latency": 0.189931997
-            },
-            {
-              "latency": 0.193317909
-            },
-            {
-              "latency": 0.191587335
-            },
-            {
-              "latency": 0.192712236
-            },
-            {
-              "latency": 0.197149592
-            },
-            {
-              "latency": 0.193073061
-            },
-            {
-              "latency": 0.183775984
-            },
-            {
-              "latency": 0.191688977
-            },
-            {
-              "latency": 0.186886233
-            },
-            {
-              "latency": 0.196147201
-            },
-            {
-              "latency": 0.197591457
-            },
-            {
-              "latency": 0.197799935
-            },
-            {
-              "latency": 0.188509381
-            },
-            {
-              "latency": 0.193815768
-            },
-            {
-              "latency": 0.196136917
-            },
-            {
-              "latency": 0.191641223
-            },
-            {
-              "latency": 0.187297548
-            },
-            {
-              "latency": 0.194353592
-            },
-            {
-              "latency": 0.195353193
-            },
-            {
-              "latency": 0.193267289
-            },
-            {
-              "latency": 0.193352815
-            },
-            {
-              "latency": 0.194135018
-            },
-            {
-              "latency": 0.189292769
-            },
-            {
-              "latency": 0.197273549
-            },
-            {
-              "latency": 0.188543473
-            },
-            {
-              "latency": 0.199705943
-            },
-            {
-              "latency": 0.192023873
-            },
-            {
-              "latency": 0.194708192
-            },
-            {
-              "latency": 0.18824854
-            },
-            {
-              "latency": 0.197970235
-            },
-            {
-              "latency": 0.186403989
-            },
-            {
-              "latency": 0.198079392
-            },
-            {
-              "latency": 0.196438811
-            },
-            {
-              "latency": 0.1951983
-            },
-            {
-              "latency": 0.183695962
-            },
-            {
-              "latency": 0.188504799
-            },
-            {
-              "latency": 0.185199014
-            },
-            {
-              "latency": 0.192127219
-            },
-            {
-              "latency": 0.185044459
-            },
-            {
-              "latency": 0.195415831
-            },
-            {
-              "latency": 0.192189302
-            },
-            {
-              "latency": 0.190118653
-            },
-            {
-              "latency": 0.199606973
-            },
-            {
-              "latency": 0.187606118
-            },
-            {
-              "latency": 0.198745704
-            },
-            {
-              "latency": 0.199539386
-            },
-            {
-              "latency": 0.193540044
-            },
-            {
-              "latency": 0.195974487
-            },
-            {
-              "latency": 0.19311689
-            },
-            {
-              "latency": 0.198019809
-            },
-            {
-              "latency": 0.186475067
-            },
-            {
-              "latency": 0.182743191
-            },
-            {
-              "latency": 0.193186705
-            }
-          ],
-          "implementation": "go-libp2p",
-          "version": "v0.28",
-          "transportStack": "quic-v1"
-        },
-        {
-          "result": [
-            {
-              "latency": 0.312370728
-            },
-            {
-              "latency": 0.386716989
-            },
-            {
-              "latency": 0.306281963
-            },
-            {
-              "latency": 0.297149305
-            },
-            {
-              "latency": 0.327404847
-            },
-            {
-              "latency": 0.312551417
-            },
-            {
-              "latency": 0.302499805
-            },
-            {
-              "latency": 0.36562669
-            },
-            {
-              "latency": 0.307643993
-            },
-            {
-              "latency": 0.311683074
-            },
-            {
-              "latency": 0.320431582
-            },
-            {
-              "latency": 0.38723953
-            },
-            {
-              "latency": 0.326886623
-            },
-            {
-              "latency": 0.321416766
-            },
-            {
-              "latency": 0.312916472
-            },
-            {
-              "latency": 0.313426815
-            },
-            {
-              "latency": 0.314922851
-            },
-            {
-              "latency": 0.300127569
-            },
-            {
-              "latency": 0.326580127
-            },
-            {
-              "latency": 0.363836283
-            },
-            {
-              "latency": 0.310743036
-            },
-            {
-              "latency": 0.320831822
-            },
-            {
-              "latency": 0.317399591
-            },
-            {
-              "latency": 0.30109932
-            },
-            {
-              "latency": 0.391243248
-            },
-            {
-              "latency": 0.307442912
-            },
-            {
-              "latency": 0.380156545
-            },
-            {
-              "latency": 0.370559333
-            },
-            {
-              "latency": 0.384365531
-            },
-            {
-              "latency": 0.309469671
-            },
-            {
-              "latency": 0.374480397
-            },
-            {
-              "latency": 0.308599701
-            },
-            {
-              "latency": 0.309511348
-            },
-            {
-              "latency": 0.381076684
-            },
-            {
-              "latency": 0.366332309
-            },
-            {
-              "latency": 0.378197319
-            },
-            {
-              "latency": 0.383835046
-            },
-            {
-              "latency": 0.317146602
-            },
-            {
-              "latency": 0.311600294
-            },
-            {
-              "latency": 0.316287001
-            },
-            {
-              "latency": 0.323929815
-            },
-            {
-              "latency": 0.376716054
-            },
-            {
-              "latency": 0.37054506
-            },
-            {
-              "latency": 0.302948224
-            },
-            {
-              "latency": 0.379622031
-            },
-            {
-              "latency": 0.323071893
-            },
-            {
-              "latency": 0.319426288
-            },
-            {
-              "latency": 0.385425862
-            },
-            {
-              "latency": 0.318844208
-            },
-            {
-              "latency": 0.316560103
-            },
-            {
-              "latency": 0.30235582
-            },
-            {
-              "latency": 0.366379471
-            },
-            {
-              "latency": 0.315405539
-            },
-            {
-              "latency": 0.322175189
-            },
-            {
-              "latency": 0.384930421
-            },
-            {
-              "latency": 0.323617621
-            },
-            {
-              "latency": 0.324738774
-            },
-            {
-              "latency": 0.315773619
-            },
-            {
-              "latency": 0.369038753
-            },
-            {
-              "latency": 0.316599897
-            },
-            {
-              "latency": 0.365506476
-            },
-            {
-              "latency": 0.306653764
-            },
-            {
-              "latency": 0.308942266
-            },
-            {
-              "latency": 0.3230687
-            },
-            {
-              "latency": 0.322926559
-            },
-            {
-              "latency": 0.308059369
-            },
-            {
-              "latency": 0.319275958
-            },
-            {
-              "latency": 0.302504856
-            },
-            {
-              "latency": 0.304093207
-            },
-            {
-              "latency": 0.314529918
-            },
-            {
-              "latency": 0.299960157
-            },
-            {
-              "latency": 0.320593847
-            },
-            {
-              "latency": 0.322881823
-            },
-            {
-              "latency": 0.293505219
-            },
-            {
-              "latency": 0.37181264
-            },
-            {
-              "latency": 0.300206851
-            },
-            {
-              "latency": 0.380473445
-            },
-            {
-              "latency": 0.323465379
-            },
-            {
-              "latency": 0.310223592
-            },
-            {
-              "latency": 0.312014351
-            },
-            {
-              "latency": 0.30990401
-            },
-            {
-              "latency": 0.376405726
-            },
-            {
-              "latency": 0.318501533
-            },
-            {
-              "latency": 0.378171665
-            },
-            {
-              "latency": 0.305653431
-            },
-            {
-              "latency": 0.362421866
-            },
-            {
-              "latency": 0.3193496
-            },
-            {
-              "latency": 0.31035679
-            },
-            {
-              "latency": 0.364816936
-            },
-            {
-              "latency": 0.308700451
-            },
-            {
-              "latency": 0.298094262
-            },
-            {
-              "latency": 0.311017713
-            },
-            {
-              "latency": 0.315717032
-            },
-            {
-              "latency": 0.320029554
-            },
-            {
-              "latency": 0.366473345
-            },
-            {
-              "latency": 0.311887397
-            },
-            {
-              "latency": 0.373750445
-            },
-            {
-              "latency": 0.31093965
-            },
-            {
-              "latency": 0.381573529
-            },
-            {
-              "latency": 0.31735787
-            }
-          ],
-          "implementation": "go-libp2p",
-          "version": "v0.29",
-          "transportStack": "tcp"
-        },
-        {
-          "result": [
-            {
-              "latency": 0.191175262
-            },
-            {
-              "latency": 0.19177266
-            },
-            {
-              "latency": 0.193051816
-            },
-            {
-              "latency": 0.179077755
-            },
-            {
-              "latency": 0.194608533
-            },
-            {
-              "latency": 0.194462088
-            },
-            {
-              "latency": 0.192814374
-            },
-            {
-              "latency": 0.19378573
-            },
-            {
-              "latency": 0.195896465
-            },
-            {
-              "latency": 0.183810401
-            },
-            {
-              "latency": 0.187057112
-            },
-            {
-              "latency": 0.191339499
-            },
-            {
-              "latency": 0.192314927
-            },
-            {
-              "latency": 0.194454458
-            },
-            {
-              "latency": 0.191025994
-            },
-            {
-              "latency": 0.181129012
-            },
-            {
-              "latency": 0.185747767
-            },
-            {
-              "latency": 0.195801935
-            },
-            {
-              "latency": 0.18840579
-            },
-            {
-              "latency": 0.195503001
-            },
-            {
-              "latency": 0.180580839
-            },
-            {
-              "latency": 0.184316233
-            },
-            {
-              "latency": 0.187113074
-            },
-            {
-              "latency": 0.191204171
-            },
-            {
-              "latency": 0.182524737
-            },
-            {
-              "latency": 0.192938351
-            },
-            {
-              "latency": 0.192668391
-            },
-            {
-              "latency": 0.193824219
-            },
-            {
-              "latency": 0.193067644
-            },
-            {
-              "latency": 0.185622103
-            },
-            {
-              "latency": 0.176615859
-            },
-            {
-              "latency": 0.197663602
-            },
-            {
-              "latency": 0.191085156
-            },
-            {
-              "latency": 0.192689975
-            },
-            {
-              "latency": 0.188463803
-            },
-            {
-              "latency": 0.192963111
-            },
-            {
-              "latency": 0.193204659
-            },
-            {
-              "latency": 0.19257791
-            },
-            {
-              "latency": 0.195151962
-            },
-            {
-              "latency": 0.191684032
-            },
-            {
-              "latency": 0.183464612
-            },
-            {
-              "latency": 0.197065907
-            },
-            {
-              "latency": 0.19187911
-            },
-            {
-              "latency": 0.194525515
-            },
-            {
-              "latency": 0.193044861
-            },
-            {
-              "latency": 0.192859381
-            },
-            {
-              "latency": 0.188372344
-            },
-            {
-              "latency": 0.185365641
-            },
-            {
-              "latency": 0.194330074
-            },
-            {
-              "latency": 0.195971807
-            },
-            {
-              "latency": 0.188262638
-            },
-            {
-              "latency": 0.191159915
-            },
-            {
-              "latency": 0.189247338
-            },
-            {
-              "latency": 0.193895397
-            },
-            {
-              "latency": 0.192819884
-            },
-            {
-              "latency": 0.197781075
-            },
-            {
-              "latency": 0.194122734
-            },
-            {
-              "latency": 0.185256788
-            },
-            {
-              "latency": 0.185545833
-            },
-            {
-              "latency": 0.196249516
-            },
-            {
-              "latency": 0.187971441
-            },
-            {
-              "latency": 0.193860896
-            },
-            {
-              "latency": 0.185476698
-            },
-            {
-              "latency": 0.189419435
-            },
-            {
-              "latency": 0.18508452
-            },
-            {
-              "latency": 0.196197099
-            },
-            {
-              "latency": 0.189344556
-            },
-            {
-              "latency": 0.192450816
-            },
-            {
-              "latency": 0.196254406
-            },
-            {
-              "latency": 0.190766159
-            },
-            {
-              "latency": 0.197975785
-            },
-            {
-              "latency": 0.19464716
-            },
-            {
-              "latency": 0.187903413
-            },
-            {
-              "latency": 0.194867478
-            },
-            {
-              "latency": 0.190509964
-            },
-            {
-              "latency": 0.185070401
-            },
-            {
-              "latency": 0.191037883
-            },
-            {
-              "latency": 0.194572239
-            },
-            {
-              "latency": 0.183051861
-            },
-            {
-              "latency": 0.191115902
-            },
-            {
-              "latency": 0.191411179
-            },
-            {
-              "latency": 0.189178287
-            },
-            {
-              "latency": 0.188547517
-            },
-            {
-              "latency": 0.191192776
-            },
-            {
-              "latency": 0.193405533
-            },
-            {
-              "latency": 0.187983986
-            },
-            {
-              "latency": 0.194049104
-            },
-            {
-              "latency": 0.186350011
-            },
-            {
-              "latency": 0.194975125
-            },
-            {
-              "latency": 0.18325428
-            },
-            {
-              "latency": 0.192500439
-            },
-            {
-              "latency": 0.193642132
-            },
-            {
-              "latency": 0.193100491
-            },
-            {
-              "latency": 0.190129243
-            },
-            {
-              "latency": 0.195512024
-            },
-            {
-              "latency": 0.195642173
-            },
-            {
-              "latency": 0.192719593
-            },
-            {
-              "latency": 0.195186627
-            },
-            {
-              "latency": 0.188561137
-            },
-            {
-              "latency": 0.184958941
-            }
-          ],
-          "implementation": "go-libp2p",
-          "version": "v0.29",
-          "transportStack": "quic-v1"
         }
       ],
       "parameters": {
@@ -4225,173 +1939,173 @@
   "pings": {
     "unit": "s",
     "results": [
+      0.07629999999999999,
+      0.07659999999999999,
+      0.061799999999999994,
+      0.061799999999999994,
+      0.061799999999999994,
+      0.061799999999999994,
+      0.061799999999999994,
+      0.0621,
+      0.061799999999999994,
+      0.061799999999999994,
+      0.061799999999999994,
+      0.061799999999999994,
+      0.0621,
+      0.061799999999999994,
+      0.061799999999999994,
+      0.061799999999999994,
+      0.061799999999999994,
+      0.061799999999999994,
+      0.061700000000000005,
+      0.0621,
+      0.061799999999999994,
+      0.061799999999999994,
+      0.061799999999999994,
+      0.061700000000000005,
+      0.0669,
+      0.0669,
+      0.0669,
+      0.0669,
+      0.0669,
+      0.0669,
+      0.0669,
+      0.0669,
+      0.0669,
+      0.0669,
+      0.0669,
+      0.060899999999999996,
+      0.061799999999999994,
+      0.061700000000000005,
+      0.061799999999999994,
+      0.061799999999999994,
+      0.061700000000000005,
+      0.061799999999999994,
+      0.061799999999999994,
+      0.061700000000000005,
+      0.061700000000000005,
+      0.061700000000000005,
+      0.061700000000000005,
+      0.061799999999999994,
+      0.061700000000000005,
+      0.061799999999999994,
+      0.061799999999999994,
+      0.061700000000000005,
+      0.061799999999999994,
+      0.061799999999999994,
+      0.061799999999999994,
+      0.061700000000000005,
       0.062299999999999994,
-      0.088,
       0.062299999999999994,
       0.062299999999999994,
       0.062299999999999994,
       0.062299999999999994,
-      0.0626,
       0.062299999999999994,
       0.062299999999999994,
-      0.0648,
-      0.0648,
-      0.0648,
-      0.0648,
-      0.065,
-      0.0648,
-      0.06509999999999999,
-      0.0648,
-      0.0648,
-      0.0648,
-      0.0648,
-      0.0648,
-      0.0648,
-      0.0648,
-      0.0648,
-      0.0648,
-      0.0648,
-      0.0648,
-      0.0648,
-      0.0648,
-      0.0648,
-      0.0648,
-      0.0648,
-      0.0648,
-      0.0648,
-      0.0648,
-      0.0648,
-      0.0648,
-      0.0648,
-      0.0648,
-      0.0648,
-      0.0648,
-      0.0649,
-      0.0648,
-      0.0648,
-      0.0648,
-      0.0648,
-      0.0648,
-      0.0648,
-      0.06509999999999999,
-      0.0648,
-      0.0648,
-      0.0648,
-      0.0648,
-      0.0648,
-      0.0648,
-      0.0648,
-      0.0648,
-      0.0648,
-      0.0649,
-      0.065,
-      0.0648,
-      0.0648,
-      0.0648,
-      0.0648,
-      0.0648,
-      0.0648,
-      0.0648,
-      0.0648,
-      0.0636,
-      0.0635,
-      0.0635,
-      0.0636,
-      0.0635,
-      0.0635,
-      0.0635,
-      0.0635,
-      0.0635,
-      0.0635,
-      0.0635,
-      0.0635,
-      0.0635,
-      0.0635,
-      0.0635,
-      0.0635,
-      0.0635,
-      0.0635,
-      0.0635,
-      0.0635,
-      0.0635,
-      0.0635,
-      0.0635,
-      0.0635,
-      0.0635,
-      0.0635,
-      0.0635,
-      0.0635,
-      0.0635,
-      0.0635,
-      0.0635,
-      0.0635
+      0.062299999999999994,
+      0.062299999999999994,
+      0.062299999999999994,
+      0.062299999999999994,
+      0.062299999999999994,
+      0.062299999999999994,
+      0.062299999999999994,
+      0.062299999999999994,
+      0.062299999999999994,
+      0.062299999999999994,
+      0.062299999999999994,
+      0.062299999999999994,
+      0.062299999999999994,
+      0.062299999999999994,
+      0.062299999999999994,
+      0.062299999999999994,
+      0.062299999999999994,
+      0.062299999999999994,
+      0.062299999999999994,
+      0.062299999999999994,
+      0.062299999999999994,
+      0.062299999999999994,
+      0.062299999999999994,
+      0.062299999999999994,
+      0.062299999999999994,
+      0.062299999999999994,
+      0.062299999999999994,
+      0.062299999999999994,
+      0.062299999999999994,
+      0.062299999999999994,
+      0.062299999999999994,
+      0.062299999999999994,
+      0.062299999999999994,
+      0.062299999999999994,
+      0.0624,
+      0.062299999999999994,
+      0.061799999999999994
     ]
   },
   "iperf": {
     "unit": "bit/s",
     "results": [
-      3250000000,
-      3250000000,
-      3250000000,
-      3250000000,
-      3250000000,
-      3250000000,
-      3250000000,
-      3250000000,
-      3250000000,
-      3250000000,
-      3260000000,
-      3250000000,
-      3250000000,
-      3250000000,
-      3250000000,
-      3250000000,
-      3250000000,
-      3190000000,
-      3200000000,
-      3200000000,
-      3200000000,
-      3200000000,
-      3250000000,
-      3240000000,
-      3240000000,
-      3240000000,
-      3240000000,
-      3240000000,
-      3240000000,
-      3250000000,
-      3250000000,
-      3250000000,
-      3250000000,
-      3250000000,
-      3250000000,
-      3250000000,
-      3250000000,
-      3250000000,
-      3240000000,
-      3200000000,
-      3180000000,
-      3190000000,
-      3180000000,
-      3220000000,
-      3260000000,
-      3260000000,
-      3260000000,
-      3260000000,
-      3260000000,
-      3260000000,
-      3260000000,
-      3260000000,
-      3250000000,
-      3240000000,
-      3250000000,
-      3250000000,
-      3250000000,
-      3250000000,
-      3250000000,
-      3240000000,
-      3240000000,
-      3240000000
+      3390000000,
+      3390000000,
+      3380000000,
+      3380000000,
+      3380000000,
+      3380000000,
+      3390000000,
+      3380000000,
+      3380000000,
+      3380000000,
+      3380000000,
+      3380000000,
+      3380000000,
+      3380000000,
+      3380000000,
+      3380000000,
+      3380000000,
+      3380000000,
+      3380000000,
+      3330000000,
+      3330000000,
+      3330000000,
+      3330000000,
+      3330000000,
+      3380000000,
+      3380000000,
+      3380000000,
+      3380000000,
+      3380000000,
+      3380000000,
+      3370000000,
+      3370000000,
+      3380000000,
+      3380000000,
+      3380000000,
+      3380000000,
+      3380000000,
+      3380000000,
+      3380000000,
+      3380000000,
+      3370000000,
+      3370000000,
+      3370000000,
+      3330000000,
+      3320000000,
+      3320000000,
+      3320000000,
+      3320000000,
+      3350000000,
+      3380000000,
+      3380000000,
+      3380000000,
+      3390000000,
+      3390000000,
+      3380000000,
+      3380000000,
+      3380000000,
+      3380000000,
+      3380000000,
+      3380000000,
+      3370000000,
+      2930000000
     ]
   }
 }
