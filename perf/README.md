@@ -51,7 +51,7 @@ _WARNING_: Running the perf tests might take a while.
           - `--run-server`
       - Running as a libp2p-perf client
           - Input via command line
-            - `--server-ip-address`
+            - `--server-address`
             - `--transport` (see `runner/versions.ts` for possible variants)
             - `--upload-bytes` number of bytes to upload per stream.
             - `--download-bytes` number of bytes to download per stream.

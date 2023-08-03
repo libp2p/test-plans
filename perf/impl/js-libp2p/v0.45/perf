@@ -9,14 +9,25 @@ if [ -z "$node_path" ]; then
   exit 1
 fi
 
-# Check if the Node.js script exists
-if [ ! -f "$node_script" ]; then
-  echo "Node.js script not found: $node_script"
-  exit 1
-fi
+run_server=false
+server_address=""
+upload_bytes=0
+download_bytes=0
+transport=""
+
+# Parse named parameters manually
+for arg in "$@"; do
+    case "$arg" in
+        -r=*| --run_server=*) run_server="${arg#*=}";;
+        -s=*| --server_address=*) server_address="${arg#*=}";;
+        -u=*| --upload_bytes=*) upload_bytes="${arg#*=}";;
+        -d=*| --download_bytes=*) download_bytes="${arg#*=}";;
+        -t=*| --transport=*) transport="${arg#*=}";;
+    esac
+done
 
 # cd into perf
 cd perf-tests
 
 # Run perf
-node dist/src/main.js
+node dist/src/main.js --run_server=$run_server --server_address=$server_address --upload_bytes=$upload_bytes --download_bytes=$download_bytes --transport=$transport
