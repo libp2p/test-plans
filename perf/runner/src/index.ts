@@ -72,7 +72,8 @@ function runPing(clientPublicIP: string, serverPublicIP: string): PingResults {
 }
 
 function runIPerf(clientPublicIP: string, serverPublicIP: string): IperfResults {
-    console.error(`= run 60 iPerf UDP from client to server`);
+    const iterations = 60;
+    console.error(`= run ${iterations} iPerf TCP from client to server`);
 
     const killCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${serverPublicIP} 'kill $(cat pidfile); rm pidfile; rm server.log || true'`;
     const killSTDOUT = execCommand(killCMD);
@@ -82,7 +83,7 @@ function runIPerf(clientPublicIP: string, serverPublicIP: string): IperfResults 
     const serverSTDOUT = execCommand(serverCMD);
     console.error(serverSTDOUT);
 
-    const cmd = `ssh -o StrictHostKeyChecking=no ec2-user@${clientPublicIP} 'iperf3 -c ${serverPublicIP} -u -b 25g -t 60'`;
+    const cmd = `ssh -o StrictHostKeyChecking=no ec2-user@${clientPublicIP} 'iperf3 -c ${serverPublicIP} -b 25g -t ${iterations}'`;
     const stdout = execSync(cmd).toString();
 
     // Extract the bitrate from each relevant line
