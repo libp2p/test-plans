@@ -1,5 +1,5 @@
 image_name := java-v0.0.1
-commitSha := 6fad470c92a5c4ab368bc615e64dbf40b5ff9ccb
+commitSha := 967b8f2adcaaaf88204939c1f9eeeadf062ce364
 
 all: image.json
 
