@@ -94,6 +94,12 @@ export const versions: Array<Version> = [
         muxers: ["mplex", "yamux"],
     },
     {
+        id: "js-v0.46",
+        transports: ["tcp", "ws", { name: "wss", onlyDial: true }],
+        secureChannels: ["noise"],
+        muxers: ["mplex", "yamux"],
+    },
+    {
         id: "chromium-js-v0.44",
         containerImageID: browserImageIDLookup,
         transports: [{ name: "webtransport", onlyDial: true }, { name: "wss", onlyDial: true }, { name: "webrtc-direct", onlyDial: true }],
@@ -109,6 +115,20 @@ export const versions: Array<Version> = [
     },
     {
         id: "firefox-js-v0.45",
+        containerImageID: browserImageIDLookup,
+        transports: [{ name: "wss", onlyDial: true }, { name: "webrtc-direct", onlyDial: true }, "webrtc"],
+        secureChannels: ["noise"],
+        muxers: ["mplex", "yamux"],
+    },
+    {
+        id: "chromium-js-v0.46",
+        containerImageID: browserImageIDLookup,
+        transports: [{ name: "webtransport", onlyDial: true }, { name: "wss", onlyDial: true }, { name: "webrtc-direct", onlyDial: true }, "webrtc"],
+        secureChannels: ["noise"],
+        muxers: ["mplex", "yamux"],
+    },
+    {
+        id: "firefox-js-v0.46",
         containerImageID: browserImageIDLookup,
         transports: [{ name: "wss", onlyDial: true }, { name: "webrtc-direct", onlyDial: true }, "webrtc"],
         secureChannels: ["noise"],
