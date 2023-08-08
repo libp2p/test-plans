@@ -8,4 +8,4 @@ RUN npm i && npm run build
 WORKDIR /app/interop
 RUN npm i && npm run build
 
-ENTRYPOINT [ "npm", "test", "--", "--build", "false", "--types", "false", "-t", "node" ]
+ENTRYPOINT [ "npm", "run", "test:interop:multidim", "--", "--build", "false", "--types", "false", "-t", "node" ]
