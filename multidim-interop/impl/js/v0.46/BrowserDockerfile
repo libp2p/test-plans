@@ -14,7 +14,7 @@ WORKDIR /app/interop
 # We install browsers here instead of the cached version so that we use the latest browsers at run time.
 # Ideally this would also be pinned, but playwright controls this, so there isn't much we can do about it.
 # By installing here, we avoid installing it at test time.
-RUN ./node_modules/.bin/playwright install
+RUN npx playwright install
 ARG BROWSER=chromium # Options: chromium, firefox, webkit
 ENV BROWSER=$BROWSER
 
