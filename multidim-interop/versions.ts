@@ -82,12 +82,6 @@ export const versions: Array<Version> = [
         muxers: [],
     },
     {
-        id: "js-v0.44",
-        transports: ["tcp", "ws", { name: "wss", onlyDial: true }],
-        secureChannels: ["noise"],
-        muxers: ["mplex", "yamux"],
-    },
-    {
         id: "js-v0.45",
         transports: ["tcp", "ws", { name: "wss", onlyDial: true }],
         secureChannels: ["noise"],
