@@ -1,10 +1,13 @@
 image_name := rust-v0.52
 version := 0.52.1
 
-all: image.json
+all: image.json chromium-image.json
+
+chromium-image.json: verify-checksum rust-libp2p-${version}
+	cd rust-libp2p-${version} && IMAGE_NAME=${image_name} ../../../../dockerBuildWrapper.sh -f interop-tests/Dockerfile.chromium .
 
 image.json: verify-checksum rust-libp2p-${version}
-	cd rust-libp2p-${version} && IMAGE_NAME=${image_name} ../../../../dockerBuildWrapper.sh -f interop-tests/Dockerfile .
+	cd rust-libp2p-${version} && IMAGE_NAME=${image_name} ../../../../dockerBuildWrapper.sh -f interop-tests/Dockerfile.native .
 	docker image inspect ${image_name} -f "{{.Id}}" | \
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
 
