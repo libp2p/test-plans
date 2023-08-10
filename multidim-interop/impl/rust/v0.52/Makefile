@@ -4,7 +4,7 @@ version := 0.52.1
 all: image.json
 
 image.json: verify-checksum rust-libp2p-${version}
-	cd rust-libp2p-${version} && IMAGE_NAME=${image_name} ../../../../dockerBuildWrapper.sh -f test-plans/PingDockerfile .
+	cd rust-libp2p-${version} && IMAGE_NAME=${image_name} ../../../../dockerBuildWrapper.sh -f interop-tests/Dockerfile .
 	docker image inspect ${image_name} -f "{{.Id}}" | \
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
 
