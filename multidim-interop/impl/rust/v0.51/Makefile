@@ -10,6 +10,7 @@ image.json: verify-checksum rust-libp2p-${version}
 
 rust-libp2p-${version}: rust-libp2p-${version}.zip
 	unzip -o rust-libp2p-${version}.zip
+	mv rust-libp2p-libp2p-v${version} rust-libp2p-${version}
 
 rust-libp2p-${version}.zip:
 	wget -O $@ "https://github.com/libp2p/rust-libp2p/archive/libp2p-v${version}.zip"
