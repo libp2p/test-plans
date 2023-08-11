@@ -51,18 +51,6 @@ function browserImageIDLookup(id: string): string {
 
 export const versions: Array<Version> = [
     {
-        id: "rust-v0.49",
-        transports: ["ws", "tcp"],
-        secureChannels: ["noise"],
-        muxers: ["mplex", "yamux"],
-    },
-    {
-        id: "rust-v0.50",
-        transports: ["ws", "tcp", "quic-v1"],
-        secureChannels: ["tls", "noise"],
-        muxers: ["mplex", "yamux"],
-    },
-    {
         id: "rust-v0.51",
         transports: ["ws", "tcp", "quic-v1", "webrtc-direct"],
         secureChannels: ["tls", "noise"],
