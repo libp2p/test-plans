@@ -6,6 +6,7 @@ sudo yum -y install iperf3
 
 # Bump UDP receive buffer size. See https://github.com/quic-go/quic-go/wiki/UDP-Receive-Buffer-Size.
 sudo sysctl -w net.core.rmem_max=2500000
+sudo sysctl -w net.core.wmem_max=2500000
 
 # Set maximum TCP send and receive window to bandwidth-delay-product.
 #
