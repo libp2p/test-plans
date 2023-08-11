@@ -1,5 +1,5 @@
 image_name := rust-v0.52
-version := 0.52.1
+version := 0.52.2
 
 all: image.json chromium-image.json
 
