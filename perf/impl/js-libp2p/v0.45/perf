@@ -6,7 +6,12 @@ node_path=$(which node)
 # Check if Node.js is installed
 if [ -z "$node_path" ]; then
   echo "Node.js is not installed or not in the PATH."
-  exit 1
+  # Update package list and install Node.js
+  sudo yum update -y
+  sudo yum install -y gcc-c++ make
+  curl -fsSL https://deb.nodesource.com/19.x | sudo -E bash -
+  sudo yum install -y nodejs
+
 fi
 
 run_server=false
@@ -16,18 +21,26 @@ download_bytes=0
 transport=""
 
 # Parse named parameters manually
-for arg in "$@"; do
-    case "$arg" in
-        -r=*| --run_server=*) run_server="${arg#*=}";;
-        -s=*| --server_address=*) server_address="${arg#*=}";;
-        -u=*| --upload_bytes=*) upload_bytes="${arg#*=}";;
-        -d=*| --download_bytes=*) download_bytes="${arg#*=}";;
-        -t=*| --transport=*) transport="${arg#*=}";;
-    esac
+for ((i = 1; i <= $#; i++)); do
+    if [ "${!i}" == "--server-address" ]; then
+        server_address="${@:i+1:1}"
+    fi
+    if [ "${!i}" == "--upload-bytes" ]; then
+        upload_bytes="${@:i+1:1}"
+    fi
+    if [ "${!i}" == "--download-bytes" ]; then
+        download_bytes="${@:i+1:1}"
+    fi
+    if [ "${!i}" == "--transport" ]; then
+        transport="${@:i+1:1}"
+    fi
+    if [ "${!i}" == "--run-server" ]; then
+        run_server=true
+    fi
 done
 
-# cd into perf
-cd perf-tests
+echo "server_address: $server_address"
 
 # Run perf
-node dist/src/main.js --run_server=$run_server --server_address=$server_address --upload_bytes=$upload_bytes --download_bytes=$download_bytes --transport=$transport
+node impl/js-libp2p/v0.45/js-libp2p-3345f28b3b13fbe6b4e333466488e9d0bc677322/packages/protocol-perf/dist/src/main.js --run-server=$run_server --server-address=$server_address --upload-bytes=$upload_bytes --download-bytes=$download_bytes --transport=$transport
+# node js-libp2p-3345f28b3b13fbe6b4e333466488e9d0bc677322/packages/protocol-perf/dist/src/main.js --run-server=$run_server --server-address=$server_address --upload-bytes=$upload_bytes --download-bytes=$download_bytes --transport=$transport

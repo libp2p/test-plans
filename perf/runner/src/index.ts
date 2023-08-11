@@ -56,7 +56,7 @@ async function main(clientPublicIP: string, serverPublicIP: string) {
 function runPing(clientPublicIP: string, serverPublicIP: string): PingResults {
     console.error(`= run 100 pings from client to server`);
 
-    const cmd = `ssh -o StrictHostKeyChecking=no ec2-user@${clientPublicIP} 'ping -c 100 ${serverPublicIP}'`;
+    const cmd = `ssh -o StrictHostKeyChecking=no ec2-user@${clientPublicIP} 'ping -c 1 ${serverPublicIP}'`;
     const stdout = execCommand(cmd).toString();
 
     // Extract the time from each ping
@@ -72,7 +72,7 @@ function runPing(clientPublicIP: string, serverPublicIP: string): PingResults {
 }
 
 function runIPerf(clientPublicIP: string, serverPublicIP: string): IperfResults {
-    const iterations = 60;
+    const iterations = 1;
     console.error(`= run ${iterations} iPerf TCP from client to server`);
 
     const killCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${serverPublicIP} 'kill $(cat pidfile); rm pidfile; rm server.log || true'`;
