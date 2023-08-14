@@ -9,7 +9,7 @@ if [ -z "$node_path" ]; then
   # Update package list and install Node.js
   sudo yum update -y
   sudo yum install -y gcc-c++ make
-  curl -fsSL https://deb.nodesource.com/19.x | sudo -E bash -
+  curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
   sudo yum install -y nodejs
 
 fi
@@ -39,8 +39,6 @@ for ((i = 1; i <= $#; i++)); do
     fi
 done
 
-echo "server_address: $server_address"
-
 # Run perf
-node impl/js-libp2p/v0.45/js-libp2p-3345f28b3b13fbe6b4e333466488e9d0bc677322/packages/protocol-perf/dist/src/main.js --run-server=$run_server --server-address=$server_address --upload-bytes=$upload_bytes --download-bytes=$download_bytes --transport=$transport
-# node js-libp2p-3345f28b3b13fbe6b4e333466488e9d0bc677322/packages/protocol-perf/dist/src/main.js --run-server=$run_server --server-address=$server_address --upload-bytes=$upload_bytes --download-bytes=$download_bytes --transport=$transport
+node impl/js-libp2p/v0.45/js-libp2p-bf087d9f7b868dd1e235828e4aae0160c7afbc5c/packages/protocol-perf/dist/src/main.js --run-server=$run_server --server-address=$server_address --upload-bytes=$upload_bytes --download-bytes=$download_bytes --transport=$transport
+#node js-libp2p-f88ee492a7d32dd52cdd1c5753845537bfb65de1/packages/protocol-perf/dist/src/main.js --run-server=$run_server --server-address=$server_address --upload-bytes=$upload_bytes --download-bytes=$download_bytes --transport=$transport
