@@ -39,7 +39,7 @@ variable "ci_enabled" {
 variable "long_lived_enabled" {
   type        = bool
   description = "Whether or not to create long lived resources (in CI, used across runs; e.g. VPCs)"
-  default     = true
+  default     = false
 }
 
 variable "short_lived_enabled" {
