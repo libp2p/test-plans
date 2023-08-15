@@ -1,0 +1,42 @@
+#!/bin/bash
+
+# Find the path to the Node.js executable
+node_path=$(which node)
+
+# Check if Node.js is installed
+if [ -z "$node_path" ]; then
+  echo "Node.js is not installed or not in the PATH."
+  # Update package list and install Node.js
+  sudo yum update -y
+  sudo yum install -y gcc-c++ make
+  curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+  sudo yum install -y nodejs
+fi
+
+run_server=false
+server_address=""
+upload_bytes=0
+download_bytes=0
+transport=""
+
+# Parse named parameters manually
+for ((i = 1; i <= $#; i++)); do
+    if [ "${!i}" == "--server-address" ]; then
+        server_address="${@:i+1:1}"
+    fi
+    if [ "${!i}" == "--upload-bytes" ]; then
+        upload_bytes="${@:i+1:1}"
+    fi
+    if [ "${!i}" == "--download-bytes" ]; then
+        download_bytes="${@:i+1:1}"
+    fi
+    if [ "${!i}" == "--transport" ]; then
+        transport="${@:i+1:1}"
+    fi
+    if [ "${!i}" == "--run-server" ]; then
+        run_server=true
+    fi
+done
+
+# Run perf
+node impl/js-libp2p/v0.46/js-libp2p-protocol-perf/node_modules/@libp2p/perf/dist/src/main.js --run-server=$run_server --server-address=$server_address --upload-bytes=$upload_bytes --download-bytes=$download_bytes --transport=$transport
