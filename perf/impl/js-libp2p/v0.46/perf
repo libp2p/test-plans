@@ -3,15 +3,6 @@
 # Find the path to the Node.js executable
 node_path=$(which node)
 
-# Check if Node.js is installed
-if [ -z "$node_path" ]; then
-  echo "Node.js is not installed or not in the PATH."
-  # Update package list and install Node.js
-  sudo yum update -y
-  sudo yum install -y gcc-c++ make
-  curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-  sudo yum install -y nodejs
-fi
 
 run_server=false
 server_address=""

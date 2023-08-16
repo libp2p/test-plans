@@ -4,16 +4,22 @@ NPM_PACKAGE_NAME := $(NPM_PACKAGE)@$(NPM_PACKAGE_VERSION)
 
 SOURCE_DIR := js-libp2p-protocol-perf
 
-DOCKER_IMAGE := node:18.14.2
+DOCKER_IMAGE := node:18.17.1
 DOCKER_RUN := docker run --rm -v "$(shell pwd)/$(SOURCE_DIR)":/usr/src/myapp -w /usr/src/myapp $(DOCKER_IMAGE)
 
 all: perf
 
-perf:
+perf: install_node
 	mkdir -p $(SOURCE_DIR)
 	$(DOCKER_RUN) npm install $(NPM_PACKAGE_NAME)
 
+install_node:
+	sudo yum update -y
+	curl -fsSL https://rpm.nodesource.com/setup_lts.x | sudo bash -
+	sudo yum install -y nodejs
+	node -v
+	npm -v
 
 clean: rm -rf js-libp2p-*
 
-.PHONY: all clean perf
+.PHONY: all clean perf install_node

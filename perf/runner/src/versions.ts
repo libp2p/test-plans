@@ -41,7 +41,7 @@ export const versions: Array<Version> = [
     //     transportStacks: ["tcp", "quic-v1"]
     // },
     {
-        id: "v0.45",
+        id: "v0.46",
         implementation: "js-libp2p",
         transportStacks: ["tcp"]
     },
