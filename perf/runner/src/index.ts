@@ -72,7 +72,7 @@ function runPing(clientPublicIP: string, serverPublicIP: string): PingResults {
 }
 
 function runIPerf(clientPublicIP: string, serverPublicIP: string): IperfResults {
-    const iterations = 1;
+    const iterations = 60;
     console.error(`= run ${iterations} iPerf TCP from client to server`);
 
     const killCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${serverPublicIP} 'kill $(cat pidfile); rm pidfile; rm server.log || true'`;
