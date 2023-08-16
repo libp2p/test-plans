@@ -1,4 +1,3 @@
-image_name := nim-v1.0
 commitSha := e03547ea3e2f0372c540c586e993803299d3c4b6
 
 all: perf
@@ -15,8 +14,8 @@ nim-libp2p-${commitSha}: nim-libp2p-${commitSha}.zip
 
 nim-libp2p-${commitSha}.zip:
 	wget -O $@ "https://github.com/status-im/nim-libp2p/archive/${commitSha}.zip"
+
 clean:
 	rm -f perf
 	rm -f nim-libp2p
-	rm -rf nim-libp2p-${commitSha}
-	rm -f nim-libp2p-${commitSha}.zip
+	rm -rf nim-libp2p-*
