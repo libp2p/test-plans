@@ -1,5 +1,5 @@
-image_name := js-v0.45
-commitSha := 47a96706527fd82cd9daf3cc298f56866a5d027a
+image_name := js-v0.46
+commitSha := b7e608998cc88860d9ec8a3ed7c03fdfb3eccb3b
 
 # TODO Enable webkit once https://github.com/libp2p/js-libp2p/pull/1627 is in
 all: image.json chromium-image.json firefox-image.json

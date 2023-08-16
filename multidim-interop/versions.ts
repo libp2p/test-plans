@@ -51,18 +51,6 @@ function browserImageIDLookup(id: string): string {
 
 export const versions: Array<Version> = [
     {
-        id: "rust-v0.49",
-        transports: ["ws", "tcp"],
-        secureChannels: ["noise"],
-        muxers: ["mplex", "yamux"],
-    },
-    {
-        id: "rust-v0.50",
-        transports: ["ws", "tcp", "quic-v1"],
-        secureChannels: ["tls", "noise"],
-        muxers: ["mplex", "yamux"],
-    },
-    {
         id: "rust-v0.51",
         transports: ["ws", "tcp", "quic-v1", "webrtc-direct"],
         secureChannels: ["tls", "noise"],
@@ -82,36 +70,35 @@ export const versions: Array<Version> = [
         muxers: [],
     },
     {
-        id: "js-v0.44",
-        transports: ["tcp", "ws", { name: "wss", onlyDial: true }],
-        secureChannels: ["noise"],
-        muxers: ["mplex", "yamux"],
-    },
-    {
         id: "js-v0.45",
         transports: ["tcp", "ws", { name: "wss", onlyDial: true }],
         secureChannels: ["noise"],
         muxers: ["mplex", "yamux"],
     },
     {
-        id: "chromium-js-v0.44",
-        containerImageID: browserImageIDLookup,
-        transports: [{ name: "webtransport", onlyDial: true }, { name: "wss", onlyDial: true }, { name: "webrtc-direct", onlyDial: true }],
+        id: "js-v0.46",
+        transports: ["tcp", "ws", { name: "wss", onlyDial: true }],
         secureChannels: ["noise"],
         muxers: ["mplex", "yamux"],
     },
     {
-        id: "chromium-js-v0.45",
+        id: "chromium-js-v0.46",
         containerImageID: browserImageIDLookup,
         transports: [{ name: "webtransport", onlyDial: true }, { name: "wss", onlyDial: true }, { name: "webrtc-direct", onlyDial: true }, "webrtc"],
         secureChannels: ["noise"],
         muxers: ["mplex", "yamux"],
     },
     {
-        id: "firefox-js-v0.45",
+        id: "firefox-js-v0.46",
         containerImageID: browserImageIDLookup,
         transports: [{ name: "wss", onlyDial: true }, { name: "webrtc-direct", onlyDial: true }, "webrtc"],
         secureChannels: ["noise"],
+        muxers: ["mplex", "yamux"],
+    },
+    {
+        id: "go-v0.29",
+        transports: ["tcp", "ws", "quic", "quic-v1", "webtransport"],
+        secureChannels: ["tls", "noise"],
         muxers: ["mplex", "yamux"],
     },
     {
@@ -122,18 +109,6 @@ export const versions: Array<Version> = [
     },
     {
         id: "go-v0.27",
-        transports: ["tcp", "ws", "quic", "quic-v1", "webtransport"],
-        secureChannels: ["tls", "noise"],
-        muxers: ["mplex", "yamux"],
-    },
-    {
-        id: "go-v0.26",
-        transports: ["tcp", "ws", "quic", "quic-v1", "webtransport"],
-        secureChannels: ["tls", "noise"],
-        muxers: ["mplex", "yamux"],
-    },
-    {
-        id: "go-v0.25",
         transports: ["tcp", "ws", "quic", "quic-v1", "webtransport"],
         secureChannels: ["tls", "noise"],
         muxers: ["mplex", "yamux"],

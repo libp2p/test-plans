@@ -18,4 +18,4 @@ RUN npx playwright install
 ARG BROWSER=chromium # Options: chromium, firefox, webkit
 ENV BROWSER=$BROWSER
 
-ENTRYPOINT npm test -- --build false --types false -t browser -- --browser $BROWSER
+ENTRYPOINT npm run test:interop:multidim -- --build false --types false -t browser -- --browser $BROWSER
