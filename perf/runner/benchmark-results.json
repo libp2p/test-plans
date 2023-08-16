@@ -7,38 +7,38 @@
         {
           "result": [
             {
-              "latency": 1.686
+              "latency": 32.313
             },
             {
-              "latency": 1.684
+              "latency": 31.177
             },
             {
-              "latency": 1.747
+              "latency": 31.199
             },
             {
-              "latency": 1.686
+              "latency": 35.959
             },
             {
-              "latency": 1.766
+              "latency": 31.242
             },
             {
-              "latency": 1.722
+              "latency": 31.306
             },
             {
-              "latency": 1.813
+              "latency": 31.234
             },
             {
-              "latency": 1.654
+              "latency": 31.328
             },
             {
-              "latency": 1.666
+              "latency": 31.196
             },
             {
-              "latency": 1.713
+              "latency": 31.308
             }
           ],
           "implementation": "js-libp2p",
-          "version": "v0.45",
+          "version": "v0.46",
           "transportStack": "tcp"
         }
       ],
@@ -54,38 +54,38 @@
         {
           "result": [
             {
-              "latency": 1.867
+              "latency": 31.358
             },
             {
-              "latency": 1.879
+              "latency": 31.354
             },
             {
-              "latency": 1.807
+              "latency": 31.475
             },
             {
-              "latency": 1.922
+              "latency": 31.453
             },
             {
-              "latency": 1.819
+              "latency": 31.277
             },
             {
-              "latency": 1.82
+              "latency": 31.219
             },
             {
-              "latency": 1.774
+              "latency": 31.314
             },
             {
-              "latency": 1.755
+              "latency": 31.283
             },
             {
-              "latency": 1.887
+              "latency": 31.397
             },
             {
-              "latency": 1.851
+              "latency": 31.297
             }
           ],
           "implementation": "js-libp2p",
-          "version": "v0.45",
+          "version": "v0.46",
           "transportStack": "tcp"
         }
       ],
@@ -93,337 +93,20 @@
         "uploadBytes": 0,
         "downloadBytes": 104857600
       }
-    },
-    {
-      "name": "Connection establishment + 1 byte round trip latencies",
-      "unit": "s",
-      "results": [
-        {
-          "result": [
-            {
-              "latency": 1.019
-            },
-            {
-              "latency": 1.041
-            },
-            {
-              "latency": 1.035
-            },
-            {
-              "latency": 1.05
-            },
-            {
-              "latency": 1.041
-            },
-            {
-              "latency": 1.048
-            },
-            {
-              "latency": 1.06
-            },
-            {
-              "latency": 1.061
-            },
-            {
-              "latency": 1.043
-            },
-            {
-              "latency": 1.033
-            },
-            {
-              "latency": 0.992
-            },
-            {
-              "latency": 1.059
-            },
-            {
-              "latency": 1.053
-            },
-            {
-              "latency": 1.041
-            },
-            {
-              "latency": 1.037
-            },
-            {
-              "latency": 1.042
-            },
-            {
-              "latency": 1.032
-            },
-            {
-              "latency": 0.987
-            },
-            {
-              "latency": 1.038
-            },
-            {
-              "latency": 1.057
-            },
-            {
-              "latency": 1.043
-            },
-            {
-              "latency": 1.045
-            },
-            {
-              "latency": 1.056
-            },
-            {
-              "latency": 1.035
-            },
-            {
-              "latency": 1.044
-            },
-            {
-              "latency": 1.058
-            },
-            {
-              "latency": 1.036
-            },
-            {
-              "latency": 0.997
-            },
-            {
-              "latency": 1.061
-            },
-            {
-              "latency": 1.059
-            },
-            {
-              "latency": 1.037
-            },
-            {
-              "latency": 1.06
-            },
-            {
-              "latency": 0.983
-            },
-            {
-              "latency": 1.039
-            },
-            {
-              "latency": 1.041
-            },
-            {
-              "latency": 1.04
-            },
-            {
-              "latency": 1.059
-            },
-            {
-              "latency": 1.042
-            },
-            {
-              "latency": 1.04
-            },
-            {
-              "latency": 1.045
-            },
-            {
-              "latency": 1.056
-            },
-            {
-              "latency": 0.987
-            },
-            {
-              "latency": 1.063
-            },
-            {
-              "latency": 1.035
-            },
-            {
-              "latency": 1.041
-            },
-            {
-              "latency": 1.057
-            },
-            {
-              "latency": 1.062
-            },
-            {
-              "latency": 1.043
-            },
-            {
-              "latency": 1.034
-            },
-            {
-              "latency": 1.039
-            },
-            {
-              "latency": 1.035
-            },
-            {
-              "latency": 1.017
-            },
-            {
-              "latency": 1.041
-            },
-            {
-              "latency": 0.989
-            },
-            {
-              "latency": 1.058
-            },
-            {
-              "latency": 1.038
-            },
-            {
-              "latency": 1.059
-            },
-            {
-              "latency": 1.038
-            },
-            {
-              "latency": 1.044
-            },
-            {
-              "latency": 0.999
-            },
-            {
-              "latency": 1.06
-            },
-            {
-              "latency": 0.995
-            },
-            {
-              "latency": 1.037
-            },
-            {
-              "latency": 1.064
-            },
-            {
-              "latency": 1.053
-            },
-            {
-              "latency": 1.034
-            },
-            {
-              "latency": 1.045
-            },
-            {
-              "latency": 1.04
-            },
-            {
-              "latency": 1.034
-            },
-            {
-              "latency": 1.053
-            },
-            {
-              "latency": 1.053
-            },
-            {
-              "latency": 1.019
-            },
-            {
-              "latency": 1.059
-            },
-            {
-              "latency": 1.027
-            },
-            {
-              "latency": 1.05
-            },
-            {
-              "latency": 1.057
-            },
-            {
-              "latency": 1.023
-            },
-            {
-              "latency": 1.043
-            },
-            {
-              "latency": 1.068
-            },
-            {
-              "latency": 1.04
-            },
-            {
-              "latency": 1.068
-            },
-            {
-              "latency": 1.018
-            },
-            {
-              "latency": 1.065
-            },
-            {
-              "latency": 0.986
-            },
-            {
-              "latency": 1.052
-            },
-            {
-              "latency": 1.04
-            },
-            {
-              "latency": 1.03
-            },
-            {
-              "latency": 1.041
-            },
-            {
-              "latency": 1.056
-            },
-            {
-              "latency": 1.084
-            },
-            {
-              "latency": 1.055
-            },
-            {
-              "latency": 1.058
-            },
-            {
-              "latency": 1.039
-            },
-            {
-              "latency": 1.05
-            },
-            {
-              "latency": 1.031
-            },
-            {
-              "latency": 1.058
-            },
-            {
-              "latency": 1.07
-            },
-            {
-              "latency": 1.063
-            },
-            {
-              "latency": 1.077
-            },
-            {
-              "latency": 1.079
-            }
-          ],
-          "implementation": "js-libp2p",
-          "version": "v0.45",
-          "transportStack": "tcp"
-        }
-      ],
-      "parameters": {
-        "uploadBytes": 1,
-        "downloadBytes": 1
-      }
     }
   ],
   "pings": {
     "unit": "s",
     "results": [
-      0.0605
+      0.060700000000000004
     ]
   },
   "iperf": {
     "unit": "bit/s",
     "results": [
-      2130000000,
-      2130000000,
-      1380000000
+      2060000000,
+      2060000000,
+      1430000000
     ]
   }
 }
