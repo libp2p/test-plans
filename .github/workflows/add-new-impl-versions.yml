@@ -1,7 +1,10 @@
 name: Add new implementation versions
 
 on:
-  push:
+  workflow_dispatch:
+  schedule:
+    # “At minute 36 past every 24th hour.” - https://crontab.guru/#36_*/24_*_*_*
+    - cron:  '36 */24 * * *'
 
 defaults:
   run:
