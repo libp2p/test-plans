@@ -1,10 +1,10 @@
 image_name := nim-v1.0
-commitSha := 7148f2924997193bceb7dbf5e6f7b289c80cc625
+commitSha := e03547ea3e2f0372c540c586e993803299d3c4b6
 
 all: perf
 
 perf: perf.nim nim-libp2p
-	docker run --rm --user "$(shell id -u):$(shell id -g)" -v "$(shell pwd)":/usr/src/myapp -w /usr/src/myapp nimlang/nim:1.6.10 sh -c "cd nim-libp2p && nimble install_pinned && cd - && nim c --NimblePath:nim-libp2p/nimbledeps/pkgs -p:nim-libp2p -d:chronicles_log_level=WARN --threads:off perf.nim"
+	docker run --rm --user "$(shell id -u):$(shell id -g)" -v "$(shell pwd)":/usr/src/myapp -w /usr/src/myapp nimlang/nim:1.6.10 sh -c "cd nim-libp2p && nimble install_pinned && cd - && nim c --NimblePath:nim-libp2p/nimbledeps/pkgs -p:nim-libp2p -d:chronicles_log_level=WARN --threads:off -d:release perf.nim"
 
 nim-libp2p: nim-libp2p-${commitSha}
 	rm -rf nim-libp2p

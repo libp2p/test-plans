@@ -1,4 +1,4 @@
-import os, parseopt, strutils, strformat
+import os, strutils, strformat
 import chronos, bearssl/rand, bearssl/hash
 import ./nim-libp2p/libp2p,
        ./nim-libp2p/libp2p/protocols/perf/client,
@@ -31,7 +31,6 @@ proc runServer(address: TransportAddress) {.async.} =
     .withMplex()
     .withNoise()
     .build()
-  # switch.peerInfo.peerId = PeerId.init(fixedPeerId).tryGet()
   switch.mount(Perf.new())
   await switch.start()
   await endlessFut # Await forever, exit on interrupt
@@ -60,20 +59,25 @@ proc runClient(f: Flags) {.async.} =
   echo "{\"latency\": ", fmt"{ns div s}.{ns mod s:09}", "}"
 
 proc main() {.async.} =
-  var av: seq[string] = @[]
-  for i in 1..paramCount():
-    av.add(paramStr(i))
-
+  var i = 1
   var flags = Flags(transport: "tcp")
-  for kind, key, val in getopt(av):
-    if kind == cmdLongOption:
-      case key
-      of "run-server": flags.runServer = true
-      of "server-ip-address": flags.serverIpAddress = initTAddress(val)
-      of "transport": flags.transport = val
-      of "upload-bytes": flags.uploadBytes = parseUInt(val)
-      of "download-bytes": flags.downloadBytes = parseUInt(val)
-      else: discard
+  while i < paramCount():
+    case paramStr(i)
+    of "--run-server": flags.runServer = true
+    of "--server-ip-address":
+      flags.serverIpAddress = initTAddress(paramStr(i + 1))
+      i += 1
+    of "--transport":
+      flags.transport = paramStr(i + 1)
+      i += 1
+    of "--upload-bytes":
+      flags.uploadBytes = parseUInt(paramStr(i + 1))
+      i += 1
+    of "--download-bytes":
+      flags.downloadBytes = parseUInt(paramStr(i + 1))
+      i += 1
+    else: discard
+    i += 1
 
   if flags.runServer:
     await runServer(flags.serverIpAddress)
