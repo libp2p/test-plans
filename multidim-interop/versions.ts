@@ -131,4 +131,10 @@ export const versions: Array<Version> = [
         secureChannels: ["tls", "noise"],
         muxers: ["mplex", "yamux"],
     },
+    {
+        id: "kotlin-v0.2.0",
+        transports: ["tcp"],
+        secureChannels: ["noise"],
+        muxers: ["mplex"],
+    },
 ].map((v: Version) => (typeof v.containerImageID === "undefined" ? ({ ...v, containerImageID: canonicalImageIDLookup }) : v))
