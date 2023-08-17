@@ -132,7 +132,7 @@ export const versions: Array<Version> = [
         muxers: ["mplex", "yamux"],
     },
     {
-        id: "kotlin-v0.2.0",
+        id: "kotlin-v0.2",
         transports: ["tcp"],
         secureChannels: ["noise"],
         muxers: ["mplex"],
