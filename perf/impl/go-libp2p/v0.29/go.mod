@@ -1,8 +1,6 @@
 module github.com/libp2p/test-plans/perf/impl/go-libp2p/v0.29
 
-go 1.21
-
-toolchain go1.21.0
+go 1.20
 
 require (
 	github.com/ipfs/go-log/v2 v2.5.1
