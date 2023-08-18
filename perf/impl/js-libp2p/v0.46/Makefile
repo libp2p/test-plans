@@ -13,6 +13,7 @@ perf:
 	mkdir -p $(SOURCE_DIR)
 	$(DOCKER_RUN) npm install $(NPM_PACKAGE_NAME)
 
-clean: rm -rf js-libp2p-*
+clean:
+	rm -rf js-libp2p-*
 
-.PHONY: all clean perf install_node
+.PHONY: all clean perf
