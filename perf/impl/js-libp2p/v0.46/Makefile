@@ -9,16 +9,9 @@ DOCKER_RUN := docker run --rm -v "$(shell pwd)/$(SOURCE_DIR)":/usr/src/myapp -w 
 
 all: perf
 
-perf: install_node
+perf:
 	mkdir -p $(SOURCE_DIR)
 	$(DOCKER_RUN) npm install $(NPM_PACKAGE_NAME)
-
-install_node:
-	sudo yum update -y
-	curl -fsSL https://rpm.nodesource.com/setup_lts.x | sudo bash -
-	sudo yum install -y nodejs
-	node -v
-	npm -v
 
 clean: rm -rf js-libp2p-*
 
