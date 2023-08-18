@@ -117,4 +117,6 @@ resource "aws_launch_template" "perf" {
       delete_on_termination = true
     }
   }
+
+  update_default_version = true
 }
