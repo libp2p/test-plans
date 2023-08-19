@@ -22,6 +22,9 @@ resource "aws_instance" "perf" {
   }
 
   key_name = aws_key_pair.perf.key_name
+
+  user_data_replace_on_change = true
+
 }
 
 output "public_ip" {
