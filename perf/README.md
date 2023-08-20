@@ -17,7 +17,7 @@ Benchmark results can be visualized with https://observablehq.com/@libp2p-worksp
 
 ## Running with Terraform on AWS manually
 
-### Pre-requisites
+### Prerequisites
 
 - Terraform 1.5.5 or later
 - Node.js 18 or later
@@ -25,16 +25,12 @@ Benchmark results can be visualized with https://observablehq.com/@libp2p-worksp
 ##
 ### Provision infrastructure
 
-1. Ensure you ssh agent is running, you can check that via
-```bash
-   eval "$(ssh-agent -s)"
-```
-2. Save your public SSH key as the file `./terraform/modules/short_lived/files/perf.pub`; or generate a new key pair with `make ssh-keygen` and add it to your SSH agent with `make ssh-add`.
-3. Change to the terraform local directory ```cd terraform/configs/local``` and initalize terraform ```terraform init```
-4. `terraform apply` A terraform plan will be generated, type `yes` to continue. -To preview the plan, you can run `terraform plan`
-5. Once that is finished, you can get the public IP addresses of the client and server with `terraform output client_ip` and `terraform output server_ip`. Set these to the environment variables via:
-   1. `CLIENT_IP=$(terraform output -raw client_ip)`
-   2. `SERVER_IP=$(terraform output -raw server_ip)`
+1. Save your public SSH key as the file `./terraform/modules/short_lived/files/perf.pub`; or generate a new key pair with `make ssh-keygen` and add it to your SSH agent with `make ssh-add`.
+2. ```cd terraform/configs/local```
+3. ```terraform init```
+4. ```terraform apply```
+5. ```CLIENT_IP=$(terraform output -raw client_ip)```
+6. ```SERVER_IP=$(terraform output -raw server_ip)``
 
 **Notes**
 - You may need to reset the infrastructure if you encounter any errors, you can do that by running `terraform destroy` and then `terraform apply`.
@@ -46,9 +42,8 @@ Benchmark results can be visualized with https://observablehq.com/@libp2p-worksp
     │   on ../../modules/short_lived/main.tf line 15, in resource "aws_instance" "perf":
     │   15: resource "aws_instance" "perf" {
   ```
-  If you set *TF_VAR* [`long_lived_enabled`](./terraform/configs/local/terraform.tf#L42) env variable to default to **true** terraform should spin up the long-lived resources that are required for the short-lived resources to be created.
+- If you set *TF_VAR* [`long_lived_enabled`](./terraform/configs/local/terraform.tf#L42) env variable to default to **true** terraform should spin up the long-lived resources that are required for the short-lived resources to be created.
 
-- On some occassions the instances may run out of space, this [is a known issue](https://github.com/libp2p/test-plans/pull/249) which requires [the volume to be expanded](https://github.com/libp2p/test-plans/pull/249/files#diff-28d5c648894177b493aed0b03f92e21ff4d926ce824f50499080a33161d0c0baR111-R119)
 - It's best to destroy the infrastructure after you're done with your testing, you can do that by running `terraform destroy`.
 
 ### Build and run libp2p implementations
@@ -56,8 +51,9 @@ Benchmark results can be visualized with https://observablehq.com/@libp2p-worksp
 Given you have provisioned your infrastructure, you can now build and run the libp2p implementations on the AWS instances.
 
 1. `cd runner`
-2. Install the depencies required for the runner `npm ci`
-3. The amount of iterations that perf will run your implementation defaults to 10, but you can pass in another value `npm run start -- --client-public-ip $CLIENT_IP --server-public-ip $SERVER_IP --iterations 50`
+2. `npm ci`
+3.  `npm run start -- --client-public-ip $CLIENT_IP --server-public-ip $SERVER_IP --iterations 50`
+   * Note: The default number of iterations that perf will run is 10; desired iterations can be set with the  `--iterations <value>` option.
 
 ### Deprovision infrastructure
 
