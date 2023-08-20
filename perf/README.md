@@ -22,15 +22,16 @@ Benchmark results can be visualized with https://observablehq.com/@libp2p-worksp
 - Terraform 1.5.5 or later
 - Node.js 18 or later
 - [an AWS IAM user](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users.html)
-##
+
+
 ### Provision infrastructure
 
 1. Save your public SSH key as the file `./terraform/modules/short_lived/files/perf.pub`; or generate a new key pair with `make ssh-keygen` and add it to your SSH agent with `make ssh-add`.
-2. ```cd terraform/configs/local```
-3. ```terraform init```
-4. ```terraform apply```
-5. ```CLIENT_IP=$(terraform output -raw client_ip)```
-6. ```SERVER_IP=$(terraform output -raw server_ip)``
+2. `cd terraform/configs/local`
+3. `terraform init`
+4. `terraform apply`
+5. `CLIENT_IP=$(terraform output -raw client_ip)`
+6. `SERVER_IP=$(terraform output -raw server_ip)`
 
 **Notes**
 - You may need to reset the infrastructure if you encounter any errors, you can do that by running `terraform destroy` and then `terraform apply`.
