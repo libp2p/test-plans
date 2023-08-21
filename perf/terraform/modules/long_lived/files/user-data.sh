@@ -23,6 +23,7 @@ sudo systemctl start docker
 sudo usermod -aG docker ec2-user
 
 # Taken from https://docs.aws.amazon.com/sdk-for-javascript/v2/developer-guide/setting-up-node-on-ec2-instance.html
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
-. ~/.nvm/nvm.sh
-nvm install --lts
+#
+# Adapted to work with user-data according to https://repost.aws/questions/QUhS4f3j8jT6uW5OHAzi0-Wg/nodejs-not-installed-successfully-in-aws-ec2-inside-user-data
+sudo -u ec2-user sh -c 'curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash'
+sudo -u ec2-user sh -c '. ~/.nvm/nvm.sh && nvm install --lts'
