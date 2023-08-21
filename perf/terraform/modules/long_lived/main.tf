@@ -108,4 +108,15 @@ resource "aws_launch_template" "perf" {
     security_groups = [aws_security_group.restricted_inbound.id]
     delete_on_termination = true
   }
+
+  block_device_mappings {
+    device_name = "/dev/xvda"
+    ebs {
+      volume_size           = 100 # New root volume size in GiB
+      volume_type           = "gp2"
+      delete_on_termination = true
+    }
+  }
+
+  update_default_version = true
 }

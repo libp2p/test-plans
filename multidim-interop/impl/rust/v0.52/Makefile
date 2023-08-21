@@ -1,23 +1,35 @@
 image_name := rust-v0.52
-commitSha := 68e6bf9c3cd0d3317415a5ba31a62e91cba0a5d2
+version := 0.52.2
 
 all: image.json chromium-image.json
 
-chromium-image.json: rust-libp2p-${commitSha}
-	cd rust-libp2p-${commitSha} && IMAGE_NAME=${image_name} ../../../../dockerBuildWrapper.sh -f interop-tests/Dockerfile.chromium .
+chromium-image.json: verify-checksum rust-libp2p-${version}
+	cd rust-libp2p-${version} && IMAGE_NAME=${image_name} ../../../../dockerBuildWrapper.sh -f interop-tests/Dockerfile.chromium .
 	docker image inspect ${image_name} -f "{{.Id}}" | \
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
 
-image.json: rust-libp2p-${commitSha}
-	cd rust-libp2p-${commitSha} && IMAGE_NAME=${image_name} ../../../../dockerBuildWrapper.sh -f interop-tests/Dockerfile.native .
+image.json: verify-checksum rust-libp2p-${version}
+	cd rust-libp2p-${version} && IMAGE_NAME=${image_name} ../../../../dockerBuildWrapper.sh -f interop-tests/Dockerfile.native .
 	docker image inspect ${image_name} -f "{{.Id}}" | \
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
 
-rust-libp2p-${commitSha}: rust-libp2p-${commitSha}.zip
-	unzip -o rust-libp2p-${commitSha}.zip
+rust-libp2p-${version}: rust-libp2p-${version}.zip
+	unzip -o rust-libp2p-${version}.zip
+	mv rust-libp2p-libp2p-v${version} rust-libp2p-${version}
 
-rust-libp2p-${commitSha}.zip:
-	wget -O $@ "https://github.com/libp2p/rust-libp2p/archive/${commitSha}.zip"
+rust-libp2p-${version}.zip:
+	wget -O $@ "https://github.com/libp2p/rust-libp2p/archive/libp2p-v${version}.zip"
+
+# Run `make version.lock` to generate this lock file. This file should be commited.
+# This locks the exact contents of the specified version. This lets us use the
+# human readable name while still making sure the contents don't change.
+version.lock: rust-libp2p-${version}.zip
+	shasum -a 256 rust-libp2p-${version}.zip > $@
+
+verify-checksum: rust-libp2p-${version}.zip
+	shasum -a 256 -c version.lock
+
+.PHONY: clean all verify-checksum
 
 clean:
 	rm image.json
