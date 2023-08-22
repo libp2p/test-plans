@@ -1,8 +1,14 @@
 #!/bin/bash
 
+# In case this script is `kill`ed, `kill` its child process, namely the `node`
+# process below.
+cleanup() {
+    kill $node_pid
+}
+trap cleanup EXIT TERM
+
 # Find the path to the Node.js executable
 node_path=$(which node)
-
 
 run_server=false
 server_address=""
@@ -30,4 +36,10 @@ for ((i = 1; i <= $#; i++)); do
 done
 
 # Run perf
-node impl/js-libp2p/v0.46/js-libp2p-protocol-perf/node_modules/@libp2p/perf/dist/src/main.js --run-server=$run_server --server-address=$server_address --upload-bytes=$upload_bytes --download-bytes=$download_bytes --transport=$transport
+node impl/js-libp2p/v0.46/js-libp2p-protocol-perf/node_modules/@libp2p/perf/dist/src/main.js --run-server=$run_server --server-address=$server_address --upload-bytes=$upload_bytes --download-bytes=$download_bytes --transport=$transport &
+
+node_pid=$!
+
+# Wait for `node_pid` to finish, or for it to be `kill`ed by the above
+# `cleanup`.
+wait $node_pid
