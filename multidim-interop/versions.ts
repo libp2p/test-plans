@@ -97,9 +97,9 @@ export const versions: Array<Version> = [
     },
     {
         id: "go-v0.30",
-        transports: ["tcp", "ws", "quic", "quic-v1", "webtransport"],
+        transports: ["tcp", "ws", "quic-v1", "webtransport"],
         secureChannels: ["tls", "noise"],
-        muxers: ["mplex", "yamux"],
+        muxers: ["yamux"],
     },
     {
         id: "go-v0.29",
