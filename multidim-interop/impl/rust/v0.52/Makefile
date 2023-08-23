@@ -1,5 +1,5 @@
 image_name := rust-v0.52
-version := 0.52.2
+commitSha := 54fa53af393adac83f9aab273c3d30efbc31ba57
 
 all: image.json chromium-image.json
 
