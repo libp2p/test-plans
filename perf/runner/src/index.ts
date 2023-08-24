@@ -6,7 +6,7 @@ import { BenchmarkResults, Benchmark, Result, IperfResults, PingResults, ResultV
 
 async function main(clientPublicIP: string, serverPublicIP: string, testing: boolean) {
     const pings = runPing(clientPublicIP, serverPublicIP, testing);
-    const iperf = runIPerf(clientPublicIP, serverPublicIP,testing);
+    const iperf = runIPerf(clientPublicIP, serverPublicIP, testing);
 
     copyAndBuildPerfImplementations(serverPublicIP);
     copyAndBuildPerfImplementations(clientPublicIP);
