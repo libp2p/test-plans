@@ -4,7 +4,7 @@ import yargs from 'yargs';
 import fs from 'fs';
 import { BenchmarkResults, Benchmark, Result, IperfResults, PingResults, ResultValue } from './benchmark-result-type';
 
-async function main(clientPublicIP: string, serverPublicIP: string) {
+async function main(clientPublicIP: string, serverPublicIP: string, iterations: number) {
     const pings = runPing(clientPublicIP, serverPublicIP);
     const iperf = runIPerf(clientPublicIP, serverPublicIP);
 
@@ -19,7 +19,7 @@ async function main(clientPublicIP: string, serverPublicIP: string) {
                  uploadBytes: 100 << 20,
                  downloadBytes: 0,
                  unit: "bit/s",
-                 iterations: 10,
+                 iterations,
              }),
              runBenchmarkAcrossVersions({
                  name: "Single Connection throughput – Download 100 MiB",
@@ -28,7 +28,7 @@ async function main(clientPublicIP: string, serverPublicIP: string) {
                  uploadBytes: 0,
                  downloadBytes: 100 << 20,
                  unit: "bit/s",
-                 iterations: 10,
+                 iterations,
              }),
              runBenchmarkAcrossVersions({
                  name: "Connection establishment + 1 byte round trip latencies",
@@ -37,7 +37,7 @@ async function main(clientPublicIP: string, serverPublicIP: string) {
                  uploadBytes: 1,
                  downloadBytes: 1,
                  unit: "s",
-                 iterations: 100,
+                 iterations: iterations * 10,
              }),
     ];
 
@@ -232,8 +232,14 @@ const argv = yargs
             demandOption: true,
             description: 'Server public IP address',
         },
+        'iterations': {
+            type: 'number',
+            default: 10,
+            description: 'Number of iterations to run',
+            demandOption: false,
+        }
     })
     .command('help', 'Print usage information', yargs.help)
     .parseSync();
 
-main(argv['client-public-ip'] as string, argv['server-public-ip'] as string);
+main(argv['client-public-ip'] as string, argv['server-public-ip'] as string, argv['iterations'] as number);
