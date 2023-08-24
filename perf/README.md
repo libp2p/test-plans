@@ -15,11 +15,11 @@ Benchmark results can be visualized with https://observablehq.com/@libp2p-worksp
 3. Wait for action run to finish and to push a commit to your branch.
 4. Visualize results on https://observablehq.com/@libp2p-workspace/performance-dashboard.
 
-## Running with Terraform on AWS manually
+## Running manually
 
 ### Prerequisites
 
-- Terraform 1.5.5 or later
+- Terraform 1.5.4 or later
 - Node.js 18 or later
 - [an AWS IAM user](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users.html)
 
@@ -34,7 +34,6 @@ Benchmark results can be visualized with https://observablehq.com/@libp2p-worksp
 6. `SERVER_IP=$(terraform output -raw server_ip)`
 
 **Notes**
-- You may need to reset the infrastructure if you encounter any errors, you can do that by running `terraform destroy` and then `terraform apply`.
 - While running terraform you may encounter the following error:
   ```bash
     Error: collecting instance settings: reading EC2 Launch Template versions: couldn't find resource
@@ -43,7 +42,7 @@ Benchmark results can be visualized with https://observablehq.com/@libp2p-worksp
     │   on ../../modules/short_lived/main.tf line 15, in resource "aws_instance" "perf":
     │   15: resource "aws_instance" "perf" {
   ```
-- If you set *TF_VAR* [`long_lived_enabled`](./terraform/configs/local/terraform.tf#L42) env variable to default to **true** terraform should spin up the long-lived resources that are required for the short-lived resources to be created.
+- This implies that you haven't deployed the long-lived infrastructure on your AWS account. To do so along with each short-lived deployment, you can set *TF_VAR* [`long_lived_enabled`](./terraform/configs/local/terraform.tf#L42) env variable to default to `true` terraform should spin up the long-lived resources that are required for the short-lived resources to be created.
 
 - It's best to destroy the infrastructure after you're done with your testing, you can do that by running `terraform destroy`.
 
@@ -80,7 +79,7 @@ Given you have provisioned your infrastructure, you can now build and run the li
             - `--download-bytes` number of bytes to download per stream.
           - Output
             - Logging MUST go to `stderr`.
-            - Measurement output is printed to **stdout** as JSON in the form of:
+            - Measurement output is printed to `stdout` as JSON in the form of:
               ```json
               {"latency": 0.246442851}
               ```
