@@ -16,28 +16,10 @@ async function main(clientPublicIP: string, serverPublicIP: string, iterations: 
                  name: "Single Connection throughput – Upload 100 MiB",
                  clientPublicIP,
                  serverPublicIP,
-                 uploadBytes: 100 << 20,
+                 uploadBytes: Number.MAX_SAFE_INTEGER, // TODO Ideally we have this implied through a flag.
                  downloadBytes: 0,
                  unit: "bit/s",
-                 iterations,
-             }),
-             runBenchmarkAcrossVersions({
-                 name: "Single Connection throughput – Download 100 MiB",
-                 clientPublicIP,
-                 serverPublicIP,
-                 uploadBytes: 0,
-                 downloadBytes: 100 << 20,
-                 unit: "bit/s",
-                 iterations,
-             }),
-             runBenchmarkAcrossVersions({
-                 name: "Connection establishment + 1 byte round trip latencies",
-                 clientPublicIP,
-                 serverPublicIP,
-                 uploadBytes: 1,
-                 downloadBytes: 1,
-                 unit: "s",
-                 iterations: iterations * 10,
+                 iterations: 1,
              }),
     ];
 
@@ -56,7 +38,7 @@ async function main(clientPublicIP: string, serverPublicIP: string, iterations: 
 function runPing(clientPublicIP: string, serverPublicIP: string): PingResults {
     console.error(`= run 100 pings from client to server`);
 
-    const cmd = `ssh -o StrictHostKeyChecking=no ec2-user@${clientPublicIP} 'ping -c 100 ${serverPublicIP}'`;
+    const cmd = `ssh -o StrictHostKeyChecking=no ec2-user@${clientPublicIP} 'ping -c 1 ${serverPublicIP}'`;
     const stdout = execCommand(cmd).toString();
 
     // Extract the time from each ping
@@ -72,7 +54,7 @@ function runPing(clientPublicIP: string, serverPublicIP: string): PingResults {
 }
 
 function runIPerf(clientPublicIP: string, serverPublicIP: string): IperfResults {
-    const iterations = 60;
+    const iterations = 1;
     console.error(`= run ${iterations} iPerf TCP from client to server`);
 
     const killCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${serverPublicIP} 'kill $(cat pidfile); rm pidfile; rm server.log || true'`;
@@ -180,7 +162,10 @@ interface ArgsRunBenchmark {
 function runClient(args: ArgsRunBenchmark): ResultValue[] {
     console.error(`=== Starting client ${args.implementation}/${args.id}/${args.transportStack}`);
 
-    const perfCMD = `./impl/${args.implementation}/${args.id}/perf --server-address ${args.serverPublicIP}:4001 --transport ${args.transportStack} --upload-bytes ${args.uploadBytes} --download-bytes ${args.downloadBytes}`
+    // Note 124 is timeout's exit code when timing out which is expected here.
+    // TODO Split up.
+    const perfCMD = `timeout 60s ./impl/${args.implementation}/${args.id}/perf --server-address ${args.serverPublicIP}:4001 --transport ${args.transportStack} --upload-bytes ${args.uploadBytes} --download-bytes ${args.downloadBytes} || [ $? -eq 124 ]`
+    console.log(perfCMD);
     const cmd = `ssh -o StrictHostKeyChecking=no ec2-user@${args.clientPublicIP} 'for i in {1..${args.iterations}}; do ${perfCMD}; done'`
 
     const stdout = execCommand(cmd);

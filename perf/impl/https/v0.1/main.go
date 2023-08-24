@@ -52,20 +52,41 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 type nullReader struct {
 	N    uint64
 	read uint64
+	LastReportTime time.Time
+	lastReportRead uint64
 }
 
 var _ io.Reader = &nullReader{}
 
 func (r *nullReader) Read(b []byte) (int, error) {
+	if time.Since(r.LastReportTime) > time.Second {
+		// TODO
+		jsonB, err := json.Marshal(Result{
+			TimeSeconds: time.Since(r.LastReportTime).Seconds(),
+			UploadBytes: uint(r.lastReportRead),
+			Type: "intermediary",
+		})
+		if err != nil {
+			log.Fatalf("failed to marshal perf result: %s", err)
+		}
+		fmt.Println(string(jsonB))
+
+		r.LastReportTime = time.Now()
+		r.lastReportRead = 0
+	}
+
 	remaining := r.N - r.read
 	l := uint64(len(b))
 	if uint64(len(b)) > remaining {
 		l = remaining
 	}
 	r.read += l
+	r.lastReportRead += l
+
 	if r.read == r.N {
 		return int(l), io.EOF
 	}
+
 	return int(l), nil
 }
 
@@ -84,7 +105,7 @@ func runClient(serverAddr string, uploadBytes, downloadBytes uint64) (time.Durat
 		fmt.Sprintf("https://%s/", serverAddr),
 		io.MultiReader(
 			bytes.NewReader(b),
-			&nullReader{N: uploadBytes},
+			&nullReader{N: uploadBytes, LastReportTime: time.Now()},
 		),
 	)
 	if err != nil {
@@ -167,7 +188,10 @@ func generateEphemeralCertificate() (tls.Certificate, error) {
 }
 
 type Result struct {
-	Latency float64 `json:"latency"`
+	Type          string  `json:"type"`
+	TimeSeconds   float64 `json:"timeSeconds"`
+	UploadBytes   uint    `json:"uploadBytes"`
+	DownloadBytes uint    `json:"downloadBytes"`
 }
 
 func main() {
@@ -219,8 +243,10 @@ func main() {
 			log.Fatal(err)
 		}
 
+		// TODO
 		jsonB, err := json.Marshal(Result{
-			Latency: latency.Seconds(),
+			TimeSeconds: latency.Seconds(),
+			Type: "final",
 		})
 		if err != nil {
 			log.Fatalf("failed to marshal perf result: %s", err)
