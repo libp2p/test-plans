@@ -1,6 +1,6 @@
 # Interoperabilty and end to end test-plans for libp2p
 
-[![Interop Dashboard](https://github.com/libp2p/test-plans/workflows/libp2p%20multidimensional%20interop%20test/badge.svg?branch=master)](https://github.com/libp2p/test-plans/actions/runs/5954623557/attempts/1#summary-16151511404)
+[![Interop Dashboard](https://github.com/libp2p/test-plans/workflows/libp2p%20multidimensional%20interop%20test/badge.svg?branch=master)](https://github.com/libp2p/test-plans/actions/runs/5960949302/attempts/1#summary-16169216290)
 
 [![Made by Protocol Labs](https://img.shields.io/badge/made%20by-Protocol%20Labs-blue.svg?style=flat-square)](http://protocol.ai)
 
