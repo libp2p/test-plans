@@ -36,6 +36,7 @@ export type Result = {
 };
 
 export type ResultValue = {
+    // TODO: rename to `scope`?
     type: "itermediate" | "final",
     time_seconds: number,
     upload_bytes: number,

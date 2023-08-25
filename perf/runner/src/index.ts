@@ -13,6 +13,7 @@ async function main(clientPublicIP: string, serverPublicIP: string, iterations: 
 
     const benchmarks = [
              runBenchmarkAcrossVersions({
+                 // TODO: Update name.
                  name: "Single Connection throughput – Upload 100 MiB",
                  clientPublicIP,
                  serverPublicIP,
@@ -164,7 +165,7 @@ function runClient(args: ArgsRunBenchmark): ResultValue[] {
 
     // Note 124 is timeout's exit code when timing out which is expected here.
     // TODO Split up.
-    const perfCMD = `timeout 60s ./impl/${args.implementation}/${args.id}/perf --server-address ${args.serverPublicIP}:4001 --transport ${args.transportStack} --upload-bytes ${args.uploadBytes} --download-bytes ${args.downloadBytes} || [ $? -eq 124 ]`
+    const perfCMD = `timeout 20s ./impl/${args.implementation}/${args.id}/perf --server-address ${args.serverPublicIP}:4001 --transport ${args.transportStack} --upload-bytes ${args.uploadBytes} --download-bytes ${args.downloadBytes} || [ $? -eq 124 ]`
     console.log(perfCMD);
     const cmd = `ssh -o StrictHostKeyChecking=no ec2-user@${args.clientPublicIP} 'for i in {1..${args.iterations}}; do ${perfCMD}; done'`
 
