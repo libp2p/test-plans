@@ -1,4 +1,4 @@
-commitSha := 9788b53bad52a2b0831b13c1c38e3523659a66af
+commitSha := 066d44ce95dabf390251e55a30f538cb6c05c9d7
 
 all: perf
 
@@ -12,7 +12,8 @@ rust-libp2p-${commitSha}: rust-libp2p-${commitSha}.zip
 	unzip -o rust-libp2p-${commitSha}.zip
 
 rust-libp2p-${commitSha}.zip:
-	wget -O $@ "https://github.com/libp2p/rust-libp2p/archive/${commitSha}.zip"
+	# TODO revert
+	wget -O $@ "https://github.com/mxinden/rust-libp2p/archive/${commitSha}.zip"
 
 clean:
 	rm rust-libp2p-*.zip
