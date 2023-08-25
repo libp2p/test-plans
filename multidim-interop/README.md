@@ -47,7 +47,7 @@ This will start a redis instance on port 6379.
 cd impl/js/v0.xx.xx/ && make
 ```
 
-3. Then you can run a listener by running the following command in this case where a running a rust listener:
+3. Then you can run a listener by running the following command in this case we are running a rust listener:
 
 ```bash
  RUST_LOG=yamux=trace transport=tcp muxer=yamux security=noise is_dialer=false ip="0.0.0.0" redis_addr=localhost:6379  cargo run --package interop-tests
