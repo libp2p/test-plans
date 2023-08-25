@@ -21,7 +21,7 @@ These test-plans historically used Testground. To read why we're now using `dock
 
 ## Performance Benchmarking
 
-Please see the [libp2p perf protocol](https://github.com/libp2p/specs/blob/master/perf/perf.md) and the [benchmarking README](./perf#libp2p-performance-benchmarking).
+Please see the [benchmarking README](./perf#libp2p-performance-benchmarking).
 
 ## Roadmap
 
