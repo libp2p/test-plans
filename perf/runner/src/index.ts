@@ -1,15 +1,20 @@
 import { execSync } from 'child_process';
-import { versions } from './versions';
+import { Version, versions } from './versions';
 import yargs from 'yargs';
 import fs from 'fs';
 import { BenchmarkResults, Benchmark, Result, IperfResults, PingResults, ResultValue } from './benchmark-result-type';
 
-async function main(clientPublicIP: string, serverPublicIP: string, iterations: number) {
+async function main(clientPublicIP: string, serverPublicIP: string, iterations: number, testFilter: string[]) {
+    console.error(`= Starting benchmark with ${iterations} iterations on implementations ${testFilter}`);
     const pings = runPing(clientPublicIP, serverPublicIP);
     const iperf = runIPerf(clientPublicIP, serverPublicIP);
 
-    copyAndBuildPerfImplementations(serverPublicIP);
-    copyAndBuildPerfImplementations(clientPublicIP);
+    const versionsToRun = versions.filter(version => testFilter.includes('*') || testFilter.includes(version.implementation))
+
+    const implsToBuild = Array.from(new Set(versionsToRun.map(v => v.implementation))).join(' ');
+
+    copyAndBuildPerfImplementations(serverPublicIP, implsToBuild);
+    copyAndBuildPerfImplementations(clientPublicIP, implsToBuild);
 
     const benchmarks = [
              runBenchmarkAcrossVersions({
@@ -20,7 +25,7 @@ async function main(clientPublicIP: string, serverPublicIP: string, iterations: 
                  downloadBytes: 0,
                  unit: "bit/s",
                  iterations,
-             }),
+             }, versionsToRun),
              runBenchmarkAcrossVersions({
                  name: "Single Connection throughput – Download 100 MiB",
                  clientPublicIP,
@@ -29,7 +34,7 @@ async function main(clientPublicIP: string, serverPublicIP: string, iterations: 
                  downloadBytes: 100 << 20,
                  unit: "bit/s",
                  iterations,
-             }),
+             }, versionsToRun),
              runBenchmarkAcrossVersions({
                  name: "Connection establishment + 1 byte round trip latencies",
                  clientPublicIP,
@@ -38,7 +43,7 @@ async function main(clientPublicIP: string, serverPublicIP: string, iterations: 
                  downloadBytes: 1,
                  unit: "s",
                  iterations: iterations * 10,
-             }),
+             }, versionsToRun),
     ];
 
     const benchmarkResults: BenchmarkResults = {
@@ -115,12 +120,12 @@ interface ArgsRunBenchmarkAcrossVersions {
     iterations: number,
 }
 
-function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions): Benchmark {
-    console.error(`= Benchmark ${args.name}`)
+function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions, versionsToRun: Version[]): Benchmark {
+    console.error(`= Benchmark ${args.name} on versions ${versionsToRun.map(v => v.implementation).join(', ')}`)
 
     const results: Result[] = [];
 
-    for (const version of versions) {
+    for (const version of versionsToRun) {
         console.error(`== Version ${version.implementation}/${version.id}`)
 
         console.error(`=== Starting server ${version.implementation}/${version.id}`);
@@ -210,13 +215,13 @@ function execCommand(cmd: string): string {
     }
 }
 
-function copyAndBuildPerfImplementations(ip: string) {
-    console.error(`= Building implementations on ${ip}`);
+function copyAndBuildPerfImplementations(ip: string, impls: string) {
+    console.error(`= Building implementations for ${impls} on ${ip}`);
 
     const stdout = execCommand(`rsync -avz --progress --filter=':- .gitignore' -e "ssh -o StrictHostKeyChecking=no" ../impl ec2-user@${ip}:/home/ec2-user`);
     console.error(stdout.toString());
 
-    const stdout2 = execCommand(`ssh -o StrictHostKeyChecking=no ec2-user@${ip} 'cd impl && make'`);
+    const stdout2 = execCommand(`ssh -o StrictHostKeyChecking=no ec2-user@${ip} 'cd impl && make ${impls}'`);
     console.error(stdout2.toString());
 }
 
@@ -237,9 +242,17 @@ const argv = yargs
             default: 10,
             description: 'Number of iterations to run',
             demandOption: false,
+        },
+        'test-filter': {
+            type: 'string',
+            array: true,
+            choices: ['js-libp2p', 'rust-libp2p', 'go-libp2p', 'https', 'quic-go', '*'],
+            description: 'Filter tests to run, only the implementations here will be run, * for all',
+            demandOption: false,
+            default: '*'
         }
     })
     .command('help', 'Print usage information', yargs.help)
     .parseSync();
 
-main(argv['client-public-ip'] as string, argv['server-public-ip'] as string, argv['iterations'] as number);
+main(argv['client-public-ip'] as string, argv['server-public-ip'] as string, argv['iterations'] as number, argv['test-filter'] as string[]);
