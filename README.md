@@ -11,7 +11,7 @@ This repository contains:
 ## Multidimensional Interop
 ### Specs
 
-Please see our first specification for interoperability tests between transports, multiplexers, and secure channels here: [Interoperability Test Specs](https://github.com/libp2p/test-plans/blob/master/multidim-interop/README.md)
+Please see our first specification for interoperability tests between transports, multiplexers, and secure channels here: [Interoperability Test Specs](./multidim-interop/README.md)
 
 More specs to come soon!
 
@@ -21,7 +21,7 @@ These test-plans historically used Testground. To read why we're now using `dock
 
 ## Performance Benchmarking
 
-Please see the [libp2p perf protocol](https://github.com/libp2p/specs/blob/master/perf/perf.md) and the [benchmarking README](https://github.com/libp2p/test-plans/tree/master/perf#libp2p-performance-benchmarking).
+Please see the [libp2p perf protocol](https://github.com/libp2p/specs/blob/master/perf/perf.md) and the [benchmarking README](./perf#libp2p-performance-benchmarking).
 
 ## Roadmap
 
