@@ -1,5 +1,5 @@
 image_name := js-v0.46
-commitSha := b7e608998cc88860d9ec8a3ed7c03fdfb3eccb3b
+commitSha := 1511105774db3c3c7707809b0262e57bdfa544d8
 
 # TODO Enable webkit once https://github.com/libp2p/js-libp2p/pull/1627 is in
 all: image.json chromium-image.json firefox-image.json
@@ -24,7 +24,7 @@ image.json: js-libp2p-${commitSha}
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
 
 js-libp2p-${commitSha}:
-	wget -O js-libp2p-${commitSha}.zip "https://github.com/libp2p/js-libp2p/archive/${commitSha}.zip"
+	curl -LJ "https://github.com/libp2p/js-libp2p/archive/${commitSha}.zip" -o js-libp2p-${commitSha}.zip
 	unzip -o js-libp2p-${commitSha}.zip
 	unzip -o js-libp2p-${commitSha}.zip
 
