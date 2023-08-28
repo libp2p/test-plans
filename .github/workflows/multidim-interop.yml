@@ -1,9 +1,13 @@
 on:
   workflow_dispatch:
   pull_request:
+    paths:
+      - 'multidim-interop/**'
   push:
     branches:
       - "master"
+    paths:
+      - 'multidim-interop/**'
 
 name: libp2p multidimensional interop test
 
