@@ -24,7 +24,7 @@ image.json: js-libp2p-${commitSha}
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
 
 js-libp2p-${commitSha}:
-	curl -LJ "https://github.com/libp2p/js-libp2p/archive/${commitSha}.zip" -o js-libp2p-${commitSha}.zip
+	wget -O js-libp2p-${commitSha}.zip "https://github.com/libp2p/js-libp2p/archive/${commitSha}.zip"
 	unzip -o js-libp2p-${commitSha}.zip
 	unzip -o js-libp2p-${commitSha}.zip
 
