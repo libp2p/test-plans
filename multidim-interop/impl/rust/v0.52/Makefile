@@ -17,7 +17,7 @@ rust-libp2p-${commitSha}: rust-libp2p-${commitSha}.zip
 	unzip -o rust-libp2p-${commitSha}.zip
 
 rust-libp2p-${commitSha}.zip:
-	wget --secure-protocol TLSv1.3 -O $@ "https://github.com/libp2p/rust-libp2p/archive/${commitSha}.zip"
+	wget --secure-protocol TLSv1_2 -O $@ "https://github.com/libp2p/rust-libp2p/archive/${commitSha}.zip"
 
 clean:
 	rm image.json

@@ -12,7 +12,7 @@ go-libp2p-${version}: go-libp2p-${version}.zip
 	unzip -o go-libp2p-${version}.zip
 
 go-libp2p-${version}.zip:
-	wget --secure-protocol TLSv1.3 -O $@ "https://github.com/libp2p/go-libp2p/archive/v${version}.zip"
+	wget --secure-protocol TLSv1_2 -O $@ "https://github.com/libp2p/go-libp2p/archive/v${version}.zip"
 
 # Run `make version.lock` to generate this lock file. This file should be commited.
 # This locks the exact contents of the specified version. This lets us use the
