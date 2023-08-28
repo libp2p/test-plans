@@ -3,9 +3,10 @@
 FROM node:18
 WORKDIR /app
 COPY . .
-RUN npm i && npm run build
+RUN apt-get update && apt-get install -y cmake
+RUN npm ci && npm run build
 
 WORKDIR /app/interop
-RUN npm i && npm run build
+RUN npm ci && npm run build
 
 ENTRYPOINT [ "npm", "run", "test:interop:multidim", "--", "--build", "false", "--types", "false", "-t", "node" ]
