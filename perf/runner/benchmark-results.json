@@ -8,116 +8,116 @@
           "result": [
             {
               "type": "intermediate",
-              "timeSeconds": 1.000099677,
+              "timeSeconds": 1.00007944,
               "uploadBytes": 3145728,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000077246,
-              "uploadBytes": 4456448,
-              "downloadBytes": 0
-            },
-            {
-              "type": "intermediate",
-              "timeSeconds": 1.000090596,
-              "uploadBytes": 4456448,
-              "downloadBytes": 0
-            },
-            {
-              "type": "intermediate",
-              "timeSeconds": 1.000086797,
+              "timeSeconds": 1.000066517,
               "uploadBytes": 4194304,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000079055,
-              "uploadBytes": 4456448,
-              "downloadBytes": 0
-            },
-            {
-              "type": "intermediate",
-              "timeSeconds": 1.00008183,
-              "uploadBytes": 4456448,
-              "downloadBytes": 0
-            },
-            {
-              "type": "intermediate",
-              "timeSeconds": 1.000081268,
-              "uploadBytes": 4456448,
-              "downloadBytes": 0
-            },
-            {
-              "type": "intermediate",
-              "timeSeconds": 1.000104772,
+              "timeSeconds": 1.000075231,
               "uploadBytes": 4194304,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000080397,
-              "uploadBytes": 4456448,
-              "downloadBytes": 0
-            },
-            {
-              "type": "intermediate",
-              "timeSeconds": 1.0000813,
-              "uploadBytes": 4456448,
-              "downloadBytes": 0
-            },
-            {
-              "type": "intermediate",
-              "timeSeconds": 1.000099692,
+              "timeSeconds": 1.000071643,
               "uploadBytes": 4194304,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000087505,
+              "timeSeconds": 1.00006832,
               "uploadBytes": 4456448,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000091381,
-              "uploadBytes": 4456448,
-              "downloadBytes": 0
-            },
-            {
-              "type": "intermediate",
-              "timeSeconds": 1.000074997,
-              "uploadBytes": 4456448,
-              "downloadBytes": 0
-            },
-            {
-              "type": "intermediate",
-              "timeSeconds": 1.000086039,
+              "timeSeconds": 1.000073022,
               "uploadBytes": 4194304,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000089111,
+              "timeSeconds": 1.000069231,
+              "uploadBytes": 4194304,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediate",
+              "timeSeconds": 1.000072254,
+              "uploadBytes": 4194304,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediate",
+              "timeSeconds": 1.000070605,
+              "uploadBytes": 4194304,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediate",
+              "timeSeconds": 1.000068426,
               "uploadBytes": 4456448,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000081147,
+              "timeSeconds": 1.000075991,
+              "uploadBytes": 4194304,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediate",
+              "timeSeconds": 1.000089905,
+              "uploadBytes": 4194304,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediate",
+              "timeSeconds": 1.000070386,
+              "uploadBytes": 4194304,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediate",
+              "timeSeconds": 1.000072992,
+              "uploadBytes": 4194304,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediate",
+              "timeSeconds": 1.000069172,
               "uploadBytes": 4456448,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000082896,
-              "uploadBytes": 4419584,
+              "timeSeconds": 1.000068985,
+              "uploadBytes": 4194304,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000097683,
-              "uploadBytes": 4231168,
+              "timeSeconds": 1.000069611,
+              "uploadBytes": 4194304,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediate",
+              "timeSeconds": 1.000073023,
+              "uploadBytes": 4194304,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediate",
+              "timeSeconds": 1.000071253,
+              "uploadBytes": 4194304,
               "downloadBytes": 0
             }
           ],
@@ -129,116 +129,110 @@
           "result": [
             {
               "type": "intermediate",
-              "timeSeconds": 1.0000865,
+              "timeSeconds": 1.000083767,
               "uploadBytes": 199999959,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000096963,
-              "uploadBytes": 29936640,
+              "timeSeconds": 1.000131256,
+              "uploadBytes": 67184640,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000147196,
-              "uploadBytes": 34111488,
+              "timeSeconds": 1.000164951,
+              "uploadBytes": 77198336,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000018835,
-              "uploadBytes": 49011712,
+              "timeSeconds": 0.999841873,
+              "uploadBytes": 48995328,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999957156,
-              "uploadBytes": 93516800,
+              "timeSeconds": 0.999791864,
+              "uploadBytes": 60221440,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000009999,
-              "uploadBytes": 207893122,
+              "timeSeconds": 0.999787877,
+              "uploadBytes": 46735360,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000334223,
-              "uploadBytes": 31421440,
+              "timeSeconds": 1.000057794,
+              "uploadBytes": 93015040,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999807729,
-              "uploadBytes": 35279872,
+              "timeSeconds": 0.999989748,
+              "uploadBytes": 94902272,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999960673,
-              "uploadBytes": 76963840,
+              "timeSeconds": 0.99975666,
+              "uploadBytes": 99323904,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999929433,
-              "uploadBytes": 236411227,
+              "timeSeconds": 1.000030465,
+              "uploadBytes": 84773888,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.00009746,
-              "uploadBytes": 76319744,
+              "timeSeconds": 0.999934207,
+              "uploadBytes": 92011520,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999983236,
-              "uploadBytes": 77412352,
+              "timeSeconds": 0.99978892,
+              "uploadBytes": 94947328,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999779113,
-              "uploadBytes": 79714304,
+              "timeSeconds": 1.000060171,
+              "uploadBytes": 99871744,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999971102,
-              "uploadBytes": 80389120,
+              "timeSeconds": 0.999947149,
+              "uploadBytes": 88640512,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000030752,
-              "uploadBytes": 77771776,
+              "timeSeconds": 0.999896887,
+              "uploadBytes": 99704832,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999857687,
-              "uploadBytes": 78787584,
+              "timeSeconds": 1.00004742,
+              "uploadBytes": 92063744,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999739139,
-              "uploadBytes": 78533632,
+              "timeSeconds": 1.000043372,
+              "uploadBytes": 102043648,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999992781,
-              "uploadBytes": 76876800,
-              "downloadBytes": 0
-            },
-            {
-              "type": "intermediate",
-              "timeSeconds": 0.999971866,
-              "uploadBytes": 77300736,
+              "timeSeconds": 0.999798329,
+              "uploadBytes": 71273472,
               "downloadBytes": 0
             }
           ],
@@ -250,122 +244,364 @@
           "result": [
             {
               "type": "intermediary",
-              "timeSeconds": 1.000000707,
-              "uploadBytes": 163250176,
+              "timeSeconds": 1.022824388,
+              "uploadBytes": 101810176,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.0000291,
-              "uploadBytes": 633438208,
+              "timeSeconds": 1.054364179,
+              "uploadBytes": 666533888,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.087729586,
-              "uploadBytes": 610861056,
+              "timeSeconds": 1.000010342,
+              "uploadBytes": 633765888,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000004593,
-              "uploadBytes": 618037248,
+              "timeSeconds": 1.04636277,
+              "uploadBytes": 585957376,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000003222,
-              "uploadBytes": 617414656,
+              "timeSeconds": 1.00001677,
+              "uploadBytes": 617152512,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.077674548,
-              "uploadBytes": 598966272,
-              "downloadBytes": 0
-            },
-            {
-              "type": "intermediary",
-              "timeSeconds": 1.000029301,
-              "uploadBytes": 619741184,
-              "downloadBytes": 0
-            },
-            {
-              "type": "intermediary",
-              "timeSeconds": 1.000021156,
-              "uploadBytes": 621543424,
-              "downloadBytes": 0
-            },
-            {
-              "type": "intermediary",
-              "timeSeconds": 1.060418039,
-              "uploadBytes": 582909952,
-              "downloadBytes": 0
-            },
-            {
-              "type": "intermediary",
-              "timeSeconds": 1.000037114,
-              "uploadBytes": 621084672,
-              "downloadBytes": 0
-            },
-            {
-              "type": "intermediary",
-              "timeSeconds": 1.00000476,
-              "uploadBytes": 620822528,
-              "downloadBytes": 0
-            },
-            {
-              "type": "intermediary",
-              "timeSeconds": 1.057862096,
-              "uploadBytes": 580714496,
-              "downloadBytes": 0
-            },
-            {
-              "type": "intermediary",
-              "timeSeconds": 1.000005775,
-              "uploadBytes": 620724224,
-              "downloadBytes": 0
-            },
-            {
-              "type": "intermediary",
-              "timeSeconds": 1.000012995,
-              "uploadBytes": 620593152,
-              "downloadBytes": 0
-            },
-            {
-              "type": "intermediary",
-              "timeSeconds": 1.05401532,
-              "uploadBytes": 578977792,
-              "downloadBytes": 0
-            },
-            {
-              "type": "intermediary",
-              "timeSeconds": 1.000005753,
-              "uploadBytes": 621674496,
-              "downloadBytes": 0
-            },
-            {
-              "type": "intermediary",
-              "timeSeconds": 1.00001519,
+              "timeSeconds": 1.000047526,
               "uploadBytes": 618364928,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.068250351,
-              "uploadBytes": 588808192,
+              "timeSeconds": 1.055677417,
+              "uploadBytes": 585859072,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000003123,
-              "uploadBytes": 617086976,
+              "timeSeconds": 1.000020424,
+              "uploadBytes": 635273216,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.042785005,
+              "uploadBytes": 582320128,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.000029302,
+              "uploadBytes": 619479040,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.00000604,
+              "uploadBytes": 608862208,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.011249845,
+              "uploadBytes": 566493184,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.00001205,
+              "uploadBytes": 607223808,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.000036121,
+              "uploadBytes": 608436224,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.000047328,
+              "uploadBytes": 608862208,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.039813883,
+              "uploadBytes": 583467008,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.000023259,
+              "uploadBytes": 609714176,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.00004447,
+              "uploadBytes": 608927744,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.000027838,
+              "uploadBytes": 614531072,
               "downloadBytes": 0
             }
           ],
           "implementation": "https",
           "version": "v0.1",
           "transportStack": "tcp"
+        },
+        {
+          "result": [
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.000008938,
+              "uploadBytes": 40239104,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.0674709039999999,
+              "uploadBytes": 110755840,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.000008582,
+              "uploadBytes": 114819072,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.068319053,
+              "uploadBytes": 111673344,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.000034441,
+              "uploadBytes": 114556928,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.068376307,
+              "uploadBytes": 111935488,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.000031935,
+              "uploadBytes": 114753536,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.068362339,
+              "uploadBytes": 111738880,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.000034931,
+              "uploadBytes": 114819072,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.06836402,
+              "uploadBytes": 111673344,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.000099624,
+              "uploadBytes": 114884608,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.068222595,
+              "uploadBytes": 111607808,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.000079214,
+              "uploadBytes": 114688000,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.068049591,
+              "uploadBytes": 111804416,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.000007493,
+              "uploadBytes": 114688000,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.06852149,
+              "uploadBytes": 111804416,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.000054812,
+              "uploadBytes": 114622464,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.068255918,
+              "uploadBytes": 111869952,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.000090577,
+              "uploadBytes": 114884608,
+              "downloadBytes": 0
+            }
+          ],
+          "implementation": "go-libp2p",
+          "version": "v0.29",
+          "transportStack": "tcp"
+        },
+        {
+          "result": [
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.001384458,
+              "uploadBytes": 66453504,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.000108346,
+              "uploadBytes": 124649472,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.000156165,
+              "uploadBytes": 112918528,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.012935442,
+              "uploadBytes": 125894656,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.014168448,
+              "uploadBytes": 126353408,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.01373612,
+              "uploadBytes": 126287872,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.013069981,
+              "uploadBytes": 126222336,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.013697753,
+              "uploadBytes": 126222336,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.012333434,
+              "uploadBytes": 126156800,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.01361831,
+              "uploadBytes": 126418944,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.013518029,
+              "uploadBytes": 126353408,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.013064228,
+              "uploadBytes": 126222336,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.013797798,
+              "uploadBytes": 126353408,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.014095249,
+              "uploadBytes": 126287872,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.013255703,
+              "uploadBytes": 126287872,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.01251869,
+              "uploadBytes": 126156800,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.012875243,
+              "uploadBytes": 126222336,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.01405195,
+              "uploadBytes": 126353408,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.013308794,
+              "uploadBytes": 126222336,
+              "downloadBytes": 0
+            }
+          ],
+          "implementation": "go-libp2p",
+          "version": "v0.29",
+          "transportStack": "quic-v1"
         }
       ],
       "parameters": {
@@ -377,15 +613,15 @@
   "pings": {
     "unit": "s",
     "results": [
-      0.0678
+      0.0608
     ]
   },
   "iperf": {
     "unit": "bit/s",
     "results": [
-      1900000000,
-      1900000000,
-      1260000000
+      2240000000,
+      2240000000,
+      1610000000
     ]
   }
 }

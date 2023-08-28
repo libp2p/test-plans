@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"io"
+	"time"
 
 	logging "github.com/ipfs/go-log/v2"
 	pool "github.com/libp2p/go-buffer-pool"
@@ -89,7 +91,27 @@ func sendBytes(s io.Writer, bytesToSend uint64) error {
 	buf := pool.Get(blockSize)
 	defer pool.Put(buf)
 
+	lastReportTime := time.Now()
+	lastReportWrite := 0
+
 	for bytesToSend > 0 {
+		// TODO: Is this expensive in go? Is there a cheaper API with less resolution?
+		now := time.Now()
+		if now.Sub(lastReportTime) > time.Second {
+			jsonB, err := json.Marshal(Result{
+				TimeSeconds: now.Sub(lastReportTime).Seconds(),
+				UploadBytes: uint(lastReportWrite),
+				Type: "intermediary",
+			})
+			if err != nil {
+				log.Fatalf("failed to marshal perf result: %s", err)
+			}
+			fmt.Println(string(jsonB))
+
+			lastReportTime = now
+			lastReportWrite = 0
+		}
+
 		toSend := buf
 		if bytesToSend < blockSize {
 			toSend = buf[:bytesToSend]
@@ -100,10 +122,12 @@ func sendBytes(s io.Writer, bytesToSend uint64) error {
 			return err
 		}
 		bytesToSend -= uint64(n)
+		lastReportWrite += n
 	}
 	return nil
 }
 
+// TODO: We should also print the outcome here.
 func drainStream(s io.Reader) (uint64, error) {
 	var recvd int64
 	recvd, err := io.Copy(io.Discard, s)
