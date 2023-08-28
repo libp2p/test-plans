@@ -7,7 +7,7 @@ print-cpu-info: image.json
 	docker run --rm --entrypoint /app/zig/bin/zig $$(jq -r .imageID image.json) build-exe --show-builtin
 
 image.json:
-	wget -O zig-libp2p-${commitSha}.zip "https://github.com/marcopolo/zig-libp2p/archive/${commitSha}.zip"
+	wget --secure-protocol TLSv1.3 -O zig-libp2p-${commitSha}.zip "https://github.com/marcopolo/zig-libp2p/archive/${commitSha}.zip"
 	unzip -o zig-libp2p-${commitSha}.zip
 	cd zig-libp2p-${commitSha} && docker build -t ${image_name} -f interop/Dockerfile .
 	docker image inspect ${image_name} -f "{{.Id}}" | \

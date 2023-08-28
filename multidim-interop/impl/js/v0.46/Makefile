@@ -30,7 +30,7 @@ js-libp2p-${commitSha}/package-lock.json: js-libp2p-${commitSha}
 	cp ./package-lock.json js-libp2p-${commitSha}/package-lock.json
 
 js-libp2p-${commitSha}:
-	# wget -O js-libp2p-${commitSha}.zip "https://github.com/libp2p/js-libp2p/archive/${commitSha}.zip"
+	# wget --secure-protocol TLSv1.3 -O js-libp2p-${commitSha}.zip "https://github.com/libp2p/js-libp2p/archive/${commitSha}.zip"
 	curl "https://codeload.github.com/libp2p/js-libp2p/zip/${commitSha}" > js-libp2p-${commitSha}.zip 
 	unzip -o js-libp2p-${commitSha}.zip
 
