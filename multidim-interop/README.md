@@ -37,7 +37,7 @@ listener.
    make
    ```
 
-2. Install the dependencies
+2. Install the dependencies need to run the tests
 
    ```bash
    npm install
@@ -48,13 +48,13 @@ listener.
    npm run test
    ```
 **Note**:
-You may only want to run specific versions, you can do so by passing the `--test-filter` flag
+You may only want to run specific versions, you can do so by passing the `--name-filter` flag
 ```bash
-npm run test -- --test-filter=js-libp2p-head
+npm run test -- --name-filter js-libp2p-head
 ```
-You can also ignore specific versions by passing the `--test-ignore` flag
+You can also ignore specific versions by passing the `--name-ignore` flag
 ```bash
-npm run test -- --test-ignore=js-libp2p-head
+npm run test -- --name-filter js-libp2p-head
 ```
 
 ## Adding an implementation
