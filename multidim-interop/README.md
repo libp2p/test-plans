@@ -29,39 +29,56 @@ environment variables. The current parameters are:
 The test should do two different things depending on if it's the dialer or
 listener.
 
-## Running Locally
+## Running Tests Locally using Docker images
 
-In some cases you may want to run locally when debugging, such as modifying internal dependencies.
+1. Build the images of the implementations
 
-1. To run the test locally, you'll also need to have docker installed in order to run the redis instance. Once docker is running, you can run the following command to start the redis instance:
+   ```bash
+   make
+   ```
 
+2. Install the dependencies
+
+   ```bash
+   npm install
+   ```
+3. Run the tests
+
+   ```bash
+   npm run test
+   ```
+**Note**:
+You may only want to run specific versions, you can do so by passing the `--test-filter` flag
 ```bash
-docker run --rm -p 6379:6379 redis:7-alpine
+npm run test -- --test-filter=js-libp2p-head
+```
+You can also ignore specific versions by passing the `--test-ignore` flag
+```bash
+npm run test -- --test-ignore=js-libp2p-head
 ```
 
-This will start a redis instance on port 6379.
+## Adding an implementation
 
-2. Next, you'll need to install the dependencies and build the implementation for the test.  In this and the next step we are using a JS implementation as an example, so you would run the following command:
+1. Add the implementation to new subdirectory in [`impl/*`](./impl/).
+    - For a new implementation, create a folder `impl/<your-implementation-name>/` e.g. `go-libp2p`
+    - For a new version of an existing implementation, create a folder `impl/<your-implementation-name>/<your-implementation-version>`.
+    - In that folder include a `Makefile` that builds a docker image and stores it as `image.json`
+    - Requirements for the executable:
+2. Add the implementation to [`versions.ts`](./versions.ts).
+3. Add the implementation (and it's subdirectories) [`Makefile`](./Makefile).
+4. The implementation must implement a [ping](https://github.com/libp2p/specs/blob/50db89f3a71a87b096b0994a43a2dce0d251aeec/ping/ping.md) test, where it listens for a ping
+   and responds with a pong. The test runner will measure the round trip time
+   and the time it takes to establish the connection.
+5. The implementation must accept the a `transport` flag which specifies which transport to use. e.g. `tcp`, `ws`, `quic`, `quic-v1`, `webtransport`.
+6. The implementation must accept the a `muxer` flag which specifies which muxer to use. e.g. `mplex`, `yamux`.
+7. The implementation may accept an `ip` flag which specifies which IP address to bind to. If not specified, the implementation should bind to `0.0.0.0`
+8. The implementation must accept a `redis_addr` flag which specifies which address to connect to redis. If not specified, the implementation should connect to `redis:6379`
+9. The implementation must accept a `test_timeout_seconds` flag which specifies the timeout of the test. If not specified, the implementation should use a default of 180 seconds.
+10. The implementation must accept an `is_dialer` flag which specifies whether the implementation should dial or listen.
 
-```bash
-cd impl/js/v0.xx.xx/ && make
-```
+Below is a more detailed description of the test spec.
 
-3. Then you can run a listener by running the following command in this case we are running a rust listener:
-
-```bash
- RUST_LOG=yamux=trace transport=tcp muxer=yamux security=noise is_dialer=false ip="0.0.0.0" redis_addr=localhost:6379  cargo run --package interop-tests
- ```
-
-3. Finally you can run a dialer by running the following command, ensure that you pass the required environment variables, as well as any that may be of use for debugging:
-
-```bash
-DEBUG=*:yamux:trace transport=tcp muxer=yamux security=noise is_dialer=true   npm run test -- -t node
-```
-
-For more details on how to run a dialer vs a listener, see the sections below.
-
-## Dialer
+### Dialer
 
 The dialer should emit all diagnostic logs to `stderr`. Only the final JSON
 string result should be emitted to `stdout`.
@@ -80,7 +97,7 @@ string result should be emitted to `stdout`.
 
 On error, the dialer should return a non-zero exit code.
 
-## Listener
+### Listener
 
 The listener should emit all diagnostic logs to `stderr`.
 
