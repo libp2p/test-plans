@@ -19,7 +19,7 @@ nim-libp2p-${commitSha}: nim-libp2p-${commitSha}.zip
 	unzip -o nim-libp2p-${commitSha}.zip
 
 nim-libp2p-${commitSha}.zip:
-	wget --secure-protocol TLSv1_2 -O $@ "https://github.com/status-im/nim-libp2p/archive/${commitSha}.zip"
+	wget --secure-protocol=TLSv1_2 -O $@ "https://github.com/status-im/nim-libp2p/archive/${commitSha}.zip"
 
 .PHONY: clean all
 
