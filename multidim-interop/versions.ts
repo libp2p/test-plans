@@ -125,4 +125,10 @@ export const versions: Array<Version> = [
         secureChannels: ["tls", "noise"],
         muxers: ["mplex", "yamux"],
     },
+    {
+        id: "dotnet-v1.0",
+        transports: ["tcp"],
+        secureChannels: ["noise"],
+        muxers: ["yamux"],
+    },
 ].map((v: Version) => (typeof v.containerImageID === "undefined" ? ({ ...v, containerImageID: canonicalImageIDLookup }) : v))
