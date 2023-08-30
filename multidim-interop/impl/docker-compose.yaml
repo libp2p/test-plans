@@ -17,8 +17,10 @@ services:
       ip: "0.0.0.0"
       security: "noise"
       muxer: "mplex"
+    depends_on:
+      - redis
   listener:
-    image: "sha256:e139526dfbda00ca37cdeeab5017218783fc0aee6541189c86444507f7253181"
+    image: "sha256:9b4ef453bd9eb957391a74dab6999e7c677b231e75131cd4de510854f4561f47"
     environment:
       redis_addr: "redis:6379"
       is_dialer: false
@@ -26,5 +28,7 @@ services:
       ip: "0.0.0.0"
       security: "noise"
       muxer: "mplex"
+    depends_on:
+      - redis
   redis:
     image: redis/redis-stack
