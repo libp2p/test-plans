@@ -1,5 +1,14 @@
+NPM_PACKAGE_VERSION := 1.0.0
+NPM_PACKAGE := @libp2p/multidim-interop
+NPM_PACKAGE_NAME := $(NPM_PACKAGE)@$(NPM_PACKAGE_VERSION)
+
+SOURCE_DIR := js-libp2p-multidim
+
+DOCKER_IMAGE := node:18.17.1
+
+DOCKER_RUN := docker run --rm -v "$(shell pwd)/$(SOURCE_DIR)":/usr/src/myapp -w /usr/src/myapp $(DOCKER_IMAGE)
+
 image_name := js-v0.46
-commitSha := b7e608998cc88860d9ec8a3ed7c03fdfb3eccb3b
 
 # TODO Enable webkit once https://github.com/libp2p/js-libp2p/pull/1627 is in
 all: image.json chromium-image.json firefox-image.json
@@ -18,15 +27,13 @@ firefox-image.json: load-image-json BrowserDockerfile
 	docker image inspect firefox-${image_name} -f "{{.Id}}" | \
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
 
-image.json: js-libp2p-${commitSha}
-	cd js-libp2p-${commitSha} && docker build -t ${image_name} -f ../Dockerfile .
+image.json:
+	mkdir -p $(SOURCE_DIR)
+	$(DOCKER_RUN) npm install $(NPM_PACKAGE_NAME)
+	cd js-libp2p-multidim && docker build -t ${image_name} -f ../Dockerfile .
 	docker image inspect ${image_name} -f "{{.Id}}" | \
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
 
-js-libp2p-${commitSha}:
-	wget -O js-libp2p-${commitSha}.zip "https://github.com/libp2p/js-libp2p/archive/${commitSha}.zip"
-	unzip -o js-libp2p-${commitSha}.zip
-	unzip -o js-libp2p-${commitSha}.zip
 
 clean:
 	rm -rf image.json js-libp2p-*.zip js-libp2p-* *-image.json
