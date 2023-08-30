@@ -1,0 +1,30 @@
+# Convenience file to locally check a ping between dialer and listener
+# Usage:
+# - Go to the particular implementation directory, e.g. rust/v0.52
+# - Build the docker image
+# - In the 'image.json' file, the sha256 of the docker image is present. Copy/paste that into this file.
+# - Do that for both listener and dialer.
+# - Update other environment variables below accordingly
+# - `docker-compose up` to test, ctrl-c to stop.
+version: "3.7"
+services:
+  dialer:
+    image: "sha256:7ff0dc7840ae4936b832c95340a3e6f00ff71de0741a58109679c5a686971d36"
+    environment:
+      redis_addr: "redis:6379"
+      is_dialer: true
+      transport: "tcp"
+      ip: "0.0.0.0"
+      security: "noise"
+      muxer: "mplex"
+  listener:
+    image: "sha256:e139526dfbda00ca37cdeeab5017218783fc0aee6541189c86444507f7253181"
+    environment:
+      redis_addr: "redis:6379"
+      is_dialer: false
+      transport: "tcp"
+      ip: "0.0.0.0"
+      security: "noise"
+      muxer: "mplex"
+  redis:
+    image: redis/redis-stack
