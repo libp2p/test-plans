@@ -1,10 +1,7 @@
 # Convenience file to locally check a ping between dialer and listener
 # Usage:
-# - Go to the particular implementation directory, e.g. rust/v0.52
-# - Build the docker image
-# - In the 'image.json' file, the sha256 of the docker image is present. Copy/paste that into this file.
-# - Do that for both listener and dialer.
-# - Update other environment variables below accordingly
+# - Paste the sha256 from the 'image.json' (build in their respective directories) below for the dialer and listener.
+# - Update the other environment variables below accordingly
 # - `docker-compose up` to test, ctrl-c to stop.
 version: "3.7"
 services:
