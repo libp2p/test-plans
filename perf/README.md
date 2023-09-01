@@ -42,7 +42,7 @@ Benchmark results can be visualized with https://observablehq.com/@libp2p-worksp
     │   on ../../modules/short_lived/main.tf line 15, in resource "aws_instance" "perf":
     │   15: resource "aws_instance" "perf" {
   ```
-- This implies that you haven't deployed the long-lived infrastructure on your AWS account. To do so along with each short-lived deployment, you can set *TF_VAR* [`long_lived_enabled`](./terraform/configs/local/terraform.tf#L42) env variable to default to `true` terraform should spin up the long-lived resources that are required for the short-lived resources to be created.
+- This implies that you haven't deployed the long-lived infrastructure on your AWS account. To do so along with each short-lived deployment, you can set *TF_VAR* [`long_lived_enabled`](./terraform/configs/local/terraform.tf#L42) env variable to default to `true`. Terraform should then spin up the long-lived resources that are required for the short-lived resources to be created.
 
 - It's best to destroy the infrastructure after you're done with your testing, you can do that by running `terraform destroy`.
 
