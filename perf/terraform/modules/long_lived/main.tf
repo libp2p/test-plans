@@ -94,7 +94,7 @@ resource "aws_security_group" "restricted_inbound" {
 resource "aws_launch_template" "perf" {
   name          = "perf-node"
   image_id      = var.ami
-  instance_type = "m7i.xlarge"
+  instance_type = "m5.xlarge"
 
   # Debug via:
   # - /var/log/cloud-init.log and
