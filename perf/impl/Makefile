@@ -3,7 +3,7 @@ RUST_SUBDIRS := $(wildcard rust-libp2p/*/.)
 HTTPS_SUBDIRS := $(wildcard https/*/.)
 QUIC_GO_SUBDIRS := $(wildcard quic-go/*/.)
 
-all: $(RUST_SUBDIRS) $(HTTPS_SUBDIRS) $(GO_SUBDIRS) $(QUIC_GO_SUBDIRS)
+all: $(RUST_SUBDIRS) $(GO_SUBDIRS) $(HTTPS_SUBDIRS) $(QUIC_GO_SUBDIRS)
 $(RUST_SUBDIRS):
 	$(MAKE) -C $@
 $(GO_SUBDIRS):
@@ -18,4 +18,4 @@ clean: $(RUST_SUBDIRS:%=%clean) $(GO_SUBDIRS:%=%clean) $(HTTPS_SUBDIRS:%=%clean)
 %clean:
 	$(MAKE) -C $* clean
 
-.PHONY: $(RUST_SUBDIRS) $(GO_SUBDIRS) $(HTTPS_SUBDIRS) $(QUIC_GO_SUBDIRS)
+.PHONY: $(RUST_SUBDIRS) $(GO_SUBDIRS) $(HTTPS_SUBDIRS) $(QUIC_GO_SUBDIRS) all clean

@@ -4,9 +4,9 @@ import yargs from 'yargs';
 import fs from 'fs';
 import { BenchmarkResults, Benchmark, Result, IperfResults, PingResults, ResultValue } from './benchmark-result-type';
 
-async function main(clientPublicIP: string, serverPublicIP: string, iterations: number) {
-    const pings = runPing(clientPublicIP, serverPublicIP);
-    const iperf = runIPerf(clientPublicIP, serverPublicIP);
+async function main(clientPublicIP: string, serverPublicIP: string, testing: boolean) {
+    const pings = runPing(clientPublicIP, serverPublicIP, testing);
+    const iperf = runIPerf(clientPublicIP, serverPublicIP, testing);
 
     copyAndBuildPerfImplementations(serverPublicIP);
     copyAndBuildPerfImplementations(clientPublicIP);
@@ -20,7 +20,7 @@ async function main(clientPublicIP: string, serverPublicIP: string, iterations: 
                  uploadBytes: Number.MAX_SAFE_INTEGER, // TODO Ideally we have this implied through a flag.
                  downloadBytes: 0,
                  unit: "bit/s",
-                 iterations: 1,
+                 iterations: testing ? 1 : 10,
              }),
     ];
 
@@ -36,10 +36,11 @@ async function main(clientPublicIP: string, serverPublicIP: string, iterations: 
     console.error("== done");
 }
 
-function runPing(clientPublicIP: string, serverPublicIP: string): PingResults {
-    console.error(`= run 100 pings from client to server`);
+function runPing(clientPublicIP: string, serverPublicIP: string, testing: boolean): PingResults {
+    const pingCount = testing ? 1 : 100;
+    console.error(`= run ${pingCount} pings from client to server`);
 
-    const cmd = `ssh -o StrictHostKeyChecking=no ec2-user@${clientPublicIP} 'ping -c 1 ${serverPublicIP}'`;
+    const cmd = `ssh -o StrictHostKeyChecking=no ec2-user@${clientPublicIP} 'ping -c ${pingCount} ${serverPublicIP}'`;
     const stdout = execCommand(cmd).toString();
 
     // Extract the time from each ping
@@ -54,9 +55,9 @@ function runPing(clientPublicIP: string, serverPublicIP: string): PingResults {
     return { unit: "s", results: times }
 }
 
-function runIPerf(clientPublicIP: string, serverPublicIP: string): IperfResults {
-    const iterations = 1;
-    console.error(`= run ${iterations} iPerf TCP from client to server`);
+function runIPerf(clientPublicIP: string, serverPublicIP: string, testing: boolean): IperfResults {
+    const iPerfIterations = testing ? 1 : 60;
+    console.error(`= run ${iPerfIterations} iPerf TCP from client to server`);
 
     const killCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${serverPublicIP} 'kill $(cat pidfile); rm pidfile; rm server.log || true'`;
     const killSTDOUT = execCommand(killCMD);
@@ -66,7 +67,7 @@ function runIPerf(clientPublicIP: string, serverPublicIP: string): IperfResults 
     const serverSTDOUT = execCommand(serverCMD);
     console.error(serverSTDOUT);
 
-    const cmd = `ssh -o StrictHostKeyChecking=no ec2-user@${clientPublicIP} 'iperf3 -c ${serverPublicIP} -b 25g -t ${iterations}'`;
+    const cmd = `ssh -o StrictHostKeyChecking=no ec2-user@${clientPublicIP} 'iperf3 -c ${serverPublicIP} -b 25g -t ${iPerfIterations}'`;
     const stdout = execSync(cmd).toString();
 
     // Extract the bitrate from each relevant line
@@ -218,14 +219,14 @@ const argv = yargs
             demandOption: true,
             description: 'Server public IP address',
         },
-        'iterations': {
-            type: 'number',
-            default: 10,
-            description: 'Number of iterations to run',
+        'testing': {
+            type: 'boolean',
+            default: false,
+            description: 'Run in testing mode',
             demandOption: false,
         }
     })
     .command('help', 'Print usage information', yargs.help)
     .parseSync();
 
-main(argv['client-public-ip'] as string, argv['server-public-ip'] as string, argv['iterations'] as number);
+main(argv['client-public-ip'] as string, argv['server-public-ip'] as string, argv['testing'] as boolean);
