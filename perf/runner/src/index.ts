@@ -4,10 +4,13 @@ import yargs from 'yargs';
 import fs from 'fs';
 import { BenchmarkResults, Benchmark, Result, IperfResults, PingResults, ResultValue } from './benchmark-result-type';
 
-async function main(clientPublicIP: string, serverPublicIP: string, iterations: number, testFilter: string[]) {
+async function main(clientPublicIP: string, serverPublicIP: string, testing: boolean, testFilter: string[]) {
+    const iterations = testing ? 1 : 10;
+
     console.error(`= Starting benchmark with ${iterations} iterations on implementations ${testFilter}`);
-    const pings = runPing(clientPublicIP, serverPublicIP);
-    const iperf = runIPerf(clientPublicIP, serverPublicIP);
+
+    const pings = runPing(clientPublicIP, serverPublicIP, testing);
+    const iperf = runIPerf(clientPublicIP, serverPublicIP, testing);
 
     const versionsToRun = versions.filter(version => testFilter.includes('*') || testFilter.includes(version.implementation))
 
@@ -42,7 +45,7 @@ async function main(clientPublicIP: string, serverPublicIP: string, iterations: 
                  uploadBytes: 1,
                  downloadBytes: 1,
                  unit: "s",
-                 iterations: iterations * 10,
+                 iterations: testing ? 1 : 100,
              }, versionsToRun),
     ];
 
@@ -58,10 +61,11 @@ async function main(clientPublicIP: string, serverPublicIP: string, iterations: 
     console.error("== done");
 }
 
-function runPing(clientPublicIP: string, serverPublicIP: string): PingResults {
-    console.error(`= run 100 pings from client to server`);
+function runPing(clientPublicIP: string, serverPublicIP: string, testing: boolean): PingResults {
+    const pingCount = testing ? 1 : 100;
+    console.error(`= run ${pingCount} pings from client to server`);
 
-    const cmd = `ssh -o StrictHostKeyChecking=no ec2-user@${clientPublicIP} 'ping -c 100 ${serverPublicIP}'`;
+    const cmd = `ssh -o StrictHostKeyChecking=no ec2-user@${clientPublicIP} 'ping -c ${pingCount} ${serverPublicIP}'`;
     const stdout = execCommand(cmd).toString();
 
     // Extract the time from each ping
@@ -76,9 +80,9 @@ function runPing(clientPublicIP: string, serverPublicIP: string): PingResults {
     return { unit: "s", results: times }
 }
 
-function runIPerf(clientPublicIP: string, serverPublicIP: string): IperfResults {
-    const iterations = 60;
-    console.error(`= run ${iterations} iPerf TCP from client to server`);
+function runIPerf(clientPublicIP: string, serverPublicIP: string, testing: boolean): IperfResults {
+    const iPerfIterations = testing ? 1 : 60;
+    console.error(`= run ${iPerfIterations} iPerf TCP from client to server`);
 
     const killCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${serverPublicIP} 'kill $(cat pidfile); rm pidfile; rm server.log || true'`;
     const killSTDOUT = execCommand(killCMD);
@@ -88,7 +92,7 @@ function runIPerf(clientPublicIP: string, serverPublicIP: string): IperfResults 
     const serverSTDOUT = execCommand(serverCMD);
     console.error(serverSTDOUT);
 
-    const cmd = `ssh -o StrictHostKeyChecking=no ec2-user@${clientPublicIP} 'iperf3 -c ${serverPublicIP} -b 25g -t ${iterations}'`;
+    const cmd = `ssh -o StrictHostKeyChecking=no ec2-user@${clientPublicIP} 'iperf3 -c ${serverPublicIP} -b 25g -t ${iPerfIterations}'`;
     const stdout = execSync(cmd).toString();
 
     // Extract the bitrate from each relevant line
@@ -237,10 +241,10 @@ const argv = yargs
             demandOption: true,
             description: 'Server public IP address',
         },
-        'iterations': {
-            type: 'number',
-            default: 10,
-            description: 'Number of iterations to run',
+        'testing': {
+            type: 'boolean',
+            default: false,
+            description: 'Run in testing mode',
             demandOption: false,
         },
         'test-filter': {
@@ -255,4 +259,4 @@ const argv = yargs
     .command('help', 'Print usage information', yargs.help)
     .parseSync();
 
-main(argv['client-public-ip'] as string, argv['server-public-ip'] as string, argv['iterations'] as number, argv['test-filter'] as string[]);
+main(argv['client-public-ip'] as string, argv['server-public-ip'] as string, argv['testing'] as boolean, argv['test-filter'] as string[]);
