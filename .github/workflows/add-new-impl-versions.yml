@@ -27,7 +27,8 @@ jobs:
         uses: actions/checkout@v3
       - name: Configure git
         run: |
-          git fetch $BRANCH && git checkout $BRANCH && git rebase $GITHUB_REF -X theirs || git checkout -b $BRANCH
+          git fetch origin $BRANCH && git checkout $BRANCH || git checkout -b $BRANCH
+          git rebase $GITHUB_REF -X theirs || git rebase --abort
           git config --global user.email $GITHUB_ACTOR@users.noreply.github.com
           git config --global user.name $GITHUB_ACTOR
       - id: go
@@ -62,6 +63,9 @@ jobs:
           git add .
           git commit -m "chore: add go-libp2p@$REMOTE_VERSION to $DIR"
           git push origin $BRANCH --force
-          gh pr create --title "chore: add go-libp2p@$REMOTE_VERSION to $DIR" --body "This PR adds go-libp2p@$REMOTE_VERSION to $DIR" --head $BRANCH --base $GITHUB_REF
+          # create a PR if an open one doesn't exist yet
+          if [[ $(gh pr list --state open --base $GITHUB_REF --head $BRANCH | wc -l) -eq 0 ]]; then
+            gh pr create --title "chore: add go-libp2p@$REMOTE_VERSION to $DIR" --body "This PR adds go-libp2p@$REMOTE_VERSION to $DIR" --head $BRANCH --base $GITHUB_REF
+          fi
           gh workflow run perf.yml --ref $BRANCH
         working-directory: ${{ env.DIR }}
