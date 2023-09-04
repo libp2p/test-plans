@@ -55,6 +55,7 @@ function runPing(clientPublicIP: string, serverPublicIP: string, testing: boolea
     return { unit: "s", results: times }
 }
 
+// TODO: Have iterations on iperf, i.e. use multiple tcp connections consecutively
 function runIPerf(clientPublicIP: string, serverPublicIP: string, testing: boolean): IperfResults {
     const iPerfIterations = testing ? 1 : 60;
     console.error(`= run ${iPerfIterations} iPerf TCP from client to server`);
@@ -67,7 +68,7 @@ function runIPerf(clientPublicIP: string, serverPublicIP: string, testing: boole
     const serverSTDOUT = execCommand(serverCMD);
     console.error(serverSTDOUT);
 
-    const cmd = `ssh -o StrictHostKeyChecking=no ec2-user@${clientPublicIP} 'iperf3 -c ${serverPublicIP} -b 25g -t ${iPerfIterations}'`;
+    const cmd = `ssh -o StrictHostKeyChecking=no ec2-user@${clientPublicIP} 'iperf3 -c ${serverPublicIP} -t ${iPerfIterations} -N'`;
     const stdout = execSync(cmd).toString();
 
     // Extract the bitrate from each relevant line
