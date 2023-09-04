@@ -118,7 +118,6 @@ function buildSpec(containerImages: { [key: string]: () => string }, { name, dia
                     transport,
                     is_dialer: true,
                     ip: "0.0.0.0",
-                    redis_addr: "redis:6379",
                     ...(!!muxer && { muxer }),
                     ...(!!security && { security }),
                     ...extraEnv,
