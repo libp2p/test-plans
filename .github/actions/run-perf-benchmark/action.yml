@@ -4,7 +4,7 @@ inputs:
   test-filter:
     description: "Filter which tests to run, only these implementations will be run"
     required: false
-    default: ""
+    default: "*"
   tf_in_automation:
     description: "Whether to run terraform in automation mode"
     required: false
@@ -21,10 +21,6 @@ inputs:
     description: "S3 secret key id for the terraform infrastructure"
     required: true
     default: ""
-  test-iterations:
-    description: "How many times to run each test"
-    required: false
-    default: "1"
 runs:
   using: "composite"
   steps:
@@ -92,7 +88,7 @@ runs:
       env:
         SERVER_IP: ${{ steps.server.outputs.stdout }}
         CLIENT_IP: ${{ steps.client.outputs.stdout }}
-      run: npm run start -- --client-public-ip $CLIENT_IP --server-public-ip $SERVER_IP --iterations ${{ inputs.test-iterations }} --test-filter ${{ inputs.test-filter }}
+      run: npm run start -- --client-public-ip $CLIENT_IP --server-public-ip $SERVER_IP  --test-filter ${{ inputs.test-filter }}
 
     - name: Push
       shell: bash

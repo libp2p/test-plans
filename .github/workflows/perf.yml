@@ -35,5 +35,5 @@ jobs:
           ref: ${{ github.ref }}
       - uses: ./.github/actions/run-perf-benchmark
         with:
-          s3-access-key-id: ${{ vars.PERF_AWS_SECRET_ACCESS_KEY }}
-          s3-secret-access-key: ${{ secrets.PERF_AWS_ACCESS_KEY_ID }}
+          s3-access-key-id: ${{ vars.PERF_AWS_ACCESS_KEY_ID }}
+          s3-secret-access-key: ${{ secrets.PERF_AWS_SECRET_ACCESS_KEY }}
