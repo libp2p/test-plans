@@ -20,7 +20,7 @@ async function main(clientPublicIP: string, serverPublicIP: string, testing: boo
                  uploadBytes: Number.MAX_SAFE_INTEGER, // TODO Ideally we have this implied through a flag.
                  downloadBytes: 0,
                  unit: "bit/s",
-                 iterations: testing ? 1 : 10,
+                 iterations: testing ? 1 : 5,
              }),
     ];
 
