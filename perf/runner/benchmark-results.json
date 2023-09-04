@@ -8,356 +8,356 @@
           "result": [
             {
               "type": "intermediary",
-              "timeSeconds": 1.000007993,
-              "uploadBytes": 107970560,
+              "timeSeconds": 1.000073932,
+              "uploadBytes": 95551488,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000059486,
-              "uploadBytes": 228540416,
+              "timeSeconds": 1.000033028,
+              "uploadBytes": 211812352,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000060862,
-              "uploadBytes": 229572608,
+              "timeSeconds": 1.000053989,
+              "uploadBytes": 213630976,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000057777,
-              "uploadBytes": 229376000,
+              "timeSeconds": 1.000076456,
+              "uploadBytes": 215580672,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000017898,
-              "uploadBytes": 229392384,
+              "timeSeconds": 1.000021951,
+              "uploadBytes": 214925312,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000056391,
-              "uploadBytes": 228622336,
+              "timeSeconds": 1.000006257,
+              "uploadBytes": 214958080,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000029597,
-              "uploadBytes": 228851712,
+              "timeSeconds": 1.000029871,
+              "uploadBytes": 215203840,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000012778,
-              "uploadBytes": 228933632,
+              "timeSeconds": 1.000002565,
+              "uploadBytes": 213385216,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.00005309,
-              "uploadBytes": 228392960,
+              "timeSeconds": 1.000055031,
+              "uploadBytes": 211877888,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000135309,
-              "uploadBytes": 228835328,
+              "timeSeconds": 1.000003119,
+              "uploadBytes": 206389248,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000001634,
-              "uploadBytes": 228589568,
+              "timeSeconds": 1.00007882,
+              "uploadBytes": 213270528,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000014497,
-              "uploadBytes": 228556800,
+              "timeSeconds": 1.000026964,
+              "uploadBytes": 213516288,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000026642,
-              "uploadBytes": 228491264,
+              "timeSeconds": 1.000039691,
+              "uploadBytes": 213385216,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000053035,
-              "uploadBytes": 228589568,
+              "timeSeconds": 1.000038245,
+              "uploadBytes": 213516288,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000122229,
-              "uploadBytes": 228818944,
+              "timeSeconds": 1.000010269,
+              "uploadBytes": 214138880,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000005422,
-              "uploadBytes": 228884480,
+              "timeSeconds": 1.000067625,
+              "uploadBytes": 214417408,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000044293,
-              "uploadBytes": 228868096,
+              "timeSeconds": 1.000001158,
+              "uploadBytes": 213549056,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000057871,
-              "uploadBytes": 228687872,
+              "timeSeconds": 1.000041597,
+              "uploadBytes": 213794816,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000017805,
-              "uploadBytes": 228769792,
+              "timeSeconds": 1.000027282,
+              "uploadBytes": 213319680,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000029982,
-              "uploadBytes": 228605952,
+              "timeSeconds": 1.000038089,
+              "uploadBytes": 205668352,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.00003823,
-              "uploadBytes": 228769792,
+              "timeSeconds": 1.000026464,
+              "uploadBytes": 209813504,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000010783,
-              "uploadBytes": 228474880,
+              "timeSeconds": 1.00006977,
+              "uploadBytes": 215662592,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000032193,
-              "uploadBytes": 229130240,
+              "timeSeconds": 1.00005098,
+              "uploadBytes": 213762048,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000289122,
-              "uploadBytes": 228720640,
+              "timeSeconds": 1.000030458,
+              "uploadBytes": 212303872,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000028471,
-              "uploadBytes": 228196352,
+              "timeSeconds": 1.000055244,
+              "uploadBytes": 203636736,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000030271,
-              "uploadBytes": 228343808,
+              "timeSeconds": 1.000066772,
+              "uploadBytes": 214286336,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000015204,
-              "uploadBytes": 228999168,
+              "timeSeconds": 1.000039544,
+              "uploadBytes": 210698240,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000038677,
-              "uploadBytes": 228720640,
+              "timeSeconds": 1.000004384,
+              "uploadBytes": 213729280,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000099351,
-              "uploadBytes": 228474880,
+              "timeSeconds": 1.000083223,
+              "uploadBytes": 211124224,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.00007426,
-              "uploadBytes": 228376576,
+              "timeSeconds": 1.000008815,
+              "uploadBytes": 201277440,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000011794,
-              "uploadBytes": 228802560,
+              "timeSeconds": 1.000001203,
+              "uploadBytes": 199114752,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000034024,
-              "uploadBytes": 228769792,
+              "timeSeconds": 1.000030259,
+              "uploadBytes": 212975616,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000029278,
-              "uploadBytes": 228655104,
+              "timeSeconds": 1.000027844,
+              "uploadBytes": 211320832,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000020417,
-              "uploadBytes": 228655104,
+              "timeSeconds": 1.000130103,
+              "uploadBytes": 213991424,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000030226,
-              "uploadBytes": 228704256,
+              "timeSeconds": 1.000062468,
+              "uploadBytes": 213630976,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000031459,
-              "uploadBytes": 228556800,
+              "timeSeconds": 1.000022672,
+              "uploadBytes": 206848000,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000042505,
-              "uploadBytes": 228900864,
+              "timeSeconds": 1.000069881,
+              "uploadBytes": 210485248,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000038922,
-              "uploadBytes": 228720640,
+              "timeSeconds": 1.000097751,
+              "uploadBytes": 214974464,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000041434,
-              "uploadBytes": 228704256,
+              "timeSeconds": 1.000009119,
+              "uploadBytes": 210305024,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000014265,
-              "uploadBytes": 228524032,
+              "timeSeconds": 1.000041563,
+              "uploadBytes": 204292096,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000037182,
-              "uploadBytes": 228589568,
+              "timeSeconds": 1.000131965,
+              "uploadBytes": 208601088,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000018499,
-              "uploadBytes": 228966400,
+              "timeSeconds": 1.00001198,
+              "uploadBytes": 213598208,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000027239,
-              "uploadBytes": 228589568,
+              "timeSeconds": 1.000078544,
+              "uploadBytes": 211304448,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000047792,
-              "uploadBytes": 228769792,
+              "timeSeconds": 1.000051119,
+              "uploadBytes": 212467712,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000001266,
-              "uploadBytes": 228884480,
+              "timeSeconds": 1.000042232,
+              "uploadBytes": 213155840,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000101042,
-              "uploadBytes": 228048896,
+              "timeSeconds": 1.00001366,
+              "uploadBytes": 212926464,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000068668,
-              "uploadBytes": 228376576,
+              "timeSeconds": 1.00035101,
+              "uploadBytes": 126468096,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000036718,
-              "uploadBytes": 228507648,
+              "timeSeconds": 1.002718792,
+              "uploadBytes": 108609536,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000023964,
-              "uploadBytes": 228507648,
+              "timeSeconds": 1.0000229,
+              "uploadBytes": 108462080,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000033634,
-              "uploadBytes": 228704256,
+              "timeSeconds": 1.000103537,
+              "uploadBytes": 107839488,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000068098,
-              "uploadBytes": 228884480,
+              "timeSeconds": 1.000127425,
+              "uploadBytes": 109084672,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000044461,
-              "uploadBytes": 228605952,
+              "timeSeconds": 1.000024852,
+              "uploadBytes": 107986944,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000048639,
-              "uploadBytes": 228442112,
+              "timeSeconds": 1.000067127,
+              "uploadBytes": 108806144,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000058741,
-              "uploadBytes": 228868096,
+              "timeSeconds": 1.00014183,
+              "uploadBytes": 109363200,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000052417,
-              "uploadBytes": 228573184,
+              "timeSeconds": 1.000352474,
+              "uploadBytes": 109215744,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000070294,
-              "uploadBytes": 228605952,
+              "timeSeconds": 1.000065724,
+              "uploadBytes": 109527040,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000110596,
-              "uploadBytes": 228507648,
+              "timeSeconds": 1.00004097,
+              "uploadBytes": 109805568,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000067013,
-              "uploadBytes": 228605952,
+              "timeSeconds": 1.000049862,
+              "uploadBytes": 109707264,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000031366,
-              "uploadBytes": 228442112,
+              "timeSeconds": 1.000069039,
+              "uploadBytes": 110411776,
               "downloadBytes": 0
             }
           ],
@@ -369,356 +369,356 @@
           "result": [
             {
               "type": "intermediate",
-              "timeSeconds": 1.000077769,
-              "uploadBytes": 3145728,
+              "timeSeconds": 1.000111527,
+              "uploadBytes": 3014656,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000069128,
+              "timeSeconds": 1.000070802,
+              "uploadBytes": 4063232,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediate",
+              "timeSeconds": 1.000112406,
+              "uploadBytes": 4063232,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediate",
+              "timeSeconds": 1.000104095,
+              "uploadBytes": 4063232,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediate",
+              "timeSeconds": 1.000106264,
+              "uploadBytes": 4063232,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediate",
+              "timeSeconds": 1.000101746,
               "uploadBytes": 3932160,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000081926,
-              "uploadBytes": 3932160,
-              "downloadBytes": 0
-            },
-            {
-              "type": "intermediate",
-              "timeSeconds": 1.000072796,
+              "timeSeconds": 1.000094415,
               "uploadBytes": 4194304,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000068722,
+              "timeSeconds": 1.000093607,
               "uploadBytes": 3932160,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000081766,
+              "timeSeconds": 1.000100047,
+              "uploadBytes": 4063232,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediate",
+              "timeSeconds": 1.000090658,
+              "uploadBytes": 4063232,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediate",
+              "timeSeconds": 1.000099156,
+              "uploadBytes": 4063232,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediate",
+              "timeSeconds": 1.000087595,
+              "uploadBytes": 4063232,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediate",
+              "timeSeconds": 1.00010139,
               "uploadBytes": 3932160,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000072713,
+              "timeSeconds": 1.000101471,
               "uploadBytes": 4194304,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000071401,
+              "timeSeconds": 1.000102549,
               "uploadBytes": 3932160,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000074358,
-              "uploadBytes": 3932160,
-              "downloadBytes": 0
-            },
-            {
-              "type": "intermediate",
-              "timeSeconds": 1.000068802,
+              "timeSeconds": 1.000113447,
               "uploadBytes": 4194304,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000077002,
+              "timeSeconds": 1.000102785,
               "uploadBytes": 3932160,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000080363,
-              "uploadBytes": 3932160,
-              "downloadBytes": 0
-            },
-            {
-              "type": "intermediate",
-              "timeSeconds": 1.000089852,
-              "uploadBytes": 3932160,
-              "downloadBytes": 0
-            },
-            {
-              "type": "intermediate",
-              "timeSeconds": 1.00007186,
+              "timeSeconds": 1.000100936,
               "uploadBytes": 4194304,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000072011,
+              "timeSeconds": 1.000109002,
               "uploadBytes": 3932160,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000072913,
+              "timeSeconds": 1.00011019,
+              "uploadBytes": 4063232,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediate",
+              "timeSeconds": 1.000108735,
+              "uploadBytes": 4063232,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediate",
+              "timeSeconds": 1.000087021,
               "uploadBytes": 3932160,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000071977,
-              "uploadBytes": 3977216,
-              "downloadBytes": 0
-            },
-            {
-              "type": "intermediate",
-              "timeSeconds": 1.000074745,
-              "uploadBytes": 4149248,
-              "downloadBytes": 0
-            },
-            {
-              "type": "intermediate",
-              "timeSeconds": 1.00006423,
-              "uploadBytes": 3932160,
-              "downloadBytes": 0
-            },
-            {
-              "type": "intermediate",
-              "timeSeconds": 1.000072426,
-              "uploadBytes": 3932160,
-              "downloadBytes": 0
-            },
-            {
-              "type": "intermediate",
-              "timeSeconds": 1.000071986,
+              "timeSeconds": 1.000089541,
               "uploadBytes": 4194304,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000072723,
+              "timeSeconds": 1.000105973,
               "uploadBytes": 3932160,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000075998,
-              "uploadBytes": 3932160,
-              "downloadBytes": 0
-            },
-            {
-              "type": "intermediate",
-              "timeSeconds": 1.000083825,
-              "uploadBytes": 3932160,
-              "downloadBytes": 0
-            },
-            {
-              "type": "intermediate",
-              "timeSeconds": 1.000071706,
+              "timeSeconds": 1.000098421,
               "uploadBytes": 4194304,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000075966,
+              "timeSeconds": 1.000103749,
               "uploadBytes": 3932160,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000080503,
-              "uploadBytes": 3932160,
-              "downloadBytes": 0
-            },
-            {
-              "type": "intermediate",
-              "timeSeconds": 1.000071864,
+              "timeSeconds": 1.000103275,
               "uploadBytes": 4194304,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000073367,
+              "timeSeconds": 1.00011274,
               "uploadBytes": 3932160,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.00007975,
-              "uploadBytes": 3932160,
-              "downloadBytes": 0
-            },
-            {
-              "type": "intermediate",
-              "timeSeconds": 1.000071751,
-              "uploadBytes": 3932160,
-              "downloadBytes": 0
-            },
-            {
-              "type": "intermediate",
-              "timeSeconds": 1.000075309,
+              "timeSeconds": 1.000099947,
               "uploadBytes": 4194304,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000074384,
+              "timeSeconds": 1.000104684,
               "uploadBytes": 3932160,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000077658,
-              "uploadBytes": 3932160,
-              "downloadBytes": 0
-            },
-            {
-              "type": "intermediate",
-              "timeSeconds": 1.000123892,
-              "uploadBytes": 3999744,
-              "downloadBytes": 0
-            },
-            {
-              "type": "intermediate",
-              "timeSeconds": 1.00007579,
-              "uploadBytes": 4126720,
-              "downloadBytes": 0
-            },
-            {
-              "type": "intermediate",
-              "timeSeconds": 1.000071291,
-              "uploadBytes": 3932160,
-              "downloadBytes": 0
-            },
-            {
-              "type": "intermediate",
-              "timeSeconds": 1.000075744,
-              "uploadBytes": 3932160,
-              "downloadBytes": 0
-            },
-            {
-              "type": "intermediate",
-              "timeSeconds": 1.000071238,
+              "timeSeconds": 1.000086448,
               "uploadBytes": 4194304,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000075299,
+              "timeSeconds": 1.00010161,
               "uploadBytes": 3932160,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000073671,
+              "timeSeconds": 1.000111771,
+              "uploadBytes": 3988480,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediate",
+              "timeSeconds": 1.000100956,
+              "uploadBytes": 4137984,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediate",
+              "timeSeconds": 1.000119551,
               "uploadBytes": 3932160,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000093643,
-              "uploadBytes": 3932160,
-              "downloadBytes": 0
-            },
-            {
-              "type": "intermediate",
-              "timeSeconds": 1.000073842,
+              "timeSeconds": 1.000091818,
               "uploadBytes": 4194304,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000073206,
+              "timeSeconds": 1.00010545,
               "uploadBytes": 3932160,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.0000764,
-              "uploadBytes": 3932160,
-              "downloadBytes": 0
-            },
-            {
-              "type": "intermediate",
-              "timeSeconds": 1.000077562,
-              "uploadBytes": 3932160,
-              "downloadBytes": 0
-            },
-            {
-              "type": "intermediate",
-              "timeSeconds": 1.000072825,
+              "timeSeconds": 1.000075103,
               "uploadBytes": 4194304,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000070558,
+              "timeSeconds": 1.000089203,
               "uploadBytes": 3932160,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.00007999,
+              "timeSeconds": 1.000129952,
+              "uploadBytes": 3943424,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediate",
+              "timeSeconds": 1.000092892,
+              "uploadBytes": 4183040,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediate",
+              "timeSeconds": 1.000105332,
               "uploadBytes": 3932160,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000068593,
+              "timeSeconds": 1.000090245,
               "uploadBytes": 4194304,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000072167,
+              "timeSeconds": 1.000098052,
               "uploadBytes": 3932160,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000070594,
-              "uploadBytes": 3932160,
-              "downloadBytes": 0
-            },
-            {
-              "type": "intermediate",
-              "timeSeconds": 1.000069873,
-              "uploadBytes": 3932160,
-              "downloadBytes": 0
-            },
-            {
-              "type": "intermediate",
-              "timeSeconds": 1.000073362,
+              "timeSeconds": 1.000099949,
               "uploadBytes": 4194304,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000069932,
+              "timeSeconds": 1.000116929,
               "uploadBytes": 3932160,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000072551,
+              "timeSeconds": 1.000114861,
               "uploadBytes": 3932160,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000072759,
+              "timeSeconds": 1.000094943,
               "uploadBytes": 4194304,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.00007309,
+              "timeSeconds": 1.000091015,
               "uploadBytes": 3932160,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000069487,
+              "timeSeconds": 1.000098052,
+              "uploadBytes": 4194304,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediate",
+              "timeSeconds": 1.000101418,
               "uploadBytes": 3932160,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediate",
+              "timeSeconds": 1.000093964,
+              "uploadBytes": 4194304,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediate",
+              "timeSeconds": 1.000095166,
+              "uploadBytes": 3932160,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediate",
+              "timeSeconds": 1.000108231,
+              "uploadBytes": 3932160,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediate",
+              "timeSeconds": 1.000107727,
+              "uploadBytes": 4194304,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediate",
+              "timeSeconds": 1.000094042,
+              "uploadBytes": 3932160,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediate",
+              "timeSeconds": 1.000101479,
+              "uploadBytes": 4194304,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediate",
+              "timeSeconds": 1.000094118,
+              "uploadBytes": 3932160,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediate",
+              "timeSeconds": 1.000090302,
+              "uploadBytes": 4194304,
               "downloadBytes": 0
             }
           ],
@@ -730,356 +730,356 @@
           "result": [
             {
               "type": "intermediate",
-              "timeSeconds": 1.000087564,
+              "timeSeconds": 1.00008262,
               "uploadBytes": 199999959,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000223306,
-              "uploadBytes": 27527168,
+              "timeSeconds": 1.000301324,
+              "uploadBytes": 20710400,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.00006961,
-              "uploadBytes": 30881792,
+              "timeSeconds": 1.000316559,
+              "uploadBytes": 23282688,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999859354,
-              "uploadBytes": 52091904,
+              "timeSeconds": 0.999705228,
+              "uploadBytes": 59683840,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999830037,
-              "uploadBytes": 85348352,
+              "timeSeconds": 1.000344989,
+              "uploadBytes": 71658496,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999762557,
-              "uploadBytes": 201686623,
+              "timeSeconds": 0.999735216,
+              "uploadBytes": 200911193,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000321048,
-              "uploadBytes": 30098432,
+              "timeSeconds": 1.000193549,
+              "uploadBytes": 23088128,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999919169,
-              "uploadBytes": 72094720,
+              "timeSeconds": 1.000048909,
+              "uploadBytes": 30978048,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999808919,
-              "uploadBytes": 79929344,
+              "timeSeconds": 1.000005785,
+              "uploadBytes": 227541610,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999803828,
-              "uploadBytes": 74614784,
+              "timeSeconds": 1.000241659,
+              "uploadBytes": 62725120,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999920507,
-              "uploadBytes": 76790784,
+              "timeSeconds": 0.999862439,
+              "uploadBytes": 62301184,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999854579,
-              "uploadBytes": 225124326,
+              "timeSeconds": 1.000192997,
+              "uploadBytes": 70756352,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000285633,
-              "uploadBytes": 30058496,
+              "timeSeconds": 0.999746687,
+              "uploadBytes": 37060608,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999926356,
-              "uploadBytes": 34401280,
+              "timeSeconds": 0.999965277,
+              "uploadBytes": 59173888,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999998665,
-              "uploadBytes": 80160768,
+              "timeSeconds": 0.99968082,
+              "uploadBytes": 150464512,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999806149,
-              "uploadBytes": 91074560,
+              "timeSeconds": 1.000117145,
+              "uploadBytes": 63258624,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999809374,
-              "uploadBytes": 98092032,
+              "timeSeconds": 0.999782591,
+              "uploadBytes": 52556800,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999910613,
-              "uploadBytes": 86415360,
+              "timeSeconds": 0.999747096,
+              "uploadBytes": 107030528,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999853536,
-              "uploadBytes": 91990016,
+              "timeSeconds": 1.00006959,
+              "uploadBytes": 63629312,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999815101,
-              "uploadBytes": 89498624,
+              "timeSeconds": 1.000040001,
+              "uploadBytes": 96013312,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999909221,
-              "uploadBytes": 95127552,
+              "timeSeconds": 1.000036902,
+              "uploadBytes": 63894528,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.9999862,
-              "uploadBytes": 92643328,
+              "timeSeconds": 0.999889906,
+              "uploadBytes": 226889836,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.99987672,
-              "uploadBytes": 95218688,
+              "timeSeconds": 1.000342523,
+              "uploadBytes": 60530688,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999822517,
-              "uploadBytes": 88045568,
+              "timeSeconds": 0.999862771,
+              "uploadBytes": 68239360,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999969046,
-              "uploadBytes": 237635249,
+              "timeSeconds": 1.000065755,
+              "uploadBytes": 70258688,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000064686,
-              "uploadBytes": 52671488,
+              "timeSeconds": 0.999804818,
+              "uploadBytes": 67128320,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000052736,
-              "uploadBytes": 74070016,
+              "timeSeconds": 0.999862636,
+              "uploadBytes": 62903296,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999927326,
-              "uploadBytes": 76156928,
+              "timeSeconds": 0.999834755,
+              "uploadBytes": 61190144,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999942735,
-              "uploadBytes": 69116928,
+              "timeSeconds": 0.999802069,
+              "uploadBytes": 67343360,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999947522,
-              "uploadBytes": 67920896,
+              "timeSeconds": 0.999842968,
+              "uploadBytes": 231413085,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999834917,
-              "uploadBytes": 79909888,
+              "timeSeconds": 1.000191986,
+              "uploadBytes": 62230528,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999984374,
-              "uploadBytes": 82758656,
+              "timeSeconds": 0.99974737,
+              "uploadBytes": 67372032,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999986495,
-              "uploadBytes": 86288384,
+              "timeSeconds": 0.999758735,
+              "uploadBytes": 62349312,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999822613,
-              "uploadBytes": 92439552,
+              "timeSeconds": 0.999766344,
+              "uploadBytes": 69411840,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000029747,
-              "uploadBytes": 85588992,
+              "timeSeconds": 1.000019742,
+              "uploadBytes": 67465216,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999947234,
-              "uploadBytes": 94338048,
+              "timeSeconds": 1.000036625,
+              "uploadBytes": 66459648,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000012198,
-              "uploadBytes": 83942400,
+              "timeSeconds": 0.999935687,
+              "uploadBytes": 71947264,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999835444,
-              "uploadBytes": 91637760,
+              "timeSeconds": 0.99980469,
+              "uploadBytes": 230686149,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999738949,
-              "uploadBytes": 96415744,
+              "timeSeconds": 1.000390718,
+              "uploadBytes": 63555584,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.99988887,
-              "uploadBytes": 86644736,
+              "timeSeconds": 1.000010512,
+              "uploadBytes": 67494912,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999870393,
-              "uploadBytes": 90445824,
+              "timeSeconds": 0.999769647,
+              "uploadBytes": 70606848,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999769532,
-              "uploadBytes": 95900672,
+              "timeSeconds": 1.000055857,
+              "uploadBytes": 68703232,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999983909,
-              "uploadBytes": 93070336,
+              "timeSeconds": 1.000018953,
+              "uploadBytes": 63457280,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999850053,
-              "uploadBytes": 95086592,
+              "timeSeconds": 0.999808536,
+              "uploadBytes": 65571840,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999754412,
-              "uploadBytes": 85145600,
+              "timeSeconds": 0.999814855,
+              "uploadBytes": 64745472,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000053122,
-              "uploadBytes": 94835712,
+              "timeSeconds": 0.999914875,
+              "uploadBytes": 238342949,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999751117,
-              "uploadBytes": 92221440,
+              "timeSeconds": 1.000129852,
+              "uploadBytes": 60750848,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999814111,
-              "uploadBytes": 96300032,
+              "timeSeconds": 0.999757671,
+              "uploadBytes": 71061504,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999813023,
-              "uploadBytes": 98324480,
+              "timeSeconds": 1.000057844,
+              "uploadBytes": 68678656,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999861023,
-              "uploadBytes": 226714585,
+              "timeSeconds": 1.000003664,
+              "uploadBytes": 63571968,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 1.000062468,
-              "uploadBytes": 50484224,
+              "timeSeconds": 1.000028331,
+              "uploadBytes": 65013760,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999917619,
-              "uploadBytes": 59862016,
+              "timeSeconds": 1.000022998,
+              "uploadBytes": 71200768,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999926749,
-              "uploadBytes": 67450880,
+              "timeSeconds": 1.000025913,
+              "uploadBytes": 65595392,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999764496,
-              "uploadBytes": 55827456,
+              "timeSeconds": 1.000142899,
+              "uploadBytes": 233298090,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999850018,
-              "uploadBytes": 81306624,
+              "timeSeconds": 1.000268152,
+              "uploadBytes": 63318016,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.99973945,
-              "uploadBytes": 87647232,
+              "timeSeconds": 0.99983506,
+              "uploadBytes": 68148224,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999878502,
-              "uploadBytes": 94989312,
+              "timeSeconds": 1.000009478,
+              "uploadBytes": 62251008,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999977488,
-              "uploadBytes": 90414080,
+              "timeSeconds": 0.999907788,
+              "uploadBytes": 66539520,
               "downloadBytes": 0
             },
             {
               "type": "intermediate",
-              "timeSeconds": 0.999840647,
-              "uploadBytes": 95282176,
+              "timeSeconds": 0.999779824,
+              "uploadBytes": 66833408,
               "downloadBytes": 0
             }
           ],
@@ -1091,332 +1091,350 @@
           "result": [
             {
               "type": "intermediary",
-              "timeSeconds": 1.000015777,
-              "uploadBytes": 200376320,
+              "timeSeconds": 1.000003737,
+              "uploadBytes": 174030848,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.071619497,
-              "uploadBytes": 633733120,
+              "timeSeconds": 1.027133476,
+              "uploadBytes": 619053056,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.073996966,
-              "uploadBytes": 640155648,
+              "timeSeconds": 1.000025983,
+              "uploadBytes": 619380736,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.071548013,
-              "uploadBytes": 638648320,
+              "timeSeconds": 1.000035695,
+              "uploadBytes": 617807872,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.082329433,
-              "uploadBytes": 645169152,
+              "timeSeconds": 1.089548714,
+              "uploadBytes": 605880320,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.081854198,
-              "uploadBytes": 644808704,
+              "timeSeconds": 1.04161594,
+              "uploadBytes": 621510656,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.080525004,
-              "uploadBytes": 644055040,
+              "timeSeconds": 1.018422719,
+              "uploadBytes": 607387648,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.083391938,
-              "uploadBytes": 645726208,
+              "timeSeconds": 1.046523252,
+              "uploadBytes": 624361472,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.080221201,
-              "uploadBytes": 643858432,
+              "timeSeconds": 1.004625758,
+              "uploadBytes": 599425024,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.082064111,
-              "uploadBytes": 644939776,
+              "timeSeconds": 1.087780701,
+              "uploadBytes": 648904704,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.082925744,
-              "uploadBytes": 645464064,
+              "timeSeconds": 1.000063116,
+              "uploadBytes": 602669056,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.08129305,
-              "uploadBytes": 644513792,
+              "timeSeconds": 1.000019504,
+              "uploadBytes": 603455488,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.079458508,
-              "uploadBytes": 643399680,
+              "timeSeconds": 1.000004604,
+              "uploadBytes": 627015680,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000010526,
-              "uploadBytes": 645496832,
+              "timeSeconds": 1.000042196,
+              "uploadBytes": 593395712,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000004219,
-              "uploadBytes": 551288832,
+              "timeSeconds": 1.001706626,
+              "uploadBytes": 557514752,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.075369693,
-              "uploadBytes": 636256256,
+              "timeSeconds": 1.013840379,
+              "uploadBytes": 604798976,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.079080321,
-              "uploadBytes": 643137536,
+              "timeSeconds": 1.00000063,
+              "uploadBytes": 642973696,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.07820097,
-              "uploadBytes": 642154496,
+              "timeSeconds": 1.000003974,
+              "uploadBytes": 590479360,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.075836812,
-              "uploadBytes": 641269760,
+              "timeSeconds": 1.000050432,
+              "uploadBytes": 606863360,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.081794318,
-              "uploadBytes": 644808704,
+              "timeSeconds": 1.082044025,
+              "uploadBytes": 594870272,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.082729309,
-              "uploadBytes": 645332992,
+              "timeSeconds": 1.000008756,
+              "uploadBytes": 602537984,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.078067158,
-              "uploadBytes": 642580480,
+              "timeSeconds": 1.061904573,
+              "uploadBytes": 627605504,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.076145209,
-              "uploadBytes": 641433600,
+              "timeSeconds": 1.000004563,
+              "uploadBytes": 607223808,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.068036535,
-              "uploadBytes": 636583936,
+              "timeSeconds": 1.000023001,
+              "uploadBytes": 597360640,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.072065471,
-              "uploadBytes": 638976000,
+              "timeSeconds": 1.000014881,
+              "uploadBytes": 600113152,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.071108791,
-              "uploadBytes": 638451712,
+              "timeSeconds": 1.049960668,
+              "uploadBytes": 611450880,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.072827371,
-              "uploadBytes": 639434752,
+              "timeSeconds": 1.026063081,
+              "uploadBytes": 612106240,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.081042879,
-              "uploadBytes": 644349952,
+              "timeSeconds": 1.000016196,
+              "uploadBytes": 629637120,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.080445026,
-              "uploadBytes": 643989504,
+              "timeSeconds": 1.000014022,
+              "uploadBytes": 596869120,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.078498431,
-              "uploadBytes": 642809856,
+              "timeSeconds": 1.000019045,
+              "uploadBytes": 598310912,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.081308236,
-              "uploadBytes": 644481024,
+              "timeSeconds": 1.000009731,
+              "uploadBytes": 612433920,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.08271448,
-              "uploadBytes": 645365760,
+              "timeSeconds": 1.084379617,
+              "uploadBytes": 596049920,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.082159031,
-              "uploadBytes": 645005312,
+              "timeSeconds": 1.093376644,
+              "uploadBytes": 652214272,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.083925201,
-              "uploadBytes": 646053888,
+              "timeSeconds": 1.000054112,
+              "uploadBytes": 615284736,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.080007763,
-              "uploadBytes": 643727360,
+              "timeSeconds": 1.000009667,
+              "uploadBytes": 624328704,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.082598484,
-              "uploadBytes": 645267456,
+              "timeSeconds": 1.079834329,
+              "uploadBytes": 597721088,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.0798611,
-              "uploadBytes": 643661824,
+              "timeSeconds": 1.011396591,
+              "uploadBytes": 603389952,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.08210332,
-              "uploadBytes": 644972544,
+              "timeSeconds": 1.045342031,
+              "uploadBytes": 623640576,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.083134302,
-              "uploadBytes": 645595136,
+              "timeSeconds": 1.023783031,
+              "uploadBytes": 610762752,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.074558894,
-              "uploadBytes": 640450560,
+              "timeSeconds": 1.000029635,
+              "uploadBytes": 606961664,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.071271555,
-              "uploadBytes": 638550016,
+              "timeSeconds": 1.000041864,
+              "uploadBytes": 603553792,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.084527355,
-              "uploadBytes": 646447104,
+              "timeSeconds": 1.000048403,
+              "uploadBytes": 603455488,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.078829783,
-              "uploadBytes": 643006464,
+              "timeSeconds": 1.000027119,
+              "uploadBytes": 602374144,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.075965414,
-              "uploadBytes": 641302528,
+              "timeSeconds": 1.000008897,
+              "uploadBytes": 590151680,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.070501626,
-              "uploadBytes": 638058496,
+              "timeSeconds": 1.000061744,
+              "uploadBytes": 588283904,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.070210134,
-              "uploadBytes": 637894656,
+              "timeSeconds": 1.000024948,
+              "uploadBytes": 593952768,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.070822238,
-              "uploadBytes": 638255104,
+              "timeSeconds": 1.000019775,
+              "uploadBytes": 589463552,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.072830387,
-              "uploadBytes": 639434752,
+              "timeSeconds": 1.031361159,
+              "uploadBytes": 609878016,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.066897416,
-              "uploadBytes": 635895808,
+              "timeSeconds": 1.00005969,
+              "uploadBytes": 603357184,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.07022372,
-              "uploadBytes": 637894656,
+              "timeSeconds": 1.000006582,
+              "uploadBytes": 603815936,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.0803055,
-              "uploadBytes": 643891200,
+              "timeSeconds": 1.041463918,
+              "uploadBytes": 607420416,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.076698664,
-              "uploadBytes": 641794048,
+              "timeSeconds": 1.089342792,
+              "uploadBytes": 649854976,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.071592208,
-              "uploadBytes": 638713856,
+              "timeSeconds": 1.000064934,
+              "uploadBytes": 601653248,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.070636867,
-              "uploadBytes": 638124032,
+              "timeSeconds": 1.000001719,
+              "uploadBytes": 608894976,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.071515951,
-              "uploadBytes": 638648320,
+              "timeSeconds": 1.000003544,
+              "uploadBytes": 608796672,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.000009376,
+              "uploadBytes": 593887232,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.000035404,
+              "uploadBytes": 589824000,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.000058211,
+              "uploadBytes": 609157120,
               "downloadBytes": 0
             }
           ],
@@ -1428,350 +1446,356 @@
           "result": [
             {
               "type": "intermediary",
-              "timeSeconds": 1.024963713,
-              "uploadBytes": 25165824,
+              "timeSeconds": 1.026358258,
+              "uploadBytes": 33554432,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.027247547,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.000006571,
+              "uploadBytes": 113508352,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.027769396,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.000049643,
+              "uploadBytes": 109969408,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.027424547,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.000094494,
+              "uploadBytes": 111017984,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.027422019,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.000056556,
+              "uploadBytes": 107741184,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.027628798,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.000120033,
+              "uploadBytes": 109379584,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.027150178,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.000104642,
+              "uploadBytes": 108134400,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.027019407,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.063052126,
+              "uploadBytes": 112001024,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.027198148,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.000007101,
+              "uploadBytes": 110428160,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.028122565,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.000091648,
+              "uploadBytes": 110231552,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.027204093,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.000077658,
+              "uploadBytes": 112263168,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.027283993,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.000092734,
+              "uploadBytes": 106168320,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.027197331,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.000074814,
+              "uploadBytes": 109182976,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.027224647,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.000030715,
+              "uploadBytes": 110755840,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.027390144,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.001877282,
+              "uploadBytes": 104333312,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.027857077,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.000017224,
+              "uploadBytes": 115081216,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.027060114,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.000106321,
+              "uploadBytes": 108986368,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.027542456,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.000042968,
+              "uploadBytes": 111345664,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.027205798,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.000067197,
+              "uploadBytes": 107085824,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.027342835,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.000032421,
+              "uploadBytes": 106430464,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.027346671,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.000034435,
+              "uploadBytes": 112918528,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.027165745,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.00004624,
+              "uploadBytes": 109248512,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.027283231,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.065762456,
+              "uploadBytes": 109707264,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.027378058,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.006792432,
+              "uploadBytes": 109051904,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.0460184240000001,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.000092249,
+              "uploadBytes": 111476736,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.049768715,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.00440173,
+              "uploadBytes": 106627072,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.049799629,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.004334944,
+              "uploadBytes": 109051904,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.03568673,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.000070826,
+              "uploadBytes": 111607808,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.02704214,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.000873774,
+              "uploadBytes": 106496000,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.026985619,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.000009463,
+              "uploadBytes": 113377280,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.028080619,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.001058525,
+              "uploadBytes": 104726528,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.027288021,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.003301098,
+              "uploadBytes": 109051904,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.027409345,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.002467882,
+              "uploadBytes": 109051904,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.027597451,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.000163,
+              "uploadBytes": 111542272,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.027633454,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.000099493,
+              "uploadBytes": 110034944,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.027815391,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.004296845,
+              "uploadBytes": 105578496,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.027508652,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.000123054,
+              "uploadBytes": 109051904,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.027225255,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.000075808,
+              "uploadBytes": 111935488,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.027226844,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.001100434,
+              "uploadBytes": 106168320,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.027747159,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.007127737,
+              "uploadBytes": 109051904,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.027213514,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.000043623,
+              "uploadBytes": 113639424,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.027240124,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.065174975,
+              "uploadBytes": 112852992,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.027567181,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.000018957,
+              "uploadBytes": 112132096,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.027330007,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.000044984,
+              "uploadBytes": 110821376,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.02718538,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.000072113,
+              "uploadBytes": 107479040,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.02703087,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.000011702,
+              "uploadBytes": 109969408,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.026982528,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.007913774,
+              "uploadBytes": 104857600,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.028156264,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.000045744,
+              "uploadBytes": 116523008,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.027290346,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.000030359,
+              "uploadBytes": 109117440,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.027679192,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.066480241,
+              "uploadBytes": 109903872,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.027618005,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.000000877,
+              "uploadBytes": 111017984,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.027184712,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.000007433,
+              "uploadBytes": 110624768,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.027305841,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.000000834,
+              "uploadBytes": 110166016,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.027311556,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.064660966,
+              "uploadBytes": 112787456,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.02769809,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.001869261,
+              "uploadBytes": 109051904,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.027445647,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.000067382,
+              "uploadBytes": 112984064,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.048690986,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.00119728,
+              "uploadBytes": 105119744,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.049431432,
-              "uploadBytes": 117440512,
+              "timeSeconds": 1.002855422,
+              "uploadBytes": 109051904,
+              "downloadBytes": 0
+            },
+            {
+              "type": "intermediary",
+              "timeSeconds": 1.002151748,
+              "uploadBytes": 109051904,
               "downloadBytes": 0
             }
           ],
@@ -1783,356 +1807,356 @@
           "result": [
             {
               "type": "intermediary",
-              "timeSeconds": 1.008209498,
-              "uploadBytes": 63635456,
+              "timeSeconds": 1.015967696,
+              "uploadBytes": 71630848,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000062809,
-              "uploadBytes": 122028032,
+              "timeSeconds": 1.002166745,
+              "uploadBytes": 129171456,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.016205984,
-              "uploadBytes": 122552320,
+              "timeSeconds": 1.002177055,
+              "uploadBytes": 129236992,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000084407,
-              "uploadBytes": 123011072,
+              "timeSeconds": 1.014706864,
+              "uploadBytes": 129236992,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.012878686,
-              "uploadBytes": 121372672,
+              "timeSeconds": 1.00327695,
+              "uploadBytes": 128974848,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000141846,
-              "uploadBytes": 122617856,
+              "timeSeconds": 1.000292096,
+              "uploadBytes": 130154496,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.014031408,
-              "uploadBytes": 121962496,
+              "timeSeconds": 1.010638291,
+              "uploadBytes": 127991808,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000104489,
-              "uploadBytes": 122880000,
+              "timeSeconds": 1.00428165,
+              "uploadBytes": 129105920,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.014516619,
-              "uploadBytes": 121438208,
+              "timeSeconds": 1.000005835,
+              "uploadBytes": 130023424,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000111408,
-              "uploadBytes": 123338752,
+              "timeSeconds": 1.014582602,
+              "uploadBytes": 128450560,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.013797377,
-              "uploadBytes": 121241600,
+              "timeSeconds": 1.004843927,
+              "uploadBytes": 129105920,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000122942,
-              "uploadBytes": 123011072,
+              "timeSeconds": 1.000027326,
+              "uploadBytes": 130220032,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.015926232,
-              "uploadBytes": 121503744,
+              "timeSeconds": 1.015545349,
+              "uploadBytes": 128057344,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000006911,
-              "uploadBytes": 123142144,
+              "timeSeconds": 1.000424682,
+              "uploadBytes": 129171456,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.013505561,
-              "uploadBytes": 121372672,
+              "timeSeconds": 1.000173921,
+              "uploadBytes": 129892352,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000182534,
-              "uploadBytes": 121241600,
+              "timeSeconds": 1.0168997,
+              "uploadBytes": 128319488,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.024388812,
-              "uploadBytes": 123207680,
+              "timeSeconds": 1.000159516,
+              "uploadBytes": 129302528,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000190747,
-              "uploadBytes": 122290176,
+              "timeSeconds": 1.000191487,
+              "uploadBytes": 130285568,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.013701894,
-              "uploadBytes": 122355712,
+              "timeSeconds": 1.016485168,
+              "uploadBytes": 127533056,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000154148,
-              "uploadBytes": 122486784,
+              "timeSeconds": 1.000164348,
+              "uploadBytes": 129826816,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.014971097,
-              "uploadBytes": 121896960,
+              "timeSeconds": 1.000163639,
+              "uploadBytes": 129826816,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000182292,
-              "uploadBytes": 122617856,
+              "timeSeconds": 1.017046904,
+              "uploadBytes": 127598592,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.013387821,
-              "uploadBytes": 121896960,
+              "timeSeconds": 1.000148852,
+              "uploadBytes": 129761280,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000120042,
-              "uploadBytes": 122552320,
+              "timeSeconds": 1.000009852,
+              "uploadBytes": 129826816,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.013135468,
-              "uploadBytes": 121962496,
+              "timeSeconds": 1.021693671,
+              "uploadBytes": 128057344,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000069169,
-              "uploadBytes": 122552320,
+              "timeSeconds": 1.000114906,
+              "uploadBytes": 129499136,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.013267009,
-              "uploadBytes": 121896960,
+              "timeSeconds": 1.000148889,
+              "uploadBytes": 129761280,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000128527,
-              "uploadBytes": 122683392,
+              "timeSeconds": 1.018849958,
+              "uploadBytes": 127926272,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.013942134,
-              "uploadBytes": 121962496,
+              "timeSeconds": 1.000099552,
+              "uploadBytes": 129892352,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000130047,
-              "uploadBytes": 121831424,
+              "timeSeconds": 1.006356768,
+              "uploadBytes": 123076608,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.019664031,
-              "uploadBytes": 122880000,
+              "timeSeconds": 1.020466668,
+              "uploadBytes": 127795200,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000068279,
-              "uploadBytes": 121438208,
+              "timeSeconds": 1.000180759,
+              "uploadBytes": 99287040,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.014435198,
-              "uploadBytes": 122945536,
+              "timeSeconds": 1.000257883,
+              "uploadBytes": 79101952,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000119409,
-              "uploadBytes": 121962496,
+              "timeSeconds": 1.000171755,
+              "uploadBytes": 79364096,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.013862021,
-              "uploadBytes": 122617856,
+              "timeSeconds": 1.00217856,
+              "uploadBytes": 78708736,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000125313,
-              "uploadBytes": 122093568,
+              "timeSeconds": 1.0007311,
+              "uploadBytes": 79888384,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.013824854,
-              "uploadBytes": 122421248,
+              "timeSeconds": 1.000028982,
+              "uploadBytes": 80216064,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.00016934,
-              "uploadBytes": 122028032,
+              "timeSeconds": 1.00291649,
+              "uploadBytes": 79691776,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.013630352,
-              "uploadBytes": 122552320,
+              "timeSeconds": 1.00010977,
+              "uploadBytes": 80281600,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000157063,
-              "uploadBytes": 121962496,
+              "timeSeconds": 1.001012082,
+              "uploadBytes": 80805888,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.013964729,
-              "uploadBytes": 122748928,
+              "timeSeconds": 1.00065029,
+              "uploadBytes": 80936960,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000084444,
-              "uploadBytes": 122093568,
+              "timeSeconds": 1.001252361,
+              "uploadBytes": 80609280,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.012884107,
-              "uploadBytes": 122290176,
+              "timeSeconds": 1.00054717,
+              "uploadBytes": 81657856,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000174879,
-              "uploadBytes": 122093568,
+              "timeSeconds": 1.000759487,
+              "uploadBytes": 81985536,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.014094084,
-              "uploadBytes": 122486784,
+              "timeSeconds": 1.001893658,
+              "uploadBytes": 81592320,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000152562,
-              "uploadBytes": 122224640,
+              "timeSeconds": 1.000531737,
+              "uploadBytes": 82247680,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.014007196,
-              "uploadBytes": 122355712,
+              "timeSeconds": 1.000694859,
+              "uploadBytes": 82575360,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000020134,
-              "uploadBytes": 122290176,
+              "timeSeconds": 1.000285632,
+              "uploadBytes": 82706432,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.014031494,
-              "uploadBytes": 122224640,
+              "timeSeconds": 1.000441196,
+              "uploadBytes": 82575360,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000012128,
-              "uploadBytes": 122355712,
+              "timeSeconds": 1.000416823,
+              "uploadBytes": 83165184,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.013068642,
-              "uploadBytes": 122093568,
+              "timeSeconds": 1.000733174,
+              "uploadBytes": 83623936,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000182563,
-              "uploadBytes": 122290176,
+              "timeSeconds": 1.000444569,
+              "uploadBytes": 83623936,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.014244408,
-              "uploadBytes": 122421248,
+              "timeSeconds": 1.000028202,
+              "uploadBytes": 83755008,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000257423,
-              "uploadBytes": 136642560,
+              "timeSeconds": 1.000599055,
+              "uploadBytes": 83951616,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.027096302,
-              "uploadBytes": 123207680,
+              "timeSeconds": 1.000218162,
+              "uploadBytes": 84738048,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000256185,
-              "uploadBytes": 123273216,
+              "timeSeconds": 1.000146919,
+              "uploadBytes": 84475904,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.014654589,
-              "uploadBytes": 121044992,
+              "timeSeconds": 1.000864542,
+              "uploadBytes": 84738048,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.000050404,
-              "uploadBytes": 125763584,
+              "timeSeconds": 1.000179384,
+              "uploadBytes": 85000192,
               "downloadBytes": 0
             },
             {
               "type": "intermediary",
-              "timeSeconds": 1.013444282,
-              "uploadBytes": 118685696,
+              "timeSeconds": 1.00039746,
+              "uploadBytes": 85786624,
               "downloadBytes": 0
             }
           ],
@@ -2150,15 +2174,15 @@
   "pings": {
     "unit": "s",
     "results": [
-      0.0633
+      0.0585
     ]
   },
   "iperf": {
     "unit": "bit/s",
     "results": [
-      1960000000,
-      1960000000,
-      1290000000
+      1080000000,
+      1080000000,
+      752000000
     ]
   }
 }
