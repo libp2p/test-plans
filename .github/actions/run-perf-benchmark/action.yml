@@ -93,10 +93,13 @@ runs:
     - name: Push
       shell: bash
       if: github.event.inputs.push == 'true'
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
       run: |
         git add benchmark-results.json
         git commit -m "perf: update benchmark results"
         git push
+        gh pr comment --body "See new metrics at https://observablehq.com/@libp2p-workspace/performance-dashboard?branch=$(git rev-parse HEAD)" || true
       working-directory: perf/runner
 
     - name: Archive
