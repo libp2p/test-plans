@@ -19,3 +19,5 @@ clean:
 	rm -f perf
 	rm -f nim-libp2p
 	rm -rf nim-libp2p-*
+
+.PHONY: all clean
