@@ -2,6 +2,7 @@
 # installed on the same platform the test is run. Otherwise tools like `esbuild` will fail to run
 FROM node:18.17.1
 WORKDIR /app
+RUN apt-get update && apt-get install -y cmake
 RUN npm install @libp2p/multidim-interop@1.0.0-c4eff4c5
 
 WORKDIR /app/node_modules/@libp2p/multidim-interop
