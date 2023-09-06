@@ -17,6 +17,8 @@ firefox-image.json: load-image-json BrowserDockerfile
 	docker image inspect firefox-${image_name} -f "{{.Id}}" | \
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
 
+# We update the lock file here so that we make sure we are always using the correct lock file.
+# If this changes, CI will fail since there are unstaged changes.
 update-lock-file: image.json
 	CONTAINER_ID=$$(docker create $$(jq -r .imageID image.json)); \
 	docker cp $$CONTAINER_ID:/app/package-lock.json ./package-lock.json; \
