@@ -1,7 +1,7 @@
 image_name := js-v0.46
 
 # TODO Enable webkit once https://github.com/libp2p/js-libp2p/pull/1627 is in
-all: image.json chromium-image.json firefox-image.json
+all: image.json chromium-image.json firefox-image.json update-lock-file
 
 # Necessary because multistage builds require a docker image name rather than a digest to be used
 load-image-json: image.json
@@ -16,6 +16,11 @@ firefox-image.json: load-image-json BrowserDockerfile
 	docker build -f BrowserDockerfile --build-arg=BASE_IMAGE=${image_name} --build-arg=BROWSER=firefox -t firefox-${image_name} .
 	docker image inspect firefox-${image_name} -f "{{.Id}}" | \
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
+
+update-lock-file: image.json
+	CONTAINER_ID=$$(docker create $$(jq -r .imageID image.json)); \
+	docker cp $$CONTAINER_ID:/app/package-lock.json ./package-lock.json; \
+	docker rm $$CONTAINER_ID
 
 image.json:
 	docker build -t ${image_name} -f ./Dockerfile .

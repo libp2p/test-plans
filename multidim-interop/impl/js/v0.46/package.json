@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@libp2p/multidim-interop": "^1.0.0-c4eff4c5"
+  }
+}
