@@ -1,5 +1,19 @@
 {
   "dependencies": {
-    "@libp2p/multidim-interop": "^1.0.0-c4eff4c5"
+    "@libp2p/multidim-interop": "1.0.0-c4eff4c5"
+  },
+  "overrides": {
+    "@chainsafe/libp2p-noise": "13.0.1",
+    "@chainsafe/libp2p-yamux": "5.0.0",
+    "@libp2p/mplex": "9.0.5",
+    "@libp2p/tcp": "8.0.5",
+    "@libp2p/webrtc": "3.1.9",
+    "@libp2p/websockets": "7.0.5",
+    "@libp2p/webtransport": "3.0.9",
+    "@multiformats/mafmt": "12.1.6",
+    "@multiformats/multiaddr": "12.1.7",
+    "aegir": "40.0.12",
+    "libp2p": "0.46.9",
+    "redis": "4.6.8"
   }
 }
