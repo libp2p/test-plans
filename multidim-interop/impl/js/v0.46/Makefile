@@ -31,6 +31,6 @@ image.json:
 
 
 clean:
-	rm -rf image.json js-libp2p-*.zip js-libp2p-* *-image.json
+	rm -rf image.json *-image.json
 
 .PHONY: all clean browser-images load-image-json
