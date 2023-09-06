@@ -1,13 +1,3 @@
-NPM_PACKAGE_VERSION := 1.0.0
-NPM_PACKAGE := @libp2p/multidim-interop
-NPM_PACKAGE_NAME := $(NPM_PACKAGE)@$(NPM_PACKAGE_VERSION)
-
-SOURCE_DIR := js-libp2p-multidim
-
-DOCKER_IMAGE := node:18.17.1
-
-DOCKER_RUN := docker run --rm -v "$(shell pwd)/$(SOURCE_DIR)":/usr/src/myapp -w /usr/src/myapp $(DOCKER_IMAGE)
-
 image_name := js-v0.46
 
 # TODO Enable webkit once https://github.com/libp2p/js-libp2p/pull/1627 is in
@@ -28,9 +18,7 @@ firefox-image.json: load-image-json BrowserDockerfile
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
 
 image.json:
-	mkdir -p $(SOURCE_DIR)
-	$(DOCKER_RUN) npm install $(NPM_PACKAGE_NAME)
-	cd js-libp2p-multidim && docker build -t ${image_name} -f ../Dockerfile .
+	docker build -t ${image_name} -f ./Dockerfile .
 	docker image inspect ${image_name} -f "{{.Id}}" | \
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
 
