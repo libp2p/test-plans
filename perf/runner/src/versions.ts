@@ -1,6 +1,6 @@
 export type Version = {
     id: string,
-    implementation: "go-libp2p" | "js-libp2p" | "nim-libp2p" | "rust-libp2p" | "rust-libp2p-quinn" | "zig-libp2p" | "https" | "quic-go" | "nim-libp2p",
+    implementation: "go-libp2p" | "js-libp2p" | "nim-libp2p" | "rust-libp2p" | "rust-libp2p-quinn" | "zig-libp2p" | "https" | "quic-go",
     transportStacks: string[],
 }
 
@@ -41,7 +41,7 @@ export const versions: Array<Version> = [
         transportStacks: ["tcp", "quic-v1"]
     },
     {
-        id: "v1.0",
+        id: "v1.1",
         implementation: "nim-libp2p",
         transportStacks: ["tcp"]
     },
