@@ -36,9 +36,7 @@ export type Result = {
 };
 
 export type ResultValue = {
-    connectionEstablishedSeconds: number,
-    uploadSeconds: number,
-    downloadSeconds: number,
+    latency: number
 };
 
 export type Comparison = {
