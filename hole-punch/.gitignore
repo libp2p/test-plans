@@ -1,0 +1,8 @@
+# For now, not committing image.json files
+image.json
+
+results.csv
+# Logs from testground
+*.tgz
+
+node_modules/
