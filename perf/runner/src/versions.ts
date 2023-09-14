@@ -40,4 +40,9 @@ export const versions: Array<Version> = [
         implementation: "nim-libp2p",
         transportStacks: ["tcp"]
     },
+    {
+        id: "v0.46",
+        implementation: "js-libp2p",
+        transportStacks: ["tcp"]
+    },
 ]
