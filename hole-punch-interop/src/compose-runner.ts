@@ -33,6 +33,9 @@ export async function run(namespace: string, compose: ComposeSpecification): Pro
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 1000 * timeoutSecs)
         const { signal } = controller;
+
+        await exec(`docker network prune -f`);
+
         const { stdout, stderr } = await exec(`docker compose -f ${path.join(dir, "compose.yaml")} up --exit-code-from alice --abort-on-container-exit`, { signal })
         clearTimeout(timeoutId)
         try {
@@ -54,14 +57,14 @@ export async function run(namespace: string, compose: ComposeSpecification): Pro
         return e
     } finally {
         try {
-            const { stdout, stderr } = await exec(`docker compose -f ${path.join(dir, "compose.yaml")} rm -f`);
+            await exec(`docker compose -f ${path.join(dir, "compose.yaml")} rm -f`);
         } catch (e) {
-            console.log("Failed to compose down", e)
+            console.log("Failed to compose rm", e)
         }
         try {
-            const { stdout, stderr } = await exec(`docker network prune -f`);
+            await exec(`docker network prune -f`);
         } catch (e) {
-            console.log("Failed to prune docker networks down", e)
+            console.log("Failed to prune docker networks", e)
         }
         await fs.rm(dir, { recursive: true, force: true })
     }
