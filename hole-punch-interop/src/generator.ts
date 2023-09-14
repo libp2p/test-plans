@@ -216,15 +216,7 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
                     ]
                 }
             },
-            control: {
-                ipam: {
-                    config: [
-                        {
-                            subnet: "10.1.0.0/24"
-                        }
-                    ]
-                }
-            },
+            control: { },
         }
     }
 }
