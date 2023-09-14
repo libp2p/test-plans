@@ -84,8 +84,8 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
     if (nameIgnore && name.includes(nameIgnore)) {
         return null
     }
-    const ALICE_LAN_PREFIX = "192.168.0";
-    const BOB_LAN_PREFIX = "192.168.1";
+    const ALICE_LAN_PREFIX = "192.168.100";
+    const BOB_LAN_PREFIX = "192.168.101";
     const INTERNET_PREFIX = "17.0.0";
 
     let internetSubnet = `${INTERNET_PREFIX}.0/16`;
