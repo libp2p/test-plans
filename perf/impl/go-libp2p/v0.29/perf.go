@@ -127,12 +127,45 @@ func sendBytes(s io.Writer, bytesToSend uint64) error {
 	return nil
 }
 
-// TODO: We should also print the outcome here.
 func drainStream(s io.Reader) (uint64, error) {
 	var recvd int64
-	recvd, err := io.Copy(io.Discard, s)
+	recvd, err := io.Copy(io.Discard, & reportingReader { orig: s, LastReportTime: time.Now() })
 	if err != nil && err != io.EOF {
 		return uint64(recvd), err
 	}
 	return uint64(recvd), nil
+}
+
+type reportingReader struct {
+	orig             io.Reader
+	LastReportTime   time.Time
+	lastReportRead   uint64
+}
+
+var _ io.Reader = &reportingReader{}
+
+func (r *reportingReader) Read(b []byte) (int, error) {
+	n, err := r.orig.Read(b)
+	r.lastReportRead += uint64(n)
+
+	now := time.Now()
+	if now.Sub(r.LastReportTime) > time.Second {
+		// This section is analogous to your Read implementation
+		result := Result{
+			TimeSeconds: now.Sub(r.LastReportTime).Seconds(),
+			Type: "intermediary",
+			DownloadBytes: uint(r.lastReportRead),
+		}
+
+		jsonB, err := json.Marshal(result)
+		if err != nil {
+			log.Fatalf("failed to marshal perf result: %s", err)
+		}
+		fmt.Println(string(jsonB))
+
+		r.LastReportTime = now
+		r.lastReportRead = 0
+	}
+
+	return n, err
 }
