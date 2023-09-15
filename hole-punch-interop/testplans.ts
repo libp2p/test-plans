@@ -93,9 +93,9 @@ import path from "path";
                 return
             }
             console.log("Running test spec: " + testSpec.name)
-            const failure = await run(testSpec.name || "unknown test", testSpec)
+            const failure = await run(testSpec.name || "unknown test", testSpec, path.join(__dirname, "logs"))
             if (failure != null) {
-                failures.push(failure)
+                failures.push(testSpec.name)
                 statuses.push([testSpec.name || "unknown test", "failure"])
             } else {
                 statuses.push([testSpec.name || "unknown test", "success"])

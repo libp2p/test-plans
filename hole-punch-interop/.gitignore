@@ -2,7 +2,6 @@
 image.json
 
 results.csv
-# Logs from testground
-*.tgz
+logs/
 
 node_modules/

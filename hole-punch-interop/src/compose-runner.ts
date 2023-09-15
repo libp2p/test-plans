@@ -10,7 +10,7 @@ const exec = util.promisify(execStd);
 
 export type RunFailure = any
 
-export async function run(namespace: string, compose: ComposeSpecification): Promise<RunFailure | null> {
+export async function run(namespace: string, compose: ComposeSpecification, logDir: string): Promise<RunFailure | null> {
     // sanitize namespace
     const sanitizedNamespace = namespace.replace(/[^a-zA-Z0-9]/g, "-")
     const dir = path.join(tmpdir(), "compose-runner", sanitizedNamespace)
@@ -22,30 +22,27 @@ export async function run(namespace: string, compose: ComposeSpecification): Pro
     } catch (e) {
     }
     await fs.mkdir(dir, { recursive: true })
+    await fs.mkdir(logDir, { recursive: true })
 
     // Create compose.yaml file
     // Some docker compose environments don't like the name field to have special characters
     const sanitizedComposeName = compose?.name.replace(/[^a-zA-Z0-9_-]/g, "_")
     await fs.writeFile(path.join(dir, "compose.yaml"), stringify({ ...compose, name: sanitizedComposeName }))
 
+    const stdoutLogFile = path.join(logDir, `${sanitizedComposeName}.stdout`);
+    const stderrLogFile = path.join(logDir, `${sanitizedComposeName}.stderr`);
+
     try {
         const { stdout, stderr } = await exec(`docker compose -f ${path.join(dir, "compose.yaml")} up --exit-code-from alice --abort-on-container-exit`, { timeout: 15 * 1000 })
-        try {
-            // TODO: Parse ping here.
 
-            console.log("Finished:", namespace)
-        } catch (e) {
-            console.log("Failed to parse test results.")
-            console.log("stdout:")
-            console.log(stdout)
-            console.log("")
-            console.log("stderr:")
-            console.log(stderr)
-            console.log("")
-            throw e
+        await fs.writeFile(stdoutLogFile, stdout)
+        await fs.writeFile(stderrLogFile, stderr)
+    } catch (e: unknown) {
+        if (isExecException(e)) {
+            await fs.writeFile(stdoutLogFile, e.stdout)
+            await fs.writeFile(stderrLogFile, e.stderr)
         }
-    } catch (e: any) {
-        console.log("Failure", e)
+
         return e
     } finally {
         try {
@@ -55,4 +52,20 @@ export async function run(namespace: string, compose: ComposeSpecification): Pro
         }
         await fs.rm(dir, { recursive: true, force: true })
     }
+}
+
+interface ExecException extends Error {
+    cmd?: string | undefined;
+    killed?: boolean | undefined;
+    code?: number | undefined;
+    signal?: NodeJS.Signals | undefined;
+    stdout: string;
+    stderr: string;
+}
+
+function isExecException(candidate: unknown): candidate is ExecException {
+    if (candidate && typeof candidate === 'object' && 'cmd' in candidate) {
+        return true;
+    }
+    return false;
 }
