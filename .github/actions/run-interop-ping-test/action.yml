@@ -91,6 +91,19 @@ runs:
           exit 1
         fi
 
+    - name: Print implementation images
+      working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
+      run: head impl/*/*/*image.json
+      shell: bash
+    - name: Print the image sizes
+      working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
+      run: docker image ls
+      shell: bash
+    - name: Print Docker disk usage
+      working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
+      run: docker system df
+      shell: bash
+
     - name: Push the image cache
       if: env.PUSH_CACHE == 'true'
       working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
