@@ -1,5 +1,5 @@
-use std::net::IpAddr;
-use anyhow::{Context, Result};
+use std::net::{IpAddr, Ipv4Addr};
+use anyhow::{bail, Context, Result};
 use libp2p::{
     core::{
         multiaddr::{Multiaddr, Protocol},
@@ -36,10 +36,8 @@ async fn main() -> Result<()> {
 
     let mut swarm = make_swarm()?;
 
-    let listen_addr = std::env::var("LISTEN_ADDR").context("Missing env var `LISTEN_ADDR`")?.parse().context("Failed to parse `LISTEN_ADDR` as IpAddr")?;
-
-    let tcp_listener_id = swarm.listen_on(tcp_addr(listen_addr))?;
-    let quic_listener_id = swarm.listen_on(quic_addr(listen_addr))?;
+    let tcp_listener_id = swarm.listen_on(tcp_addr(Ipv4Addr::UNSPECIFIED.into()))?;
+    let quic_listener_id = swarm.listen_on(quic_addr(Ipv4Addr::UNSPECIFIED.into()))?;
 
     loop {
         match swarm.next().await.expect("Infinite Stream.") {
@@ -47,6 +45,16 @@ async fn main() -> Result<()> {
                 address,
                 listener_id,
             } => {
+                let Some(Protocol::Ip4(addr)) = address.iter().next() else {
+                    bail!("Expected first protocol of listen address to be Ip4")
+                };
+
+                if addr.is_loopback() {
+                    log::debug!("Ignoring loop-back address: {address}");
+
+                    continue;
+                }
+
                 swarm.add_external_address(address.clone()); // We know that in our testing network setup, that we are listening on a "publicly-reachable" address.
 
                 log::info!("Listening on {address}");

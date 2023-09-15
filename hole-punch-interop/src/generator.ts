@@ -84,10 +84,6 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
     if (nameIgnore && name.includes(nameIgnore)) {
         return null
     }
-    const INTERNET_PREFIX = "17.0.0";
-
-    let internetSubnet = `${INTERNET_PREFIX}.0/16`;
-    const relayListenAddr = `${INTERNET_PREFIX}.12`;
 
     return {
         name,
@@ -96,14 +92,10 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
                 image: relayImageId,
                 init: true,
                 environment: {
-                    LISTEN_ADDR: relayListenAddr,
                     RUST_LOG: "debug"
                 },
                 networks: {
-                    internet: {
-                        ipv4_address: relayListenAddr
-                    },
-                    control: {},
+                    internet: { },
                 },
                 cap_add: ["NET_ADMIN"]
             },
@@ -120,16 +112,18 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
                 depends_on: ["relay", "alice_router"],
                 image: containerImages[aliceImage](),
                 init: true,
-                command: ["/bin/sh", "-c", `set -ex; ip route add ${internetSubnet} via $(dig +short alice_router) dev eth0; hole-punch-client`],
+                command: ["/bin/sh", "-c", "set -ex; ip route add $(curl --silent --unix-socket /var/run/docker.sock http://localhost/networks | jq -r '.[] | select(.Name | contains(\"internet\")) | .IPAM.Config[0].Subnet') via $(dig +short alice_router) dev eth0; hole-punch-client"],
                 environment: {
                     TRANSPORT: transport,
                     MODE: "dial"
                 },
                 networks: {
                     alice_lan: {},
-                    control: {}
                 },
-                cap_add: ["NET_ADMIN"]
+                cap_add: ["NET_ADMIN"],
+                volumes: [
+                    "/var/run/docker.sock:/var/run/docker.sock"
+                ]
             },
             bob_router: {
                 image: routerImageId,
@@ -144,16 +138,18 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
                 depends_on: ["relay", "bob_router"],
                 image: containerImages[bobImage](),
                 init: true,
-                command: ["/bin/sh", "-c", `set -ex; ip route add ${internetSubnet} via $(dig +short bob_router) dev eth0; hole-punch-client`],
+                command: ["/bin/sh", "-c", `set -ex; ip route add $(curl --silent --unix-socket /var/run/docker.sock http://localhost/networks | jq -r '.[] | select(.Name | contains(\"internet\")) | .IPAM.Config[0].Subnet') via $(dig +short bob_router) dev eth0; hole-punch-client`],
                 environment: {
                     TRANSPORT: transport,
                     MODE: "listen"
                 },
                 networks: {
                     bob_lan: {},
-                    control: {}
                 },
-                cap_add: ["NET_ADMIN"]
+                cap_add: ["NET_ADMIN"],
+                volumes: [
+                    "/var/run/docker.sock:/var/run/docker.sock"
+                ]
             },
             redis: {
                 image: "redis:7-alpine",
@@ -161,23 +157,22 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
                     REDIS_ARGS: "--loglevel warning"
                 },
                 networks: {
-                    control: {}
+                    internet: {
+                        aliases: ["redis"]
+                    },
+                    alice_lan: {
+                        aliases: ["redis"]
+                    },
+                    bob_lan: {
+                        aliases: ["redis"]
+                    },
                 }
             }
         },
         networks: {
-            alice_lan: {},
-            bob_lan: {},
-            internet: {
-                ipam: {
-                    config: [
-                        {
-                            subnet: internetSubnet
-                        }
-                    ]
-                }
-            },
-            control: { },
+            alice_lan: { },
+            bob_lan: { },
+            internet: { },
         }
     }
 }
