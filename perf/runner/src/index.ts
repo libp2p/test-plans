@@ -13,12 +13,21 @@ async function main(clientPublicIP: string, serverPublicIP: string, testing: boo
 
     const benchmarks = [
         runBenchmarkAcrossVersions({
-            // TODO: Update name.
-            name: "Single Connection throughput – Upload 100 MiB",
+            name: "throughput/upload",
             clientPublicIP,
             serverPublicIP,
             uploadBytes: Number.MAX_SAFE_INTEGER, // TODO Ideally we have this implied through a flag.
             downloadBytes: 0,
+            unit: "bit/s",
+            iterations: testing ? 1 : 5,
+            durationSecondsPerIteration: testing ? 5 : 60,
+        }),
+        runBenchmarkAcrossVersions({
+            name: "throughput/download",
+            clientPublicIP,
+            serverPublicIP,
+            uploadBytes: 0,
+            downloadBytes: Number.MAX_SAFE_INTEGER, // TODO Ideally we have this implied through a flag.
             unit: "bit/s",
             iterations: testing ? 1 : 5,
             durationSecondsPerIteration: testing ? 5 : 60,
