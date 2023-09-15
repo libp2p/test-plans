@@ -59,10 +59,11 @@ type nullReader struct {
 var _ io.Reader = &nullReader{}
 
 func (r *nullReader) Read(b []byte) (int, error) {
-	if time.Since(r.LastReportTime) > time.Second {
+	now := time.Now()
+	if now.Sub(r.LastReportTime) > time.Second {
 		// TODO
 		jsonB, err := json.Marshal(Result{
-			TimeSeconds: time.Since(r.LastReportTime).Seconds(),
+			TimeSeconds: now.Sub(r.LastReportTime).Seconds(),
 			UploadBytes: uint(r.lastReportRead),
 			Type: "intermediary",
 		})
@@ -71,7 +72,7 @@ func (r *nullReader) Read(b []byte) (int, error) {
 		}
 		fmt.Println(string(jsonB))
 
-		r.LastReportTime = time.Now()
+		r.LastReportTime = now
 		r.lastReportRead = 0
 	}
 
