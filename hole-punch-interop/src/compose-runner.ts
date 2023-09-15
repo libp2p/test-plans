@@ -7,7 +7,6 @@ import {ComposeSpecification} from "../compose-spec/compose-spec";
 import {stringify} from 'yaml';
 
 const exec = util.promisify(execStd);
-const timeoutSecs = 3 * 60
 
 export type RunFailure = any
 
@@ -30,12 +29,7 @@ export async function run(namespace: string, compose: ComposeSpecification): Pro
     await fs.writeFile(path.join(dir, "compose.yaml"), stringify({ ...compose, name: sanitizedComposeName }))
 
     try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 1000 * timeoutSecs)
-        const { signal } = controller;
-
-        const { stdout, stderr } = await exec(`docker compose -f ${path.join(dir, "compose.yaml")} up --exit-code-from alice --abort-on-container-exit`, { signal })
-        clearTimeout(timeoutId)
+        const { stdout, stderr } = await exec(`docker compose -f ${path.join(dir, "compose.yaml")} up --exit-code-from alice --abort-on-container-exit`, { timeout: 15 * 1000 })
         try {
             // TODO: Parse ping here.
 
