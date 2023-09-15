@@ -102,6 +102,18 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
         hole-punch-client
     `);
 
+    let relayStartupScript = `
+        set -ex;
+
+        # Wait for redis to be online
+        while ! ping -c 1 -w 1 "redis"; do sleep 1; done
+
+        # Add RTT when using the relay
+        tc qdisc add dev eth0 root netem delay 50ms;
+
+        /usr/bin/relay
+    `;
+
     return {
         name,
         services: {
@@ -109,7 +121,7 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
                 depends_on: ["redis"],
                 image: relayImageId,
                 init: true,
-                command: ["/bin/sh", "-c", "set -ex; tc qdisc add dev eth0 root netem delay 50ms; /usr/bin/relay"],
+                command: ["/bin/sh", "-c", relayStartupScript],
                 networks: {
                     internet: { },
                 },
