@@ -109,6 +109,7 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
                 depends_on: ["redis"],
                 image: relayImageId,
                 init: true,
+                command: ["/bin/sh", "-c", "set -ex; tc qdisc add dev eth0 root netem delay 50ms; /usr/bin/relay"],
                 networks: {
                     internet: { },
                 },
