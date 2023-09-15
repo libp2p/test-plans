@@ -92,7 +92,7 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
         set -ex;
 
         # Wait for eth0 to be online
-        while ! ip addr show eth0 do sleep 1; done
+        while ! ip addr show eth0; do sleep 1; done
 
         ROUTER_IP=$$(dig +short ${actor}_router)
         INTERNET_SUBNET=$$(curl --silent --unix-socket /var/run/docker.sock http://localhost/networks | jq -r '.[] | select(.Name == \"${internetNetworkName}\") | .IPAM.Config[0].Subnet')
