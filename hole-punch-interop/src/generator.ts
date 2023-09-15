@@ -95,7 +95,7 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
         while ! ping -c 1 -w 1 "${actor}_router"; do sleep 1; done
 
         ROUTER_IP=$$(dig +short ${actor}_router)
-        INTERNET_SUBNET=$$(curl --silent --unix-socket /var/run/docker.sock http://localhost/networks | jq -r '.[] | select(.Name == \"${internetNetworkName}\") | .IPAM.Config[0].Subnet')
+        INTERNET_SUBNET=$$(curl --silent --unix-socket /var/run/docker.sock http://localhost/networks/${internetNetworkName} | jq -r '.IPAM.Config[0].Subnet')
 
         ip route add $$INTERNET_SUBNET via $$ROUTER_IP dev eth0
 
