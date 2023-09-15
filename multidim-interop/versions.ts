@@ -63,8 +63,7 @@ export const versions: Array<Version> = [
         muxers: ["mplex", "yamux"],
     },
     {
-        id: "chromium-rust-v0.52",
-        containerImageID: browserImageIDLookup,
+        id: "rust-chromium-v0.52",
         transports: [{ name: "webtransport", onlyDial: true }],
         secureChannels: [],
         muxers: [],
@@ -94,6 +93,12 @@ export const versions: Array<Version> = [
         transports: [{ name: "wss", onlyDial: true }, { name: "webrtc-direct", onlyDial: true }],
         secureChannels: ["noise"],
         muxers: ["mplex", "yamux"],
+    },
+    {
+        id: "go-v0.31",
+        transports: ["tcp", "ws", "quic-v1", "webtransport"],
+        secureChannels: ["tls", "noise"],
+        muxers: ["yamux"],
     },
     {
         id: "go-v0.30",

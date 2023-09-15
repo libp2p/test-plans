@@ -52,7 +52,7 @@ Given you have provisioned your infrastructure, you can now build and run the li
 
 1. `cd runner`
 2. `npm ci`
-3.  `npm run start -- --client-public-ip $CLIENT_IP --server-public-ip $SERVER_IP`
+3. `npm run start -- --client-public-ip $CLIENT_IP --server-public-ip $SERVER_IP`
    * Note: The default number of iterations that perf will run is 10; desired iterations can be set with the  `--iterations <value>` option.
 
 ### Deprovision infrastructure
