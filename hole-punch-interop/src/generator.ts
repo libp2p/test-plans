@@ -2,6 +2,7 @@ import sqlite3 from "sqlite3";
 import {open} from "sqlite";
 import {Version} from "../versions";
 import {ComposeSpecification} from "../compose-spec/compose-spec";
+import {sanitizeComposeName} from "./lib";
 
 function buildExtraEnv(timeoutOverride: { [key: string]: number }, test1ID: string, test2ID: string): {
     [key: string]: string
@@ -85,10 +86,24 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
         return null
     }
 
+    let internetNetworkName = `${sanitizeComposeName(name)}_internet`
+
+    let startupScriptFn = (actor: "alice" | "bob") => (`
+        set -ex;
+
+        ROUTER_IP=$$(dig +short ${actor}_router)
+        INTERNET_SUBNET=$$(curl --silent --unix-socket /var/run/docker.sock http://localhost/networks | jq -r '.[] | select(.Name == \"${internetNetworkName}\") | .IPAM.Config[0].Subnet')
+
+        ip route add $$INTERNET_SUBNET via $$ROUTER_IP dev eth0
+
+        hole-punch-client
+    `);
+
     return {
         name,
         services: {
             relay: {
+                depends_on: ["redis"],
                 image: relayImageId,
                 init: true,
                 environment: {
@@ -112,7 +127,7 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
                 depends_on: ["relay", "alice_router"],
                 image: containerImages[aliceImage](),
                 init: true,
-                command: ["/bin/sh", "-c", "set -ex; ip route add $(curl --silent --unix-socket /var/run/docker.sock http://localhost/networks | jq -r '.[] | select(.Name | contains(\"internet\")) | .IPAM.Config[0].Subnet') via $(dig +short alice_router) dev eth0; hole-punch-client"],
+                command: ["/bin/sh", "-c", startupScriptFn("alice")],
                 environment: {
                     TRANSPORT: transport,
                     MODE: "dial"
@@ -138,7 +153,7 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
                 depends_on: ["relay", "bob_router"],
                 image: containerImages[bobImage](),
                 init: true,
-                command: ["/bin/sh", "-c", `set -ex; ip route add $(curl --silent --unix-socket /var/run/docker.sock http://localhost/networks | jq -r '.[] | select(.Name | contains(\"internet\")) | .IPAM.Config[0].Subnet') via $(dig +short bob_router) dev eth0; hole-punch-client`],
+                command: ["/bin/sh", "-c", startupScriptFn("bob")],
                 environment: {
                     TRANSPORT: transport,
                     MODE: "listen"

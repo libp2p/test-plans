@@ -118,3 +118,7 @@ export const markdownTable = (table: string[][]): string => {
 
   return body;
 };
+
+export function sanitizeComposeName(name: string) {
+  return name.replace(/[^a-zA-Z0-9_-]/g, "_");
+}

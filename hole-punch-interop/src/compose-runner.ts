@@ -5,6 +5,7 @@ import {exec as execStd} from 'child_process';
 import util from 'util';
 import {ComposeSpecification} from "../compose-spec/compose-spec";
 import {stringify} from 'yaml';
+import {sanitizeComposeName} from "./lib";
 
 const exec = util.promisify(execStd);
 
@@ -26,7 +27,7 @@ export async function run(namespace: string, compose: ComposeSpecification, logD
 
     // Create compose.yaml file
     // Some docker compose environments don't like the name field to have special characters
-    const sanitizedComposeName = compose?.name.replace(/[^a-zA-Z0-9_-]/g, "_")
+    const sanitizedComposeName = sanitizeComposeName(compose.name)
     await fs.writeFile(path.join(dir, "compose.yaml"), stringify({ ...compose, name: sanitizedComposeName }))
 
     const stdoutLogFile = path.join(logDir, `${sanitizedComposeName}.stdout`);
