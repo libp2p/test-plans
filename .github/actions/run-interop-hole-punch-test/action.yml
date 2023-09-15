@@ -103,10 +103,6 @@ runs:
       shell: bash
 
     - name: Run the test
-      run: ip addr
-      shell: bash
-
-    - name: Run the test
       working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
       env:
         WORKER_COUNT: ${{ inputs.worker-count }}
