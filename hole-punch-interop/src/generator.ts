@@ -106,15 +106,13 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
                 depends_on: ["redis"],
                 image: relayImageId,
                 init: true,
-                environment: {
-                    RUST_LOG: "debug"
-                },
                 networks: {
                     internet: { },
                 },
                 cap_add: ["NET_ADMIN"]
             },
             alice_router: {
+                depends_on: ["redis"],
                 image: routerImageId,
                 init: true,
                 networks: {
@@ -141,6 +139,7 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
                 ]
             },
             bob_router: {
+                depends_on: ["redis"],
                 image: routerImageId,
                 init: true,
                 networks: {

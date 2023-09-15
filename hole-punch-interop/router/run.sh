@@ -9,7 +9,7 @@ nft add table ip nat
 nft add chain ip nat postrouting { type nat hook postrouting priority 100 \; }
 nft add rule ip nat postrouting ip saddr $SUBNET_INTERNAL oifname "eth1" snat $ADDR_EXTERNAL
 
-tc qdisc add dev eth1 root netem delay 50ms
+tc qdisc add dev eth1 root netem delay 100ms
 
 tail -f /dev/null
 
