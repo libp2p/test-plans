@@ -6,6 +6,4 @@ RUN --mount=type=cache,target=/var/cache/apt apt-get update && apt-get -y instal
 COPY *.sh /scripts/
 RUN chmod +x /scripts/*.sh
 
-HEALTHCHECK CMD [ "sh", "-c", "test $(cat /var/setup_completed) = 1" ]
-
 ENTRYPOINT ["./scripts/run.sh"]

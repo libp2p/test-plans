@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -e
+set -ex
 
 # Wait for interfaces to be up and running ...
 while ! ip addr show eth0; do sleep 1; done
@@ -14,7 +14,5 @@ nft add chain ip nat postrouting { type nat hook postrouting priority 100 \; }
 nft add rule ip nat postrouting ip saddr $SUBNET_INTERNAL oifname "eth1" snat $ADDR_EXTERNAL
 
 tc qdisc add dev eth1 root netem delay 100ms
-
-echo "1" > /var/setup_completed
 
 tail -f /dev/null
