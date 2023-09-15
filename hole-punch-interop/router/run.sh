@@ -15,4 +15,6 @@ nft add rule ip nat postrouting ip saddr $SUBNET_INTERNAL oifname "eth1" snat $A
 
 tc qdisc add dev eth1 root netem delay 100ms
 
+echo "1" > /var/setup_completed
+
 tail -f /dev/null
