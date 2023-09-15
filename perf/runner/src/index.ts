@@ -193,7 +193,6 @@ function runClient(args: ArgsRunBenchmark): ResultValue[] {
     const withTimeout = `timeout ${args.durationSecondsPerIteration}s ${cmd} || [ $? -eq 124 ]`
     const withForLoop = `for i in {1..${args.iterations}}; do ${withTimeout}; done`
     const withSSH = `ssh -o StrictHostKeyChecking=no ec2-user@${args.clientPublicIP} '${withForLoop}'`
-    console.log(withSSH);
 
     const stdout = execCommand(withSSH);
 
