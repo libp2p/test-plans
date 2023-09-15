@@ -84,20 +84,9 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
     if (nameIgnore && name.includes(nameIgnore)) {
         return null
     }
-    const ALICE_LAN_PREFIX = "192.168.100";
-    const BOB_LAN_PREFIX = "192.168.101";
     const INTERNET_PREFIX = "17.0.0";
 
     let internetSubnet = `${INTERNET_PREFIX}.0/16`;
-
-    const aliceRouterLanAddr = `${ALICE_LAN_PREFIX}.10`;
-    const aliceNodeLanAddr = `${ALICE_LAN_PREFIX}.11`;
-
-    const bobRouterLanAddr = `${BOB_LAN_PREFIX}.10`;
-    const bobNodeLanAddr = `${BOB_LAN_PREFIX}.11`;
-
-    const aliceRouterPublicAddr = `${INTERNET_PREFIX}.10`;
-    const bobRouterPublicAddr = `${INTERNET_PREFIX}.11`;
     const relayListenAddr = `${INTERNET_PREFIX}.12`;
 
     return {
@@ -122,12 +111,8 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
                 image: routerImageId,
                 init: true,
                 networks: {
-                    alice_lan: {
-                        ipv4_address: aliceRouterLanAddr
-                    },
-                    internet: {
-                        ipv4_address: aliceRouterPublicAddr
-                    },
+                    alice_lan: {},
+                    internet: {},
                 },
                 cap_add: ["NET_ADMIN"]
             },
@@ -135,15 +120,13 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
                 depends_on: ["relay", "alice_router"],
                 image: containerImages[aliceImage](),
                 init: true,
-                command: ["/bin/sh", "-c", `ip route add ${internetSubnet} via ${aliceRouterLanAddr} dev eth0 && hole-punch-client`],
+                command: ["/bin/sh", "-c", `set -ex; ip route add ${internetSubnet} via $(dig +short alice_router) dev eth0; hole-punch-client`],
                 environment: {
                     TRANSPORT: transport,
                     MODE: "dial"
                 },
                 networks: {
-                    alice_lan: {
-                        ipv4_address: aliceNodeLanAddr
-                    },
+                    alice_lan: {},
                     control: {}
                 },
                 cap_add: ["NET_ADMIN"]
@@ -152,12 +135,8 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
                 image: routerImageId,
                 init: true,
                 networks: {
-                    bob_lan: {
-                        ipv4_address: bobRouterLanAddr
-                    },
-                    internet: {
-                        ipv4_address: bobRouterPublicAddr
-                    },
+                    bob_lan: {},
+                    internet: {},
                 },
                 cap_add: ["NET_ADMIN"]
             },
@@ -165,15 +144,13 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
                 depends_on: ["relay", "bob_router"],
                 image: containerImages[bobImage](),
                 init: true,
-                command: ["/bin/sh", "-c", `ip route add ${internetSubnet} via ${bobRouterLanAddr} dev eth0 && hole-punch-client`],
+                command: ["/bin/sh", "-c", `set -ex; ip route add ${internetSubnet} via $(dig +short bob_router) dev eth0; hole-punch-client`],
                 environment: {
                     TRANSPORT: transport,
                     MODE: "listen"
                 },
                 networks: {
-                    bob_lan: {
-                        ipv4_address: bobNodeLanAddr
-                    },
+                    bob_lan: {},
                     control: {}
                 },
                 cap_add: ["NET_ADMIN"]
@@ -189,24 +166,8 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
             }
         },
         networks: {
-            alice_lan: {
-                ipam: {
-                    config: [
-                        {
-                            subnet: `${ALICE_LAN_PREFIX}.0/24`
-                        }
-                    ]
-                }
-            },
-            bob_lan: {
-                ipam: {
-                    config: [
-                        {
-                            subnet: `${BOB_LAN_PREFIX}.0/24`
-                        }
-                    ]
-                }
-            },
+            alice_lan: {},
+            bob_lan: {},
             internet: {
                 ipam: {
                     config: [
