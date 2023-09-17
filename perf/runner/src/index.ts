@@ -12,7 +12,7 @@ async function main(clientPublicIP: string, serverPublicIP: string, testing: boo
     const pings = runPing(clientPublicIP, serverPublicIP, testing);
     const iperf = runIPerf(clientPublicIP, serverPublicIP, testing);
 
-    const versionsToRun = versions.filter(version => testFilter.includes('*') || testFilter.includes(version.implementation))
+    const versionsToRun = versions.filter(version => testFilter.includes('all') || testFilter.includes(version.implementation))
 
     const implsToBuild = Array.from(new Set(versionsToRun.map(v => v.implementation))).join(' ');
 
@@ -20,33 +20,33 @@ async function main(clientPublicIP: string, serverPublicIP: string, testing: boo
     copyAndBuildPerfImplementations(clientPublicIP, implsToBuild);
 
     const benchmarks = [
-             runBenchmarkAcrossVersions({
-                 name: "Single Connection throughput – Upload 100 MiB",
-                 clientPublicIP,
-                 serverPublicIP,
-                 uploadBytes: 100 << 20,
-                 downloadBytes: 0,
-                 unit: "bit/s",
-                 iterations,
-             }, versionsToRun),
-             runBenchmarkAcrossVersions({
-                 name: "Single Connection throughput – Download 100 MiB",
-                 clientPublicIP,
-                 serverPublicIP,
-                 uploadBytes: 0,
-                 downloadBytes: 100 << 20,
-                 unit: "bit/s",
-                 iterations,
-             }, versionsToRun),
-             runBenchmarkAcrossVersions({
-                 name: "Connection establishment + 1 byte round trip latencies",
-                 clientPublicIP,
-                 serverPublicIP,
-                 uploadBytes: 1,
-                 downloadBytes: 1,
-                 unit: "s",
-                 iterations: testing ? 1 : 100,
-             }, versionsToRun),
+        runBenchmarkAcrossVersions({
+            name: "Single Connection throughput – Upload 100 MiB",
+            clientPublicIP,
+            serverPublicIP,
+            uploadBytes: 100 << 20,
+            downloadBytes: 0,
+            unit: "bit/s",
+            iterations,
+        }, versionsToRun),
+        runBenchmarkAcrossVersions({
+            name: "Single Connection throughput – Download 100 MiB",
+            clientPublicIP,
+            serverPublicIP,
+            uploadBytes: 0,
+            downloadBytes: 100 << 20,
+            unit: "bit/s",
+            iterations,
+        }, versionsToRun),
+        runBenchmarkAcrossVersions({
+            name: "Connection establishment + 1 byte round trip latencies",
+            clientPublicIP,
+            serverPublicIP,
+            uploadBytes: 1,
+            downloadBytes: 1,
+            unit: "s",
+            iterations: testing ? 1 : 100,
+        }, versionsToRun),
     ];
 
     const benchmarkResults: BenchmarkResults = {
@@ -111,7 +111,7 @@ function runIPerf(clientPublicIP: string, serverPublicIP: string, testing: boole
         })
         .filter((bitrate): bitrate is number => bitrate !== null); // Remove any null values
 
-    return { unit: "bit/s", results:  bitrates}
+    return { unit: "bit/s", results: bitrates }
 }
 
 interface ArgsRunBenchmarkAcrossVersions {
@@ -196,7 +196,7 @@ function runClient(args: ArgsRunBenchmark): ResultValue[] {
 
     const lines = stdout.toString().trim().split('\n');
 
-    const combined: ResultValue[]= [];
+    const combined: ResultValue[] = [];
 
     for (const line of lines) {
         const result = JSON.parse(line) as ResultValue;
@@ -250,10 +250,10 @@ const argv = yargs
         'test-filter': {
             type: 'string',
             array: true,
-            choices: ['js-libp2p', 'rust-libp2p', 'go-libp2p', 'https', 'quic-go', '*'],
-            description: 'Filter tests to run, only the implementations here will be run, * for all',
+            choices: ['js-libp2p', 'rust-libp2p', 'go-libp2p', 'https', 'quic-go', 'all'],
+            description: 'Filter tests to run, only the implementations here will be run. It defaults to all.',
             demandOption: false,
-            default: '*'
+            default: 'all'
         }
     })
     .command('help', 'Print usage information', yargs.help)
