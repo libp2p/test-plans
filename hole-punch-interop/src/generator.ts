@@ -140,7 +140,7 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
                   DELAY_MS: routerDelay
                 },
                 networks: {
-                    dialer_lan: {},
+                    lan_dialer: {},
                     internet: {},
                 },
                 cap_add: ["NET_ADMIN"]
@@ -156,7 +156,7 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
                     RUST_LOG: rustLog,
                 },
                 networks: {
-                    dialer_lan: {},
+                    lan_dialer: {},
                 },
                 cap_add: ["NET_ADMIN"],
                 volumes: [dockerSocketVolume]
@@ -169,7 +169,7 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
                     DELAY_MS: routerDelay
                 },
                 networks: {
-                    listener_lan: {},
+                    lan_listener: {},
                     internet: {},
                 },
                 cap_add: ["NET_ADMIN"]
@@ -185,7 +185,7 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
                     RUST_LOG: rustLog,
                 },
                 networks: {
-                    listener_lan: {},
+                    lan_listener: {},
                 },
                 cap_add: ["NET_ADMIN"],
                 volumes: [dockerSocketVolume]
@@ -199,18 +199,18 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
                     internet: {
                         aliases: ["redis"]
                     },
-                    dialer_lan: {
+                    lan_dialer: {
                         aliases: ["redis"]
                     },
-                    listener_lan: {
+                    lan_listener: {
                         aliases: ["redis"]
                     },
                 }
             }
         },
         networks: {
-            dialer_lan: { },
-            listener_lan: { },
+            lan_dialer: { },
+            lan_listener: { },
             internet: { },
         }
     }

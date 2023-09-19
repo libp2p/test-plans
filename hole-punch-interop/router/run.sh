@@ -11,13 +11,13 @@ fi
 while ! ip addr show eth0 >&2; do sleep 1; done
 while ! ip addr show eth1 >&2; do sleep 1; done
 
-ADDR_EXTERNAL=$(ip -json addr show eth1 | jq '.[0].addr_info[0].local' -r)
-SUBNET_INTERNAL=$(ip -json addr show eth0 | jq '.[0].addr_info[0].local + "/" + (.[0].addr_info[0].prefixlen | tostring)' -r)
+ADDR_EXTERNAL=$(ip -json addr show eth0 | jq '.[0].addr_info[0].local' -r)
+SUBNET_INTERNAL=$(ip -json addr show eth1 | jq '.[0].addr_info[0].local + "/" + (.[0].addr_info[0].prefixlen | tostring)' -r)
 
 # Set up NAT
 nft add table ip nat
 nft add chain ip nat postrouting { type nat hook postrouting priority 100 \; }
-nft add rule ip nat postrouting ip saddr $SUBNET_INTERNAL oifname "eth1" snat $ADDR_EXTERNAL
+nft add rule ip nat postrouting ip saddr $SUBNET_INTERNAL oifname "eth0" snat $ADDR_EXTERNAL
 
 # tc can only apply delays on egress traffic. By setting a delay for both eth0 and eth1, we achieve the active delay passed in as a parameter.
 half_of_delay=$(expr "$DELAY_MS" / 2 )
