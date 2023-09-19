@@ -99,7 +99,7 @@ fn make_swarm() -> Result<Swarm<Behaviour>> {
     let local_peer_id = PeerId::from(local_key.public());
     log::info!("Local peer id: {local_peer_id}");
 
-    let transport = tcp::tokio::Transport::new(tcp::Config::default().port_reuse(true))
+    let transport = tcp::tokio::Transport::new(tcp::Config::default().nodelay(true))
         .upgrade(upgrade::Version::V1)
         .authenticate(noise::Config::new(&local_key)?)
         .multiplex(yamux::Config::default())

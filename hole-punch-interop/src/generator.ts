@@ -86,6 +86,7 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
         return null
     }
 
+    const rustLog = "debug,netlink_proto=warn,rustls=warn,multistream_select=warn";
     let internetNetworkName = `${sanitizeComposeName(name)}_internet`
 
     let startupScriptFn = (actor: "alice" | "bob") => (`
@@ -102,10 +103,12 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
     let relayStartupScript = `
         set -ex;
  
-        tc qdisc add dev eth0 root netem delay 50ms; # Add a delay to all relayed connections
+        tc qdisc add dev eth0 root netem delay 25ms; # Add a delay to all relayed connections
 
         /usr/bin/relay
     `;
+
+    const dockerSocketVolume = "/var/run/docker.sock:/var/run/docker.sock";
 
     return {
         name,
@@ -115,6 +118,9 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
                 image: relayImageId,
                 init: true,
                 command: ["/bin/sh", "-c", relayStartupScript],
+                environment: {
+                    RUST_LOG: rustLog,
+                },
                 networks: {
                     internet: { },
                 },
@@ -138,16 +144,13 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
                 environment: {
                     TRANSPORT: transport,
                     MODE: "dial",
-                    RUST_LOG: "debug",
-                    REDIS_TIMEOUT: 30
+                    RUST_LOG: rustLog,
                 },
                 networks: {
                     alice_lan: {},
                 },
                 cap_add: ["NET_ADMIN"],
-                volumes: [
-                    "/var/run/docker.sock:/var/run/docker.sock"
-                ]
+                volumes: [dockerSocketVolume]
             },
             bob_router: {
                 depends_on: ["redis"],
@@ -167,16 +170,13 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
                 environment: {
                     TRANSPORT: transport,
                     MODE: "listen",
-                    RUST_LOG: "debug",
-                    REDIS_TIMEOUT: 30
+                    RUST_LOG: rustLog,
                 },
                 networks: {
                     bob_lan: {},
                 },
                 cap_add: ["NET_ADMIN"],
-                volumes: [
-                    "/var/run/docker.sock:/var/run/docker.sock"
-                ]
+                volumes: [dockerSocketVolume]
             },
             redis: {
                 image: "redis:7-alpine",
