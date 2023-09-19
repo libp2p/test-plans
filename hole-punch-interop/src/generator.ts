@@ -91,12 +91,6 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
     let startupScriptFn = (actor: "alice" | "bob") => (`
         set -ex;
 
-        # Wait for router to be online
-        while ! ping -c 1 -w 1 "${actor}_router"; do sleep 1; done
-
-        # Wait for redis to be online
-        while ! ping -c 1 -w 1 "redis"; do sleep 1; done
-
         ROUTER_IP=$$(dig +short ${actor}_router)
         INTERNET_SUBNET=$$(curl --silent --unix-socket /var/run/docker.sock http://localhost/networks/${internetNetworkName} | jq -r '.IPAM.Config[0].Subnet')
 
@@ -107,12 +101,8 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
 
     let relayStartupScript = `
         set -ex;
-
-        # Wait for redis to be online
-        while ! ping -c 1 -w 1 "redis"; do sleep 1; done
-
-        # Add RTT when using the relay
-        tc qdisc add dev eth0 root netem delay 50ms;
+ 
+        tc qdisc add dev eth0 root netem delay 50ms; # Add a delay to all relayed connections
 
         /usr/bin/relay
     `;
@@ -141,14 +131,15 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
                 cap_add: ["NET_ADMIN"]
             },
             alice: {
-                depends_on: ["relay", "alice_router"],
+                depends_on: ["relay", "alice_router", "redis"],
                 image: containerImages[aliceImage](),
                 init: true,
                 command: ["/bin/sh", "-c", startupScriptFn("alice")],
                 environment: {
                     TRANSPORT: transport,
                     MODE: "dial",
-                    RUST_LOG: "debug"
+                    RUST_LOG: "debug",
+                    REDIS_TIMEOUT: 30
                 },
                 networks: {
                     alice_lan: {},
@@ -169,14 +160,15 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
                 cap_add: ["NET_ADMIN"]
             },
             bob: {
-                depends_on: ["relay", "bob_router"],
+                depends_on: ["relay", "bob_router", "redis"],
                 image: containerImages[bobImage](),
                 init: true,
                 command: ["/bin/sh", "-c", startupScriptFn("bob")],
                 environment: {
                     TRANSPORT: transport,
                     MODE: "listen",
-                    RUST_LOG: "debug"
+                    RUST_LOG: "debug",
+                    REDIS_TIMEOUT: 30
                 },
                 networks: {
                     bob_lan: {},
@@ -188,8 +180,8 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
             },
             redis: {
                 image: "redis:7-alpine",
-                environment: {
-                    REDIS_ARGS: "--loglevel warning"
+                healthcheck: {
+                    test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
                 },
                 networks: {
                     internet: {

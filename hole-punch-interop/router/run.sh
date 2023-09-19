@@ -13,7 +13,9 @@ nft add table ip nat
 nft add chain ip nat postrouting { type nat hook postrouting priority 100 \; }
 nft add rule ip nat postrouting ip saddr $SUBNET_INTERNAL oifname "eth1" snat $ADDR_EXTERNAL
 
-tc qdisc add dev eth0 root netem delay 30ms
-tc qdisc add dev eth1 root netem delay 30ms
+tc qdisc add dev eth0 root netem delay 30ms # Internal latency
+tc qdisc add dev eth1 root netem delay 50ms # External latency
+
+echo "1" > /var/setup_done # This will be checked by our docker HEALTHCHECK
 
 tail -f /dev/null

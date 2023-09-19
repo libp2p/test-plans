@@ -34,7 +34,7 @@ export async function run(namespace: string, compose: ComposeSpecification, logD
     const stderrLogFile = path.join(logDir, `${sanitizedComposeName}.stderr`);
 
     try {
-        const { stdout, stderr } = await exec(`docker compose -f ${path.join(dir, "compose.yaml")} up --exit-code-from alice --abort-on-container-exit`, { timeout: 15 * 1000 })
+        const { stdout, stderr } = await exec(`docker compose -f ${path.join(dir, "compose.yaml")} up --exit-code-from alice --abort-on-container-exit`, { timeout: 30 * 1000 })
 
         await fs.writeFile(stdoutLogFile, stdout)
         await fs.writeFile(stderrLogFile, stderr)
