@@ -2,6 +2,6 @@
 image.json
 
 results.csv
-logs/
+runs/
 
 node_modules/

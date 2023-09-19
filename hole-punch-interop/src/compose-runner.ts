@@ -11,30 +11,23 @@ const exec = util.promisify(execStd);
 
 export type RunFailure = any
 
-export async function run(namespace: string, compose: ComposeSpecification, logDir: string): Promise<Report> {
-    // sanitize namespace
-    const sanitizedNamespace = namespace.replace(/[^a-zA-Z0-9]/g, "-")
-    const dir = path.join(tmpdir(), "compose-runner", sanitizedNamespace)
+export async function run(namespace: string, compose: ComposeSpecification, rootAssetDir: string): Promise<Report> {
+    const sanitizedComposeName = sanitizeComposeName(compose.name)
+    const assetDir = path.join(rootAssetDir, sanitizedComposeName);
 
-    // Check if directory exists
-    try {
-        await fs.access(dir)
-        await fs.rm(dir, { recursive: true, force: true })
-    } catch (e) {
-    }
-    await fs.mkdir(dir, { recursive: true })
-    await fs.mkdir(logDir, { recursive: true })
+    await fs.mkdir(assetDir, { recursive: true })
+
 
     // Create compose.yaml file
     // Some docker compose environments don't like the name field to have special characters
-    const sanitizedComposeName = sanitizeComposeName(compose.name)
-    await fs.writeFile(path.join(dir, "compose.yaml"), stringify({ ...compose, name: sanitizedComposeName }))
+    const composeYmlPath = path.join(assetDir, "docker-compose.yaml");
+    await fs.writeFile(composeYmlPath, stringify({ ...compose, name: sanitizedComposeName }))
 
-    const stdoutLogFile = path.join(logDir, `${sanitizedComposeName}.stdout`);
-    const stderrLogFile = path.join(logDir, `${sanitizedComposeName}.stderr`);
+    const stdoutLogFile = path.join(assetDir, `stdout.log`);
+    const stderrLogFile = path.join(assetDir, `stderr.log`);
 
     try {
-        const { stdout, stderr } = await exec(`docker compose -f ${path.join(dir, "compose.yaml")} up --exit-code-from dialer --abort-on-container-exit`, { timeout: 60 * 1000 })
+        const { stdout, stderr } = await exec(`docker compose -f ${composeYmlPath} up --exit-code-from dialer --abort-on-container-exit`, { timeout: 60 * 1000 })
 
         await fs.writeFile(stdoutLogFile, stdout);
         await fs.writeFile(stderrLogFile, stderr);
@@ -49,11 +42,10 @@ export async function run(namespace: string, compose: ComposeSpecification, logD
         throw e
     } finally {
         try {
-            await exec(`docker compose -f ${path.join(dir, "compose.yaml")} down`);
+            await exec(`docker compose -f ${composeYmlPath} down`);
         } catch (e) {
             console.log("Failed to compose down", e)
         }
-        await fs.rm(dir, { recursive: true, force: true })
     }
 }
 

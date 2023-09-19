@@ -26,6 +26,6 @@ param="${half_of_delay}ms"
 tc qdisc add dev eth0 root netem delay $param
 tc qdisc add dev eth1 root netem delay $param
 
-echo "1" > /var/setup_done # This will be checked by our docker HEALTHCHECK
+echo "1" > /tmp/setup_done # This will be checked by our docker HEALTHCHECK
 
 tail -f /dev/null # Keep it running forever.

@@ -144,4 +144,4 @@ runs:
         path: |
           ${{ steps.find-workdir.outputs.WORK_DIR }}/results.csv
           ${{ steps.find-workdir.outputs.WORK_DIR }}/dashboard.md
-          ${{ steps.find-workdir.outputs.WORK_DIR }}/logs
+          ${{ steps.find-workdir.outputs.WORK_DIR }}/runs

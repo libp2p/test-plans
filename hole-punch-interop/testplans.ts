@@ -77,7 +77,9 @@ import path from "path";
     const rttRelayedConnection = routerDelay * 2 + relayDelay * 2;
     const rttDirectConnection = routerDelay * 2;
 
-    let testSpecs = await buildTestSpecs(versions.concat(extraVersions), nameFilter, nameIgnore, routerImageId, relayImageId, routerDelay, relayDelay)
+    const assetDir = path.join(__dirname, "runs");
+
+    let testSpecs = await buildTestSpecs(versions.concat(extraVersions), nameFilter, nameIgnore, routerImageId, relayImageId, routerDelay, relayDelay, assetDir)
 
 
     if (argv["emit-only"]) {
@@ -106,7 +108,7 @@ import path from "path";
             console.log("Running test spec: " + testSpec.name)
 
             try {
-                const report = await run(testSpec.name, testSpec, path.join(__dirname, "logs"));
+                const report = await run(testSpec.name, testSpec, assetDir);
                 const rttDifference = Math.abs(report.rtt_to_holepunched_peer_millis - rttDirectConnection);
 
                 if (rttDifference > 5) {

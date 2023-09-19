@@ -3,6 +3,7 @@ import {open} from "sqlite";
 import {Version} from "../versions";
 import {ComposeSpecification} from "../compose-spec/compose-spec";
 import {sanitizeComposeName} from "./lib";
+import path from "path";
 
 function buildExtraEnv(timeoutOverride: { [key: string]: number }, test1ID: string, test2ID: string): {
     [key: string]: string
@@ -11,7 +12,7 @@ function buildExtraEnv(timeoutOverride: { [key: string]: number }, test1ID: stri
     return maxTimeout > 0 ? {"test_timeout_seconds": maxTimeout.toString(10)} : {}
 }
 
-export async function buildTestSpecs(versions: Array<Version>, nameFilter: string | null, nameIgnore: string | null, routerImageId: string, relayImageId: string, routerDelay: number, relayDelay: number): Promise<Array<ComposeSpecification>> {
+export async function buildTestSpecs(versions: Array<Version>, nameFilter: string | null, nameIgnore: string | null, routerImageId: string, relayImageId: string, routerDelay: number, relayDelay: number, assetDir: string): Promise<Array<ComposeSpecification>> {
     const containerImages: { [key: string]: () => string } = {}
     const timeoutOverride: { [key: string]: number } = {}
     versions.forEach(v => containerImages[v.id] = () => {
@@ -35,12 +36,23 @@ export async function buildTestSpecs(versions: Array<Version>, nameFilter: strin
         driver: sqlite3.Database,
     });
 
-    await db.exec(`CREATE TABLE IF NOT EXISTS transports (id string not null, transport string not null);`)
+    await db.exec(`CREATE TABLE IF NOT EXISTS transports
+                   (
+                       id
+                       string
+                       not
+                       null,
+                       transport
+                       string
+                       not
+                       null
+                   );`)
 
     await Promise.all(
         versions.flatMap(version => {
             return [
-                db.exec(`INSERT INTO transports (id, transport) VALUES ${version.transports.map(transport => `("${version.id}", "${transport}")`).join(", ")};`)
+                db.exec(`INSERT INTO transports (id, transport)
+                         VALUES ${version.transports.map(transport => `("${version.id}", "${transport}")`).join(", ")};`)
             ]
         })
     )
@@ -48,8 +60,9 @@ export async function buildTestSpecs(versions: Array<Version>, nameFilter: strin
     // Generate the testing combinations by SELECT'ing from transports tables the distinct combinations where the transports of the different libp2p implementations match.
     const queryResults =
         await db.all(`SELECT DISTINCT a.id as dialer, b.id as listener, a.transport
-                             FROM transports a, transports b
-                             WHERE a.transport == b.transport;`
+                      FROM transports a,
+                           transports b
+                      WHERE a.transport == b.transport;`
         );
     await db.close();
 
@@ -60,7 +73,7 @@ export async function buildTestSpecs(versions: Array<Version>, nameFilter: strin
             listenerImage: test.listener,
             transport: test.transport,
             extraEnv: buildExtraEnv(timeoutOverride, test.id1, test.id2)
-        }, nameFilter, nameIgnore, routerImageId, relayImageId, routerDelay, relayDelay)
+        }, nameFilter, nameIgnore, routerImageId, relayImageId, routerDelay, relayDelay, assetDir)
     )).filter((spec): spec is ComposeSpecification => spec !== null)
 }
 
@@ -78,7 +91,7 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
     listenerImage,
     transport,
     extraEnv
-}: TestSpec, nameFilter: string | null, nameIgnore: string | null, routerImageId: string, relayImageId: string, routerDelay: number, relayDelay: number): ComposeSpecification | null {
+}: TestSpec, nameFilter: string | null, nameIgnore: string | null, routerImageId: string, relayImageId: string, routerDelay: number, relayDelay: number, assetDir: string): ComposeSpecification | null {
     if (nameFilter && !name.includes(nameFilter)) {
         return null
     }
@@ -103,6 +116,10 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
 
         ip route add $$INTERNET_SUBNET via $$ROUTER_IP dev eth0
 
+        tcpdump -i eth0 -w /tmp/${actor}.pcap &
+
+        sleep 2 # Let tcpdump start up
+
         hole-punch-client
     `);
 
@@ -115,6 +132,7 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
     `;
 
     const dockerSocketVolume = "/var/run/docker.sock:/var/run/docker.sock";
+    const tcpDumpVolume = `${path.join(assetDir, sanitizeComposeName(name))}:/tmp:rw`;
 
     return {
         name,
@@ -128,7 +146,7 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
                     RUST_LOG: rustLog,
                 },
                 networks: {
-                    internet: { },
+                    internet: {},
                 },
                 cap_add: ["NET_ADMIN"]
             },
@@ -137,13 +155,13 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
                 image: routerImageId,
                 init: true,
                 environment: {
-                  DELAY_MS: routerDelay
+                    DELAY_MS: routerDelay
                 },
                 networks: {
                     lan_dialer: {},
                     internet: {},
                 },
-                cap_add: ["NET_ADMIN"]
+                cap_add: ["NET_ADMIN"],
             },
             dialer: {
                 depends_on: ["relay", "dialer_router", "redis"],
@@ -159,7 +177,7 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
                     lan_dialer: {},
                 },
                 cap_add: ["NET_ADMIN"],
-                volumes: [dockerSocketVolume]
+                volumes: [dockerSocketVolume, tcpDumpVolume]
             },
             listener_router: {
                 depends_on: ["redis"],
@@ -188,7 +206,7 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
                     lan_listener: {},
                 },
                 cap_add: ["NET_ADMIN"],
-                volumes: [dockerSocketVolume]
+                volumes: [dockerSocketVolume, tcpDumpVolume]
             },
             redis: {
                 image: "redis:7-alpine",
@@ -209,9 +227,9 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
             }
         },
         networks: {
-            lan_dialer: { },
-            lan_listener: { },
-            internet: { },
+            lan_dialer: {},
+            lan_listener: {},
+            internet: {},
         }
     }
 }
