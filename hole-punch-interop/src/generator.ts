@@ -47,7 +47,7 @@ export async function buildTestSpecs(versions: Array<Version>, nameFilter: strin
 
     // Generate the testing combinations by SELECT'ing from transports tables the distinct combinations where the transports of the different libp2p implementations match.
     const queryResults =
-        await db.all(`SELECT DISTINCT a.id as alice, b.id as bob, a.transport
+        await db.all(`SELECT DISTINCT a.id as dialer, b.id as listener, a.transport
                              FROM transports a, transports b
                              WHERE a.transport == b.transport;`
         );
@@ -55,9 +55,9 @@ export async function buildTestSpecs(versions: Array<Version>, nameFilter: strin
 
     return queryResults.map((test): ComposeSpecification => (
         buildSpec(containerImages, {
-            name: `${test.alice} x ${test.bob} (${test.transport})`,
-            aliceImage: test.alice,
-            bobImage: test.bob,
+            name: `${test.dialer} x ${test.listener} (${test.transport})`,
+            dialerImage: test.dialer,
+            listenerImage: test.listener,
             transport: test.transport,
             extraEnv: buildExtraEnv(timeoutOverride, test.id1, test.id2)
         }, nameFilter, nameIgnore, routerImageId, relayImageId, routerDelay, relayDelay)
@@ -66,16 +66,16 @@ export async function buildTestSpecs(versions: Array<Version>, nameFilter: strin
 
 interface TestSpec {
     name: string,
-    aliceImage: string,
-    bobImage: string,
+    dialerImage: string,
+    listenerImage: string,
     transport: string,
     extraEnv?: { [key: string]: string }
 }
 
 function buildSpec(containerImages: { [key: string]: () => string }, {
     name,
-    aliceImage,
-    bobImage,
+    dialerImage,
+    listenerImage,
     transport,
     extraEnv
 }: TestSpec, nameFilter: string | null, nameIgnore: string | null, routerImageId: string, relayImageId: string, routerDelay: number, relayDelay: number): ComposeSpecification | null {
@@ -89,7 +89,7 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
     const rustLog = "debug,netlink_proto=warn,rustls=warn,multistream_select=warn";
     let internetNetworkName = `${sanitizeComposeName(name)}_internet`
 
-    let startupScriptFn = (actor: "alice" | "bob") => (`
+    let startupScriptFn = (actor: "dialer" | "listener") => (`
         set -ex;
 
         # Wait for router to be online
@@ -132,7 +132,7 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
                 },
                 cap_add: ["NET_ADMIN"]
             },
-            alice_router: {
+            dialer_router: {
                 depends_on: ["redis"],
                 image: routerImageId,
                 init: true,
@@ -140,28 +140,28 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
                   DELAY_MS: routerDelay
                 },
                 networks: {
-                    alice_lan: {},
+                    dialer_lan: {},
                     internet: {},
                 },
                 cap_add: ["NET_ADMIN"]
             },
-            alice: {
-                depends_on: ["relay", "alice_router", "redis"],
-                image: containerImages[aliceImage](),
+            dialer: {
+                depends_on: ["relay", "dialer_router", "redis"],
+                image: containerImages[dialerImage](),
                 init: true,
-                command: ["/bin/sh", "-c", startupScriptFn("alice")],
+                command: ["/bin/sh", "-c", startupScriptFn("dialer")],
                 environment: {
                     TRANSPORT: transport,
                     MODE: "dial",
                     RUST_LOG: rustLog,
                 },
                 networks: {
-                    alice_lan: {},
+                    dialer_lan: {},
                 },
                 cap_add: ["NET_ADMIN"],
                 volumes: [dockerSocketVolume]
             },
-            bob_router: {
+            listener_router: {
                 depends_on: ["redis"],
                 image: routerImageId,
                 init: true,
@@ -169,23 +169,23 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
                     DELAY_MS: routerDelay
                 },
                 networks: {
-                    bob_lan: {},
+                    listener_lan: {},
                     internet: {},
                 },
                 cap_add: ["NET_ADMIN"]
             },
-            bob: {
-                depends_on: ["relay", "bob_router", "redis"],
-                image: containerImages[bobImage](),
+            listener: {
+                depends_on: ["relay", "listener_router", "redis"],
+                image: containerImages[listenerImage](),
                 init: true,
-                command: ["/bin/sh", "-c", startupScriptFn("bob")],
+                command: ["/bin/sh", "-c", startupScriptFn("listener")],
                 environment: {
                     TRANSPORT: transport,
                     MODE: "listen",
                     RUST_LOG: rustLog,
                 },
                 networks: {
-                    bob_lan: {},
+                    listener_lan: {},
                 },
                 cap_add: ["NET_ADMIN"],
                 volumes: [dockerSocketVolume]
@@ -199,18 +199,18 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
                     internet: {
                         aliases: ["redis"]
                     },
-                    alice_lan: {
+                    dialer_lan: {
                         aliases: ["redis"]
                     },
-                    bob_lan: {
+                    listener_lan: {
                         aliases: ["redis"]
                     },
                 }
             }
         },
         networks: {
-            alice_lan: { },
-            bob_lan: { },
+            dialer_lan: { },
+            listener_lan: { },
             internet: { },
         }
     }
