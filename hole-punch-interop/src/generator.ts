@@ -94,6 +94,9 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
         # Wait for router to be online
         while ! ping -c 1 -w 1 "${actor}_router"; do sleep 1; done
 
+        # Wait for redis to be online
+        while ! ping -c 1 -w 1 "redis"; do sleep 1; done
+
         ROUTER_IP=$$(dig +short ${actor}_router)
         INTERNET_SUBNET=$$(curl --silent --unix-socket /var/run/docker.sock http://localhost/networks/${internetNetworkName} | jq -r '.IPAM.Config[0].Subnet')
 
@@ -144,7 +147,8 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
                 command: ["/bin/sh", "-c", startupScriptFn("alice")],
                 environment: {
                     TRANSPORT: transport,
-                    MODE: "dial"
+                    MODE: "dial",
+                    RUST_LOG: "debug"
                 },
                 networks: {
                     alice_lan: {},
@@ -171,7 +175,8 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
                 command: ["/bin/sh", "-c", startupScriptFn("bob")],
                 environment: {
                     TRANSPORT: transport,
-                    MODE: "listen"
+                    MODE: "listen",
+                    RUST_LOG: "debug"
                 },
                 networks: {
                     bob_lan: {},
