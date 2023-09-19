@@ -92,6 +92,12 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
     let startupScriptFn = (actor: "alice" | "bob") => (`
         set -ex;
 
+        # Wait for router to be online
+        while ! nslookup "${actor}_router"; do sleep 1; done
+
+        # Wait for redis to be online
+        while ! nslookup "redis"; do sleep 1; done
+
         ROUTER_IP=$$(dig +short ${actor}_router)
         INTERNET_SUBNET=$$(curl --silent --unix-socket /var/run/docker.sock http://localhost/networks/${internetNetworkName} | jq -r '.IPAM.Config[0].Subnet')
 
