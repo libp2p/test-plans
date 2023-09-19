@@ -4,7 +4,7 @@
     "description": "Tests hole-punching across libp2p implementations",
     "main": "testplans.ts",
     "scripts": {
-        "test": "ts-node testplans.ts",
+        "test": "ts-node src/*.test.ts && ts-node testplans.ts",
         "renderResults": "ts-node renderResults.ts",
         "cache": "ts-node helpers/cache.ts"
     },

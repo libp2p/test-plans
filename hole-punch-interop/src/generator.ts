@@ -11,7 +11,7 @@ function buildExtraEnv(timeoutOverride: { [key: string]: number }, test1ID: stri
     return maxTimeout > 0 ? {"test_timeout_seconds": maxTimeout.toString(10)} : {}
 }
 
-export async function buildTestSpecs(versions: Array<Version>, nameFilter: string | null, nameIgnore: string | null, routerImageId: string, relayImageId: string): Promise<Array<ComposeSpecification>> {
+export async function buildTestSpecs(versions: Array<Version>, nameFilter: string | null, nameIgnore: string | null, routerImageId: string, relayImageId: string, routerDelay: number, relayDelay: number): Promise<Array<ComposeSpecification>> {
     const containerImages: { [key: string]: () => string } = {}
     const timeoutOverride: { [key: string]: number } = {}
     versions.forEach(v => containerImages[v.id] = () => {
@@ -60,7 +60,7 @@ export async function buildTestSpecs(versions: Array<Version>, nameFilter: strin
             bobImage: test.bob,
             transport: test.transport,
             extraEnv: buildExtraEnv(timeoutOverride, test.id1, test.id2)
-        }, nameFilter, nameIgnore, routerImageId, relayImageId)
+        }, nameFilter, nameIgnore, routerImageId, relayImageId, routerDelay, relayDelay)
     )).filter((spec): spec is ComposeSpecification => spec !== null)
 }
 
@@ -78,7 +78,7 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
     bobImage,
     transport,
     extraEnv
-}: TestSpec, nameFilter: string | null, nameIgnore: string | null, routerImageId: string, relayImageId: string): ComposeSpecification | null {
+}: TestSpec, nameFilter: string | null, nameIgnore: string | null, routerImageId: string, relayImageId: string, routerDelay: number, relayDelay: number): ComposeSpecification | null {
     if (nameFilter && !name.includes(nameFilter)) {
         return null
     }
@@ -93,10 +93,10 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
         set -ex;
 
         # Wait for router to be online
-        while ! nslookup "${actor}_router"; do sleep 1; done
+        while ! nslookup "${actor}_router" >&2; do sleep 1; done
 
         # Wait for redis to be online
-        while ! nslookup "redis"; do sleep 1; done
+        while ! nslookup "redis" >&2; do sleep 1; done
 
         ROUTER_IP=$$(dig +short ${actor}_router)
         INTERNET_SUBNET=$$(curl --silent --unix-socket /var/run/docker.sock http://localhost/networks/${internetNetworkName} | jq -r '.IPAM.Config[0].Subnet')
@@ -109,7 +109,7 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
     let relayStartupScript = `
         set -ex;
  
-        tc qdisc add dev eth0 root netem delay 25ms; # Add a delay to all relayed connections
+        tc qdisc add dev eth0 root netem delay ${relayDelay}ms; # Add a delay to all relayed connections
 
         /usr/bin/relay
     `;
@@ -136,6 +136,9 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
                 depends_on: ["redis"],
                 image: routerImageId,
                 init: true,
+                environment: {
+                  DELAY_MS: routerDelay
+                },
                 networks: {
                     alice_lan: {},
                     internet: {},
@@ -162,6 +165,9 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
                 depends_on: ["redis"],
                 image: routerImageId,
                 init: true,
+                environment: {
+                    DELAY_MS: routerDelay
+                },
                 networks: {
                     bob_lan: {},
                     internet: {},

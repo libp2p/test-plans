@@ -71,7 +71,13 @@ import path from "path";
     let routerImageId = JSON.parse(await fs.readFile(path.join(".", "router", "image.json"), "utf-8")).imageID;
     let relayImageId = JSON.parse(await fs.readFile(path.join(".", "rust-relay", "image.json"), "utf-8")).imageID;
 
-    let testSpecs = await buildTestSpecs(versions.concat(extraVersions), nameFilter, nameIgnore, routerImageId, relayImageId)
+    const routerDelay = 100;
+    const relayDelay = 25;
+
+    const rttRelayedConnection = routerDelay * 2 + relayDelay * 2;
+    const rttDirectConnection = routerDelay * 2;
+
+    let testSpecs = await buildTestSpecs(versions.concat(extraVersions), nameFilter, nameIgnore, routerImageId, relayImageId, routerDelay, relayDelay)
 
 
     if (argv["emit-only"]) {
@@ -92,13 +98,30 @@ import path from "path";
             if (testSpec == null) {
                 return
             }
+            if (!testSpec.name) {
+                console.warn("Skipping testSpec without name")
+                continue;
+            }
+
             console.log("Running test spec: " + testSpec.name)
-            const failure = await run(testSpec.name || "unknown test", testSpec, path.join(__dirname, "logs"))
-            if (failure != null) {
+
+            try {
+                const report = await run(testSpec.name, testSpec, path.join(__dirname, "logs"));
+                const rttDifference = Math.abs(report.rtt_to_holepunched_peer_millis - rttDirectConnection);
+
+                if (rttDifference > 5) {
+                    failures.push(testSpec.name)
+                    statuses.push([testSpec.name, "failure (RTT too high)"])
+
+                    console.log(`Expected RTT of direction connection to be ~${rttDirectConnection}ms but was ${report.rtt_to_holepunched_peer_millis}ms`)
+
+                    continue;
+                }
+
+                statuses.push([testSpec.name, "success"])
+            } catch (e) {
                 failures.push(testSpec.name)
-                statuses.push([testSpec.name || "unknown test", "failure"])
-            } else {
-                statuses.push([testSpec.name || "unknown test", "success"])
+                statuses.push([testSpec.name, "failure"])
             }
         }
     })

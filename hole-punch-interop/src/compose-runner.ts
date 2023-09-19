@@ -11,7 +11,7 @@ const exec = util.promisify(execStd);
 
 export type RunFailure = any
 
-export async function run(namespace: string, compose: ComposeSpecification, logDir: string): Promise<RunFailure | null> {
+export async function run(namespace: string, compose: ComposeSpecification, logDir: string): Promise<Report> {
     // sanitize namespace
     const sanitizedNamespace = namespace.replace(/[^a-zA-Z0-9]/g, "-")
     const dir = path.join(tmpdir(), "compose-runner", sanitizedNamespace)
@@ -39,14 +39,14 @@ export async function run(namespace: string, compose: ComposeSpecification, logD
         await fs.writeFile(stdoutLogFile, stdout);
         await fs.writeFile(stderrLogFile, stderr);
 
-
+        return JSON.parse(lastStdoutLine(stdout, "alice", sanitizedComposeName)) as Report
     } catch (e: unknown) {
         if (isExecException(e)) {
             await fs.writeFile(stdoutLogFile, e.stdout)
             await fs.writeFile(stderrLogFile, e.stderr)
         }
 
-        return e
+        throw e
     } finally {
         try {
             await exec(`docker compose -f ${path.join(dir, "compose.yaml")} down`);
@@ -71,4 +71,19 @@ function isExecException(candidate: unknown): candidate is ExecException {
         return true;
     }
     return false;
+}
+
+interface Report {
+    rtt_to_holepunched_peer_millis: number
+}
+
+export function lastStdoutLine(stdout: string, component: string, composeName: string): string {
+    const allComponentStdout = stdout.split("\n").filter(line => line.startsWith(`${composeName}-${component}-1`));
+
+    const exitMessage = allComponentStdout.pop();
+    const lastLine = allComponentStdout.pop();
+
+    const [front, componentStdout] = lastLine.split("|");
+
+    return componentStdout.trim()
 }
