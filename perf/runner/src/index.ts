@@ -19,8 +19,8 @@ async function main(clientPublicIP: string, serverPublicIP: string, testing: boo
             uploadBytes: Number.MAX_SAFE_INTEGER, // TODO Ideally we have this implied through a flag.
             downloadBytes: 0,
             unit: "bit/s",
-            iterations: testing ? 1 : 5,
-            durationSecondsPerIteration: testing ? 5 : 60,
+            iterations: testing ? 1 : 10,
+            durationSecondsPerIteration: testing ? 5 : 20,
         }),
         runBenchmarkAcrossVersions({
             name: "throughput/download",
@@ -29,8 +29,8 @@ async function main(clientPublicIP: string, serverPublicIP: string, testing: boo
             uploadBytes: 0,
             downloadBytes: Number.MAX_SAFE_INTEGER, // TODO Ideally we have this implied through a flag.
             unit: "bit/s",
-            iterations: testing ? 1 : 5,
-            durationSecondsPerIteration: testing ? 5 : 60,
+            iterations: testing ? 1 : 10,
+            durationSecondsPerIteration: testing ? 5 : 20,
         }),
         runBenchmarkAcrossVersions({
             name: "Connection establishment + 1 byte round trip latencies",
