@@ -32,11 +32,11 @@ export async function buildTestSpecs(versions: Array<Version>, nameFilter: strin
     await db.close();
 
     return queryResults.map((test): ComposeSpecification => (
-        buildSpec(`${test.dialer} x ${test.listener} (${test.transport})`, test.dialer, test.listener, test.transport, {}, nameFilter, nameIgnore, routerImageId, relayImageId, routerDelay, relayDelay, assetDir)
+        buildSpec(`${test.dialer} x ${test.listener} (${test.transport})`, test.dialer, test.listener, routerImageId, relayImageId, test.transport, nameFilter, nameIgnore, routerDelay, relayDelay, assetDir, {})
     )).filter((spec): spec is ComposeSpecification => spec !== null)
 }
 
-function buildSpec(name: string, dialerImage: string, listenerImage: string, transport: string, extraEnv: { [key: string]: string }, nameFilter: string | null, nameIgnore: string | null, routerImageId: string, relayImageId: string, routerDelay: number, relayDelay: number, assetDir: string): ComposeSpecification | null {
+function buildSpec(name: string, dialerImage: string, listenerImage: string, routerImageId: string, relayImageId: string, transport: string, nameFilter: string | null, nameIgnore: string | null, routerDelay: number, relayDelay: number, assetDir: string, extraEnv: { [key: string]: string }): ComposeSpecification | null {
     if (nameFilter && !name.includes(nameFilter)) {
         return null
     }
