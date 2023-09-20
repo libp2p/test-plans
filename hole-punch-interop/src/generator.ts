@@ -13,15 +13,7 @@ function buildExtraEnv(timeoutOverride: { [key: string]: number }, test1ID: stri
 }
 
 export async function buildTestSpecs(versions: Array<Version>, nameFilter: string | null, nameIgnore: string | null, routerImageId: string, relayImageId: string, routerDelay: number, relayDelay: number, assetDir: string): Promise<Array<ComposeSpecification>> {
-    const containerImages: { [key: string]: () => string } = {}
     const timeoutOverride: { [key: string]: number } = {}
-    versions.forEach(v => containerImages[v.id] = () => {
-        if (typeof v.containerImageID === "string") {
-            return v.containerImageID
-        }
-
-        return v.containerImageID(v.id)
-    })
 
     sqlite3.verbose();
 
@@ -52,7 +44,7 @@ export async function buildTestSpecs(versions: Array<Version>, nameFilter: strin
     await db.close();
 
     return queryResults.map((test): ComposeSpecification => (
-        buildSpec(containerImages, {
+        buildSpec({
             name: `${test.dialer} x ${test.listener} (${test.transport})`,
             dialerImage: test.dialer,
             listenerImage: test.listener,
@@ -70,7 +62,7 @@ interface TestSpec {
     extraEnv?: { [key: string]: string }
 }
 
-function buildSpec(containerImages: { [key: string]: () => string }, {
+function buildSpec({
     name,
     dialerImage,
     listenerImage,
@@ -150,7 +142,7 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
             },
             dialer: {
                 depends_on: ["relay", "dialer_router", "redis"],
-                image: containerImages[dialerImage](),
+                image: dialerImage,
                 init: true,
                 command: ["/bin/sh", "-c", startupScriptFn("dialer")],
                 environment: {
@@ -179,7 +171,7 @@ function buildSpec(containerImages: { [key: string]: () => string }, {
             },
             listener: {
                 depends_on: ["relay", "listener_router", "redis"],
-                image: containerImages[listenerImage](),
+                image: listenerImage,
                 init: true,
                 command: ["/bin/sh", "-c", startupScriptFn("listener")],
                 environment: {
