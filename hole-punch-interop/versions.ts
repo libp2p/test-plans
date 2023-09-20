@@ -10,6 +10,13 @@ export type Version = {
     transports: Array<string>,
 }
 
+export const versions: Array<Version> = [
+    {
+        id: "rust-v0.52",
+        transports: ["tcp", "quic"],
+    },
+].map((v: Version) => (typeof v.containerImageID === "undefined" ? ({ ...v, containerImageID: canonicalImageIDLookup }) : v))
+
 function canonicalImagePath(id: string): string {
     // Split by implementation and version
     const [impl, version] = id.split("-v")
@@ -32,10 +39,3 @@ function canonicalImageIDLookup(id: string): string {
     const imageID = JSON.parse(imageIDJSON).imageID
     return imageID
 }
-
-export const versions: Array<Version> = [
-    {
-        id: "rust-v0.52",
-        transports: ["tcp", "quic"],
-    },
-].map((v: Version) => (typeof v.containerImageID === "undefined" ? ({ ...v, containerImageID: canonicalImageIDLookup }) : v))
