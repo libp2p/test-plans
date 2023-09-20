@@ -17,12 +17,9 @@ export async function buildTestSpecs(versions: Array<Version>, nameFilter: strin
     await db.exec('CREATE TABLE IF NOT EXISTS transports (id string not null, transport string not null);');
 
     await Promise.all(
-        versions.flatMap(version => {
-            return [
-                db.exec(`INSERT INTO transports (id, transport)
-                         VALUES ${version.transports.map(transport => `("${version.id}", "${transport}")`).join(", ")};`)
-            ]
-        })
+        versions.flatMap(version => ([
+            db.exec(`INSERT INTO transports (id, transport) VALUES ${version.transports.map(transport => `("${version.id}", "${transport}")`).join(", ")};`)
+        ]))
     )
 
     // Generate the testing combinations by SELECT'ing from transports tables the distinct combinations where the transports of the different libp2p implementations match.
