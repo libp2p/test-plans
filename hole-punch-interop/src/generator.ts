@@ -32,8 +32,8 @@ export async function buildTestSpecs(versions: Array<Version>, nameFilter: strin
     await db.close();
 
     return queryResults
-        .map(test => {
-            let name = `${test.dialer} x ${test.listener} (${test.transport})`;
+        .map(testCase => {
+            let name = `${testCase.dialer} x ${testCase.listener} (${testCase.transport})`;
 
             if (nameFilter && !name.includes(nameFilter)) {
                 return null
@@ -42,7 +42,7 @@ export async function buildTestSpecs(versions: Array<Version>, nameFilter: strin
                 return null
             }
 
-            return buildSpec(name, test.dialer, test.listener, routerImageId, relayImageId, test.transport, routerDelay, relayDelay, assetDir, {})
+            return buildSpec(name, testCase.dialer, testCase.listener, routerImageId, relayImageId, testCase.transport, routerDelay, relayDelay, assetDir, {})
         })
         .filter(spec => spec !== null)
 }
