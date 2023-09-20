@@ -5,7 +5,7 @@ export type Version = {
     // This can be the image ID, or a function that takes the version ID and returns the image ID.
     // By default it uses the canonicalImageIDLookup.
     containerImageID?: string | ((id: string) => string),
-    transports: Array<string>,
+    transports: Array<"tcp" | "quic">,
 }
 
 export const versions: Array<Version> = [
