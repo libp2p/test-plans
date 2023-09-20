@@ -5,16 +5,7 @@ import {ComposeSpecification} from "../compose-spec/compose-spec";
 import {sanitizeComposeName} from "./lib";
 import path from "path";
 
-function buildExtraEnv(timeoutOverride: { [key: string]: number }, test1ID: string, test2ID: string): {
-    [key: string]: string
-} {
-    const maxTimeout = Math.max(timeoutOverride[test1ID] || 0, timeoutOverride[test2ID] || 0)
-    return maxTimeout > 0 ? {"test_timeout_seconds": maxTimeout.toString(10)} : {}
-}
-
 export async function buildTestSpecs(versions: Array<Version>, nameFilter: string | null, nameIgnore: string | null, routerImageId: string, relayImageId: string, routerDelay: number, relayDelay: number, assetDir: string): Promise<Array<ComposeSpecification>> {
-    const timeoutOverride: { [key: string]: number } = {}
-
     sqlite3.verbose();
 
     const db = await open({
@@ -49,7 +40,7 @@ export async function buildTestSpecs(versions: Array<Version>, nameFilter: strin
             dialerImage: test.dialer,
             listenerImage: test.listener,
             transport: test.transport,
-            extraEnv: buildExtraEnv(timeoutOverride, test.id1, test.id2)
+            extraEnv: {}
         }, nameFilter, nameIgnore, routerImageId, relayImageId, routerDelay, relayDelay, assetDir)
     )).filter((spec): spec is ComposeSpecification => spec !== null)
 }
@@ -59,7 +50,7 @@ interface TestSpec {
     dialerImage: string,
     listenerImage: string,
     transport: string,
-    extraEnv?: { [key: string]: string }
+    extraEnv: { [key: string]: string }
 }
 
 function buildSpec({
