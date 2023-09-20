@@ -100,7 +100,7 @@ fn make_swarm() -> Result<Swarm<Behaviour>> {
     log::info!("Local peer id: {local_peer_id}");
 
     let transport = tcp::tokio::Transport::new(tcp::Config::default().nodelay(true))
-        .upgrade(upgrade::Version::V1)
+        .upgrade(upgrade::Version::V1Lazy)
         .authenticate(noise::Config::new(&local_key)?)
         .multiplex(yamux::Config::default())
         .or_transport(quic::tokio::Transport::new(quic::Config::new(&local_key)))
@@ -117,7 +117,11 @@ fn make_swarm() -> Result<Swarm<Behaviour>> {
         )),
     };
 
-    Ok(SwarmBuilder::with_tokio_executor(transport, behaviour, local_peer_id).build())
+    Ok(
+        SwarmBuilder::with_tokio_executor(transport, behaviour, local_peer_id)
+            .substream_upgrade_protocol_override(upgrade::Version::V1Lazy)
+            .build(),
+    )
 }
 
 struct RedisClient {
