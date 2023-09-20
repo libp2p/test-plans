@@ -22,11 +22,6 @@ export async function buildTestSpecs(versions: Array<Version>, nameFilter: strin
 
         return v.containerImageID(v.id)
     })
-    versions.forEach(v => {
-        if (v.timeoutSecs) {
-            timeoutOverride[v.id] = v.timeoutSecs
-        }
-    })
 
     sqlite3.verbose();
 

@@ -5,8 +5,6 @@ export type Version = {
     // This can be the image ID, or a function that takes the version ID and returns the image ID.
     // By default it uses the canonicalImageIDLookup.
     containerImageID?: string | ((id: string) => string),
-    // If defined, this will increase the timeout for tests using this version
-    timeoutSecs?: number, // TODO: Add timeout config to images
     transports: Array<string>,
 }
 
