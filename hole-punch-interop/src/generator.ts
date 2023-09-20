@@ -31,17 +31,7 @@ export async function buildTestSpecs(versions: Array<Version>, nameFilter: strin
         driver: sqlite3.Database,
     });
 
-    await db.exec(`CREATE TABLE IF NOT EXISTS transports
-                   (
-                       id
-                       string
-                       not
-                       null,
-                       transport
-                       string
-                       not
-                       null
-                   );`)
+    await db.exec('CREATE TABLE IF NOT EXISTS transports (id string not null, transport string not null);')
 
     await Promise.all(
         versions.flatMap(version => {
