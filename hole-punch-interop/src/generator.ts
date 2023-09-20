@@ -31,19 +31,23 @@ export async function buildTestSpecs(versions: Array<Version>, nameFilter: strin
         );
     await db.close();
 
-    return queryResults.map((test): ComposeSpecification => (
-        buildSpec(`${test.dialer} x ${test.listener} (${test.transport})`, test.dialer, test.listener, routerImageId, relayImageId, test.transport, nameFilter, nameIgnore, routerDelay, relayDelay, assetDir, {})
-    )).filter((spec): spec is ComposeSpecification => spec !== null)
+    return queryResults
+        .map(test => {
+            let name = `${test.dialer} x ${test.listener} (${test.transport})`;
+
+            if (nameFilter && !name.includes(nameFilter)) {
+                return null
+            }
+            if (nameIgnore && name.includes(nameIgnore)) {
+                return null
+            }
+
+            return buildSpec(name, test.dialer, test.listener, routerImageId, relayImageId, test.transport, routerDelay, relayDelay, assetDir, {})
+        })
+        .filter(spec => spec !== null)
 }
 
-function buildSpec(name: string, dialerImage: string, listenerImage: string, routerImageId: string, relayImageId: string, transport: string, nameFilter: string | null, nameIgnore: string | null, routerDelay: number, relayDelay: number, assetDir: string, extraEnv: { [key: string]: string }): ComposeSpecification | null {
-    if (nameFilter && !name.includes(nameFilter)) {
-        return null
-    }
-    if (nameIgnore && name.includes(nameIgnore)) {
-        return null
-    }
-
+function buildSpec(name: string, dialerImage: string, listenerImage: string, routerImageId: string, relayImageId: string, transport: string, routerDelay: number, relayDelay: number, assetDir: string, extraEnv: { [key: string]: string }): ComposeSpecification {
     const rustLog = "debug,netlink_proto=warn,rustls=warn,multistream_select=warn";
     let internetNetworkName = `${sanitizeComposeName(name)}_internet`
 
