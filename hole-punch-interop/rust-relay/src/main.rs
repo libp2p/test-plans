@@ -34,6 +34,8 @@ async fn main() -> Result<()> {
         .parse_default_env()
         .init();
 
+    // TODO Set: "debug,netlink_proto=warn,rustls=warn,multistream_select=warn" here.
+
     let mut swarm = make_swarm()?;
 
     let tcp_listener_id = swarm.listen_on(tcp_addr(Ipv4Addr::UNSPECIFIED.into()))?;

@@ -48,7 +48,6 @@ export async function buildTestSpecs(versions: Array<Version>, nameFilter: strin
 }
 
 function buildSpec(name: string, dialerImage: string, listenerImage: string, routerImageId: string, relayImageId: string, transport: string, routerDelay: number, relayDelay: number, assetDir: string, extraEnv: { [key: string]: string }): ComposeSpecification {
-    const rustLog = "debug,netlink_proto=warn,rustls=warn,multistream_select=warn";
     let internetNetworkName = `${sanitizeComposeName(name)}_internet`
 
     let startupScriptFn = (actor: "dialer" | "listener") => (`
@@ -91,9 +90,6 @@ function buildSpec(name: string, dialerImage: string, listenerImage: string, rou
                 image: relayImageId,
                 init: true,
                 command: ["/bin/sh", "-c", relayStartupScript],
-                environment: {
-                    RUST_LOG: rustLog,
-                },
                 networks: {
                     internet: {},
                 },
@@ -120,7 +116,6 @@ function buildSpec(name: string, dialerImage: string, listenerImage: string, rou
                 environment: {
                     TRANSPORT: transport,
                     MODE: "dial",
-                    RUST_LOG: rustLog,
                 },
                 networks: {
                     lan_dialer: {},
@@ -149,7 +144,6 @@ function buildSpec(name: string, dialerImage: string, listenerImage: string, rou
                 environment: {
                     TRANSPORT: transport,
                     MODE: "listen",
-                    RUST_LOG: rustLog,
                 },
                 networks: {
                     lan_listener: {},
