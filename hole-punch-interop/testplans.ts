@@ -1,7 +1,7 @@
 import { buildTestSpecs } from "./src/generator"
 import { Version, versions } from "./versions"
 import { promises as fs } from "fs";
-import { run, RunFailure } from "./src/compose-runner"
+import {ExecException, run} from "./src/compose-runner"
 import { stringify } from "csv-stringify/sync"
 import { stringify as YAMLStringify } from "yaml"
 import yargs from "yargs/yargs"
@@ -92,7 +92,7 @@ import path from "path";
     }
 
     console.log(`Running ${testSpecs.length} tests`)
-    const failures: Array<RunFailure> = []
+    const failures: Array<{ name: String, e: ExecException }> = []
     const statuses: Array<string[]> = [["name", "outcome"]]
     const workers = new Array(WorkerCount).fill({}).map(async () => {
         while (true) {
@@ -100,15 +100,16 @@ import path from "path";
             if (testSpec == null) {
                 return
             }
-            if (!testSpec.name) {
+            const name = testSpec.name;
+            if (!name) {
                 console.warn("Skipping testSpec without name")
                 continue;
             }
 
-            console.log("Running test spec: " + testSpec.name)
+            console.log("Running test spec: " + name)
 
             try {
-                const report = await run(testSpec.name, testSpec, assetDir);
+                const report = await run(name, testSpec, assetDir);
                 const rttDifference = Math.abs(report.rtt_to_holepunched_peer_millis - rttDirectConnection);
 
                 if (rttDifference > 5) {
@@ -116,16 +117,23 @@ import path from "path";
                     console.warn(`Expected RTT of direction connection to be ~${rttDirectConnection}ms but was ${report.rtt_to_holepunched_peer_millis}ms`)
                 }
 
-                statuses.push([testSpec.name, "success"])
+                statuses.push([name, "success"])
             } catch (e) {
-                failures.push(testSpec.name)
-                statuses.push([testSpec.name, "failure"])
+                failures.push({ name, e })
+                statuses.push([name, "failure"])
             }
         }
     })
     await Promise.all(workers)
 
-    console.log(`${failures.length} failures`, failures)
+    console.log(`${failures.length} failures:`)
+
+    for (const [number, {name, e}] of failures.entries()) {
+        console.log(`---------- ${name} ---------- (${number + 1} / ${failures.length + 1})`);
+        console.log(e.stdout)
+        console.log(e.stderr)
+    }
+
     await fs.writeFile("results.csv", stringify(statuses))
 
     console.log("Run complete")

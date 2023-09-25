@@ -1,4 +1,3 @@
-import {tmpdir} from 'os'
 import {promises as fs} from 'fs';
 import path from 'path';
 import {exec as execStd} from 'child_process';
@@ -8,8 +7,6 @@ import {stringify} from 'yaml';
 import {sanitizeComposeName} from "./lib";
 
 const exec = util.promisify(execStd);
-
-export type RunFailure = any
 
 export async function run(namespace: string, compose: ComposeSpecification, rootAssetDir: string): Promise<Report> {
     const sanitizedComposeName = sanitizeComposeName(compose.name)
@@ -49,7 +46,7 @@ export async function run(namespace: string, compose: ComposeSpecification, root
     }
 }
 
-interface ExecException extends Error {
+export interface ExecException extends Error {
     cmd?: string | undefined;
     killed?: boolean | undefined;
     code?: number | undefined;
