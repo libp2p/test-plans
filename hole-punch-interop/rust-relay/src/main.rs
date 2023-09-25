@@ -1,4 +1,3 @@
-use std::net::{IpAddr, Ipv4Addr};
 use anyhow::{bail, Context, Result};
 use libp2p::{
     core::{
@@ -7,20 +6,14 @@ use libp2p::{
         transport::Transport,
         upgrade,
     },
-    identify,
-    identity,
-    noise,
-    PeerId,
-    quic,
-    relay,
-    swarm::{NetworkBehaviour, SwarmBuilder, SwarmEvent},
-    Swarm,
-    tcp,
-    yamux,
     futures::future::Either,
-    futures::StreamExt
+    futures::StreamExt,
+    identify, identity, noise, ping, quic, relay,
+    swarm::{NetworkBehaviour, SwarmBuilder, SwarmEvent},
+    tcp, yamux, PeerId, Swarm,
 };
 use redis::AsyncCommands;
+use std::net::{IpAddr, Ipv4Addr};
 
 /// The redis key we push the relay's TCP listen address to.
 const RELAY_TCP_ADDRESS: &str = "RELAY_TCP_ADDRESS";
@@ -31,7 +24,9 @@ const RELAY_QUIC_ADDRESS: &str = "RELAY_QUIC_ADDRESS";
 async fn main() -> Result<()> {
     env_logger::builder()
         .filter_level(log::LevelFilter::Debug)
-        .parse_filters("netlink_proto=warn,rustls=warn,multistream_select=warn,libp2p_swarm::connection=info")
+        .parse_filters(
+            "netlink_proto=warn,rustls=warn,multistream_select=warn,libp2p_swarm::connection=info",
+        )
         .parse_default_env()
         .init();
 
@@ -116,6 +111,7 @@ fn make_swarm() -> Result<Swarm<Behaviour>> {
             "/hole-punch-tests/1".to_owned(),
             local_key.public(),
         )),
+        ping: ping::Behaviour::default(),
     };
 
     Ok(
@@ -152,4 +148,5 @@ impl RedisClient {
 struct Behaviour {
     relay: relay::Behaviour,
     identify: identify::Behaviour,
+    ping: ping::Behaviour,
 }
