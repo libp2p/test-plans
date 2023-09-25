@@ -54,10 +54,10 @@ function buildSpec(name: string, dialerImage: string, listenerImage: string, rou
         set -ex;
 
         # Wait for router to be online
-        while ! nslookup "${actor}_router" >&2; do sleep 1; done
+        while ! ping -c 1 "${actor}_router" >&2; do sleep 1; done
 
         # Wait for redis to be online
-        while ! nslookup "redis" >&2; do sleep 1; done
+        while ! ping -c 1 "redis" >&2; do sleep 1; done
 
         ROUTER_IP=$$(dig +short ${actor}_router)
         INTERNET_SUBNET=$$(curl --silent --unix-socket /var/run/docker.sock http://localhost/networks/${internetNetworkName} | jq -r '.IPAM.Config[0].Subnet')
@@ -75,7 +75,7 @@ function buildSpec(name: string, dialerImage: string, listenerImage: string, rou
         set -ex;
  
         # Wait for redis to be online
-        while ! nslookup "redis" >&2; do sleep 1; done
+        while ! ping -c 1 "redis" >&2; do sleep 1; done
  
         tc qdisc add dev eth0 root netem delay ${relayDelay}ms; # Add a delay to all relayed connections
 
