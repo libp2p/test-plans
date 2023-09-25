@@ -202,9 +202,10 @@ func main() {
 			log.Fatal(err)
 		}
 
-		// TODO
 		jsonB, err := json.Marshal(Result{
 			TimeSeconds: latency.Seconds(),
+			UploadBytes: uint(*uploadBytes),
+			DownloadBytes: uint(*downloadBytes),
 			Type: "final",
 		})
 		if err != nil {

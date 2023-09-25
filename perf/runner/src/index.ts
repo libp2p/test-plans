@@ -16,7 +16,7 @@ async function main(clientPublicIP: string, serverPublicIP: string, testing: boo
             name: "throughput/upload",
             clientPublicIP,
             serverPublicIP,
-            uploadBytes: Number.MAX_SAFE_INTEGER, // TODO Ideally we have this implied through a flag.
+            uploadBytes: Number.MAX_SAFE_INTEGER,
             downloadBytes: 0,
             unit: "bit/s",
             iterations: testing ? 1 : 10,
@@ -27,7 +27,7 @@ async function main(clientPublicIP: string, serverPublicIP: string, testing: boo
             clientPublicIP,
             serverPublicIP,
             uploadBytes: 0,
-            downloadBytes: Number.MAX_SAFE_INTEGER, // TODO Ideally we have this implied through a flag.
+            downloadBytes: Number.MAX_SAFE_INTEGER,
             unit: "bit/s",
             iterations: testing ? 1 : 10,
             durationSecondsPerIteration: testing ? 5 : 20,
@@ -75,7 +75,6 @@ function runPing(clientPublicIP: string, serverPublicIP: string, testing: boolea
     return { unit: "s", results: times }
 }
 
-// TODO: Have iterations on iperf, i.e. use multiple tcp connections consecutively
 function runIPerf(clientPublicIP: string, serverPublicIP: string, testing: boolean): IperfResults {
     const iPerfIterations = testing ? 1 : 60;
     console.error(`= run ${iPerfIterations} iPerf TCP from client to server`);

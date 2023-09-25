@@ -95,7 +95,6 @@ func sendBytes(s io.Writer, bytesToSend uint64) error {
 	lastReportWrite := 0
 
 	for bytesToSend > 0 {
-		// TODO: Is this expensive in go? Is there a cheaper API with less resolution?
 		now := time.Now()
 		if now.Sub(lastReportTime) > time.Second {
 			jsonB, err := json.Marshal(Result{
@@ -150,7 +149,6 @@ func (r *reportingReader) Read(b []byte) (int, error) {
 
 	now := time.Now()
 	if now.Sub(r.LastReportTime) > time.Second {
-		// This section is analogous to your Read implementation
 		result := Result{
 			TimeSeconds: now.Sub(r.LastReportTime).Seconds(),
 			Type: "intermediary",
