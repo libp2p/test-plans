@@ -65,17 +65,17 @@ runs:
       shell: bash
       id: buildkit
 
+    - name: Install more recent docker-compose version # https://stackoverflow.com/questions/54331949/having-networking-issues-with-docker-compose
+      shell: bash
+      run: |
+        wget -q -O- https://github.com/docker/compose/releases/download/v2.22.0/docker-compose-linux-aarch64 > /usr/libexec/docker/cli-plugins/docker-compose
+        docker compose version
+
     - name: Set up Docker Buildx
       id: buildx
       uses: docker/setup-buildx-action@v2
       with:
         config: ${{ steps.buildkit.outputs.config }}
-
-    - name: Install more recent docker-compose version # https://stackoverflow.com/questions/54331949/having-networking-issues-with-docker-compose
-      shell: bash
-      run: | 
-        wget -q -O- https://github.com/docker/compose/releases/download/v2.22.0/docker-compose-linux-aarch64 > /usr/libexec/docker/cli-plugins/docker-compose
-        docker compose version
 
     - name: Install deps
       working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
