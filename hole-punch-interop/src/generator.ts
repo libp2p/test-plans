@@ -74,6 +74,9 @@ function buildSpec(name: string, dialerImage: string, listenerImage: string, rou
     let relayStartupScript = `
         set -ex;
  
+        # Wait for redis to be online
+        while ! nslookup "redis" >&2; do sleep 1; done
+ 
         tc qdisc add dev eth0 root netem delay ${relayDelay}ms; # Add a delay to all relayed connections
 
         /usr/bin/relay
