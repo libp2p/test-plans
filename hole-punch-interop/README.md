@@ -62,3 +62,23 @@ The docker-compose file uses 6 containers in total:
 - 1 hole-punch client in `MODE=dial`
 - 1 hole-punch client in `MODE=listen`
 - 2 [routers](./router): 1 per client
+
+The networks are allocated by docker-compose.
+We dynamically fetch the IPs and subnets as part of a startup script to set the correct IP routes.  
+
+In total, we have three networks:
+
+1. `lan_dialer`
+2. `lan_listener`
+3. `internet`
+
+The two LANs host a router and a client each whereas the relay is connected (without a router) to the `internet` network.
+On startup of the clients, we add an `ip route` that redirects all traffic to the corresponding `router` container.
+The router container masquerades all traffic upon forwarding, see the [README](./router/README.md) for details.
+
+## Running a single test
+
+1. Build all containers using `make`
+1. Generate all test definitions using `npm run test -- --no-run`
+1. Pick the desired test from the [runs](./runs) directory
+1. Execute it using `docker compose up`
