@@ -128,8 +128,7 @@ import path from "path";
     console.log(`${failures.length} failures:`)
 
     for (const [number, {name, e}] of failures.entries()) {
-        console.log(`---------- ${name} ---------- (${number + 1} / ${failures.length + 1})`);
-        console.log(e.stdout)
+        console.log(`---------- ${name} ---------- (${number + 1} / ${failures.length})\n`);
         console.log(e.stderr)
     }
 
