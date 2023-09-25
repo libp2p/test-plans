@@ -47,3 +47,18 @@
 - Implementations SHOULD exit early with a non-zero exit code if anything goes wrong
 - Implementations MUST set `TCP_NODELAY` for the TCP transport
 - Implements MUST make sure connections are being kept alive
+
+## Design notes
+
+The design of this test runner is heavily influenced by [multidim-interop](../multidim-interop) but differs in several ways.
+
+All files related to test runs will be written to the [./runs](./runs) directory.
+This includes the `docker-compose.yml` files of each individual run as well as logs and `tcpdump`'s for the dialer and listener.
+
+The docker-compose file uses 6 containers in total:
+
+- 1 redis container for orchestrating the test
+- 1 [relay](./rust-relay)
+- 1 hole-punch client in `MODE=dial`
+- 1 hole-punch client in `MODE=listen`
+- 2 [routers](./router): 1 per client

@@ -16,12 +16,11 @@ import path from "path";
                 default: "",
             },
             'name-ignore': {
-                description: 'Do not run any tests including this name ',
+                description: 'Do not run any tests including this name',
                 default: "",
             },
-            'emit-only': {
-                alias: 'e',
-                description: 'Only print the compose.yaml file',
+            'no-run': {
+                description: "Don't run any tests, just generate the docker-compose files",
                 default: false,
                 type: 'boolean'
             },
