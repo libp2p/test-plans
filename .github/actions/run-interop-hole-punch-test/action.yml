@@ -68,8 +68,9 @@ runs:
     - name: Install more recent docker-compose version # https://stackoverflow.com/questions/54331949/having-networking-issues-with-docker-compose
       shell: bash
       run: |
-        sudo mv /usr/libexec/docker/cli-plugins/docker-compose /usr/libexec/docker/cli-plugins/docker-compose.bkp
-        sudo wget -q -O- https://github.com/docker/compose/releases/download/v2.22.0/docker-compose-linux-aarch64 > /usr/libexec/docker/cli-plugins/docker-compose
+        mkdir -p $HOME/.docker/cli-plugins
+        wget -q -O- https://github.com/docker/compose/releases/download/v2.22.0/docker-compose-linux-aarch64 > $HOME/.docker/cli-plugins/docker-compose
+        chmod +x $HOME/.docker/cli-plugins/docker-compose
         docker compose version
 
     - name: Set up Docker Buildx
