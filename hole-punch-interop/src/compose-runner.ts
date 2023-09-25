@@ -8,7 +8,7 @@ import {sanitizeComposeName} from "./lib";
 
 const exec = util.promisify(execStd);
 
-export async function run(namespace: string, compose: ComposeSpecification, rootAssetDir: string): Promise<Report> {
+export async function run(compose: ComposeSpecification, rootAssetDir: string, dryRun: boolean): Promise<Report | null> {
     const sanitizedComposeName = sanitizeComposeName(compose.name)
     const assetDir = path.join(rootAssetDir, sanitizedComposeName);
 
@@ -19,6 +19,10 @@ export async function run(namespace: string, compose: ComposeSpecification, root
     // Some docker compose environments don't like the name field to have special characters
     const composeYmlPath = path.join(assetDir, "docker-compose.yaml");
     await fs.writeFile(composeYmlPath, stringify({ ...compose, name: sanitizedComposeName }))
+
+    if (dryRun) {
+        return null;
+    }
 
     const stdoutLogFile = path.join(assetDir, `stdout.log`);
     const stderrLogFile = path.join(assetDir, `stderr.log`);
@@ -56,10 +60,7 @@ export interface ExecException extends Error {
 }
 
 function isExecException(candidate: unknown): candidate is ExecException {
-    if (candidate && typeof candidate === 'object' && 'cmd' in candidate) {
-        return true;
-    }
-    return false;
+    return candidate && typeof candidate === 'object' && 'cmd' in candidate;
 }
 
 interface Report {

@@ -19,8 +19,8 @@ import path from "path";
                 description: 'Do not run any tests including this name',
                 default: "",
             },
-            'no-run': {
-                description: "Don't run any tests, just generate the docker-compose files",
+            'dry-run': {
+                description: "Don't actually run the test, just generate the compose files",
                 default: false,
                 type: 'boolean'
             },
@@ -80,16 +80,6 @@ import path from "path";
 
     let testSpecs = await buildTestSpecs(versions.concat(extraVersions), nameFilter, nameIgnore, routerImageId, relayImageId, routerDelay, relayDelay, assetDir)
 
-
-    if (argv["emit-only"]) {
-        for (const testSpec of testSpecs) {
-            console.log("## " + testSpec.name)
-            console.log(YAMLStringify(testSpec))
-            console.log("\n\n")
-        }
-        return
-    }
-
     console.log(`Running ${testSpecs.length} tests`)
     const failures: Array<{ name: String, e: ExecException }> = []
     const statuses: Array<string[]> = [["name", "outcome"]]
@@ -108,12 +98,15 @@ import path from "path";
             console.log("Running test spec: " + name)
 
             try {
-                const report = await run(name, testSpec, assetDir);
-                const rttDifference = Math.abs(report.rtt_to_holepunched_peer_millis - rttDirectConnection);
+                const report = await run(testSpec, assetDir, argv['no-run'] as boolean);
 
-                if (rttDifference > 5) {
-                    // Emit a warning but don't do anything for now.
-                    console.warn(`Expected RTT of direction connection to be ~${rttDirectConnection}ms but was ${report.rtt_to_holepunched_peer_millis}ms`)
+                if (report != null) {
+                    const rttDifference = Math.abs(report.rtt_to_holepunched_peer_millis - rttDirectConnection);
+
+                    if (rttDifference > 5) {
+                        // Emit a warning but don't do anything for now.
+                        console.warn(`Expected RTT of direction connection to be ~${rttDirectConnection}ms but was ${report.rtt_to_holepunched_peer_millis}ms`)
+                    }
                 }
 
                 statuses.push([name, "success"])
