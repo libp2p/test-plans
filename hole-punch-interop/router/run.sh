@@ -7,10 +7,6 @@ if [ -z "$DELAY_MS" ]; then
   exit 1
 fi
 
-# Wait for interfaces to be up and running ...
-while ! ip addr show eth0 >&2; do sleep 1; done
-while ! ip addr show eth1 >&2; do sleep 1; done
-
 ADDR_EXTERNAL=$(ip -json addr show eth0 | jq '.[0].addr_info[0].local' -r)
 SUBNET_INTERNAL=$(ip -json addr show eth1 | jq '.[0].addr_info[0].local + "/" + (.[0].addr_info[0].prefixlen | tostring)' -r)
 
