@@ -105,7 +105,7 @@ import path from "path";
 
                     if (rttDifference > 5) {
                         // Emit a warning but don't do anything for now.
-                        console.warn(`Expected RTT of direction connection to be ~${rttDirectConnection}ms but was ${report.rtt_to_holepunched_peer_millis}ms`)
+                        console.warn(`Expected RTT of direct connection to be ~${rttDirectConnection}ms but was ${report.rtt_to_holepunched_peer_millis}ms`)
                     }
                 }
 
