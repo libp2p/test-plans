@@ -18,13 +18,13 @@ export async function buildTestSpecs(versions: Array<Version>, nameFilter: strin
 
     await Promise.all(
         versions.flatMap(version => ([
-            db.exec(`INSERT INTO transports (id, transport) VALUES ${version.transports.map(transport => `("${version.id}", "${transport}")`).join(", ")};`)
+            db.exec(`INSERT INTO transports (id, imageID, transport) VALUES ${version.transports.map(transport => `("${version.id}", "${version.containerImageID}", "${transport}")`).join(", ")};`)
         ]))
     )
 
     // Generate the testing combinations by SELECT'ing from transports tables the distinct combinations where the transports of the different libp2p implementations match.
     const queryResults =
-        await db.all(`SELECT DISTINCT a.id as dialer, b.id as listener, a.transport
+        await db.all(`SELECT DISTINCT a.id as dialer, a.imageID as dialerImage, b.id as listener, b.imageID as listenerImage, a.transport
                       FROM transports a,
                            transports b
                       WHERE a.transport == b.transport;`
@@ -42,7 +42,7 @@ export async function buildTestSpecs(versions: Array<Version>, nameFilter: strin
                 return null
             }
 
-            return buildSpec(name, testCase.dialer, testCase.listener, routerImageId, relayImageId, testCase.transport, routerDelay, relayDelay, assetDir, {})
+            return buildSpec(name, testCase.dialerImage, testCase.listenerImage, routerImageId, relayImageId, testCase.transport, routerDelay, relayDelay, assetDir, {})
         })
         .filter(spec => spec !== null)
 }
