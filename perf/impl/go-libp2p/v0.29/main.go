@@ -89,10 +89,10 @@ func main() {
 	}
 
 	jsonB, err := json.Marshal(Result{
-		TimeSeconds: time.Since(start).Seconds(),
-		UploadBytes: uint(*uploadBytes),
-		DownloadBytes: uint(*downloadBytes),
-		Type: "final",
+		TimeSeconds:   time.Since(start).Seconds(),
+		UploadBytes:   *uploadBytes,
+		DownloadBytes: *downloadBytes,
+		Type:          "final",
 	})
 	if err != nil {
 		log.Fatalf("failed to marshal perf result: %s", err)
@@ -104,8 +104,8 @@ func main() {
 type Result struct {
 	Type          string  `json:"type"`
 	TimeSeconds   float64 `json:"timeSeconds"`
-	UploadBytes   uint    `json:"uploadBytes"`
-	DownloadBytes uint    `json:"downloadBytes"`
+	UploadBytes   uint64  `json:"uploadBytes"`
+	DownloadBytes uint64  `json:"downloadBytes"`
 }
 
 type simpleReader struct {

@@ -92,15 +92,15 @@ func sendBytes(s io.Writer, bytesToSend uint64) error {
 	defer pool.Put(buf)
 
 	lastReportTime := time.Now()
-	lastReportWrite := 0
+	lastReportWrite := uint64(0)
 
 	for bytesToSend > 0 {
 		now := time.Now()
-		if now.Sub(lastReportTime) > time.Second {
+		if now.Sub(lastReportTime) >= time.Second {
 			jsonB, err := json.Marshal(Result{
 				TimeSeconds: now.Sub(lastReportTime).Seconds(),
-				UploadBytes: uint(lastReportWrite),
-				Type: "intermediary",
+				UploadBytes: lastReportWrite,
+				Type:        "intermediary",
 			})
 			if err != nil {
 				log.Fatalf("failed to marshal perf result: %s", err)
@@ -121,14 +121,14 @@ func sendBytes(s io.Writer, bytesToSend uint64) error {
 			return err
 		}
 		bytesToSend -= uint64(n)
-		lastReportWrite += n
+		lastReportWrite += uint64(n)
 	}
 	return nil
 }
 
 func drainStream(s io.Reader) (uint64, error) {
 	var recvd int64
-	recvd, err := io.Copy(io.Discard, & reportingReader { orig: s, LastReportTime: time.Now() })
+	recvd, err := io.Copy(io.Discard, &reportingReader{orig: s, LastReportTime: time.Now()})
 	if err != nil && err != io.EOF {
 		return uint64(recvd), err
 	}
@@ -136,9 +136,9 @@ func drainStream(s io.Reader) (uint64, error) {
 }
 
 type reportingReader struct {
-	orig             io.Reader
-	LastReportTime   time.Time
-	lastReportRead   uint64
+	orig           io.Reader
+	LastReportTime time.Time
+	lastReportRead uint64
 }
 
 var _ io.Reader = &reportingReader{}
@@ -148,11 +148,11 @@ func (r *reportingReader) Read(b []byte) (int, error) {
 	r.lastReportRead += uint64(n)
 
 	now := time.Now()
-	if now.Sub(r.LastReportTime) > time.Second {
+	if now.Sub(r.LastReportTime) >= time.Second {
 		result := Result{
-			TimeSeconds: now.Sub(r.LastReportTime).Seconds(),
-			Type: "intermediary",
-			DownloadBytes: uint(r.lastReportRead),
+			TimeSeconds:   now.Sub(r.LastReportTime).Seconds(),
+			Type:          "intermediary",
+			DownloadBytes: r.lastReportRead,
 		}
 
 		jsonB, err := json.Marshal(result)
