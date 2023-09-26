@@ -9,7 +9,7 @@ on:
     paths:
       - 'hole-punch-interop/**'
 
-name: libp2p multidimensional interop test
+name: libp2p holepunching interop test
 
 jobs:
   run-hole-punch-interop:
