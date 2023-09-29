@@ -11,7 +11,7 @@ This repository contains:
 ## Transport Interop
 ### Specs
 
-Please see our first specification for interoperability tests between transports, multiplexers, and secure channels here: [Transport Interoperability Test Specs](./multidim-interop/README.md)
+Please see our first specification for interoperability tests between transports, multiplexers, and secure channels here: [Transport Interoperability Test Specs](transport-interop/README.md)
 
 More specs to come soon!
 
