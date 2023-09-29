@@ -98,7 +98,7 @@ import path from "path";
             console.log("Running test spec: " + name)
 
             try {
-                const report = await run(testSpec, assetDir, argv['no-run'] as boolean);
+                const report = await run(testSpec, assetDir, argv['dry-run'] as boolean);
 
                 if (report != null) {
                     const rttDifference = Math.abs(report.rtt_to_holepunched_peer_millis - rttDirectConnection);
