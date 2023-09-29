@@ -4,7 +4,7 @@ HTTPS_SUBDIRS := $(wildcard https/*/.)
 QUIC_GO_SUBDIRS := $(wildcard quic-go/*/.)
 NIM_SUBDIRS := $(wildcard nim-libp2p/*/.)
 
-all: $(RUST_SUBDIRS) $(GO_SUBDIRS) $(HTTPS_SUBDIRS) $(QUIC_GO_SUBDIRS)
+all: $(RUST_SUBDIRS) $(GO_SUBDIRS) $(HTTPS_SUBDIRS) $(QUIC_GO_SUBDIRS) $(NIM_SUBDIRS)
 $(RUST_SUBDIRS):
 	$(MAKE) -C $@
 $(GO_SUBDIRS):
