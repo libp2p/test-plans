@@ -1,7 +1,7 @@
-# Interoperability test
+# Transport Interoperability tests
 
 This tests that different libp2p implementations can communicate with each other
-on each of their supported capabilities.
+on each of their supported (transport) capabilities.
 
 Each version of libp2p is defined in `versions.ts`. There the version defines
 its capabilities along with the id of its container image.
