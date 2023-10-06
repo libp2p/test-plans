@@ -7,6 +7,7 @@
     <Nullable>enable</Nullable>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <RestoreLockedMode>true</RestoreLockedMode>
+    <EnablePreviewFeatures>True</EnablePreviewFeatures>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,13 +16,14 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions"  Version="7.0.1" />
     
-    <PackageReference Include="Nethermind.Libp2p.Core" Version="1.0.0-preview.27" />
-    <PackageReference Include="Nethermind.Libp2p.Protocols.IpTcp" Version="1.0.0-preview.27" />
-    <PackageReference Include="Nethermind.Libp2p.Protocols.Noise" Version="1.0.0-preview.27" />
-    <PackageReference Include="Nethermind.Libp2p.Protocols.Ping" Version="1.0.0-preview.27" />
-    <PackageReference Include="Nethermind.Libp2p.Protocols.Yamux" Version="1.0.0-preview.27" />
-    <PackageReference Include="Nethermind.Libp2p.Protocols.Identify" Version="1.0.0-preview.27" />
-    <PackageReference Include="Nethermind.Libp2p.Protocols.Multistream" Version="1.0.0-preview.27" />
+    <PackageReference Include="Nethermind.Libp2p.Core" Version="1.0.0-preview.29" />
+    <PackageReference Include="Nethermind.Libp2p.Protocols.Quic" Version="1.0.0-preview.29" />
+    <PackageReference Include="Nethermind.Libp2p.Protocols.IpTcp" Version="1.0.0-preview.29" />
+    <PackageReference Include="Nethermind.Libp2p.Protocols.Noise" Version="1.0.0-preview.29" />
+    <PackageReference Include="Nethermind.Libp2p.Protocols.Ping" Version="1.0.0-preview.29" />
+    <PackageReference Include="Nethermind.Libp2p.Protocols.Yamux" Version="1.0.0-preview.29" />
+    <PackageReference Include="Nethermind.Libp2p.Protocols.Identify" Version="1.0.0-preview.29" />
+    <PackageReference Include="Nethermind.Libp2p.Protocols.Multistream" Version="1.0.0-preview.29" />
   </ItemGroup>
 
 </Project>

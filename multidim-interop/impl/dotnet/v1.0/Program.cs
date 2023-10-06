@@ -22,7 +22,8 @@ try
 
     int testTimeoutSeconds = int.Parse(Environment.GetEnvironmentVariable("test_timeout_seconds") ?? "180");
 
-    IPeerFactory peerFactory = new TestPlansPeerFactoryBuilder(transport, muxer, security).Build();
+    TestPlansPeerFactoryBuilder builder = new TestPlansPeerFactoryBuilder(transport, muxer, security);
+    IPeerFactory peerFactory = builder.Build();
 
     Log($"Connecting to redis at {redisAddr}...");
     ConnectionMultiplexer redis = ConnectionMultiplexer.Connect(redisAddr);
@@ -30,7 +31,7 @@ try
 
     if (isDialer)
     {
-        ILocalPeer localPeer = peerFactory.Create(localAddr: $"/ip4/0.0.0.0/tcp/0");
+        ILocalPeer localPeer = peerFactory.Create(localAddr: builder.MakeAddress());
         string? listenerAddr = null;
         while ((listenerAddr = db.ListRightPop("listenerAddr")) is null)
         {
@@ -65,9 +66,9 @@ try
             ip = addresses.First().Address.ToString()!;
         }
         Log("Starting to listen...");
-        ILocalPeer localPeer = peerFactory.Create(localAddr: $"/ip4/{ip}/tcp/0");
+        ILocalPeer localPeer = peerFactory.Create(localAddr: builder.MakeAddress(ip));
         IListener listener = await localPeer.ListenAsync(localPeer.Address);
-        listener.OnConnection += async (peer) => Log($"Connected {peer.Address}");
+        listener.OnConnection += (peer) => { Log($"Connected {peer.Address}"); return Task.CompletedTask; };
         Log($"Listening on {listener.Address}");
         db.ListRightPush(new RedisKey("listenerAddr"), new RedisValue(localPeer.Address.ToString()));
         await Task.Delay(testTimeoutSeconds * 1000);
@@ -116,12 +117,14 @@ class TestPlansPeerFactoryBuilder : PeerFactoryBuilderBase<TestPlansPeerFactoryB
         ProtocolStack stack = transport switch
         {
             "tcp" => Over<IpTcpProtocol>(),
+            "quic-v1" => Over<QuicProtocol>(),
             _ => throw new NotImplementedException(),
         };
 
+        stack = stack.Over<MultistreamProtocol>();
+
         if (!stacklessProtocols.Contains(transport))
         {
-            stack = stack.Over<MultistreamProtocol>();
             stack = security switch
             {
                 "noise" => stack.Over<NoiseProtocol>(),
@@ -139,4 +142,11 @@ class TestPlansPeerFactoryBuilder : PeerFactoryBuilderBase<TestPlansPeerFactoryB
         return stack.AddAppLayerProtocol<IdentifyProtocol>()
                     .AddAppLayerProtocol<PingProtocol>();
     }
+
+    public string MakeAddress(string ip = "0.0.0.0", string port = "0") => transport switch
+    {
+        "tcp" => $"/ip4/{ip}/tcp/{port}",
+        "quic-v1" => $"/ip4/{ip}/udp/{port}/quic-v1",
+        _ => throw new NotImplementedException(),
+    };
 }

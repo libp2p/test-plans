@@ -127,7 +127,7 @@ export const versions: Array<Version> = [
     },
     {
         id: "dotnet-v1.0",
-        transports: ["tcp"],
+        transports: ["tcp", "quic-v1"],
         secureChannels: ["noise"],
         muxers: ["yamux"],
     },
