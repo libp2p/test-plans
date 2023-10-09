@@ -13,10 +13,6 @@ export const versions: Array<Version> = [
         id: "rust-v0.52",
         transports: ["tcp", "quic"],
     },
-    // {
-    //     id: "go-v0.31",
-    //     transports: ["tcp", "quic"],
-    // },
 ].map((v: Version) => (typeof v.containerImageID === "undefined" ? ({ ...v, containerImageID: canonicalImageIDLookup(v.id) }) : v))
 
 function canonicalImagePath(id: string): string {
