@@ -1,17 +1,17 @@
 # Interoperability/end to end test-plans & performance benchmarking for libp2p
 
-[![Interop Dashboard](https://github.com/libp2p/test-plans/workflows/libp2p%20multidimensional%20interop%20test/badge.svg?branch=master)](https://github.com/libp2p/test-plans/actions/runs/6190795509/attempts/1#summary-16807793452)
+[![Interop Dashboard](https://github.com/libp2p/test-plans/workflows/libp2p%20transport%20interop%20test/badge.svg?branch=master)](https://github.com/libp2p/test-plans/actions/runs/6414175078/attempts/1#summary-17414176243)
 
 [![Made by Protocol Labs](https://img.shields.io/badge/made%20by-Protocol%20Labs-blue.svg?style=flat-square)](http://protocol.ai)
 
 This repository contains:
-* interoperability and end to end tests for libp2p modules across different implementations and versions
+* interoperability tests for libp2p's transport layers modules across different implementations and versions
 * components to run performance benchmarks for different libp2p implementations
 
-## Multidimensional Interop
+## Transport Interop
 ### Specs
 
-Please see our first specification for interoperability tests between transports, multiplexers, and secure channels here: [Interoperability Test Specs](./multidim-interop/README.md)
+Please see our first specification for interoperability tests between transports, multiplexers, and secure channels here: [Transport Interoperability Test Specs](transport-interop/README.md)
 
 More specs to come soon!
 
