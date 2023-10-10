@@ -3,7 +3,7 @@ name: Update Badge
 on:
   workflow_run:
     workflows:
-      - libp2p multidimensional interop test
+      - libp2p transport interop test
     types:
       - completed
     branches:
