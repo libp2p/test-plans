@@ -7,7 +7,7 @@ import * as path from 'path';
 import * as child_process from 'child_process';
 import ignore, { Ignore } from 'ignore'
 
-const multidimInteropDir = path.join(scriptDir, '..')
+const root = path.join(scriptDir, '..')
 const arch = child_process.execSync('docker info -f "{{.Architecture}}"').toString().trim();
 
 enum Mode {
@@ -28,13 +28,13 @@ switch (modeStr) {
 }
 
 (async () => {
-    for (const implFamily of fs.readdirSync(path.join(multidimInteropDir, 'impl'))) {
+    for (const implFamily of fs.readdirSync(path.join(root, 'impl'))) {
         const ig = ignore()
 
-        addGitignoreIfPresent(ig, path.join(multidimInteropDir, ".gitignore"))
-        addGitignoreIfPresent(ig, path.join(multidimInteropDir, "..", ".gitignore"))
+        addGitignoreIfPresent(ig, path.join(root, ".gitignore"))
+        addGitignoreIfPresent(ig, path.join(root, "..", ".gitignore"))
 
-        const implFamilyDir = path.join(multidimInteropDir, 'impl', implFamily)
+        const implFamilyDir = path.join(root, 'impl', implFamily)
         addGitignoreIfPresent(ig, path.join(implFamilyDir, ".gitignore"))
 
         for (const impl of fs.readdirSync(implFamilyDir)) {
