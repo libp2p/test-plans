@@ -1,15 +1,19 @@
 # syntax=docker/dockerfile:1.5-labs
 
-FROM rust:1.72.0 as builder
+FROM --platform=$BUILDPLATFORM rust:1.72.0 as builder
 
-# Default value if not provided
-ARG TARGET_ARCH=x86_64-unknown-linux-musl
-RUN rustup target add ${TARGET_ARCH}
+ARG BUILDPLATFORM
+
+# Copy the setup.sh script into the image
+COPY setRustTarget.sh /setRustTarget.sh
+
+RUN chmod +x /setRustTarget.sh && /setRustTarget.sh ${BUILDPLATFORM}
 
 # Conditionally install musl-tools if targeting musl
 RUN --mount=type=cache,target=/var/cache/apt \
+    . /etc/environment && \
     apt-get update && \
-    if [[ "${TARGET_ARCH}" == *"-musl"* ]]; then \
+    if [[ "${RUST_TARGET}" == *"-musl"* ]]; then \
         apt-get install -y musl-dev musl-tools; \
     fi
 
@@ -18,10 +22,12 @@ WORKDIR /workspace
 ADD . .
 RUN --mount=type=cache,target=./target \
     --mount=type=cache,target=/usr/local/cargo/registry \
-    cargo build --release --package relay --target ${TARGET_ARCH}
+    . /etc/environment && \
+    cargo build --release --package relay --target ${RUST_TARGET}
 
 RUN --mount=type=cache,target=./target \
-    mv ./target/${TARGET_ARCH}/release/relay /usr/local/bin/relay
+    . /etc/environment && \
+    mv ./target/${RUST_TARGET}/release/relay /usr/local/bin/relay
 
 FROM alpine:3
 COPY --from=builder /usr/local/bin/relay /usr/bin/relay
