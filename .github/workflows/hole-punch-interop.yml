@@ -16,8 +16,8 @@ jobs:
     runs-on: ['self-hosted', 'linux', 'x64', '4xlarge'] # https://github.com/pl-strflt/tf-aws-gh-runner/blob/main/runners.tf
     strategy:
       matrix:
-        dim1: ['a', 'b', 'c', 'd']
-        dim2: [1, 2, 3, 4]
+        dim1: ['a', 'b', 'c', 'd', 'e', 'f']
+        dim2: [1, 2, 3, 4, 5, 6]
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
