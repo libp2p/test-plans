@@ -5,7 +5,7 @@ import {ComposeSpecification} from "../compose-spec/compose-spec";
 import {sanitizeComposeName} from "./lib";
 import path from "path";
 
-export async function buildTestSpecs(versions: Array<Version>, nameFilter: string | null, nameIgnore: string | null, routerImageId: string, relayImageId: string, routerDelay: number, relayDelay: number, assetDir: string): Promise<Array<ComposeSpecification>> {
+export async function buildTestSpecs(versions: Array<Version>, nameFilter: string | null, nameIgnore: string | null, routerImageId: string, relayImageId: string, routerDelay: number, relayDelay: number, localDelay: number, assetDir: string): Promise<Array<ComposeSpecification>> {
     sqlite3.verbose();
 
     const db = await open({
@@ -42,12 +42,12 @@ export async function buildTestSpecs(versions: Array<Version>, nameFilter: strin
                 return null
             }
 
-            return buildSpec(name, testCase.dialerImage, testCase.listenerImage, routerImageId, relayImageId, testCase.transport, routerDelay, relayDelay, assetDir, {})
+            return buildSpec(name, testCase.dialerImage, testCase.listenerImage, routerImageId, relayImageId, testCase.transport, routerDelay, relayDelay, localDelay, assetDir, {})
         })
         .filter(spec => spec !== null)
 }
 
-function buildSpec(name: string, dialerImage: string, listenerImage: string, routerImageId: string, relayImageId: string, transport: string, routerDelay: number, relayDelay: number, assetDir: string, extraEnv: { [key: string]: string }): ComposeSpecification {
+function buildSpec(name: string, dialerImage: string, listenerImage: string, routerImageId: string, relayImageId: string, transport: string, routerDelay: number, relayDelay: number, localDelay: number, assetDir: string, extraEnv: { [key: string]: string }): ComposeSpecification {
     let internetNetworkName = `${sanitizeComposeName(name)}_internet`
 
     let startupScriptFn = (actor: "dialer" | "listener") => (`
@@ -57,6 +57,8 @@ function buildSpec(name: string, dialerImage: string, listenerImage: string, rou
         INTERNET_SUBNET=$$(curl --fail --silent --unix-socket /var/run/docker.sock http://localhost/networks/${internetNetworkName} | jq -r '.IPAM.Config[0].Subnet')
 
         ip route add $$INTERNET_SUBNET via $$ROUTER_IP dev eth0
+
+        tc qdisc add dev eth0 root netem delay ${localDelay}ms; # Add a local delay to all outgoing packets
 
         tcpdump -i eth0 -w /tmp/${actor}.pcap &
 
