@@ -72,7 +72,7 @@ import path from "path";
 
     const routerDelay = 100;
     const relayDelay = 25;
-    const localDelay = 10;
+    const localDelay = 20;
 
     const rttRelayedConnection = routerDelay * 2 + relayDelay * 2 + localDelay * 2;
     const rttDirectConnection = routerDelay * 2 + localDelay * 2;
