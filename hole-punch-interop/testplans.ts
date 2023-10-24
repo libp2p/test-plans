@@ -72,14 +72,13 @@ import path from "path";
 
     const routerDelay = 100;
     const relayDelay = 25;
-    const localDelay = 0;
 
-    const rttRelayedConnection = routerDelay * 2 + relayDelay * 2 + localDelay * 2;
-    const rttDirectConnection = routerDelay * 2 + localDelay * 2;
+    const rttRelayedConnection = routerDelay * 2 + relayDelay * 2;
+    const rttDirectConnection = routerDelay * 2;
 
     const assetDir = path.join(__dirname, "runs");
 
-    let testSpecs = await buildTestSpecs(versions.concat(extraVersions), nameFilter, nameIgnore, routerImageId, relayImageId, routerDelay, relayDelay, localDelay, assetDir)
+    let testSpecs = await buildTestSpecs(versions.concat(extraVersions), nameFilter, nameIgnore, routerImageId, relayImageId, routerDelay, relayDelay, assetDir)
 
     console.log(`Running ${testSpecs.length} tests`)
     const failures: Array<{ name: String, e: ExecException }> = []
