@@ -138,6 +138,7 @@ function buildSpec(name: string, dialerImage: string, listenerImage: string, rou
                 environment: {
                     TRANSPORT: transport,
                     MODE: "listen",
+                    SSLKEYLOGFILE: "/tmp/tls.key"
                 },
                 networks: {
                     lan_listener: {},
