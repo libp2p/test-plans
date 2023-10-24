@@ -14,6 +14,10 @@ name: libp2p holepunching interop test
 jobs:
   run-hole-punch-interop:
     runs-on: ['self-hosted', 'linux', 'x64', '4xlarge'] # https://github.com/pl-strflt/tf-aws-gh-runner/blob/main/runners.tf
+    strategy:
+      matrix:
+        dim1: ['a', 'b', 'c']
+        dim2: [1, 2, 3]
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/run-interop-hole-punch-test
