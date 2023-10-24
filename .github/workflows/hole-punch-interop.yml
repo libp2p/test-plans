@@ -18,6 +18,7 @@ jobs:
       matrix:
         dim1: ['a', 'b', 'c', 'd']
         dim2: [1, 2, 3, 4]
+      fail-fast: false
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/run-interop-hole-punch-test
