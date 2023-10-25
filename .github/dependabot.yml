@@ -1,0 +1,13 @@
+version: 2
+updates:
+  - package-ecosystem: "cargo"
+    directory: "/hole-punch-interop/rust-relay"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    commit-message:
+      prefix: "deps"
+    rebase-strategy: "disabled"
