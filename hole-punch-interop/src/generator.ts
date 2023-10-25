@@ -54,7 +54,7 @@ function buildSpec(name: string, dialerImage: string, listenerImage: string, rou
         set -ex;
 
         ROUTER_IP=$$(dig +short ${actor}_router)
-        INTERNET_SUBNET=$$(curl --silent --unix-socket /var/run/docker.sock http://localhost/networks/${internetNetworkName} | jq -r '.IPAM.Config[0].Subnet')
+        INTERNET_SUBNET=$$(curl --fail --silent --unix-socket /var/run/docker.sock http://localhost/networks/${internetNetworkName} | jq -r '.IPAM.Config[0].Subnet')
 
         ip route add $$INTERNET_SUBNET via $$ROUTER_IP dev eth0
 
@@ -138,6 +138,7 @@ function buildSpec(name: string, dialerImage: string, listenerImage: string, rou
                 environment: {
                     TRANSPORT: transport,
                     MODE: "listen",
+                    SSLKEYLOGFILE: "/tmp/tls.key"
                 },
                 networks: {
                     lan_listener: {},
