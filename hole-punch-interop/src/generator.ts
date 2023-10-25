@@ -47,9 +47,7 @@ export async function buildTestSpecs(versions: Array<Version>, nameFilter: strin
         .filter(spec => spec !== null)
 }
 
-function buildSpec(name: string, dialerImage: string, listenerImage: string, routerImageId: string, relayImageId: string, transport: string, routerDelay: number, relayDelay: number, assetDir: string, extraEnv: {
-    [p: string]: string
-}): ComposeSpecification {
+function buildSpec(name: string, dialerImage: string, listenerImage: string, routerImageId: string, relayImageId: string, transport: string, routerDelay: number, relayDelay: number, assetDir: string, extraEnv: { [key: string]: string }): ComposeSpecification {
     let internetNetworkName = `${sanitizeComposeName(name)}_internet`
 
     let startupScriptFn = (actor: "dialer" | "listener") => (`
