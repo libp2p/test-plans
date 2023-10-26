@@ -13,19 +13,16 @@ export const versions: Array<Version> = [
         id: "rust-v0.52",
         transports: ["tcp", "quic"],
     },
-].map((v: Version) => (typeof v.containerImageID === "undefined" ? ({ ...v, containerImageID: canonicalImageIDLookup(v.id) }) : v))
-
-// Loads the container image id for the given version id. Expects the form of
-// "<impl>-vX.Y.Z" or "<impl>vX.Y" and the image id to be in the file
-// "./impl/<impl>/vX.Y/image.json" or "./impl/<impl>/v0.0.Z/image.json"
-function canonicalImageIDLookup(id: string): string {
-    return readImageId(canonicalImagePath(id))
-}
+].map((v: Version) => (typeof v.containerImageID === "undefined" ? ({ ...v, containerImageID: readImageId(canonicalImagePath(v.id)) }) : v))
 
 function readImageId(path: string) {
     return JSON.parse(fs.readFileSync(path, "utf8")).imageID;
 }
 
+// Finds the `image.json` for the given version id.
+//
+// Expects the form of "<impl>-vX.Y.Z" or "<impl>vX.Y".
+// The image id must be in the file "./impl/<impl>/vX.Y/image.json" or "./impl/<impl>/v0.0.Z/image.json".
 function canonicalImagePath(id: string): string {
     // Split by implementation and version
     const [impl, version] = id.split("-v")
