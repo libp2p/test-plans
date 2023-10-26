@@ -19,9 +19,11 @@ export const versions: Array<Version> = [
 // "<impl>-vX.Y.Z" or "<impl>vX.Y" and the image id to be in the file
 // "./impl/<impl>/vX.Y/image.json" or "./impl/<impl>/v0.0.Z/image.json"
 function canonicalImageIDLookup(id: string): string {
-    const imageIDJSON = fs.readFileSync(canonicalImagePath(id), "utf8")
-    const imageID = JSON.parse(imageIDJSON).imageID
-    return imageID
+    return readImageId(canonicalImagePath(id))
+}
+
+function readImageId(path: string) {
+    return JSON.parse(fs.readFileSync(path, "utf8")).imageID;
 }
 
 function canonicalImagePath(id: string): string {
