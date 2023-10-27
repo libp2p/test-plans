@@ -1,5 +1,5 @@
 image_name := rust-master
-commitSha := 7517934a0f629309f83b69dc00eef44c44ddbc72
+commitSha := 6cc45d5c25646ba10702ec8097f2abf5ccc615f5
 
 all: image.json
 
