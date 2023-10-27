@@ -10,6 +10,10 @@ export type Version = {
 
 export const versions: Array<Version> = [
     {
+        id: "rust-v0.52",
+        transports: ["tcp", "quic"],
+    } as Version,
+    {
         id: "rust-master",
         transports: ["tcp", "quic"],
         containerImageID: readImageId("./impl/rust/master/image.json"),
