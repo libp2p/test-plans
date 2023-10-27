@@ -72,7 +72,7 @@ async fn main() -> Result<()> {
                 }
             }
             other => {
-                log::trace!("{other:?}")
+                log::debug!("{other:?}")
             }
         }
     }
