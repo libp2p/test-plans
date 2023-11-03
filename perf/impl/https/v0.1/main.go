@@ -49,26 +49,6 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type nullReader struct {
-	N    uint64
-	read uint64
-}
-
-var _ io.Reader = &nullReader{}
-
-func (r *nullReader) Read(b []byte) (int, error) {
-	remaining := r.N - r.read
-	l := uint64(len(b))
-	if uint64(len(b)) > remaining {
-		l = remaining
-	}
-	r.read += l
-	if r.read == r.N {
-		return int(l), io.EOF
-	}
-	return int(l), nil
-}
-
 func runClient(serverAddr string, uploadBytes, downloadBytes uint64) (time.Duration, error) {
 	client := &http.Client{
 		Transport: &http.Transport{
@@ -84,7 +64,7 @@ func runClient(serverAddr string, uploadBytes, downloadBytes uint64) (time.Durat
 		fmt.Sprintf("https://%s/", serverAddr),
 		io.MultiReader(
 			bytes.NewReader(b),
-			&nullReader{N: uploadBytes},
+			&reportingReader{orig: &nullReader{N: uploadBytes}, LastReportTime: time.Now(), isUpload: true},
 		),
 	)
 	if err != nil {
@@ -167,7 +147,10 @@ func generateEphemeralCertificate() (tls.Certificate, error) {
 }
 
 type Result struct {
-	Latency float64 `json:"latency"`
+	Type          string  `json:"type"`
+	TimeSeconds   float64 `json:"timeSeconds"`
+	UploadBytes   uint64  `json:"uploadBytes"`
+	DownloadBytes uint64  `json:"downloadBytes"`
 }
 
 func main() {
@@ -220,7 +203,10 @@ func main() {
 		}
 
 		jsonB, err := json.Marshal(Result{
-			Latency: latency.Seconds(),
+			TimeSeconds:   latency.Seconds(),
+			UploadBytes:   *uploadBytes,
+			DownloadBytes: *downloadBytes,
+			Type:          "final",
 		})
 		if err != nil {
 			log.Fatalf("failed to marshal perf result: %s", err)
@@ -249,9 +235,72 @@ func sendBytes(s io.Writer, bytesToSend uint64) error {
 
 func drainStream(s io.Reader) (uint64, error) {
 	var recvd int64
-	recvd, err := io.Copy(io.Discard, s)
+	recvd, err := io.Copy(io.Discard, &reportingReader{orig: s, LastReportTime: time.Now(), isUpload: false})
 	if err != nil && err != io.EOF {
 		return uint64(recvd), err
 	}
 	return uint64(recvd), nil
+}
+
+type reportingReader struct {
+	orig           io.Reader
+	LastReportTime time.Time
+	lastReportRead uint64
+	isUpload       bool
+}
+
+var _ io.Reader = &reportingReader{}
+
+func (r *reportingReader) Read(b []byte) (int, error) {
+	n, err := r.orig.Read(b)
+	r.lastReportRead += uint64(n)
+
+	now := time.Now()
+	if now.Sub(r.LastReportTime) >= time.Second {
+		// This section is analogous to your Read implementation
+		result := Result{
+			TimeSeconds: now.Sub(r.LastReportTime).Seconds(),
+			Type:        "intermediary",
+		}
+		if r.isUpload {
+			result.UploadBytes = r.lastReportRead
+		} else {
+			result.DownloadBytes = r.lastReportRead
+		}
+
+		jsonB, err := json.Marshal(result)
+		if err != nil {
+			log.Fatalf("failed to marshal perf result: %s", err)
+		}
+		fmt.Println(string(jsonB))
+
+		r.LastReportTime = now
+		r.lastReportRead = 0
+	}
+
+	return n, err
+}
+
+type nullReader struct {
+	N              uint64
+	read           uint64
+	LastReportTime time.Time
+	lastReportRead uint64
+}
+
+var _ io.Reader = &nullReader{}
+
+func (r *nullReader) Read(b []byte) (int, error) {
+	remaining := r.N - r.read
+	l := uint64(len(b))
+	if uint64(len(b)) > remaining {
+		l = remaining
+	}
+	r.read += l
+
+	if r.read == r.N {
+		return int(l), io.EOF
+	}
+
+	return int(l), nil
 }

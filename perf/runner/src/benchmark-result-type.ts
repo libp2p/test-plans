@@ -36,7 +36,10 @@ export type Result = {
 };
 
 export type ResultValue = {
-    latency: number
+    type: "itermediate" | "final",
+    time_seconds: number,
+    upload_bytes: number,
+    download_bytes: number,
 };
 
 export type Comparison = {
