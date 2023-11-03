@@ -11,10 +11,12 @@ import libp2p/[builders,
                   protocols/connectivity/autonat/service]
 import libp2p/protocols/connectivity/relay/client as rclient
 import tests/stubs/autonatclientstub
+import libp2p/protocols/ping
 
 proc createSwitch(r: Relay = nil, hpService: Service = nil): Switch =
+  let rng = newRng()
   var builder = SwitchBuilder.new()
-    .withRng(newRng())
+    .withRng(rng)
     .withAddresses(@[ MultiAddress.init("/ip4/0.0.0.0/tcp/0").tryGet() ])
     .withObservedAddrManager(ObservedAddrManager.new(minCount = 1))
     .withTcpTransport()
@@ -28,7 +30,9 @@ proc createSwitch(r: Relay = nil, hpService: Service = nil): Switch =
   if r != nil:
     builder = builder.withCircuitRelay(r)
 
-  return builder.build()
+  let s =  builder.build()
+  s.mount(Ping.new(rng=rng))
+  return s
 
 proc main() {.async.} =
   let relayClient = RelayClient.new()
