@@ -10,4 +10,5 @@ fi
 
 docker buildx build \
     --load \
+    --progress=plain \
     -t $IMAGE_NAME $CACHING_OPTIONS "$@"
