@@ -12,33 +12,36 @@ async function main(clientPublicIP: string, serverPublicIP: string, testing: boo
     copyAndBuildPerfImplementations(clientPublicIP);
 
     const benchmarks = [
-             runBenchmarkAcrossVersions({
-                 name: "Single Connection throughput – Upload 100 MiB",
-                 clientPublicIP,
-                 serverPublicIP,
-                 uploadBytes: 100 << 20,
-                 downloadBytes: 0,
-                 unit: "bit/s",
-                 iterations: testing ? 1 : 10,
-             }),
-             runBenchmarkAcrossVersions({
-                 name: "Single Connection throughput – Download 100 MiB",
-                 clientPublicIP,
-                 serverPublicIP,
-                 uploadBytes: 0,
-                 downloadBytes: 100 << 20,
-                 unit: "bit/s",
-                 iterations: testing ? 1 : 10,
-             }),
-             runBenchmarkAcrossVersions({
-                 name: "Connection establishment + 1 byte round trip latencies",
-                 clientPublicIP,
-                 serverPublicIP,
-                 uploadBytes: 1,
-                 downloadBytes: 1,
-                 unit: "s",
-                 iterations: testing ? 1 : 100,
-             }),
+        runBenchmarkAcrossVersions({
+            name: "throughput/upload",
+            clientPublicIP,
+            serverPublicIP,
+            uploadBytes: Number.MAX_SAFE_INTEGER,
+            downloadBytes: 0,
+            unit: "bit/s",
+            iterations: testing ? 1 : 10,
+            durationSecondsPerIteration: testing ? 5 : 20,
+        }),
+        runBenchmarkAcrossVersions({
+            name: "throughput/download",
+            clientPublicIP,
+            serverPublicIP,
+            uploadBytes: 0,
+            downloadBytes: Number.MAX_SAFE_INTEGER,
+            unit: "bit/s",
+            iterations: testing ? 1 : 10,
+            durationSecondsPerIteration: testing ? 5 : 20,
+        }),
+        runBenchmarkAcrossVersions({
+            name: "Connection establishment + 1 byte round trip latencies",
+            clientPublicIP,
+            serverPublicIP,
+            uploadBytes: 1,
+            downloadBytes: 1,
+            unit: "s",
+            iterations: testing ? 1 : 100,
+            durationSecondsPerIteration: Number.MAX_SAFE_INTEGER,
+        }),
     ];
 
     const benchmarkResults: BenchmarkResults = {
@@ -84,7 +87,7 @@ function runIPerf(clientPublicIP: string, serverPublicIP: string, testing: boole
     const serverSTDOUT = execCommand(serverCMD);
     console.error(serverSTDOUT);
 
-    const cmd = `ssh -o StrictHostKeyChecking=no ec2-user@${clientPublicIP} 'iperf3 -c ${serverPublicIP} -b 25g -t ${iPerfIterations}'`;
+    const cmd = `ssh -o StrictHostKeyChecking=no ec2-user@${clientPublicIP} 'iperf3 -c ${serverPublicIP} -t ${iPerfIterations} -N'`;
     const stdout = execSync(cmd).toString();
 
     // Extract the bitrate from each relevant line
@@ -114,6 +117,7 @@ interface ArgsRunBenchmarkAcrossVersions {
     downloadBytes: number,
     unit: "bit/s" | "s",
     iterations: number,
+    durationSecondsPerIteration: number,
 }
 
 function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions): Benchmark {
@@ -144,6 +148,7 @@ function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions): Bench
                 uploadBytes: args.uploadBytes,
                 downloadBytes: args.downloadBytes,
                 iterations: args.iterations,
+                durationSecondsPerIteration: args.durationSecondsPerIteration,
             });
 
             results.push({
@@ -176,15 +181,19 @@ interface ArgsRunBenchmark {
     uploadBytes: number,
     downloadBytes: number,
     iterations: number,
+    durationSecondsPerIteration: number,
 }
 
 function runClient(args: ArgsRunBenchmark): ResultValue[] {
     console.error(`=== Starting client ${args.implementation}/${args.id}/${args.transportStack}`);
 
-    const perfCMD = `./impl/${args.implementation}/${args.id}/perf --server-address ${args.serverPublicIP}:4001 --transport ${args.transportStack} --upload-bytes ${args.uploadBytes} --download-bytes ${args.downloadBytes}`
-    const cmd = `ssh -o StrictHostKeyChecking=no ec2-user@${args.clientPublicIP} 'for i in {1..${args.iterations}}; do ${perfCMD}; done'`
+    const cmd = `./impl/${args.implementation}/${args.id}/perf --server-address ${args.serverPublicIP}:4001 --transport ${args.transportStack} --upload-bytes ${args.uploadBytes} --download-bytes ${args.downloadBytes}`
+    // Note 124 is timeout's exit code when timeout is hit which is not a failure here.
+    const withTimeout = `timeout ${args.durationSecondsPerIteration}s ${cmd} || [ $? -eq 124 ]`
+    const withForLoop = `for i in {1..${args.iterations}}; do ${withTimeout}; done`
+    const withSSH = `ssh -o StrictHostKeyChecking=no ec2-user@${args.clientPublicIP} '${withForLoop}'`
 
-    const stdout = execCommand(cmd);
+    const stdout = execCommand(withSSH);
 
     const lines = stdout.toString().trim().split('\n');
 
