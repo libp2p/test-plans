@@ -83,14 +83,14 @@ export const versions: Array<Version> = [
     {
         id: "chromium-js-v0.46",
         containerImageID: browserImageIDLookup,
-        transports: [{ name: "webtransport", onlyDial: true }, { name: "wss", onlyDial: true }, { name: "webrtc-direct", onlyDial: true }],
+        transports: [{ name: "webtransport", onlyDial: true }, { name: "wss", onlyDial: true }, { name: "webrtc-direct", onlyDial: true }, "webrtc"],
         secureChannels: ["noise"],
         muxers: ["mplex", "yamux"],
     },
     {
         id: "firefox-js-v0.46",
         containerImageID: browserImageIDLookup,
-        transports: [{ name: "wss", onlyDial: true }, { name: "webrtc-direct", onlyDial: true }],
+        transports: [{ name: "wss", onlyDial: true }, { name: "webrtc-direct", onlyDial: true }, "webrtc"],
         secureChannels: ["noise"],
         muxers: ["mplex", "yamux"],
     },
