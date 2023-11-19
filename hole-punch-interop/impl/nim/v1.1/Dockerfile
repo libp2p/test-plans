@@ -13,7 +13,7 @@ COPY ../hole_punching.nim nim-libp2p/hole_punching.nim
 
 RUN --mount=type=cache,target=/root/.nimble \
     --mount=type=cache,target=/root/.cache/nim \
-    cd nim-libp2p && nim c --nimcache:root/.cache/nim -d:chronicles_log_level=DEBUG --threads:off -d:release -o:hole-punching-tests hole_punching.nim
+    cd nim-libp2p && nim c --nimcache:root/.cache/nim -d:chronicles_log_level=DEBUG -d:chronicles_default_output_device=stderr --threads:off -d:release -o:hole-punching-tests hole_punching.nim
 
 RUN ls -la /root/.cache/nim
 
