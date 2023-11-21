@@ -1,5 +1,5 @@
 image_name := nim-v1.1
-commitSha := 60f96ec85948cc401a2c8e23e658fce33f7294ef
+commitSha := ce0685c272e41614e97583f0a8dec2b6506913fd
 
 all: image.json
 
