@@ -40,4 +40,14 @@ export const versions: Array<Version> = [
         implementation: "go-libp2p",
         transportStacks: ["tcp", "quic-v1"]
     },
+    {
+        id: "v0.46",
+        implementation: "js-libp2p",
+        transportStacks: ["tcp"]
+    },
+    {
+        id: "v1.0",
+        implementation: "js-libp2p",
+        transportStacks: ["tcp"]
+    },
 ]
