@@ -1,5 +1,5 @@
 import { plaintext } from '@libp2p/plaintext'
-import { mplex } from '@chainsafe/libp2p-mplex'
+import { mplex } from '@libp2p/mplex'
 import { tcp } from '@libp2p/tcp'
 import { multiaddr } from '@multiformats/multiaddr'
 import { createLibp2p } from 'libp2p'
@@ -41,15 +41,9 @@ export async function main (runServer, serverIpAddress, transport, uploadBytes, 
   const { host, port } = splitHostPort(serverIpAddress)
 
   const config = {
-    //peerId,
-    transports: [tcp({
-      socket: {
-        noDelay: true
-      },
-      server: {
-        noDelay: true
-      }
-    })],
+    transports: [
+      tcp()
+    ],
     streamMuxers: [
       mplex()
     ],
