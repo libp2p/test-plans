@@ -200,11 +200,7 @@ function runClient(args: ArgsRunBenchmark): ResultValue[] {
     const combined: ResultValue[]= [];
 
     for (const line of lines) {
-        try {
-            combined.push(JSON.parse(line));
-        } catch (err: any) {
-            console.error(`could not parse "${line}" as JSON`, err)
-        }
+        combined.push(JSON.parse(line));
     }
 
     return combined;

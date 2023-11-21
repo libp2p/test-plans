@@ -35,6 +35,8 @@ for ((i = 1; i <= $#; i++)); do
     fi
 done
 
+export DEBUG=libp2p*,*:trace
+
 # Run perf
 node $(dirname "$0")/index.js --run-server=$run_server --server-address=$server_address --upload-bytes=$upload_bytes --download-bytes=$download_bytes --transport=$transport &
 
