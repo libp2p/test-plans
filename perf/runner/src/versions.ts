@@ -50,19 +50,19 @@ export const versions: Array<Version> = [
         implementation: "js-libp2p",
         transportStacks: ["tcp"]
     },
-    {
+    /*{
         id: "v1.0-mplex-noise",
         implementation: "js-libp2p",
         transportStacks: ["tcp"]
-    },
+    },*/
     {
         id: "v1.0-yamux-plaintext",
         implementation: "js-libp2p",
         transportStacks: ["tcp"]
     },
-    {
+/*    {
         id: "v1.0-mplex-plaintext",
         implementation: "js-libp2p",
         transportStacks: ["tcp"]
-    },
+    },*/
 ]
