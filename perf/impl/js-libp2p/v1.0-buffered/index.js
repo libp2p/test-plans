@@ -78,16 +78,10 @@ export async function main (runServer, serverIpAddress, transport, uploadBytes, 
   await node.start()
 
   if (!runServer) {
-    const output = []
-
     for await (const result of node.services.perf.measurePerformance(multiaddr(`/ip4/${host}/tcp/${port}`), uploadBytes, downloadBytes)) {
-      output.push(result)
+      process.stdout.write(JSON.stringify(result))
+      process.stdout.write('\n')
     }
-
-    output.forEach(result => {
-      // eslint-disable-next-line no-console
-      console.log(JSON.stringify(result))
-    })
 
     await node.stop()
   }
