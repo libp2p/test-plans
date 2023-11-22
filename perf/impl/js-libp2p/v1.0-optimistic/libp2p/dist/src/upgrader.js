@@ -49,13 +49,11 @@ export class DefaultUpgrader {
     muxers;
     inboundUpgradeTimeout;
     events;
-    logger;
     log;
     constructor(components, init) {
         this.components = components;
         this.connectionEncryption = new Map();
         this.log = components.logger.forComponent('libp2p:upgrader');
-        this.logger = components.logger;
         init.connectionEncryption.forEach(encrypter => {
             this.connectionEncryption.set(encrypter.protocol, encrypter);
         });
@@ -307,12 +305,12 @@ export class DefaultUpgrader {
                 if (muxer == null) {
                     throw new CodeError('Stream is not multiplexed', codes.ERR_MUXER_UNAVAILABLE);
                 }
-                connection.log('starting new stream for protocols [%s]', protocols);
+                connection.log('starting new stream for protocols %s', protocols);
                 const muxedStream = await muxer.newStream();
-                connection.log.trace('started new stream %s for protocols [%s]', muxedStream.id, protocols);
+                connection.log.trace('started new stream %s for protocols %s', muxedStream.id, protocols);
                 try {
                     if (options.signal == null) {
-                        this.log('No abort signal was passed while trying to negotiate protocols [%s] falling back to default timeout', protocols);
+                        this.log('No abort signal was passed while trying to negotiate protocols %s falling back to default timeout', protocols);
                         const signal = AbortSignal.timeout(DEFAULT_PROTOCOL_SELECT_TIMEOUT);
                         setMaxListeners(Infinity, signal);
                         options = {
@@ -331,7 +329,7 @@ export class DefaultUpgrader {
                         }));
                     }
                     else {
-                        connection.log.trace('starting new stream for protocols [%s], using regular select', protocols);
+                        connection.log.trace('starting new stream for protocols %s, using regular select', protocols);
                         ({ stream, protocol } = await mss.select(muxedStream, protocols, {
                             ...options,
                             log: muxedStream.log,
@@ -493,9 +491,22 @@ export class DefaultUpgrader {
         const protocols = Array.from(this.connectionEncryption.keys());
         this.log('selecting outbound crypto protocol', protocols);
         try {
-            const { stream, protocol } = await mss.select(connection, protocols, {
-                log: this.logger.forComponent('libp2p:mss:select')
-            });
+            let stream;
+            let protocol;
+            if (protocols.length === 1) {
+                connection.log.trace('selecting encryption protocol "%s", using lazy select', protocols[0]);
+                ({ stream, protocol } = mss.lazySelect(connection, protocols[0], {
+                    log: connection.log,
+                    yieldBytes: true
+                }));
+            }
+            else {
+                connection.log.trace('selecting encryption from %s, using regular select', protocols);
+                ({ stream, protocol } = await mss.select(connection, protocols, {
+                    log: connection.log,
+                    yieldBytes: true
+                }));
+            }
             const encrypter = this.connectionEncryption.get(protocol);
             if (encrypter == null) {
                 throw new Error(`no crypto module found for ${protocol}`);
@@ -518,9 +529,22 @@ export class DefaultUpgrader {
         const protocols = Array.from(muxers.keys());
         this.log('outbound selecting muxer %s', protocols);
         try {
-            const { stream, protocol } = await mss.select(connection, protocols, {
-                log: this.logger.forComponent('libp2p:mss:select')
-            });
+            let stream;
+            let protocol;
+            if (protocols.length === 1) {
+                connection.log.trace('selecting stream muxer "%s", using lazy select', protocols[0]);
+                ({ stream, protocol } = mss.lazySelect(connection, protocols[0], {
+                    log: connection.log,
+                    yieldBytes: true
+                }));
+            }
+            else {
+                connection.log.trace('selecting stream muxer from %s, using regular select', protocols);
+                ({ stream, protocol } = await mss.select(connection, protocols, {
+                    log: connection.log,
+                    yieldBytes: true
+                }));
+            }
             this.log('%s selected as muxer protocol', protocol);
             const muxerFactory = muxers.get(protocol);
             return { stream, muxerFactory };

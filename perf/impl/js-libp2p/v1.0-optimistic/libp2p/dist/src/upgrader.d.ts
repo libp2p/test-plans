@@ -55,7 +55,6 @@ export declare class DefaultUpgrader implements Upgrader {
     private readonly muxers;
     private readonly inboundUpgradeTimeout;
     private readonly events;
-    private readonly logger;
     private readonly log;
     constructor(components: DefaultUpgraderComponents, init: UpgraderInit);
     shouldBlockConnection(remotePeer: PeerId, maConn: MultiaddrConnection, connectionType: ConnectionDeniedType): Promise<void>;
