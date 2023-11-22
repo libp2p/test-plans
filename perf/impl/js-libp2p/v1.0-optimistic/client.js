@@ -103,8 +103,10 @@ function splitHostPort (address) {
   }
 }
 
-main(argv.values['run-server'] === 'true', argv.values['server-address'], argv.values.transport, Number(argv.values['upload-bytes']), Number(argv.values['download-bytes'])).catch((err) => {
-  // eslint-disable-next-line no-console
-  console.error(err)
-  process.exit(1)
-})
+for (let i = 0; i < 100; i++) {
+  await main(argv.values['run-server'] === 'true', argv.values['server-address'], argv.values.transport, Number(argv.values['upload-bytes']), Number(argv.values['download-bytes'])).catch((err) => {
+    // eslint-disable-next-line no-console
+    console.error(err)
+    process.exit(1)
+  })
+}
