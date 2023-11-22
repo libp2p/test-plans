@@ -11,8 +11,6 @@ async function main(clientPublicIP: string, serverPublicIP: string, testing: boo
     copyAndBuildPerfImplementations(serverPublicIP);
     copyAndBuildPerfImplementations(clientPublicIP);
 
-    testing = true
-
     const benchmarks = [
         /*runBenchmarkAcrossVersions({
             name: "throughput/upload",
