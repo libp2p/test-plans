@@ -14,7 +14,7 @@ async function main(clientPublicIP: string, serverPublicIP: string, testing: boo
     testing = true
 
     const benchmarks = [
-        runBenchmarkAcrossVersions({
+        /*runBenchmarkAcrossVersions({
             name: "throughput/upload",
             clientPublicIP,
             serverPublicIP,
@@ -33,7 +33,7 @@ async function main(clientPublicIP: string, serverPublicIP: string, testing: boo
             unit: "bit/s",
             iterations: testing ? 1 : 10,
             durationSecondsPerIteration: testing ? 5 : 20,
-        }),
+        }),*/
         runBenchmarkAcrossVersions({
             name: "Connection establishment + 1 byte round trip latencies",
             clientPublicIP,
