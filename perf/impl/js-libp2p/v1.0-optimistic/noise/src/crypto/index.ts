@@ -1,8 +1,10 @@
 import crypto from 'node:crypto'
 import { newInstance, ChaCha20Poly1305 } from '@chainsafe/as-chacha20poly1305'
 import { digest } from '@chainsafe/as-sha256'
+import { concat as uint8ArrayConcat } from 'uint8arrays/concat'
 import { isElectronMain } from 'wherearewe'
 import { pureJsCrypto } from './js.js'
+import type { KeyPair } from '../@types/libp2p.js'
 import type { ICryptoInterface } from '../crypto.js'
 
 const ctx = newInstance()
@@ -76,6 +78,47 @@ export const defaultCrypto: ICryptoInterface = {
       return asCrypto.chaCha20Poly1305Decrypt(ciphertext, nonce, ad, k, dst)
     }
     return nodeCrypto.chaCha20Poly1305Decrypt(ciphertext, nonce, ad, k, dst)
+  },
+  generateX25519KeyPair (): KeyPair {
+    const { publicKey, privateKey } = crypto.generateKeyPairSync('x25519', {
+      publicKeyEncoding: {
+        type: 'spki',
+        format: 'der'
+      },
+      privateKeyEncoding: {
+        type: 'pkcs8',
+        format: 'der'
+      }
+    })
+
+    return {
+      publicKey: publicKey.subarray(12),
+      privateKey: privateKey.subarray(16)
+    }
+  },
+  generateX25519SharedKey (privateKey: Uint8Array, publicKey: Uint8Array): Uint8Array {
+    publicKey = uint8ArrayConcat([
+      Buffer.from([0x30, 0x2a, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x6e, 0x03, 0x21, 0x00]),
+      publicKey
+    ])
+
+    privateKey = uint8ArrayConcat([
+      Buffer.from([0x30, 0x2e, 0x02, 0x01, 0x00, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x6e, 0x04, 0x22, 0x04, 0x20]),
+      privateKey
+    ])
+
+    return crypto.diffieHellman({
+      publicKey: crypto.createPublicKey({
+        key: Buffer.from(publicKey, publicKey.byteOffset, publicKey.byteLength),
+        type: 'spki',
+        format: 'der'
+      }),
+      privateKey: crypto.createPrivateKey({
+        key: Buffer.from(privateKey, privateKey.byteOffset, privateKey.byteLength),
+        type: 'pkcs8',
+        format: 'der'
+      })
+    })
   }
 }
 
