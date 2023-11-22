@@ -96,6 +96,31 @@ export const defaultCrypto: ICryptoInterface = {
       privateKey: privateKey.subarray(16)
     }
   },
+  generateX25519KeyPairFromSeed (seed: Uint8Array): KeyPair {
+    const privateKey = crypto.createPrivateKey({
+      key: Buffer.concat([
+        Buffer.from([0x30, 0x2e, 0x02, 0x01, 0x00, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x6e, 0x04, 0x22, 0x04, 0x20]),
+        seed
+      ]),
+      type: 'pkcs8',
+      format: 'der'
+    })
+
+    const publicKey = crypto.createPublicKey({
+      // @ts-expect-errort types are wrong
+      key: privateKey,
+      type: 'spki',
+      format: 'der'
+    }).export({
+      type: 'spki',
+      format: 'der'
+    }).subarray(12)
+
+    return {
+      publicKey,
+      privateKey: seed
+    }
+  },
   generateX25519SharedKey (privateKey: Uint8Array, publicKey: Uint8Array): Uint8Array {
     publicKey = uint8ArrayConcat([
       Buffer.from([0x30, 0x2a, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x6e, 0x03, 0x21, 0x00]),
