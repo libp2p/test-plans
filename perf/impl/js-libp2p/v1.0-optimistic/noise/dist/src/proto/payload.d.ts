@@ -1,4 +1,4 @@
-import type { Codec } from 'protons-runtime';
+import { type Codec } from 'protons-runtime';
 import type { Uint8ArrayList } from 'uint8arraylist';
 export interface NoiseExtensions {
     webtransportCerthashes: Uint8Array[];

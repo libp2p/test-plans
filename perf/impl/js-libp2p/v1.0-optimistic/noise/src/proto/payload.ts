@@ -4,9 +4,8 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-boolean-literal-compare */
 /* eslint-disable @typescript-eslint/no-empty-interface */
 
-import { encodeMessage, decodeMessage, message } from 'protons-runtime'
+import { type Codec, decodeMessage, encodeMessage, message } from 'protons-runtime'
 import { alloc as uint8ArrayAlloc } from 'uint8arrays/alloc'
-import type { Codec } from 'protons-runtime'
 import type { Uint8ArrayList } from 'uint8arraylist'
 
 export interface NoiseExtensions {
@@ -44,12 +43,14 @@ export namespace NoiseExtensions {
           const tag = reader.uint32()
 
           switch (tag >>> 3) {
-            case 1:
+            case 1: {
               obj.webtransportCerthashes.push(reader.bytes())
               break
-            default:
+            }
+            default: {
               reader.skipType(tag & 7)
               break
+            }
           }
         }
 
@@ -85,21 +86,19 @@ export namespace NoiseHandshakePayload {
           w.fork()
         }
 
-        if (opts.writeDefaults === true || (obj.identityKey != null && obj.identityKey.byteLength > 0)) {
+        if ((obj.identityKey != null && obj.identityKey.byteLength > 0)) {
           w.uint32(10)
-          w.bytes(obj.identityKey ?? uint8ArrayAlloc(0))
+          w.bytes(obj.identityKey)
         }
 
-        if (opts.writeDefaults === true || (obj.identitySig != null && obj.identitySig.byteLength > 0)) {
+        if ((obj.identitySig != null && obj.identitySig.byteLength > 0)) {
           w.uint32(18)
-          w.bytes(obj.identitySig ?? uint8ArrayAlloc(0))
+          w.bytes(obj.identitySig)
         }
 
         if (obj.extensions != null) {
           w.uint32(34)
-          NoiseExtensions.codec().encode(obj.extensions, w, {
-            writeDefaults: false
-          })
+          NoiseExtensions.codec().encode(obj.extensions, w)
         }
 
         if (opts.lengthDelimited !== false) {
@@ -117,18 +116,22 @@ export namespace NoiseHandshakePayload {
           const tag = reader.uint32()
 
           switch (tag >>> 3) {
-            case 1:
+            case 1: {
               obj.identityKey = reader.bytes()
               break
-            case 2:
+            }
+            case 2: {
               obj.identitySig = reader.bytes()
               break
-            case 4:
+            }
+            case 4: {
               obj.extensions = NoiseExtensions.codec().decode(reader, reader.uint32())
               break
-            default:
+            }
+            default: {
               reader.skipType(tag & 7)
               break
+            }
           }
         }
 
