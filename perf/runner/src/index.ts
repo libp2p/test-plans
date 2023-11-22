@@ -132,7 +132,7 @@ function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions): Bench
 
         console.error(`=== Starting server ${version.implementation}/${version.id}`);
 
-        const killCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.serverPublicIP} 'kill $(cat pidfile); rm pidfile; cat server.log && rm server.log || true'`;
+        const killCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.serverPublicIP} 'kill $(cat pidfile); rm pidfile; rm server.log || true'`;
         const killSTDOUT = execCommand(killCMD);
         console.error(killSTDOUT);
 
