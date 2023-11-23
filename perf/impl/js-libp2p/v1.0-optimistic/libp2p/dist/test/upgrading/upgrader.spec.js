@@ -282,12 +282,19 @@ describe('Upgrader', () => {
                 return new OtherMuxer();
             }
         }
+        class OtherOtherMuxerFactory {
+            protocol = '/muxer-local-other';
+            createStreamMuxer(init) {
+                return new OtherMuxer();
+            }
+        }
         localUpgrader = new DefaultUpgrader(localComponents, {
             connectionEncryption: [
                 plaintext()(localComponents)
             ],
             muxers: [
-                new OtherMuxerFactory()
+                new OtherMuxerFactory(),
+                new OtherOtherMuxerFactory()
             ],
             inboundUpgradeTimeout: 1000
         });

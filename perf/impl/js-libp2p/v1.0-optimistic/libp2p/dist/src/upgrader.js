@@ -1,6 +1,6 @@
 import { CodeError } from '@libp2p/interface/errors';
 import { setMaxListeners } from '@libp2p/interface/events';
-import * as mss from '@libp2p/multistream-select';
+import * as mss from '../../../multistream-select/dist/src/index.js';
 import { peerIdFromString } from '@libp2p/peer-id';
 import { createConnection } from './connection/index.js';
 import { INBOUND_UPGRADE_TIMEOUT } from './connection-manager/constants.js';
@@ -285,6 +285,18 @@ export class DefaultUpgrader {
                         muxedStream.source = stream.source;
                         muxedStream.sink = stream.sink;
                         muxedStream.protocol = protocol;
+                        // allow closing the write end of a not-yet-negotiated stream
+                        if (stream.closeWrite != null) {
+                            muxedStream.closeWrite = stream.closeWrite;
+                        }
+                        // allow closing the read end of a not-yet-negotiated stream
+                        if (stream.closeRead != null) {
+                            muxedStream.closeRead = stream.closeRead;
+                        }
+                        // make sure we don't try to negotiate a stream we are closing
+                        if (stream.close != null) {
+                            muxedStream.close = stream.close;
+                        }
                         // If a protocol stream has been successfully negotiated and is to be passed to the application,
                         // the peerstore should ensure that the peer is registered with that protocol
                         await this.components.peerStore.merge(remotePeer, {
@@ -318,25 +330,13 @@ export class DefaultUpgrader {
                             signal
                         };
                     }
-                    let stream;
-                    let protocol;
-                    if (protocols.length === 1) {
-                        connection.log.trace('starting stream for single protocol "%s", using lazy select', protocols[0]);
-                        ({ stream, protocol } = mss.lazySelect(muxedStream, protocols[0], {
-                            ...options,
-                            log: muxedStream.log,
-                            yieldBytes: false
-                        }));
-                    }
-                    else {
-                        connection.log.trace('starting new stream for protocols %s, using regular select', protocols);
-                        ({ stream, protocol } = await mss.select(muxedStream, protocols, {
-                            ...options,
-                            log: muxedStream.log,
-                            yieldBytes: false
-                        }));
-                    }
-                    connection.log('negotiated protocol stream %s with id %s', protocol, muxedStream.id);
+                    muxedStream.log.trace('selecting protocol from protocols %s', protocols);
+                    const { stream, protocol } = await mss.select(muxedStream, protocols, {
+                        ...options,
+                        log: muxedStream.log,
+                        yieldBytes: true
+                    });
+                    muxedStream.log('selected protocol %s', protocol);
                     const outgoingLimit = findOutgoingStreamLimit(protocol, this.components.registrar, options);
                     const streamCount = countStreams(protocol, 'outbound', connection);
                     if (streamCount >= outgoingLimit) {
@@ -354,6 +354,18 @@ export class DefaultUpgrader {
                     muxedStream.source = stream.source;
                     muxedStream.sink = stream.sink;
                     muxedStream.protocol = protocol;
+                    // allow closing the write end of a not-yet-negotiated stream
+                    if (stream.closeWrite != null) {
+                        muxedStream.closeWrite = stream.closeWrite;
+                    }
+                    // allow closing the read end of a not-yet-negotiated stream
+                    if (stream.closeRead != null) {
+                        muxedStream.closeRead = stream.closeRead;
+                    }
+                    // make sure we don't try to negotiate a stream we are closing
+                    if (stream.close != null) {
+                        muxedStream.close = stream.close;
+                    }
                     this.components.metrics?.trackProtocolStream(muxedStream, connection);
                     return muxedStream;
                 }
@@ -491,27 +503,16 @@ export class DefaultUpgrader {
         const protocols = Array.from(this.connectionEncryption.keys());
         this.log('selecting outbound crypto protocol', protocols);
         try {
-            let stream;
-            let protocol;
-            if (protocols.length === 1) {
-                connection.log.trace('selecting encryption protocol "%s", using lazy select', protocols[0]);
-                ({ stream, protocol } = mss.lazySelect(connection, protocols[0], {
-                    log: connection.log,
-                    yieldBytes: true
-                }));
-            }
-            else {
-                connection.log.trace('selecting encryption from %s, using regular select', protocols);
-                ({ stream, protocol } = await mss.select(connection, protocols, {
-                    log: connection.log,
-                    yieldBytes: true
-                }));
-            }
+            connection.log.trace('selecting encrypter from %s', protocols);
+            const { stream, protocol } = await mss.select(connection, protocols, {
+                log: connection.log,
+                yieldBytes: true
+            });
             const encrypter = this.connectionEncryption.get(protocol);
             if (encrypter == null) {
                 throw new Error(`no crypto module found for ${protocol}`);
             }
-            this.log('encrypting outbound connection to %p', remotePeerId);
+            connection.log('encrypting outbound connection to %p using %p', remotePeerId);
             return {
                 ...await encrypter.secureOutbound(this.components.peerId, stream, remotePeerId),
                 protocol
@@ -529,28 +530,17 @@ export class DefaultUpgrader {
         const protocols = Array.from(muxers.keys());
         this.log('outbound selecting muxer %s', protocols);
         try {
-            let stream;
-            let protocol;
-            if (protocols.length === 1) {
-                connection.log.trace('selecting stream muxer "%s", using lazy select', protocols[0]);
-                ({ stream, protocol } = mss.lazySelect(connection, protocols[0], {
-                    log: connection.log,
-                    yieldBytes: true
-                }));
-            }
-            else {
-                connection.log.trace('selecting stream muxer from %s, using regular select', protocols);
-                ({ stream, protocol } = await mss.select(connection, protocols, {
-                    log: connection.log,
-                    yieldBytes: true
-                }));
-            }
-            this.log('%s selected as muxer protocol', protocol);
+            connection.log.trace('selecting stream muxer from %s', protocols);
+            const { stream, protocol } = await mss.select(connection, protocols, {
+                log: connection.log,
+                yieldBytes: true
+            });
+            connection.log('selected %s as muxer protocol', protocol);
             const muxerFactory = muxers.get(protocol);
             return { stream, muxerFactory };
         }
         catch (err) {
-            this.log.error('error multiplexing outbound stream', err);
+            connection.log.error('error multiplexing outbound stream', err);
             throw new CodeError(String(err), codes.ERR_MUXER_UNAVAILABLE);
         }
     }
