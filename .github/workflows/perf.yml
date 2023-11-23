@@ -76,7 +76,7 @@ jobs:
       - name: Download dependencies
         run: npm ci
         working-directory: perf/runner
-      - name: wait for machines to boot
+      - name: Wait for machines to boot
         run: sleep 5
         working-directory: perf/runner
       - name: Run tests
