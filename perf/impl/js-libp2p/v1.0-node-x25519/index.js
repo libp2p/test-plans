@@ -1,4 +1,4 @@
-import { noise } from '@chainsafe/libp2p-noise'
+import { noise } from './noise/dist/src/index.js'
 import { yamux } from '@chainsafe/libp2p-yamux'
 import { tcp } from '@libp2p/tcp'
 import { multiaddr } from '@multiformats/multiaddr'
@@ -47,6 +47,10 @@ export async function main (runServer, serverIpAddress, transport, uploadBytes, 
     streamMuxers: [
       yamux()
     ],
+    connectionEncryption: [
+      noise()
+    ],
+    streamMuxers: [yamux()],
     connectionEncryption: [
       noise()
     ],
