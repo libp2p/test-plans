@@ -76,7 +76,7 @@ export const toMultiaddrConnection = (socket, options) => {
                         }
                         else {
                             // is it faster to yield all the buffers or just one big buffer?
-                            yield buf.subarray();
+                            yield * buf;
                         }
                     }
                 })());

@@ -61,9 +61,17 @@ export const defaultCrypto = {
         return nodeCrypto.hashSHA256(data);
     },
     chaCha20Poly1305Encrypt(plaintext, nonce, ad, k) {
+        console.info('encrypt', plaintext.length)
+        if (plaintext.length < 1200) {
+            return asCrypto.chaCha20Poly1305Encrypt(plaintext, nonce, ad, k);
+        }
         return nodeCrypto.chaCha20Poly1305Encrypt(plaintext, nonce, ad, k);
     },
     chaCha20Poly1305Decrypt(ciphertext, nonce, ad, k, dst) {
+        console.info('decrypt', ciphertext.length)
+        if (ciphertext.length < 1200) {
+            return asCrypto.chaCha20Poly1305Decrypt(ciphertext, nonce, ad, k, dst);
+        }
         return nodeCrypto.chaCha20Poly1305Decrypt(ciphertext, nonce, ad, k, dst);
     },
     generateX25519KeyPair() {
