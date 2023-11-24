@@ -60,4 +60,9 @@ export const versions: Array<Version> = [
         implementation: "js-libp2p",
         transportStacks: ["tcp"]
     },
+    {
+        id: "v1.0-uint8arraylists-yield-chunks-nagle",
+        implementation: "js-libp2p",
+        transportStacks: ["tcp"]
+    },
 ]
