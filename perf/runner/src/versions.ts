@@ -51,7 +51,17 @@ export const versions: Array<Version> = [
         transportStacks: ["tcp"]
     },
     {
+        id: "v1.0-native-x25519",
+        implementation: "js-libp2p",
+        transportStacks: ["tcp"]
+    },
+    {
         id: "v1.0-uint8arraylists-all-the-way-down",
+        implementation: "js-libp2p",
+        transportStacks: ["tcp"]
+    },
+    {
+        id: "v1.0-uint8arraylists-all-the-way-down-nagle",
         implementation: "js-libp2p",
         transportStacks: ["tcp"]
     },
