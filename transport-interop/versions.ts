@@ -125,12 +125,6 @@ export const versions: Array<Version> = [
         muxers: [],
     },
     {
-        id: "java-v0.0.1",
-        transports: ["tcp"],
-        secureChannels: ["tls", "noise"],
-        muxers: ["mplex", "yamux"],
-    },
-    {
         id: "java-v0.6",
         transports: ["tcp"],
         secureChannels: ["tls", "noise"],
