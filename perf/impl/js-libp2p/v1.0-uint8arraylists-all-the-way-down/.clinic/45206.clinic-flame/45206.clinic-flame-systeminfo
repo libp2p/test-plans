@@ -1,0 +1,31 @@
+{
+  "mainDirectory": "/Users/alex/Documents/Workspaces/libp2p/test-plans/perf/impl/js-libp2p/v1.0-uint8arraylists-all-the-way-down",
+  "pathSeparator": "/",
+  "nodeVersions": {
+    "node": "20.8.0",
+    "acorn": "8.10.0",
+    "ada": "2.6.0",
+    "ares": "1.19.1",
+    "base64": "0.5.0",
+    "brotli": "1.0.9",
+    "cjs_module_lexer": "1.2.2",
+    "cldr": "43.1",
+    "icu": "73.2",
+    "llhttp": "8.1.1",
+    "modules": "115",
+    "napi": "9",
+    "nghttp2": "1.56.0",
+    "nghttp3": "0.7.0",
+    "ngtcp2": "0.8.1",
+    "openssl": "3.0.10+quic",
+    "simdutf": "3.2.17",
+    "tz": "2023c",
+    "undici": "5.25.2",
+    "unicode": "15.0",
+    "uv": "1.46.0",
+    "uvwasi": "0.0.18",
+    "v8": "11.3.244.8-node.16",
+    "zlib": "1.2.13.1-motley"
+  },
+  "toolVersion": "13.0.0"
+}
