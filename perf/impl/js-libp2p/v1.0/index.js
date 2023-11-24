@@ -13,7 +13,8 @@ const argv = parseArgs({
       default: 'false'
     },
     'server-address': {
-      type: 'string'
+      type: 'string',
+      default: '127.0.0.1:8000'
     },
     transport: {
       type: 'string',
@@ -25,7 +26,7 @@ const argv = parseArgs({
     },
     'download-bytes': {
       type: 'string',
-      default: '0'
+      default: '10000000000'
     }
   }
 })
