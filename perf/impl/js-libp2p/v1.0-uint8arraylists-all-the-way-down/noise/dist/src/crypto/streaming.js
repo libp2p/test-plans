@@ -11,7 +11,13 @@ export function encryptStream(handshake, metrics) {
                 if (end > chunk.length) {
                     end = chunk.length;
                 }
-                const data = handshake.encrypt(chunk.subarray(i, end), handshake.session);
+                let data;
+                if (i === 0 && end === chunk.byteLength && chunk instanceof Uint8Array) {
+                    data = handshake.encrypt(chunk, handshake.session);
+                }
+                else {
+                    data = handshake.encrypt(chunk.subarray(i, end), handshake.session);
+                }
                 metrics?.encryptedPackets.increment();
                 yield new Uint8ArrayList(uint16BEEncode(data.byteLength), data);
             }
