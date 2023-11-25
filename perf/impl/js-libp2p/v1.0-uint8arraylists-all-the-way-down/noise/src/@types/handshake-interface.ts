@@ -1,12 +1,12 @@
-import type { bytes } from './basic.js'
 import type { NoiseSession } from './handshake.js'
 import type { NoiseExtensions } from '../proto/payload.js'
 import type { PeerId } from '@libp2p/interface/peer-id'
+import type { Uint8ArrayList } from 'uint8arraylist'
 
 export interface IHandshake {
   session: NoiseSession
   remotePeer: PeerId
   remoteExtensions: NoiseExtensions
-  encrypt: (plaintext: bytes, session: NoiseSession) => bytes
-  decrypt: (ciphertext: bytes, session: NoiseSession, dst?: Uint8Array) => { plaintext: bytes, valid: boolean }
+  encrypt: (plaintext: Uint8Array | Uint8ArrayList, session: NoiseSession) => Uint8Array | Uint8ArrayList
+  decrypt: (ciphertext: Uint8Array | Uint8ArrayList, session: NoiseSession, dst?: Uint8Array) => { plaintext: Uint8Array | Uint8ArrayList, valid: boolean }
 }

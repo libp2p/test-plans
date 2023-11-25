@@ -4,6 +4,7 @@ import { AbstractHandshake, type DecryptedResult } from './abstract-handshake.js
 import type { bytes32, bytes } from '../@types/basic.js'
 import type { CipherState, HandshakeState, MessageBuffer, NoiseSession } from '../@types/handshake.js'
 import type { KeyPair } from '../@types/libp2p.js'
+import type { Uint8ArrayList } from 'uint8arraylist'
 
 export class XX extends AbstractHandshake {
   private initializeInitiator (prologue: bytes32, s: KeyPair, rs: bytes32, psk: bytes32): HandshakeState {
@@ -96,7 +97,7 @@ export class XX extends AbstractHandshake {
     return { plaintext, valid: (valid1 && valid2) }
   }
 
-  private readMessageC (hs: HandshakeState, message: MessageBuffer): { h: bytes, plaintext: bytes, valid: boolean, cs1: CipherState, cs2: CipherState } {
+  private readMessageC (hs: HandshakeState, message: MessageBuffer): { h: bytes, plaintext: Uint8Array | Uint8ArrayList, valid: boolean, cs1: CipherState, cs2: CipherState } {
     const { plaintext: ns, valid: valid1 } = this.decryptAndHash(hs.ss, message.ns)
     if (valid1 && isValidPublicKey(ns)) {
       hs.rs = ns
@@ -165,7 +166,7 @@ export class XX extends AbstractHandshake {
   }
 
   public recvMessage (session: NoiseSession, message: MessageBuffer): DecryptedResult {
-    let plaintext: bytes = uint8ArrayAlloc(0)
+    let plaintext: Uint8Array | Uint8ArrayList = uint8ArrayAlloc(0)
     let valid = false
     if (session.mc === 0) {
       ({ plaintext, valid } = this.readMessageA(session.hs, message))

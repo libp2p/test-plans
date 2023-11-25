@@ -7,6 +7,7 @@ import type { ICryptoInterface } from './crypto.js';
 import type { NoiseExtensions } from './proto/payload.js';
 import type { PeerId } from '@libp2p/interface/peer-id';
 import type { LengthPrefixedStream } from 'it-length-prefixed-stream';
+import type { Uint8ArrayList } from 'uint8arraylist';
 export declare class XXHandshake implements IHandshake {
     isInitiator: boolean;
     session: NoiseSession;
@@ -21,12 +22,12 @@ export declare class XXHandshake implements IHandshake {
     propose(): Promise<void>;
     exchange(): Promise<void>;
     finish(): Promise<void>;
-    encrypt(plaintext: Uint8Array, session: NoiseSession): bytes;
-    decrypt(ciphertext: Uint8Array, session: NoiseSession, dst?: Uint8Array): {
-        plaintext: bytes;
+    encrypt(plaintext: Uint8Array | Uint8ArrayList, session: NoiseSession): Uint8Array | Uint8ArrayList;
+    decrypt(ciphertext: Uint8Array | Uint8ArrayList, session: NoiseSession, dst?: Uint8Array): {
+        plaintext: Uint8Array | Uint8ArrayList;
         valid: boolean;
     };
-    getRemoteStaticKey(): bytes;
+    getRemoteStaticKey(): Uint8Array | Uint8ArrayList;
     private getCS;
     protected setRemoteNoiseExtension(e: NoiseExtensions | null | undefined): void;
 }

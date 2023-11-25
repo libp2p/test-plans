@@ -8,6 +8,6 @@
     "@chainsafe/libp2p-yamux": "^5.0.3",
     "@libp2p/perf": "next",
     "@libp2p/tcp": "next",
-    "libp2p": "next"
+    "libp2p": "file://./libp2p"
   }
 }

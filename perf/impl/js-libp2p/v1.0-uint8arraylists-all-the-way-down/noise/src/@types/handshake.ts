@@ -1,13 +1,14 @@
 import type { bytes, bytes32, uint64 } from './basic.js'
 import type { KeyPair } from './libp2p.js'
 import type { Nonce } from '../nonce.js'
+import type { Uint8ArrayList } from 'uint8arraylist'
 
 export type Hkdf = [bytes, bytes, bytes]
 
 export interface MessageBuffer {
   ne: bytes32
-  ns: bytes
-  ciphertext: bytes
+  ns: Uint8Array | Uint8ArrayList
+  ciphertext: Uint8Array | Uint8ArrayList
 }
 
 export interface CipherState {
@@ -27,7 +28,7 @@ export interface HandshakeState {
   ss: SymmetricState
   s: KeyPair
   e?: KeyPair
-  rs: bytes32
+  rs: Uint8Array | Uint8ArrayList
   re: bytes32
   psk: bytes32
 }

@@ -49,7 +49,7 @@ describe('XX Handshake', () => {
             // Test encryption and decryption
             const encrypted = handshakeInitiator.encrypt(Buffer.from('encryptthis'), handshakeInitiator.session);
             const { plaintext: decrypted, valid } = handshakeResponder.decrypt(encrypted, handshakeResponder.session);
-            assert(uint8ArrayEquals(decrypted, Buffer.from('encryptthis')));
+            assert(uint8ArrayEquals(decrypted.subarray(), Buffer.from('encryptthis')));
             assert(valid);
         }
         catch (e) {

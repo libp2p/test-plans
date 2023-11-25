@@ -171,21 +171,13 @@
     "docs": "aegir docs"
   },
   "dependencies": {
-    "@libp2p/interface": "next",
+    "@libp2p/interface": "file:../interface",
     "@libp2p/logger": "next",
+    "@libp2p/utils": "file:../utils",
     "get-iterator": "^2.0.1",
     "it-foreach": "^2.0.3",
     "it-pipe": "^3.0.1",
     "it-pushable": "^3.2.0",
     "uint8arraylist": "^2.4.3"
-  },
-  "devDependencies": {
-    "@dapplion/benchmark": "^0.2.4",
-    "@libp2p/interface-compliance-tests": "next",
-    "@libp2p/mplex": "next",
-    "aegir": "^40.0.1",
-    "it-drain": "^3.0.2",
-    "it-pair": "^2.0.6",
-    "it-stream-types": "^2.0.1"
   }
 }

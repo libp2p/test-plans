@@ -1,5 +1,6 @@
 import { unmarshalPublicKey, unmarshalPrivateKey } from '@libp2p/crypto/keys'
 import { peerIdFromKeys } from '@libp2p/peer-id'
+import { type Uint8ArrayList, isUint8ArrayList } from 'uint8arraylist'
 import { concat as uint8ArrayConcat } from 'uint8arrays/concat'
 import { fromString as uint8ArrayFromString } from 'uint8arrays/from-string'
 import { type NoiseExtensions, NoiseHandshakePayload } from './proto/payload.js'
@@ -36,7 +37,7 @@ export function createHandshakePayload (
   }).subarray()
 }
 
-export async function signPayload (peerId: PeerId, payload: bytes): Promise<bytes> {
+export async function signPayload (peerId: PeerId, payload: Uint8Array | Uint8ArrayList): Promise<bytes> {
   if (peerId.privateKey == null) {
     throw new Error('PrivateKey was missing from PeerId')
   }
@@ -50,13 +51,20 @@ export async function getPeerIdFromPayload (payload: NoiseHandshakePayload): Pro
   return peerIdFromKeys(payload.identityKey)
 }
 
-export function decodePayload (payload: bytes | Uint8Array): NoiseHandshakePayload {
+export function decodePayload (payload: Uint8Array | Uint8ArrayList): NoiseHandshakePayload {
   return NoiseHandshakePayload.decode(payload)
 }
 
-export function getHandshakePayload (publicKey: bytes): bytes {
+export function getHandshakePayload (publicKey: Uint8Array | Uint8ArrayList): Uint8Array | Uint8ArrayList {
   const prefix = uint8ArrayFromString('noise-libp2p-static-key:')
-  return uint8ArrayConcat([prefix, publicKey], prefix.length + publicKey.length)
+
+  if (publicKey instanceof Uint8Array) {
+    return uint8ArrayConcat([prefix, publicKey], prefix.length + publicKey.length)
+  }
+
+  publicKey.prepend(prefix)
+
+  return publicKey
 }
 
 /**
@@ -68,7 +76,7 @@ export function getHandshakePayload (publicKey: bytes): bytes {
  * @returns {Promise<PeerId>} - peer ID of payload owner
  */
 export async function verifySignedPayload (
-  noiseStaticKey: bytes,
+  noiseStaticKey: Uint8Array | Uint8ArrayList,
   payload: NoiseHandshakePayload,
   remotePeer: PeerId
 ): Promise<PeerId> {
@@ -98,12 +106,12 @@ export async function verifySignedPayload (
   return payloadPeerId
 }
 
-export function isValidPublicKey (pk: bytes): boolean {
-  if (!(pk instanceof Uint8Array)) {
+export function isValidPublicKey (pk: Uint8Array | Uint8ArrayList): boolean {
+  if (!(pk instanceof Uint8Array) && !(isUint8ArrayList(pk))) {
     return false
   }
 
-  if (pk.length !== 32) {
+  if (pk.byteLength !== 32) {
     return false
   }
 

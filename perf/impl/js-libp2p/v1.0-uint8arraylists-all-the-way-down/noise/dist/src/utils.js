@@ -1,5 +1,6 @@
-import { unmarshalPublicKey, unmarshalPrivateKey } from '@libp2p/crypto/keys';
+import { unmarshalPublicKey, unmarshalPrivateKey } from '../../../crypto/dist/src/keys/index.js';
 import { peerIdFromKeys } from '@libp2p/peer-id';
+import { isUint8ArrayList } from 'uint8arraylist';
 import { concat as uint8ArrayConcat } from 'uint8arrays/concat';
 import { fromString as uint8ArrayFromString } from 'uint8arrays/from-string';
 import { NoiseHandshakePayload } from './proto/payload.js';
@@ -32,7 +33,11 @@ export function decodePayload(payload) {
 }
 export function getHandshakePayload(publicKey) {
     const prefix = uint8ArrayFromString('noise-libp2p-static-key:');
-    return uint8ArrayConcat([prefix, publicKey], prefix.length + publicKey.length);
+    if (publicKey instanceof Uint8Array) {
+        return uint8ArrayConcat([prefix, publicKey], prefix.length + publicKey.length);
+    }
+    publicKey.prepend(prefix);
+    return publicKey;
 }
 /**
  * Verifies signed payload, throws on any irregularities.
@@ -63,10 +68,10 @@ export async function verifySignedPayload(noiseStaticKey, payload, remotePeer) {
     return payloadPeerId;
 }
 export function isValidPublicKey(pk) {
-    if (!(pk instanceof Uint8Array)) {
+    if (!(pk instanceof Uint8Array) && !(isUint8ArrayList(pk))) {
         return false;
     }
-    if (pk.length !== 32) {
+    if (pk.byteLength !== 32) {
         return false;
     }
     return true;
