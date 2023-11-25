@@ -56,7 +56,7 @@ export const versions: Array<Version> = [
         transportStacks: ["tcp"]
     },
     {
-        id: "v1.0-no-copy-single-write",
+        id: "v1.0-no-copy-alloc",
         implementation: "js-libp2p",
         transportStacks: ["tcp"]
     },

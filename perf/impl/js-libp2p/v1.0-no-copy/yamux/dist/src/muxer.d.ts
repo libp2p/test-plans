@@ -1,11 +1,11 @@
 import { type Pushable } from 'it-pushable';
+import { Uint8ArrayList } from 'uint8arraylist';
 import { type Config } from './config.js';
 import { GoAwayCode } from './frame.js';
 import { YamuxStream } from './stream.js';
 import type { AbortOptions } from '@libp2p/interface';
 import type { StreamMuxer, StreamMuxerFactory, StreamMuxerInit } from '@libp2p/interface/stream-muxer';
 import type { Sink, Source } from 'it-stream-types';
-import type { Uint8ArrayList } from 'uint8arraylist';
 export interface YamuxMuxerInit extends StreamMuxerInit, Partial<Config> {
 }
 export declare class Yamux implements StreamMuxerFactory {

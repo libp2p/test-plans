@@ -3,6 +3,7 @@ import { setMaxListeners } from '@libp2p/interface/events'
 import { logger, type Logger } from '@libp2p/logger'
 import { getIterator } from 'get-iterator'
 import { pushable, type Pushable } from 'it-pushable'
+import { Uint8ArrayList } from 'uint8arraylist'
 import { type Config, defaultConfig, verifyConfig } from './config.js'
 import { ERR_BOTH_CLIENTS, ERR_INVALID_FRAME, ERR_MAX_OUTBOUND_STREAMS_EXCEEDED, ERR_MUXER_LOCAL_CLOSED, ERR_MUXER_REMOTE_CLOSED, ERR_NOT_MATCHING_PING, ERR_STREAM_ALREADY_EXISTS, ERR_UNREQUESTED_PING, PROTOCOL_ERRORS } from './constants.js'
 import { Decoder } from './decode.js'
@@ -13,7 +14,6 @@ import type { AbortOptions } from '@libp2p/interface'
 import type { Stream } from '@libp2p/interface/connection'
 import type { StreamMuxer, StreamMuxerFactory, StreamMuxerInit } from '@libp2p/interface/stream-muxer'
 import type { Sink, Source } from 'it-stream-types'
-import type { Uint8ArrayList } from 'uint8arraylist'
 
 const YAMUX_PROTOCOL_ID = '/yamux/1.0.0'
 const CLOSE_TIMEOUT = 500
@@ -560,8 +560,9 @@ export class YamuxMuxer implements StreamMuxer {
       if (data === undefined) {
         throw new CodeError('invalid frame', ERR_INVALID_FRAME)
       }
-      this.source.push(encodeHeader(header))
-      this.source.push(data)
+      this.source.push(
+        new Uint8ArrayList(encodeHeader(header), data)
+      )
     } else {
       this.source.push(encodeHeader(header))
     }
