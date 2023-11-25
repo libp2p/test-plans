@@ -12,11 +12,11 @@ export function encryptStream(handshake, metrics) {
                     end = chunk.length;
                 }
                 let data;
-                if (chunk instanceof Uint8Array) {
-                    data = handshake.encrypt(chunk.subarray(i, end), handshake.session);
+                if (i === 0 && end === chunk.byteLength && chunk instanceof Uint8Array) {
+                    data = handshake.encrypt(chunk, handshake.session);
                 }
                 else {
-                    data = handshake.encrypt(chunk.sublist(i, end), handshake.session);
+                    data = handshake.encrypt(chunk.subarray(i, end), handshake.session);
                 }
                 metrics?.encryptedPackets.increment();
                 yield new Uint8ArrayList(uint16BEEncode(data.byteLength), data);
@@ -36,7 +36,7 @@ export function decryptStream(handshake, metrics) {
                 if (end - CHACHA_TAG_LENGTH < i) {
                     throw new Error('Invalid chunk');
                 }
-                const encrypted = chunk.sublist(i, end);
+                const encrypted = chunk.subarray(i, end);
                 // memory allocation is not cheap so reuse the encrypted Uint8Array
                 // see https://github.com/ChainSafe/js-libp2p-noise/pull/242#issue-1422126164
                 // this is ok because chacha20 reads bytes one by one and don't reread after that

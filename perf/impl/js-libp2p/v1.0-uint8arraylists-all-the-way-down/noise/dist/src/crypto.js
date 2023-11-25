@@ -1,2 +1,2 @@
-import {} from 'uint8arraylist';
+export {};
 //# sourceMappingURL=crypto.js.map

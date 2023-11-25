@@ -2,15 +2,14 @@ import { chacha20poly1305 } from '@noble/ciphers/chacha'
 import { x25519 } from '@noble/curves/ed25519'
 import { extract, expand } from '@noble/hashes/hkdf'
 import { sha256 } from '@noble/hashes/sha256'
-import type { bytes32 } from '../@types/basic.js'
+import type { bytes, bytes32 } from '../@types/basic.js'
 import type { Hkdf } from '../@types/handshake.js'
 import type { KeyPair } from '../@types/libp2p.js'
 import type { ICryptoInterface } from '../crypto.js'
-import type { Uint8ArrayList } from 'uint8arraylist'
 
 export const pureJsCrypto: ICryptoInterface = {
-  hashSHA256 (data: Uint8Array | Uint8ArrayList): Uint8Array {
-    return sha256(data.subarray())
+  hashSHA256 (data: Uint8Array): Uint8Array {
+    return sha256(data)
   },
 
   getHKDF (ck: bytes32, ikm: Uint8Array): Hkdf {
@@ -44,15 +43,15 @@ export const pureJsCrypto: ICryptoInterface = {
     }
   },
 
-  generateX25519SharedKey (privateKey: Uint8Array | Uint8ArrayList, publicKey: Uint8Array | Uint8ArrayList): Uint8Array {
-    return x25519.getSharedSecret(privateKey.subarray(), publicKey.subarray())
+  generateX25519SharedKey (privateKey: Uint8Array, publicKey: Uint8Array): Uint8Array {
+    return x25519.getSharedSecret(privateKey, publicKey)
   },
 
-  chaCha20Poly1305Encrypt (plaintext: Uint8Array | Uint8ArrayList, nonce: Uint8Array, ad: Uint8Array, k: bytes32): Uint8Array {
-    return chacha20poly1305(k, nonce, ad).encrypt(plaintext.subarray())
+  chaCha20Poly1305Encrypt (plaintext: Uint8Array, nonce: Uint8Array, ad: Uint8Array, k: bytes32): bytes {
+    return chacha20poly1305(k, nonce, ad).encrypt(plaintext)
   },
 
-  chaCha20Poly1305Decrypt (ciphertext: Uint8Array | Uint8ArrayList, nonce: Uint8Array, ad: Uint8Array, k: bytes32, dst?: Uint8Array): Uint8Array | null {
-    return chacha20poly1305(k, nonce, ad).decrypt(ciphertext.subarray(), dst)
+  chaCha20Poly1305Decrypt (ciphertext: Uint8Array, nonce: Uint8Array, ad: Uint8Array, k: bytes32, dst?: Uint8Array): bytes | null {
+    return chacha20poly1305(k, nonce, ad).decrypt(ciphertext, dst)
   }
 }

@@ -61,7 +61,7 @@
     "test:interop": "aegir test -t node -f dist/test/interop.js"
   },
   "dependencies": {
-    "@libp2p/crypto": "file:../crypto",
+    "@libp2p/crypto": "next",
     "@libp2p/interface": "file:../interface",
     "@libp2p/interface-internal": "next",
     "@libp2p/logger": "next",

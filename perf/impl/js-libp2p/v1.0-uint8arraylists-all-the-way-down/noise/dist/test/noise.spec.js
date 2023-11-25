@@ -68,7 +68,7 @@ describe('Noise', () => {
                 xx.recvMessage(handshake.session, receivedMessageBuffer);
                 // Stage 1
                 const { publicKey: libp2pPubKey } = getKeyPairFromPeerId(remotePeer);
-                const signedPayload = await signPayload(remotePeer, getHandshakePayload(staticKeys.publicKey).subarray());
+                const signedPayload = await signPayload(remotePeer, getHandshakePayload(staticKeys.publicKey));
                 const handshakePayload = createHandshakePayload(libp2pPubKey, signedPayload);
                 const messageBuffer = xx.sendMessage(handshake.session, handshakePayload);
                 await wrapped.write(encode1(messageBuffer));
@@ -84,7 +84,7 @@ describe('Noise', () => {
         const data = (await wrapped.read()).slice();
         const { plaintext: decrypted, valid } = handshake.decrypt(data, handshake.session);
         // Decrypted data should match
-        expect(uint8ArrayEquals(decrypted.subarray(), uint8ArrayFromString('test'))).to.be.true();
+        expect(uint8ArrayEquals(decrypted, uint8ArrayFromString('test'))).to.be.true();
         expect(valid).to.be.true();
     });
     it('should test large payloads', async function () {

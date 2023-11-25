@@ -1,7 +1,6 @@
 import crypto from 'node:crypto';
 import { newInstance, ChaCha20Poly1305 } from '@chainsafe/as-chacha20poly1305';
 import { digest } from '@chainsafe/as-sha256';
-import { Uint8ArrayList } from 'uint8arraylist';
 import { isElectronMain } from 'wherearewe';
 import { pureJsCrypto } from './js.js';
 const ctx = newInstance();
@@ -11,81 +10,46 @@ const PKCS8_PREFIX = Buffer.from([0x30, 0x2e, 0x02, 0x01, 0x00, 0x30, 0x05, 0x06
 const X25519_PREFIX = Buffer.from([0x30, 0x2a, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x6e, 0x03, 0x21, 0x00]);
 const nodeCrypto = {
     hashSHA256(data) {
-        const hash = crypto.createHash('sha256');
-        if (data instanceof Uint8Array) {
-            return hash.update(data).digest();
-        }
-        for (const buf of data) {
-            hash.update(buf);
-        }
-        return hash.digest();
+        return crypto.createHash('sha256').update(data).digest();
     },
     chaCha20Poly1305Encrypt(plaintext, nonce, ad, k) {
         const cipher = crypto.createCipheriv(CHACHA_POLY1305, k, nonce, {
             authTagLength: 16
         });
         cipher.setAAD(ad, { plaintextLength: plaintext.byteLength });
-        if (plaintext instanceof Uint8Array) {
-            const updated = cipher.update(plaintext);
-            const final = cipher.final();
-            const tag = cipher.getAuthTag();
-            return Buffer.concat([updated, tag, final], updated.byteLength + tag.byteLength + final.byteLength);
-        }
-        const output = new Uint8ArrayList();
-        for (const buf of plaintext) {
-            output.append(cipher.update(buf));
-        }
+        const updated = cipher.update(plaintext);
         const final = cipher.final();
-        if (final.byteLength > 0) {
-            output.append(final);
-        }
-        output.append(cipher.getAuthTag());
-        return output;
+        const tag = cipher.getAuthTag();
+        const encrypted = Buffer.concat([updated, tag, final], updated.byteLength + tag.byteLength + final.byteLength);
+        return encrypted;
     },
     chaCha20Poly1305Decrypt(ciphertext, nonce, ad, k, _dst) {
         const authTag = ciphertext.subarray(ciphertext.length - 16);
+        const text = ciphertext.subarray(0, ciphertext.length - 16);
         const decipher = crypto.createDecipheriv(CHACHA_POLY1305, k, nonce, {
             authTagLength: 16
         });
-        let text;
-        if (ciphertext instanceof Uint8Array) {
-            text = ciphertext.subarray(0, ciphertext.length - 16);
-        }
-        else {
-            text = ciphertext.sublist(0, ciphertext.length - 16);
-        }
         decipher.setAAD(ad, {
             plaintextLength: text.byteLength
         });
         decipher.setAuthTag(authTag);
-        if (text instanceof Uint8Array) {
-            const output = decipher.update(text);
-            const final = decipher.final();
-            if (final.byteLength > 0) {
-                return Buffer.concat([output, final], output.byteLength + final.byteLength);
-            }
-            return output;
-        }
-        const output = new Uint8ArrayList();
-        for (const buf of text) {
-            output.append(decipher.update(buf));
-        }
+        const updated = decipher.update(text);
         const final = decipher.final();
         if (final.byteLength > 0) {
-            output.append(final);
+            return Buffer.concat([updated, final], updated.byteLength + final.byteLength);
         }
-        return output;
+        return updated;
     }
 };
 const asCrypto = {
     hashSHA256(data) {
-        return digest(data.subarray());
+        return digest(data);
     },
     chaCha20Poly1305Encrypt(plaintext, nonce, ad, k) {
-        return asImpl.seal(k, nonce, plaintext.subarray(), ad);
+        return asImpl.seal(k, nonce, plaintext, ad);
     },
     chaCha20Poly1305Decrypt(ciphertext, nonce, ad, k, dst) {
-        return asImpl.open(k, nonce, ciphertext.subarray(), ad, dst);
+        return asImpl.open(k, nonce, ciphertext, ad, dst);
     }
 };
 // benchmarks show that for chacha20poly1305
@@ -97,13 +61,13 @@ export const defaultCrypto = {
         return nodeCrypto.hashSHA256(data);
     },
     chaCha20Poly1305Encrypt(plaintext, nonce, ad, k) {
-        if (plaintext.byteLength < 1200) {
+        if (plaintext.length < 1200) {
             return asCrypto.chaCha20Poly1305Encrypt(plaintext, nonce, ad, k);
         }
         return nodeCrypto.chaCha20Poly1305Encrypt(plaintext, nonce, ad, k);
     },
     chaCha20Poly1305Decrypt(ciphertext, nonce, ad, k, dst) {
-        if (ciphertext.byteLength < 1200) {
+        if (ciphertext.length < 1200) {
             return asCrypto.chaCha20Poly1305Decrypt(ciphertext, nonce, ad, k, dst);
         }
         return nodeCrypto.chaCha20Poly1305Decrypt(ciphertext, nonce, ad, k, dst);
@@ -144,26 +108,14 @@ export const defaultCrypto = {
         };
     },
     generateX25519SharedKey(privateKey, publicKey) {
-        if (publicKey instanceof Uint8Array) {
-            publicKey = Buffer.concat([
-                X25519_PREFIX,
-                publicKey
-            ], X25519_PREFIX.byteLength + publicKey.byteLength);
-        }
-        else {
-            publicKey.prepend(X25519_PREFIX);
-            publicKey = publicKey.subarray();
-        }
-        if (privateKey instanceof Uint8Array) {
-            privateKey = Buffer.concat([
-                PKCS8_PREFIX,
-                privateKey
-            ], PKCS8_PREFIX.byteLength + privateKey.byteLength);
-        }
-        else {
-            privateKey.prepend(PKCS8_PREFIX);
-            privateKey = privateKey.subarray();
-        }
+        publicKey = Buffer.concat([
+            X25519_PREFIX,
+            publicKey
+        ], X25519_PREFIX.byteLength + publicKey.byteLength);
+        privateKey = Buffer.concat([
+            PKCS8_PREFIX,
+            privateKey
+        ], PKCS8_PREFIX.byteLength + privateKey.byteLength);
         return crypto.diffieHellman({
             publicKey: crypto.createPublicKey({
                 key: Buffer.from(publicKey, publicKey.byteOffset, publicKey.byteLength),

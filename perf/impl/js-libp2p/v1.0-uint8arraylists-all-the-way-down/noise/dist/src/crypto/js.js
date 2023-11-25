@@ -4,7 +4,7 @@ import { extract, expand } from '@noble/hashes/hkdf';
 import { sha256 } from '@noble/hashes/sha256';
 export const pureJsCrypto = {
     hashSHA256(data) {
-        return sha256(data.subarray());
+        return sha256(data);
     },
     getHKDF(ck, ikm) {
         const prk = extract(sha256, ikm, ck);
@@ -31,13 +31,13 @@ export const pureJsCrypto = {
         };
     },
     generateX25519SharedKey(privateKey, publicKey) {
-        return x25519.getSharedSecret(privateKey.subarray(), publicKey.subarray());
+        return x25519.getSharedSecret(privateKey, publicKey);
     },
     chaCha20Poly1305Encrypt(plaintext, nonce, ad, k) {
-        return chacha20poly1305(k, nonce, ad).encrypt(plaintext.subarray());
+        return chacha20poly1305(k, nonce, ad).encrypt(plaintext);
     },
     chaCha20Poly1305Decrypt(ciphertext, nonce, ad, k, dst) {
-        return chacha20poly1305(k, nonce, ad).decrypt(ciphertext.subarray(), dst);
+        return chacha20poly1305(k, nonce, ad).decrypt(ciphertext, dst);
     }
 };
 //# sourceMappingURL=js.js.map

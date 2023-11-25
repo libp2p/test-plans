@@ -17,12 +17,12 @@ export function encryptStream (handshake: IHandshake, metrics?: MetricsRegistry)
           end = chunk.length
         }
 
-        let data: Uint8Array | Uint8ArrayList
+        let data: Uint8Array
 
-        if (chunk instanceof Uint8Array) {
-          data = handshake.encrypt(chunk.subarray(i, end), handshake.session)
+        if (i === 0 && end === chunk.byteLength && chunk instanceof Uint8Array) {
+          data = handshake.encrypt(chunk, handshake.session)
         } else {
-          data = handshake.encrypt(chunk.sublist(i, end), handshake.session)
+          data = handshake.encrypt(chunk.subarray(i, end), handshake.session)
         }
 
         metrics?.encryptedPackets.increment()
@@ -34,7 +34,7 @@ export function encryptStream (handshake: IHandshake, metrics?: MetricsRegistry)
 }
 
 // Decrypt received payload to the user
-export function decryptStream (handshake: IHandshake, metrics?: MetricsRegistry): Transform<AsyncGenerator<Uint8ArrayList>, AsyncGenerator<Uint8Array | Uint8ArrayList>> {
+export function decryptStream (handshake: IHandshake, metrics?: MetricsRegistry): Transform<AsyncGenerator<Uint8ArrayList>, AsyncGenerator<Uint8Array>> {
   return async function * (source) {
     for await (const chunk of source) {
       for (let i = 0; i < chunk.length; i += NOISE_MSG_MAX_LENGTH_BYTES) {
@@ -47,7 +47,7 @@ export function decryptStream (handshake: IHandshake, metrics?: MetricsRegistry)
           throw new Error('Invalid chunk')
         }
 
-        const encrypted = chunk.sublist(i, end)
+        const encrypted = chunk.subarray(i, end)
         // memory allocation is not cheap so reuse the encrypted Uint8Array
         // see https://github.com/ChainSafe/js-libp2p-noise/pull/242#issue-1422126164
         // this is ok because chacha20 reads bytes one by one and don't reread after that

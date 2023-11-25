@@ -3,7 +3,6 @@ import { toString as uint8ArrayToString } from 'uint8arrays/to-string'
 import { DUMP_SESSION_KEYS } from './constants.js'
 import type { NoiseSession } from './@types/handshake.js'
 import type { KeyPair } from './@types/libp2p.js'
-import type { Uint8ArrayList } from 'uint8arraylist'
 
 const log = logger('libp2p:noise')
 
@@ -21,19 +20,11 @@ if (DUMP_SESSION_KEYS) {
 }
 
 export function logLocalStaticKeys (s: KeyPair): void {
-  if (!keyLogger.enabled) {
-    return
-  }
-
   keyLogger(`LOCAL_STATIC_PUBLIC_KEY ${uint8ArrayToString(s.publicKey, 'hex')}`)
   keyLogger(`LOCAL_STATIC_PRIVATE_KEY ${uint8ArrayToString(s.privateKey, 'hex')}`)
 }
 
 export function logLocalEphemeralKeys (e: KeyPair | undefined): void {
-  if (!keyLogger.enabled) {
-    return
-  }
-
   if (e) {
     keyLogger(`LOCAL_PUBLIC_EPHEMERAL_KEY ${uint8ArrayToString(e.publicKey, 'hex')}`)
     keyLogger(`LOCAL_PRIVATE_EPHEMERAL_KEY ${uint8ArrayToString(e.privateKey, 'hex')}`)
@@ -42,27 +33,15 @@ export function logLocalEphemeralKeys (e: KeyPair | undefined): void {
   }
 }
 
-export function logRemoteStaticKey (rs: Uint8Array | Uint8ArrayList): void {
-  if (!keyLogger.enabled) {
-    return
-  }
-
-  keyLogger(`REMOTE_STATIC_PUBLIC_KEY ${uint8ArrayToString(rs.subarray(), 'hex')}`)
+export function logRemoteStaticKey (rs: Uint8Array): void {
+  keyLogger(`REMOTE_STATIC_PUBLIC_KEY ${uint8ArrayToString(rs, 'hex')}`)
 }
 
-export function logRemoteEphemeralKey (re: Uint8Array | Uint8ArrayList): void {
-  if (!keyLogger.enabled) {
-    return
-  }
-
-  keyLogger(`REMOTE_EPHEMERAL_PUBLIC_KEY ${uint8ArrayToString(re.subarray(), 'hex')}`)
+export function logRemoteEphemeralKey (re: Uint8Array): void {
+  keyLogger(`REMOTE_EPHEMERAL_PUBLIC_KEY ${uint8ArrayToString(re, 'hex')}`)
 }
 
 export function logCipherState (session: NoiseSession): void {
-  if (!keyLogger.enabled) {
-    return
-  }
-
   if (session.cs1 && session.cs2) {
     keyLogger(`CIPHER_STATE_1 ${session.cs1.n.getUint64()} ${uint8ArrayToString(session.cs1.k, 'hex')}`)
     keyLogger(`CIPHER_STATE_2 ${session.cs2.n.getUint64()} ${uint8ArrayToString(session.cs2.k, 'hex')}`)

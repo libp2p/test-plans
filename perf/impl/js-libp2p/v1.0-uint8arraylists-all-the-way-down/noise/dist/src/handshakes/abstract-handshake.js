@@ -1,6 +1,6 @@
-import { Uint8ArrayList } from 'uint8arraylist';
 import { fromString as uint8ArrayFromString } from 'uint8arrays';
 import { alloc as uint8ArrayAlloc } from 'uint8arrays/alloc';
+import { concat as uint8ArrayConcat } from 'uint8arrays/concat';
 import { equals as uint8ArrayEquals } from 'uint8arrays/equals';
 import { logger } from '../logger.js';
 import { Nonce } from '../nonce.js';
@@ -92,7 +92,7 @@ export class AbstractHandshake {
         ss.h = this.getHash(ss.h, data);
     }
     getHash(a, b) {
-        const u = this.crypto.hashSHA256(new Uint8ArrayList(a, b));
+        const u = this.crypto.hashSHA256(uint8ArrayConcat([a, b], a.length + b.length));
         return u;
     }
     mixKey(ss, ikm) {

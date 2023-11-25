@@ -23,7 +23,6 @@ import type { ICryptoInterface } from './crypto.js'
 import type { NoiseExtensions } from './proto/payload.js'
 import type { PeerId } from '@libp2p/interface/peer-id'
 import type { LengthPrefixedStream } from 'it-length-prefixed-stream'
-import type { Uint8ArrayList } from 'uint8arraylist'
 
 export class XXHandshake implements IHandshake {
   public isInitiator: boolean
@@ -143,19 +142,19 @@ export class XXHandshake implements IHandshake {
     logCipherState(this.session)
   }
 
-  public encrypt (plaintext: Uint8Array | Uint8ArrayList, session: NoiseSession): Uint8Array | Uint8ArrayList {
+  public encrypt (plaintext: Uint8Array, session: NoiseSession): bytes {
     const cs = this.getCS(session)
 
     return this.xx.encryptWithAd(cs, uint8ArrayAlloc(0), plaintext)
   }
 
-  public decrypt (ciphertext: Uint8Array | Uint8ArrayList, session: NoiseSession, dst?: Uint8Array): { plaintext: Uint8Array | Uint8ArrayList, valid: boolean } {
+  public decrypt (ciphertext: Uint8Array, session: NoiseSession, dst?: Uint8Array): { plaintext: bytes, valid: boolean } {
     const cs = this.getCS(session, false)
 
     return this.xx.decryptWithAd(cs, uint8ArrayAlloc(0), ciphertext, dst)
   }
 
-  public getRemoteStaticKey (): Uint8Array | Uint8ArrayList {
+  public getRemoteStaticKey (): bytes {
     return this.session.hs.rs
   }
 
