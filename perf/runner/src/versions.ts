@@ -60,9 +60,4 @@ export const versions: Array<Version> = [
         implementation: "js-libp2p",
         transportStacks: ["tcp"]
     },
-    {
-        id: "v1.0-uint8arraylists-all-the-way-down-streaming-hashes-with-alloc",
-        implementation: "js-libp2p",
-        transportStacks: ["tcp"]
-    },
 ]
