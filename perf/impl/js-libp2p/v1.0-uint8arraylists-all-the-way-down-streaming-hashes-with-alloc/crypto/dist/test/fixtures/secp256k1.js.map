@@ -1,1 +1,0 @@
-{"version":3,"file":"secp256k1.js","sourceRoot":"","sources":["../../../test/fixtures/secp256k1.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,UAAU,IAAI,oBAAoB,EAAE,MAAM,yBAAyB,CAAA;AAE5E,eAAe;IACb,sEAAsE;IACtE,yEAAyE;IACzE,aAAa,EAAE,oBAAoB,CAAC,0EAA0E,EAAE,QAAQ,CAAC;IACzH,YAAY,EAAE,oBAAoB,CAAC,4EAA4E,EAAE,QAAQ,CAAC;CAC3H,CAAA"}

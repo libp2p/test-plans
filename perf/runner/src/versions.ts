@@ -51,12 +51,12 @@ export const versions: Array<Version> = [
         transportStacks: ["tcp"]
     },
     {
-        id: "v1.0-uint8arraylists-all-the-way-down",
+        id: "v1.0-no-copy",
         implementation: "js-libp2p",
         transportStacks: ["tcp"]
     },
     {
-        id: "v1.0-uint8arraylists-all-the-way-down-streaming-hashes",
+        id: "v1.0-no-copy-single-write",
         implementation: "js-libp2p",
         transportStacks: ["tcp"]
     },

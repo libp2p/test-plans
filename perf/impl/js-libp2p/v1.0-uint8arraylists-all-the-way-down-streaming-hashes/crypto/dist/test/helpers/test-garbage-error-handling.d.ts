@@ -1,2 +1,0 @@
-export declare function testGarbage(fncName: string, fnc: (...args: Uint8Array[]) => Promise<any>, num?: number, skipBuffersAndStrings?: boolean): void;
-//# sourceMappingURL=test-garbage-error-handling.d.ts.map
