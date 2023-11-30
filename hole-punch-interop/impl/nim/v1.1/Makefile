@@ -22,7 +22,8 @@ nim-libp2p-${commitSha}.zip:
 	wget -O $@ "https://github.com/status-im/nim-libp2p/archive/${commitSha}.zip"
 
 clean:
-	rm -f nim-libp2p
-	rm -rf nim-libp2p-*
+	rm -f image.json
+	rm -f hole_punching.nim
+	rm -rf nim-libp2p*
 
 .PHONY: all clean
