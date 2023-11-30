@@ -23,4 +23,5 @@ clean:
 		$(MAKE) -C $$dir clean; \
 	done
 
-.PHONY: rust-relay router all $(ALL_SUBDIRS) clean
+.PHONY: rust-relay router all $(ALL_SUBDIRS)
+
