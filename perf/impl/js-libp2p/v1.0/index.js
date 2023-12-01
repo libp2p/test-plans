@@ -41,16 +41,12 @@ export async function main (runServer, serverIpAddress, transport, uploadBytes, 
   const { host, port } = splitHostPort(serverIpAddress)
 
   const config = {
-    //peerId,
-    transports: [tcp({
-      socket: {
-        noDelay: true
-      },
-      server: {
-        noDelay: true
-      }
-    })],
-    streamMuxers: [yamux()],
+    transports: [
+      tcp()
+    ],
+    streamMuxers: [
+      yamux()
+    ],
     connectionEncryption: [
       noise()
     ],
