@@ -1,15 +1,12 @@
 image_name := nim-v1.1
-commitSha := deb72c8580c5ab7419f1a07381164d64ff5f6005
+commitSha := 2daeb6e0c61454b57b25f6ac1d8a9102ed26334c
 
 all: image.json
 
-image.json: hole_punching.nim nim-libp2p Dockerfile
+image.json: nim-libp2p Dockerfile
 	IMAGE_NAME=${image_name} ../../../dockerBuildWrapper.sh .
 	docker image inspect ${image_name} -f "{{.Id}}" | \
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
-
-hole_punching.nim: ../hole_punching.nim
-	cp ../hole_punching.nim hole_punching.nim
 
 nim-libp2p: nim-libp2p-${commitSha}
 	rm -rf nim-libp2p
@@ -23,7 +20,6 @@ nim-libp2p-${commitSha}.zip:
 
 clean:
 	rm -f image.json
-	rm -f hole_punching.nim
 	rm -rf nim-libp2p*
 
 .PHONY: all clean
