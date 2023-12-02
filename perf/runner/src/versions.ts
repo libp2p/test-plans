@@ -46,7 +46,7 @@ export const versions: Array<Version> = [
         transportStacks: ["tcp"]
     },*/
     {
-        id: "v1.0",
+        id: "v1.0-yamux-noise",
         implementation: "js-libp2p",
         transportStacks: ["tcp"]
     },
