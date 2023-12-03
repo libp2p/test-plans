@@ -44,7 +44,7 @@ export const versions: Array<Version> = [
         id: "v0.46",
         implementation: "js-libp2p",
         transportStacks: ["tcp"]
-    },*/
+    },
     {
         id: "v1.0-yamux-noise",
         implementation: "js-libp2p",
@@ -59,7 +59,7 @@ export const versions: Array<Version> = [
         id: "v1.0-yamux-plaintext",
         implementation: "js-libp2p",
         transportStacks: ["tcp"]
-    },
+    },*/
     {
         id: "v1.0-mplex-plaintext",
         implementation: "js-libp2p",
