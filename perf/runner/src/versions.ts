@@ -5,7 +5,7 @@ export type Version = {
 }
 
 export const versions: Array<Version> = [
-    {
+    /*{
         id: "v0.34",
         implementation: "quic-go",
         transportStacks: ["quic-v1"]
@@ -44,10 +44,25 @@ export const versions: Array<Version> = [
         id: "v0.46",
         implementation: "js-libp2p",
         transportStacks: ["tcp"]
-    },
+    },*/
     {
-        id: "v1.0",
+        id: "v1.0-yamux-noise",
         implementation: "js-libp2p",
         transportStacks: ["tcp"]
     },
+    {
+        id: "v1.0-mplex-noise",
+        implementation: "js-libp2p",
+        transportStacks: ["tcp"]
+    },
+/*    {
+        id: "v1.0-yamux-plaintext",
+        implementation: "js-libp2p",
+        transportStacks: ["tcp"]
+    },
+    {
+        id: "v1.0-mplex-plaintext",
+        implementation: "js-libp2p",
+        transportStacks: ["tcp"]
+    },*/
 ]

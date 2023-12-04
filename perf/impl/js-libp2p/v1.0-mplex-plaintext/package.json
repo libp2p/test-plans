@@ -1,0 +1,13 @@
+{
+  "name": "@libp2p/perf-js-libp2p-1-0",
+  "private": true,
+  "main": "index.js",
+  "type": "module",
+  "dependencies": {
+    "@libp2p/mplex": "^10.0.4",
+    "@libp2p/perf": "^3.0.4",
+    "@libp2p/plaintext": "^1.0.4",
+    "@libp2p/tcp": "^9.0.4",
+    "libp2p": "^1.0.5"
+  }
+}
