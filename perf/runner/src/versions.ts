@@ -18,7 +18,7 @@ export const versions: Array<Version> = [
     {
         id: "v0.53-dynamic-window-size",
         implementation: "rust-libp2p",
-        transportStacks: ["tcp"]
+        transportStacks: ["tcp", "quic-v1"]
     },
     {
         id: "v0.1",
