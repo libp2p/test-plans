@@ -10,9 +10,8 @@ export type Version = {
 
 export const versions: Array<Version> = [
     {
-        id: "rust-master",
-        transports: ["tcp", "quic"],
-        containerImageID: readImageId("./impl/rust/master/image.json"),
+        id: "rust-v0.53",
+        transports: ["tcp", "quic"]
     } as Version,
 ].map((v: Version) => (typeof v.containerImageID === "undefined" ? ({ ...v, containerImageID: readImageId(canonicalImagePath(v.id)) }) : v))
 
