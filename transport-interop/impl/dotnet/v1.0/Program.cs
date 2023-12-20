@@ -94,13 +94,6 @@ class TestPlansPeerFactoryBuilder : PeerFactoryBuilderBase<TestPlansPeerFactoryB
 
     public TestPlansPeerFactoryBuilder(string transport, string? muxer, string? security)
         : base(new ServiceCollection()
-              .AddLogging(builder =>
-                  builder.SetMinimumLevel(LogLevel.Trace)
-                      .AddSimpleConsole(l =>
-                      {
-                          l.SingleLine = true;
-                          l.TimestampFormat = "[HH:mm:ss.FFF]";
-                      }))
               .AddScoped(_ => defaultPeerFactoryBuilder!)
               .BuildServiceProvider())
     {
