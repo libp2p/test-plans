@@ -1,4 +1,4 @@
-image_name := rust-v0.52
+image_name := rust-chromium-v0.52
 # BROKEN because glibc does not match.
 commitSha := f1bfe8d4ed423d03df4ef477072178e953c85f45
 
