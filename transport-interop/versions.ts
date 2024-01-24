@@ -68,12 +68,12 @@ export const versions: Array<Version> = [
         secureChannels: ["tls", "noise"],
         muxers: ["mplex", "yamux"],
     },
-    {
-        id: "rust-chromium-v0.52",
-        transports: [{ name: "webtransport", onlyDial: true }],
-        secureChannels: [],
-        muxers: [],
-    },
+    // {
+    //     id: "rust-chromium-v0.52",
+    //     transports: [{ name: "webtransport", onlyDial: true }],
+    //     secureChannels: [],
+    //     muxers: [],
+    // },
     {
         id: "rust-chromium-v0.53",
         "transports": [
