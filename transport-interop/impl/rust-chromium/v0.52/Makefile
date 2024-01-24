@@ -1,5 +1,5 @@
 image_name := rust-v0.52
-commitSha := 51070dae6395821c5ab45014b7208f15975c9101
+commitSha := 8f66ad6627e3eb925324a1773938e30e825d9f71 # BROKEN because glibc does not match.
 
 all: image.json
 
