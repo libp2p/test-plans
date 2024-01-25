@@ -62,13 +62,28 @@ export const versions: Array<Version> = [
         secureChannels: ["tls", "noise"],
         muxers: ["mplex", "yamux"],
     },
-    // Re-enable when we figure out the glibc mismatch issue: https://github.com/libp2p/test-plans/pull/342
+    {
+        id: "rust-v0.53",
+        transports: ["ws", "tcp", "quic-v1", "webrtc-direct"],
+        secureChannels: ["tls", "noise"],
+        muxers: ["mplex", "yamux"],
+    },
     // {
     //     id: "rust-chromium-v0.52",
     //     transports: [{ name: "webtransport", onlyDial: true }],
     //     secureChannels: [],
     //     muxers: [],
     // },
+    {
+        id: "rust-chromium-v0.53",
+        "transports": [
+            { "name": "webtransport", "onlyDial": true },
+            { "name": "webrtc-direct", "onlyDial": true },
+            { "name": "ws", "onlyDial": true }
+        ],
+        "secureChannels": ["noise"],
+        "muxers": ["mplex", "yamux"]
+    },
     {
         id: "js-v0.45",
         transports: ["tcp", "ws", { name: "wss", onlyDial: true }],

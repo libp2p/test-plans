@@ -1,11 +1,10 @@
-image_name := rust-chromium-v0.52
-# BROKEN because glibc does not match.
-commitSha := f1bfe8d4ed423d03df4ef477072178e953c85f45
+image_name := rust-v0.53
+commitSha := b7914e407da34c99fb76dcc300b3d44b9af97fac
 
 all: image.json
 
 image.json: rust-libp2p-${commitSha}
-	cd rust-libp2p-${commitSha} && IMAGE_NAME=${image_name} ../../../../dockerBuildWrapper.sh -f interop-tests/Dockerfile.chromium .
+	cd rust-libp2p-${commitSha} && IMAGE_NAME=${image_name} ../../../../dockerBuildWrapper.sh -f interop-tests/Dockerfile.native .
 	docker image inspect ${image_name} -f "{{.Id}}" | \
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
 
