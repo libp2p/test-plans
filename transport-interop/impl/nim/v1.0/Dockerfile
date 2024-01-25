@@ -1,4 +1,4 @@
-ARG NimVersion="1.6.10"
+ARG NimVersion="1.6.16"
 FROM nimlang/nim:${NimVersion}-alpine as builder
 
 WORKDIR /app
