@@ -12,7 +12,7 @@ all: $(RUST_SUBDIRS) $(GO_SUBDIRS) $(HTTPS_SUBDIRS) $(QUIC_GO_SUBDIRS) $(JS_SUBD
 # $(HTTPS_SUBDIRS):
 # 	$(MAKE) -C $@
 # $(QUIC_GO_SUBDIRS):
-	$(MAKE) -C $@
+# 	$(MAKE) -C $@
 $(JS_SUBDIRS):
 	$(MAKE) -C $@
 
