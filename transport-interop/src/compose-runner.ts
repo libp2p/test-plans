@@ -9,7 +9,7 @@ import { stringify } from 'yaml';
 import { dialerStdout, dialerTimings } from './compose-stdout-helper';
 
 const exec = util.promisify(execStd);
-const timeoutSecs = 42
+const timeoutSecs = 3 * 60
 
 export type RunOpts = {
     up: {
@@ -50,9 +50,7 @@ export async function run(namespace: string, compose: ComposeSpecification, opts
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 1000 * timeoutSecs)
         const { signal } = controller;
-        const dcPath = `docker compose -f ${path.join(dir, "compose.yaml")} up ${upFlags.join(" ")}`
-        console.warn(dcPath)
-        const { stdout, stderr } = await exec(dcPath, { signal })
+        const { stdout, stderr } = await exec(`docker compose -f ${path.join(dir, "compose.yaml")} up ${upFlags.join(" ")}`, { signal })
         clearTimeout(timeoutId)
         try {
             const testResultsParsed = dialerTimings(dialerStdout(stdout))
