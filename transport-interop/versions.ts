@@ -63,10 +63,26 @@ export const versions: Array<Version> = [
         muxers: ["mplex", "yamux"],
     },
     {
-        id: "rust-chromium-v0.52",
-        transports: [{ name: "webtransport", onlyDial: true }],
-        secureChannels: [],
-        muxers: [],
+        id: "rust-v0.53",
+        transports: ["ws", "tcp", "quic-v1", "webrtc-direct"],
+        secureChannels: ["tls", "noise"],
+        muxers: ["mplex", "yamux"],
+    },
+    // {
+    //     id: "rust-chromium-v0.52",
+    //     transports: [{ name: "webtransport", onlyDial: true }],
+    //     secureChannels: [],
+    //     muxers: [],
+    // },
+    {
+        id: "rust-chromium-v0.53",
+        "transports": [
+            { "name": "webtransport", "onlyDial": true },
+            { "name": "webrtc-direct", "onlyDial": true },
+            { "name": "ws", "onlyDial": true }
+        ],
+        "secureChannels": ["noise"],
+        "muxers": ["mplex", "yamux"]
     },
     {
         id: "js-v0.45",

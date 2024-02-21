@@ -1,5 +1,5 @@
 image_name := rust-v0.52
-commitSha := 51070dae6395821c5ab45014b7208f15975c9101
+commitSha := f1bfe8d4ed423d03df4ef477072178e953c85f45
 
 all: image.json
 
