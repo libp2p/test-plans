@@ -111,6 +111,18 @@ export const versions: Array<Version> = [
         muxers: ["mplex", "yamux"],
     },
     {
+        id: "go-v0.33",
+        transports: ["tcp", "ws", "quic-v1", "webtransport", "webrtc-direct"],
+        secureChannels: ["tls", "noise"],
+        muxers: ["yamux"],
+    },
+    {
+        id: "go-v0.32",
+        transports: ["tcp", "ws", "quic-v1", "webtransport", "webrtc-direct"],
+        secureChannels: ["tls", "noise"],
+        muxers: ["yamux"],
+    },
+    {
         id: "go-v0.31",
         transports: ["tcp", "ws", "quic-v1", "webtransport"],
         secureChannels: ["tls", "noise"],
