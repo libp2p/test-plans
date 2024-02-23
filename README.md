@@ -1,6 +1,6 @@
 # Interoperability/end to end test-plans & performance benchmarking for libp2p
 
-[![Interop Dashboard](https://github.com/libp2p/test-plans/workflows/libp2p%20transport%20interop%20test/badge.svg?branch=master)](https://github.com/libp2p/test-plans/actions/runs/7743002566/attempts/1#summary-21113389711)
+[![Interop Dashboard](https://github.com/libp2p/test-plans/workflows/libp2p%20transport%20interop%20test/badge.svg?branch=master)](https://github.com/libp2p/test-plans/actions/runs/8021120180/attempts/1#summary-21912461640)
 
 [![Made by Protocol Labs](https://img.shields.io/badge/made%20by-Protocol%20Labs-blue.svg?style=flat-square)](http://protocol.ai)
 
