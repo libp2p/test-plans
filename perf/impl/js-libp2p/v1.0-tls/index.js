@@ -1,4 +1,4 @@
-import { noise } from '@chainsafe/libp2p-noise'
+import { tls } from '@libp2p/tls'
 import { yamux } from '@chainsafe/libp2p-yamux'
 import { tcp } from '@libp2p/tcp'
 import { multiaddr } from '@multiformats/multiaddr'
@@ -48,7 +48,7 @@ export async function main (runServer, serverIpAddress, transport, uploadBytes, 
       yamux()
     ],
     connectionEncryption: [
-      noise()
+      tls()
     ],
     connectionManager: {
       minConnections: 0
