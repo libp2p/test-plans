@@ -112,8 +112,11 @@ jobs:
           GO_MAJOR_MINOR_VERSION: ${{ steps.mm.outputs.go }}
         run: ${{ matrix.script }}
       - run: |
-          # create a PR if an open one doesn't exist yet
-          if [[ $(gh pr list --state open --base $GITHUB_REF --head $BRANCH | wc -l) -eq 0 ]]; then
-            gh pr create --title "chore: add go-libp2p@$REMOTE_VERSION for $WORKFLOW" --body "This PR adds go-libp2p@$REMOTE_VERSION for $WORKFLOW" --head $BRANCH --base $GITHUB_REF
-          fi
-          gh workflow run $WORKFLOW --ref $BRANCH
+          # push the changes
+          git push origin $BRANCH --force
+
+          # # create a PR if an open one doesn't exist yet
+          # if [[ $(gh pr list --state open --base $GITHUB_REF --head $BRANCH | wc -l) -eq 0 ]]; then
+          #   gh pr create --title "chore: add go-libp2p@$REMOTE_VERSION for $WORKFLOW" --body "This PR adds go-libp2p@$REMOTE_VERSION for $WORKFLOW" --head $BRANCH --base $GITHUB_REF
+          # fi
+          # gh workflow run $WORKFLOW --ref $BRANCH
