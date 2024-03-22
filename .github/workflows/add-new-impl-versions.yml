@@ -53,8 +53,8 @@ jobs:
               pushd transport-interop/impl/go
                 cp -r $LOCAL_MAJOR_MINOR_VERSION $REMOTE_MAJOR_MINOR_VERSION
                 pushd $REMOTE_MAJOR_MINOR_VERSION
-                  sed -i "s/image_name := go-v$LOCAL_MAJOR_MINOR_VERSION/image_name := go-$REMOTE_MAJOR_MINOR_VERSION/g" Makefile
-                  sed -i "s/version := $LOCAL_VERSION\..*/version := ${REMOTE_VERSION#v}/g" Makefile
+                  sed -i "s/image_name := go-${LOCAL_MAJOR_MINOR_VERSION}/image_name := go-${REMOTE_MAJOR_MINOR_VERSION}/g" Makefile
+                  sed -i "s/version := ${LOCAL_MAJOR_MINOR_VERSION#v}\..*/version := ${REMOTE_VERSION#v}/g" Makefile
 
                   make version.lock
                 popd
@@ -64,7 +64,7 @@ jobs:
               popd
 
               pushd transport-interop
-                versions="$(jq '. + map(select(.id == "go-\(env.LOCAL_MAJOR_MINOR_VERSION)") | .id = "go-\(env.MAJOR_MINOR_REMOTE_VERSION)")' versions.json)"
+                versions="$(jq '. + map(select(.id == "go-\(env.LOCAL_MAJOR_MINOR_VERSION)") | .id = "go-\(env.REMOTE_MAJOR_MINOR_VERSION)")' versions.json)"
                 echo "$versions" > versions.json
 
                 git add versions.json
