@@ -16,15 +16,69 @@ permissions:
   actions: write
 
 jobs:
-  go:
+  add:
+    name: Add (${{ matrix.branch }})
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - branch: perf/go-libp2p
+            workflow: perf.yml
+            directory: perf/impl/go-libp2p
+            script: |
+              pushd $DIRECTORY
+                cp -r $LOCAL_MAJOR_MINOR_VERSION $REMOTE_MAJOR_MINOR_VERSION
+                pushd $REMOTE_MAJOR_MINOR_VERSION
+                  sed -i "1s/$LOCAL_MAJOR_MINOR_VERSION/$REMOTE_MAJOR_MINOR_VERSION/g" go.mod
+
+                  go mod tidy -go=$GO_MAJOR_MINOR_VERSION
+                  go mod tidy
+
+                  go get github.com/libp2p/go-libp2p@$REMOTE_VERSION
+                popd
+
+                git add .
+                git commit -m "chore: add go-libp2p@$REMOTE_VERSION to $DIRECTORY"
+              popd
+
+              pushd perf/runner
+                versions="$(jq '. + map(select(.implementation == "go-libp2p" and .id == env.LOCAL_MAJOR_MINOR_VERSION) | .id = env.REMOTE_MAJOR_MINOR_VERSION)' versionsInput.json)"
+                echo "$versions" > versionsInput.json
+
+                git add versionsInput.json
+                git commit -m "chore: add go-libp2p@$REMOTE_VERSION to versionsInput.json"
+              popd
+          - branch: transport-interop/go-libp2p
+            workflow: transport-interop.yml
+            directory: transport-interop/impl/go
+            script: |
+              pushd $DIRECTORY
+                cp -r $LOCAL_MAJOR_MINOR_VERSION $REMOTE_MAJOR_MINOR_VERSION
+                pushd $REMOTE_MAJOR_MINOR_VERSION
+                  sed -i "s/image_name := go-${LOCAL_MAJOR_MINOR_VERSION}/image_name := go-${REMOTE_MAJOR_MINOR_VERSION}/g" Makefile
+                  sed -i "s/version := ${LOCAL_MAJOR_MINOR_VERSION#v}\..*/version := ${REMOTE_VERSION#v}/g" Makefile
+
+                  make version.lock
+                popd
+
+                git add .
+                git commit -m "chore: add go-libp2p@$REMOTE_VERSION to $DIRECTORY"
+              popd
+
+              pushd transport-interop
+                versions="$(jq '. + map(select(.id == "go-\(env.LOCAL_MAJOR_MINOR_VERSION)") | .id = "go-\(env.REMOTE_MAJOR_MINOR_VERSION)")' versionsInput.json)"
+                echo "$versions" > versionsInput.json
+
+                git add versionsInput.json
+                git commit -m "chore: add go-libp2p@$REMOTE_VERSION to versionsInput.json"
+              popd
     env:
-      DIR: perf/impl/go-libp2p
-      REPO: libp2p/go-libp2p
-      BRANCH: perf/go-libp2p
+      BRANCH: ${{ matrix.branch }}
+      WORKFLOW: ${{ matrix.workflow }}
+      DIRECTORY: ${{ matrix.directory }}
     steps:
       - name: Checkout test-plans
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Configure git
         run: |
           git fetch origin $BRANCH && git checkout $BRANCH || git checkout -b $BRANCH
@@ -32,40 +86,43 @@ jobs:
           git config --global user.email $GITHUB_ACTOR@users.noreply.github.com
           git config --global user.name $GITHUB_ACTOR
       - id: go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v5
         with:
           go-version: stable
       - name: Get the latest version (local)
         id: local
         run: ls -d v* | sort -V | tail -n-1 | xargs -I{} echo "version={}" | tee -a $GITHUB_OUTPUT
-        working-directory: ${{ env.DIR }}
+        working-directory: ${{ env.DIRECTORY }}
       - name: Get the latest version (remote)
         id: remote
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: gh api repos/$REPO/releases/latest --jq '.tag_name' | xargs -I{} echo "version={}" | tee -a $GITHUB_OUTPUT
+        run: gh api repos/libp2p/go-libp2p/releases/latest --jq '.tag_name' | xargs -I{} echo "version={}" | tee -a $GITHUB_OUTPUT
+      - id: mm
+        env:
+          REMOTE_VERSION: ${{ steps.remote.outputs.version }}
+          GO_VERSION: ${{ steps.go.outputs.go-version }}
+        run: |
+          echo $REMOTE_VERSION | sed 's/\.[0-9]*$//' | xargs -I{} echo "remote={}" | tee -a $GITHUB_OUTPUT
+          echo $GO_VERSION | sed 's/\.[0-9]*$//' | xargs -I{} echo "go={}" | tee -a $GITHUB_OUTPUT
       - name: Add the latest version
         if: ${{ !startsWith(steps.remote.outputs.version, steps.local.outputs.version) }}
         env:
-          LOCAL_VERSION: ${{ steps.local.outputs.version }}
+          LOCAL_MAJOR_MINOR_VERSION: ${{ steps.local.outputs.version }}
           REMOTE_VERSION: ${{ steps.remote.outputs.version }}
+          REMOTE_MAJOR_MINOR_VERSION: ${{ steps.mm.outputs.remote }}
           GO_VERSION: ${{ steps.go.outputs.go-version }}
+          GO_MAJOR_MINOR_VERSION: ${{ steps.mm.outputs.go }}
+        run: ${{ matrix.script }}
+      - if: ${{ !startsWith(steps.remote.outputs.version, steps.local.outputs.version) }}
+        env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          majorMinorRemoteVersion=$(echo $REMOTE_VERSION | sed 's/\.[0-9]*$//')
-          majorMinorGoVersion=$(echo $GO_VERSION | sed 's/\.[0-9]*$//')
-          cp -r $LOCAL_VERSION $majorMinorRemoteVersion
-          cd $majorMinorRemoteVersion
-          sed -i "1s/$LOCAL_VERSION/$majorMinorRemoteVersion/g" go.mod
-          go mod tidy -go=$majorMinorGoVersion
-          go mod tidy
-          go get github.com/libp2p/go-libp2p@$REMOTE_VERSION
-          git add .
-          git commit -m "chore: add go-libp2p@$REMOTE_VERSION to $DIR"
+          # push the changes
           git push origin $BRANCH --force
+
           # create a PR if an open one doesn't exist yet
           if [[ $(gh pr list --state open --base $GITHUB_REF --head $BRANCH | wc -l) -eq 0 ]]; then
-            gh pr create --title "chore: add go-libp2p@$REMOTE_VERSION to $DIR" --body "This PR adds go-libp2p@$REMOTE_VERSION to $DIR" --head $BRANCH --base $GITHUB_REF
+            gh pr create --title "chore: add go-libp2p@$REMOTE_VERSION for $WORKFLOW" --body "This PR adds go-libp2p@$REMOTE_VERSION for $WORKFLOW" --head $BRANCH --base $GITHUB_REF
           fi
-          gh workflow run perf.yml --ref $BRANCH
-        working-directory: ${{ env.DIR }}
+          gh workflow run $WORKFLOW --ref $BRANCH
