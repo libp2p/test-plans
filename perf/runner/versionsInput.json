@@ -66,5 +66,13 @@
     "transportStacks": [
       "tcp"
     ]
+  },
+  {
+    "id": "v0.33",
+    "implementation": "go-libp2p",
+    "transportStacks": [
+      "tcp",
+      "quic-v1"
+    ]
   }
 ]
