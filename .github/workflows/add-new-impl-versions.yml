@@ -149,6 +149,4 @@ jobs:
             gh pr create --title "chore: add $REPOSITORY_NAME@$REMOTE_VERSION to $TEST_NAME" --body "This PR adds $REPOSITORY_NAME@$REMOTE_VERSION to $TEST_NAME" --head $BRANCH --base $GITHUB_REF
           fi
 
-          if [[ "$TEST_NAME" == "perf" ]]; then
-            gh workflow run $TEST_NAME.yml --ref $BRANCH
-          fi
+          gh workflow run $TEST_NAME.yml --ref $BRANCH
