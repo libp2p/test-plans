@@ -291,5 +291,23 @@
       "mplex",
       "yamux"
     ]
+  },
+  {
+    "id": "js-v1.3",
+    "transports": [
+      "tcp",
+      "ws",
+      {
+        "name": "wss",
+        "onlyDial": true
+      }
+    ],
+    "secureChannels": [
+      "noise"
+    ],
+    "muxers": [
+      "mplex",
+      "yamux"
+    ]
   }
 ]
