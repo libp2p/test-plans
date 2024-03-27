@@ -8,4 +8,4 @@ RUN npm ci
 
 WORKDIR /app/node_modules/@libp2p/multidim-interop
 
-ENTRYPOINT [ "npm", "run", "test:interop:multidim", "--", "--build", "false", "--types", "false", "-t", "node" ]
+ENTRYPOINT [ "npm", "run", "test:transport:interop", "--", "--build", "false", "--types", "false", "-t", "node" ]
