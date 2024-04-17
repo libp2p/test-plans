@@ -16,7 +16,7 @@ async function main(clientPublicIP: string, serverPublicIP: string, testing: boo
             name: "throughput/upload",
             clientPublicIP,
             serverPublicIP,
-            uploadBytes: Number.MAX_SAFE_INTEGER,
+            uploadBytes: 1<<30, // gigabyte
             downloadBytes: 0,
             unit: "bit/s",
             iterations: testing ? 1 : 10,
@@ -27,7 +27,7 @@ async function main(clientPublicIP: string, serverPublicIP: string, testing: boo
             clientPublicIP,
             serverPublicIP,
             uploadBytes: 0,
-            downloadBytes: Number.MAX_SAFE_INTEGER,
+            downloadBytes: 1<<30, // gigabyte
             unit: "bit/s",
             iterations: testing ? 1 : 10,
             durationSecondsPerIteration: testing ? 5 : 20,
