@@ -15,30 +15,18 @@ export function dialerStdout(composeStdout: string): string {
 export function dialerTimings(dialerStdout: string): Object {
     let openBracket = dialerStdout.indexOf("{")
     let error
-
     while (true) {
-        if (openBracket === -1) {
-            break
-        }
-
+        if (openBracket === -1)  break
         const closeBracket = dialerStdout.indexOf("}", openBracket)
-        if (closeBracket === -1) {
-            throw new Error("Invalid JSON. No closing curly bracket found")
-        }
-
+        if (closeBracket === -1) throw new Error("Invalid JSON. No closing curly bracket found")
         try {
             const result = JSON.parse(dialerStdout.substring(openBracket, closeBracket + 1))
-
-            if (result.handshakePlusOneRTTMillis != null && result.pingRTTMilllis != null) {
-                return result
-            }
+            if (result.handshakePlusOneRTTMillis != null && result.pingRTTMilllis != null)  return result
         } catch (err) {
             error = err
         }
-
         openBracket = dialerStdout.indexOf("{", openBracket + 1)
     }
-
     throw error ?? new Error("Invalid JSON. No opening curly bracket found")
 }
 
