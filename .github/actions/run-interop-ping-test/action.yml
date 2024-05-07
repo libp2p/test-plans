@@ -43,9 +43,9 @@ runs:
       shell: bash
 
     # This depends on where this file is within this repository. This walks up
-    # from here to the multidim-interop folder
+    # from here to the transport-interop folder
     - run: |
-        WORK_DIR=$(realpath "$GITHUB_ACTION_PATH/../../../multidim-interop")
+        WORK_DIR=$(realpath "$GITHUB_ACTION_PATH/../../../transport-interop")
         echo "WORK_DIR=$WORK_DIR" >> $GITHUB_OUTPUT
       shell: bash
       id: find-workdir

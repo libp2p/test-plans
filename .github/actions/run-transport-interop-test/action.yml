@@ -1,0 +1,145 @@
+name: "libp2p transport interop test"
+description: "Run the libp2p transport interoperability test suite"
+inputs:
+  test-filter:
+    description: "Filter which tests to run out of the created matrix"
+    required: false
+    default: ""
+  test-ignore:
+    description: "Exclude tests from the created matrix that include this string in their name"
+    required: false
+    default: ""
+  extra-versions:
+    description: "Space-separated paths to JSON files describing additional images"
+    required: false
+    default: ""
+  s3-cache-bucket:
+    description: "Which S3 bucket to use for container layer caching"
+    required: false
+    default: ""
+  s3-access-key-id:
+    description: "S3 Access key id for the cache"
+    required: false
+    default: ""
+  s3-secret-access-key:
+    description: "S3 secret key id for the cache"
+    required: false
+    default: ""
+  aws-region:
+    description: "Which AWS region to use"
+    required: false
+    default: "us-east-1"
+  worker-count:
+    description: "How many workers to use for the test"
+    required: false
+    default: "2"
+runs:
+  using: "composite"
+  steps:
+    - name: Configure AWS credentials for S3 build cache
+      if: inputs.s3-access-key-id != '' && inputs.s3-secret-access-key != ''
+      run: |
+        echo "PUSH_CACHE=true" >> $GITHUB_ENV
+      shell: bash
+
+    # This depends on where this file is within this repository. This walks up
+    # from here to the transport-interop folder
+    - run: |
+        WORK_DIR=$(realpath "$GITHUB_ACTION_PATH/../../../transport-interop")
+        echo "WORK_DIR=$WORK_DIR" >> $GITHUB_OUTPUT
+      shell: bash
+      id: find-workdir
+
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 18
+
+    # Existence of /etc/buildkit/buildkitd.toml indicates that this is a
+    # self-hosted runner. If so, we need to pass the config to the buildx
+    # action. The config enables docker.io proxy which is required to
+    # work around docker hub rate limiting.
+    - run: |
+        if test -f /etc/buildkit/buildkitd.toml; then
+          echo "config=/etc/buildkit/buildkitd.toml" >> $GITHUB_OUTPUT
+        fi
+      shell: bash
+      id: buildkit
+
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v2
+      with:
+        config: ${{ steps.buildkit.outputs.config }}
+
+    - name: Install deps
+      working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
+      run: npm ci
+      shell: bash
+
+    - name: Load cache and build
+      working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
+      run: npm run cache -- load
+      shell: bash
+
+    - name: Assert Git tree is clean.
+      working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
+      shell: bash
+      run: |
+        if [[ -n "$(git status --porcelain)" ]]; then
+          echo "Git tree is dirty. This means that building an impl generated something that should probably be .gitignore'd"
+          git status
+          exit 1
+        fi
+
+    - name: Push the image cache
+      if: env.PUSH_CACHE == 'true'
+      working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
+      env:
+        AWS_BUCKET: ${{ inputs.s3-cache-bucket }}
+        AWS_REGION: ${{ inputs.aws-region }}
+        AWS_ACCESS_KEY_ID: ${{ inputs.s3-access-key-id }}
+        AWS_SECRET_ACCESS_KEY: ${{ inputs.s3-secret-access-key }}
+      run: npm run cache -- push
+      shell: bash
+
+    - name: Run the test
+      working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
+      env:
+        WORKER_COUNT: ${{ inputs.worker-count }}
+        EXTRA_VERSION: ${{ inputs.extra-versions }}
+        NAME_FILTER: ${{ inputs.test-filter }}
+        NAME_IGNORE: ${{ inputs.test-ignore }}
+      run: npm run test -- --extra-version=$EXTRA_VERSION --name-filter=$NAME_FILTER --name-ignore=$NAME_IGNORE
+      shell: bash
+
+    - name: Print the results
+      working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
+      run: cat results.csv
+      shell: bash
+
+    - name: Render results
+      working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
+      run: npm run renderResults > ./dashboard.md
+      shell: bash
+
+    - name: Show Dashboard Output
+      working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
+      run: cat ./dashboard.md >> $GITHUB_STEP_SUMMARY
+      shell: bash
+
+    - name: Exit with Error
+      working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
+      run: |
+        if grep -q ":red_circle:" ./dashboard.md; then
+          exit 1
+        else
+          exit 0
+        fi
+      shell: bash
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: test-plans-output
+        path: |
+          ${{ steps.find-workdir.outputs.WORK_DIR }}/results.csv
+          ${{ steps.find-workdir.outputs.WORK_DIR }}/dashboard.md

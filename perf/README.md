@@ -79,11 +79,33 @@ Given you have provisioned your infrastructure, you can now build and run the li
             - `--download-bytes` number of bytes to download per stream.
           - Output
             - Logging MUST go to `stderr`.
-            - Measurement output is printed to `stdout` as JSON in the form of:
-              ```json
-              {"latency": 0.246442851}
-              ```
-              Note that the measurement includes the time to (1) establish the
-              connection, (2) upload the bytes and (3) download the bytes.
+            - Measurement output is printed to `stdout` as JSON.
+            - The output schema is:
+               ``` typescript
+               interface Data {
+                 type: "intermediary" | "final";
+                 timeSeconds: number;
+                 uploadBytes: number;
+                 downloadBytes: number;
+               }
+               ```
+            - Every second the client must print the current progress to stdout. See example below. Note the `type: "intermediary"`.
+               ``` json
+               {
+                 "type": "intermediary",
+                 "timeSeconds": 1.004957645,
+                 "uploadBytes": 73039872,
+                 "downloadBytes": 0
+               },
+               ```
+            - Before terminating the client must print a final summary. See example below. Note the `type: "final"`. Also note that the measurement includes the time to (1) establish the connection, (2) upload the bytes and (3) download the bytes.
+               ``` json
+               {
+                 "type": "final",
+                 "timeSeconds": 60.127230659,
+                 "uploadBytes": 4382392320,
+                 "downloadBytes": 0
+               }
+               ```
 2. For a new implementation, in [`impl/Makefile` include your implementation in the `all` target.](./impl/Makefile#L7)
 3. For a new version, reference version in [`runner/src/versions.ts`](./runner/src/versions.ts#L7-L43).
