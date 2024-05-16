@@ -164,7 +164,6 @@
       "tcp",
       "ws",
       "quic-v1",
-      "webtransport",
       "webrtc-direct"
     ],
     "secureChannels": [
@@ -181,7 +180,6 @@
       "tcp",
       "ws",
       "quic-v1",
-      "webtransport",
       "webrtc-direct"
     ],
     "secureChannels": [
@@ -197,8 +195,7 @@
     "transports": [
       "tcp",
       "ws",
-      "quic-v1",
-      "webtransport"
+      "quic-v1"
     ],
     "secureChannels": [
       "tls",
@@ -213,8 +210,7 @@
     "transports": [
       "tcp",
       "ws",
-      "quic-v1",
-      "webtransport"
+      "quic-v1"
     ],
     "secureChannels": [
       "tls",
@@ -230,8 +226,7 @@
       "tcp",
       "ws",
       "quic",
-      "quic-v1",
-      "webtransport"
+      "quic-v1"
     ],
     "secureChannels": [
       "tls",
