@@ -275,6 +275,7 @@
       "tcp",
       "ws",
       "quic-v1",
+      "webtransport",
       "webrtc-direct"
     ],
     "secureChannels": [
