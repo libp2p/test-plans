@@ -268,5 +268,21 @@
       "mplex",
       "yamux"
     ]
+  },
+  {
+    "id": "go-v0.34",
+    "transports": [
+      "tcp",
+      "ws",
+      "quic-v1",
+      "webrtc-direct"
+    ],
+    "secureChannels": [
+      "tls",
+      "noise"
+    ],
+    "muxers": [
+      "yamux"
+    ]
   }
 ]
