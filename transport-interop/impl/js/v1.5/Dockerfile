@@ -7,5 +7,7 @@ COPY package*.json ./
 RUN npm ci
 
 WORKDIR /app/node_modules/@libp2p/multidim-interop
+# Patch the test to use IPv4 loopback address explicitly. Sometimes localhost resolves to the IPv6 address
+RUN sed -i 's/localhost/127.0.0.1/g' .aegir.js test/ping.spec.ts dist/test/ping.spec.js
 
 ENTRYPOINT [ "npm", "run", "test:interop:multidim", "--", "--build", "false", "--types", "false", "-t", "node" ]
