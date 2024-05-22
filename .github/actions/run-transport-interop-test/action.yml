@@ -71,11 +71,6 @@ runs:
       with:
         config: ${{ steps.buildkit.outputs.config }}
 
-    - name: Print docker version
-      working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
-      run: docker version
-      shell: bash
-
     - name: Install deps
       working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
       run: npm ci

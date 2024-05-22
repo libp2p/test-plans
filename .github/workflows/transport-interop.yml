@@ -2,18 +2,18 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
-      - "transport-interop/**"
+      - 'transport-interop/**'
   push:
     branches:
       - "master"
     paths:
-      - "transport-interop/**"
+      - 'transport-interop/**'
 
 name: libp2p transport interop test
 
 jobs:
   run-transport-interop:
-    runs-on: ["self-hosted", "linux", "x64", "4xlarge"] # https://github.com/pl-strflt/tf-aws-gh-runner/blob/main/runners.tf
+    runs-on: ['self-hosted', 'linux', 'x64', '4xlarge'] # https://github.com/pl-strflt/tf-aws-gh-runner/blob/main/runners.tf
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/run-transport-interop-test
