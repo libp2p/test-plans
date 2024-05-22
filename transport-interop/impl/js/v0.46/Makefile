@@ -1,4 +1,4 @@
-image_name := js-v0.46.17
+image_name := js-v0.46
 
 # TODO Enable webkit once https://github.com/libp2p/js-libp2p/pull/1627 is in
 all: image.json chromium-image.json firefox-image.json update-lock-file
@@ -28,7 +28,6 @@ image.json:
 	docker build -t ${image_name} -f ./Dockerfile .
 	docker image inspect ${image_name} -f "{{.Id}}" | \
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
-
 
 clean:
 	rm -rf image.json *-image.json

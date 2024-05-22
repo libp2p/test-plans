@@ -1,5 +1,5 @@
 {
-    "name": "Multidimensional libp2p interop test",
+    "name": "@libp2p/transport-interop",
     "version": "0.0.1",
     "description": "Tests libp2p implementations against each other across various dimensions.",
     "main": "testplans.ts",
