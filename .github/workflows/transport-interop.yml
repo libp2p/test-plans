@@ -22,6 +22,7 @@ jobs:
           s3-access-key-id: ${{ vars.S3_AWS_ACCESS_KEY_ID }}
           s3-secret-access-key: ${{ secrets.S3_AWS_SECRET_ACCESS_KEY }}
           worker-count: 16
+          test-filter: '"js-v1.6 x js-v1.6"'
   build-without-secrets:
     runs-on: ubuntu-latest
     steps:
