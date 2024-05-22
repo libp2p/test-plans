@@ -24,7 +24,7 @@ update-lock-file: image.json
 	docker cp $$CONTAINER_ID:/app/package-lock.json ./package-lock.json; \
 	docker rm $$CONTAINER_ID
 
-image.json:
+image.json: Dockerfile
 	docker build -t ${image_name} -f ./Dockerfile .
 	docker image inspect ${image_name} -f "{{.Id}}" | \
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
