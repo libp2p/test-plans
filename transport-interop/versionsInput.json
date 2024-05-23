@@ -75,43 +75,7 @@
     ]
   },
   {
-    "id": "js-v0.45",
-    "transports": [
-      "tcp",
-      "ws",
-      {
-        "name": "wss",
-        "onlyDial": true
-      }
-    ],
-    "secureChannels": [
-      "noise"
-    ],
-    "muxers": [
-      "mplex",
-      "yamux"
-    ]
-  },
-  {
-    "id": "js-v0.46",
-    "transports": [
-      "tcp",
-      "ws",
-      {
-        "name": "wss",
-        "onlyDial": true
-      }
-    ],
-    "secureChannels": [
-      "noise"
-    ],
-    "muxers": [
-      "mplex",
-      "yamux"
-    ]
-  },
-  {
-    "id": "chromium-js-v0.46",
+    "id": "chromium-js-v1.6",
     "containerImageID": "browser",
     "transports": [
       {
@@ -137,7 +101,7 @@
     ]
   },
   {
-    "id": "firefox-js-v0.46",
+    "id": "firefox-js-v1.6",
     "containerImageID": "browser",
     "transports": [
       {
@@ -280,6 +244,42 @@
     ],
     "secureChannels": [
       "tls",
+      "noise"
+    ],
+    "muxers": [
+      "mplex",
+      "yamux"
+    ]
+  },
+  {
+    "id": "js-v1.5",
+    "transports": [
+      "tcp",
+      "ws",
+      {
+        "name": "wss",
+        "onlyDial": true
+      }
+    ],
+    "secureChannels": [
+      "noise"
+    ],
+    "muxers": [
+      "mplex",
+      "yamux"
+    ]
+  },
+  {
+    "id": "js-v1.6",
+    "transports": [
+      "tcp",
+      "ws",
+      {
+        "name": "wss",
+        "onlyDial": true
+      }
+    ],
+    "secureChannels": [
       "noise"
     ],
     "muxers": [
