@@ -75,7 +75,7 @@
     ]
   },
   {
-    "id": "chromium-js-v1.6",
+    "id": "chromium-js-v1",
     "containerImageID": "browser",
     "transports": [
       {
@@ -101,7 +101,7 @@
     ]
   },
   {
-    "id": "firefox-js-v1.6",
+    "id": "firefox-js-v1",
     "containerImageID": "browser",
     "transports": [
       {
@@ -252,25 +252,7 @@
     ]
   },
   {
-    "id": "js-v1.5",
-    "transports": [
-      "tcp",
-      "ws",
-      {
-        "name": "wss",
-        "onlyDial": true
-      }
-    ],
-    "secureChannels": [
-      "noise"
-    ],
-    "muxers": [
-      "mplex",
-      "yamux"
-    ]
-  },
-  {
-    "id": "js-v1.6",
+    "id": "js-v1.x.x",
     "transports": [
       "tcp",
       "ws",

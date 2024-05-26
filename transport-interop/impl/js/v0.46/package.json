@@ -10,7 +10,7 @@
     "lint": "aegir lint",
     "dep-check": "aegir dep-check"
   },
-  "dependencies": {
+  "devDependencies": {
     "@chainsafe/libp2p-noise": "^13.0.3",
     "@chainsafe/libp2p-yamux": "^5.0.2",
     "@libp2p/interface": "^0.1.6",
@@ -19,10 +19,10 @@
     "@libp2p/webrtc": "^3.2.11",
     "@libp2p/websockets": "^7.0.13",
     "@libp2p/webtransport": "^3.1.10",
-    "@multiformats/mafmt": "^12.1.6",
     "@multiformats/multiaddr": "^12.1.10",
     "aegir": "^42.2.11",
     "libp2p": "^0.46.21",
+    "p-event": "^6.0.1",
     "redis": "^4.6.10"
   },
   "browser": {
