@@ -1,4 +1,4 @@
-image_name := js-v1.x.x
+image_name := js-v1
 
 # TODO Enable webkit once https://github.com/libp2p/js-libp2p/pull/1627 is in
 all: image.json chromium-image.json firefox-image.json update-lock-file
