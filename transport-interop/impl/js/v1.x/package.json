@@ -1,5 +1,5 @@
 {
-  "name": "@libp2p/transport-interop-libp2p-1.x.x",
+  "name": "@libp2p/transport-interop-libp2p-1.x",
   "version": "1.0.0",
   "type": "module",
   "private": true,

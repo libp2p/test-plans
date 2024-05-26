@@ -252,7 +252,7 @@
     ]
   },
   {
-    "id": "js-v1",
+    "id": "js-v1.x",
     "transports": [
       "tcp",
       "ws",
