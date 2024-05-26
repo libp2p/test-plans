@@ -75,7 +75,7 @@
     ]
   },
   {
-    "id": "chromium-js-v1",
+    "id": "chromium-js-v1.x",
     "containerImageID": "browser",
     "transports": [
       {
@@ -101,7 +101,7 @@
     ]
   },
   {
-    "id": "firefox-js-v1",
+    "id": "firefox-js-v1.x",
     "containerImageID": "browser",
     "transports": [
       {
