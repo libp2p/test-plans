@@ -103,7 +103,7 @@ import path from "path";
                 if (report != null) {
                     const rttDifference = Math.abs(report.rtt_to_holepunched_peer_millis - rttDirectConnection);
 
-                    if (rttDifference > 5) {
+                    if (rttDifference > 25) {
                         // Emit a warning but don't do anything for now.
                         console.warn(`Expected RTT of direct connection to be ~${rttDirectConnection}ms but was ${report.rtt_to_holepunched_peer_millis}ms`)
                     }
