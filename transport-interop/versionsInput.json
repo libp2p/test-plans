@@ -139,69 +139,6 @@
     ]
   },
   {
-    "id": "go-v0.32",
-    "transports": [
-      "tcp",
-      "ws",
-      "quic-v1",
-      "webrtc-direct"
-    ],
-    "secureChannels": [
-      "tls",
-      "noise"
-    ],
-    "muxers": [
-      "yamux"
-    ]
-  },
-  {
-    "id": "go-v0.31",
-    "transports": [
-      "tcp",
-      "ws",
-      "quic-v1"
-    ],
-    "secureChannels": [
-      "tls",
-      "noise"
-    ],
-    "muxers": [
-      "yamux"
-    ]
-  },
-  {
-    "id": "go-v0.30",
-    "transports": [
-      "tcp",
-      "ws",
-      "quic-v1"
-    ],
-    "secureChannels": [
-      "tls",
-      "noise"
-    ],
-    "muxers": [
-      "yamux"
-    ]
-  },
-  {
-    "id": "go-v0.29",
-    "transports": [
-      "tcp",
-      "ws",
-      "quic",
-      "quic-v1"
-    ],
-    "secureChannels": [
-      "tls",
-      "noise"
-    ],
-    "muxers": [
-      "mplex",
-      "yamux"
-    ]
-  },
-  {
     "id": "nim-v1.0",
     "transports": [
       "tcp",
