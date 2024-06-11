@@ -32,7 +32,7 @@ export async function buildTestSpecs(versions: Array<Version>, nameFilter: strin
     await db.close();
 
     return queryResults
-        .map(testCase => {
+        .map((testCase, i) => {
             let name = `${testCase.dialer} x ${testCase.listener} (${testCase.transport})`;
 
             if (nameFilter && !name.includes(nameFilter)) {
@@ -42,12 +42,12 @@ export async function buildTestSpecs(versions: Array<Version>, nameFilter: strin
                 return null
             }
 
-            return buildSpec(name, testCase.dialerImage, testCase.listenerImage, routerImageId, relayImageId, testCase.transport, routerDelay, relayDelay, assetDir, {})
+            return buildSpec(i, name, testCase.dialerImage, testCase.listenerImage, routerImageId, relayImageId, testCase.transport, routerDelay, relayDelay, assetDir, {})
         })
         .filter(spec => spec !== null)
 }
 
-function buildSpec(name: string, dialerImage: string, listenerImage: string, routerImageId: string, relayImageId: string, transport: string, routerDelay: number, relayDelay: number, assetDir: string, extraEnv: { [key: string]: string }): ComposeSpecification {
+function buildSpec(index: number, name: string, dialerImage: string, listenerImage: string, routerImageId: string, relayImageId: string, transport: string, routerDelay: number, relayDelay: number, assetDir: string, extraEnv: { [key: string]: string }): ComposeSpecification {
     let internetNetworkName = `${sanitizeComposeName(name)}_internet`
 
     let startupScriptFn = (actor: "dialer" | "listener") => (`
@@ -167,7 +167,10 @@ function buildSpec(name: string, dialerImage: string, listenerImage: string, rou
         networks: {
             lan_dialer: {},
             lan_listener: {},
-            internet: {},
+            internet: {
+                driver: "bridge",
+                ipam:{ config: [{subnet: `1.${(index>>8)%255}.${index%255}.0/24` }]},
+            }
         }
     }
 }
