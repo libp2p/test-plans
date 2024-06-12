@@ -104,8 +104,19 @@ import path from "path";
                     const rttDifference = Math.abs(report.rtt_to_holepunched_peer_millis - rttDirectConnection);
 
                     if (rttDifference > 25) {
-                        // Emit a warning but don't do anything for now.
                         console.warn(`Expected RTT of direct connection to be ~${rttDirectConnection}ms but was ${report.rtt_to_holepunched_peer_millis}ms`)
+                        class CustomExecError extends Error {
+                            stderr: string
+                            stdout: string
+                            constructor(message: string, stderr: string, stdout: string) {
+                                super(message)
+                                this.stderr = stderr
+                                this.stdout = stdout
+                            }
+                        }
+                        const e: CustomExecError = new CustomExecError(`Expected RTT of direct connection to be ~${rttDirectConnection}ms but was ${report.rtt_to_holepunched_peer_millis}ms`, "", "")
+                        failures.push({ name, e})
+                        statuses.push([name, "failure"])
                     }
                 }
 
