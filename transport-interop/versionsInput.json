@@ -64,6 +64,10 @@
       {
         "name": "ws",
         "onlyDial": true
+      },
+      {
+        "name": "wss",
+        "onlyDial": true
       }
     ],
     "secureChannels": [
