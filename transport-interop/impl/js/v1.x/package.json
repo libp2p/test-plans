@@ -26,7 +26,7 @@
     "aegir": "^42.2.11",
     "libp2p": "^1.6.0",
     "p-event": "^6.0.1",
-    "redis": "^4.6.10"
+    "redis": "^4.7.0"
   },
   "browser": {
     "@libp2p/tcp": false
