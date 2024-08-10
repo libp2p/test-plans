@@ -239,5 +239,22 @@
     "muxers": [
       "yamux"
     ]
+  },
+  {
+    "id": "rust-v0.54",
+    "transports": [
+      "ws",
+      "tcp",
+      "quic-v1",
+      "webrtc-direct"
+    ],
+    "secureChannels": [
+      "tls",
+      "noise"
+    ],
+    "muxers": [
+      "mplex",
+      "yamux"
+    ]
   }
 ]
