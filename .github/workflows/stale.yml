@@ -1,13 +1,13 @@
-name: Close and mark stale issue
+# name: Close and mark stale issue
 
-on:
-  schedule:
-    - cron: '0 0 * * *'
+# on:
+#   schedule:
+#     - cron: '0 0 * * *'
 
-permissions:
-  issues: write
-  pull-requests: write
+# permissions:
+#   issues: write
+#   pull-requests: write
 
-jobs:
-  stale:
-    uses: pl-strflt/.github/.github/workflows/reusable-stale-issue.yml@v0.3
+# jobs:
+#   stale:
+#     uses: pl-strflt/.github/.github/workflows/reusable-stale-issue.yml@v0.3
