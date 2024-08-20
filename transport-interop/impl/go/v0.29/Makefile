@@ -18,10 +18,10 @@ go-libp2p-${version}.zip:
 # This locks the exact contents of the specified version. This lets us use the
 # human readable name while still making sure the contents don't change.
 version.lock: go-libp2p-${version}.zip
-	shasum -a 256 go-libp2p-${version}.zip > $@
+	sha256sum go-libp2p-${version}.zip > $@
 
 verify-checksum: go-libp2p-${version}.zip
-	shasum -a 256 -c version.lock
+	sha256sum -c version.lock
 
 .PHONY: clean all verify-checksum
 
