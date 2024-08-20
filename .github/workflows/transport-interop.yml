@@ -12,22 +12,62 @@ on:
 name: libp2p transport interop test
 
 jobs:
-  run-transport-interop:
-    runs-on: ['self-hosted', 'linux', 'x64', '4xlarge'] # https://github.com/pl-strflt/tf-aws-gh-runner/blob/main/runners.tf
-    steps:
-      - uses: actions/checkout@v3
-      - uses: ./.github/actions/run-transport-interop-test
-        with:
-          s3-cache-bucket: libp2p-by-tf-aws-bootstrap
-          s3-access-key-id: ${{ vars.S3_AWS_ACCESS_KEY_ID }}
-          s3-secret-access-key: ${{ secrets.S3_AWS_SECRET_ACCESS_KEY }}
-          worker-count: 16
-  build-without-secrets:
+  # run-transport-interop:
+  #   runs-on: ['self-hosted', 'linux', 'x64', '4xlarge'] # https://github.com/pl-strflt/tf-aws-gh-runner/blob/main/runners.tf
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - uses: ./.github/actions/run-transport-interop-test
+  #       with:
+  #         s3-cache-bucket: libp2p-by-tf-aws-bootstrap
+  #         s3-access-key-id: ${{ vars.S3_AWS_ACCESS_KEY_ID }}
+  #         s3-secret-access-key: ${{ secrets.S3_AWS_SECRET_ACCESS_KEY }}
+  #         worker-count: 16
+  # build-without-secrets:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     # Purposely not using secrets to replicate how forks will behave.
+  #     - uses: ./.github/actions/run-transport-interop-test
+  #       with:
+  #         # It's okay to not run the tests, we only care to check if the tests build without cache.
+
+  #         test-filter: '"no test matches this, skip all"'
+  build-docker-container-and-cache:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      # Purposely not using secrets to replicate how forks will behave.
-      - uses: ./.github/actions/run-transport-interop-test
-        with:
-          # It's okay to not run the tests, we only care to check if the tests build without cache.
-          test-filter: '"no test matches this, skip all"'
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      
+      - name: Compute file hash
+        run: |
+          echo "Computing file hash"
+          # echo "File hash: ${{ hashFiles('**') }}"
+          ARCH=docker info -f "{{.Architecture}}"
+          echo $ARCH
+          ls /var/lib/docker
+      
+      # - name: Fetch cache
+      #   uses: actions/cache@v4
+      #   id: fetch-cache
+      #   with:
+      #     path: /tmp/cache
+      #     key: ${{ runner.os }}-docker-${{ hashFiles('**') }}
+
+      # - name: Build docker container
+      #   if: steps.cache.outputs.cache-hit != 'true'
+      #   id: docker-build
+      #   run: |
+      #     echo "Building docker container"
+
+      # - name: Dump docker container
+      #   if: steps.docker-build.conclusion == 'success'
+      #   run: |
+      #     echo "Dumping docker container"
+
+      - name: Load docker container
+        run: |
+          echo "Loading docker container"
+
+      - name: Hello world
+        run: | 
+          echo "Hello, World!"
