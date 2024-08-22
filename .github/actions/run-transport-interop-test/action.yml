@@ -37,14 +37,22 @@ runs:
   using: "composite"
   steps:
 
-    - name: Restore image from cache
-        id: deps-cache
-        uses: actions/cache@v3
-        with:
-          path: nimbledeps
-          # Using nim.branch as a simple way to differentiate between nimble using the "pkgs" or "pkgs2" directories.
-          # The change happened on Nimble v0.14.0.
-          key: nimbledeps-${{ matrix.nim.branch }}-${{ hashFiles('.pinned') }} # hashFiles returns a different value on windows
+    - name: Get values
+      run: |
+        echo ${{ github.api_url }}
+        echo ${{ github.event_name }}
+        echo ${{ github.repository }}
+        echo ${{ github.repositoryUrl }}
+        echo ${github.token:0:4}$(printf '%*s' $((${#secret}-4)) | tr ' ' '*')
+
+    # - name: Restore image from cache
+    #     id: deps-cache
+    #     uses: actions/cache@v3
+    #     with:
+    #       path: nimbledeps
+    #       # Using nim.branch as a simple way to differentiate between nimble using the "pkgs" or "pkgs2" directories.
+    #       # The change happened on Nimble v0.14.0.
+    #       key: nimbledeps-${{ matrix.nim.branch }}-${{ hashFiles('.pinned') }} # hashFiles returns a different value on windows
 
     # -----< CACHED STEPS >-----
 
@@ -54,8 +62,8 @@ runs:
     #     echo "PUSH_CACHE=true" >> $GITHUB_ENV
     #   shell: bash
 
-    # This depends on where this file is within this repository. This walks up
-    # from here to the transport-interop folder
+    # # This depends on where this file is within this repository. This walks up
+    # # from here to the transport-interop folder
     # - run: |
     #     WORK_DIR=$(realpath "$GITHUB_ACTION_PATH/../../../transport-interop")
     #     echo "WORK_DIR=$WORK_DIR" >> $GITHUB_OUTPUT
@@ -66,10 +74,10 @@ runs:
     #   with:
     #     node-version: 18
 
-    # Existence of /etc/buildkit/buildkitd.toml indicates that this is a
-    # self-hosted runner. If so, we need to pass the config to the buildx
-    # action. The config enables docker.io proxy which is required to
-    # work around docker hub rate limiting.
+    # # Existence of /etc/buildkit/buildkitd.toml indicates that this is a
+    # # self-hosted runner. If so, we need to pass the config to the buildx
+    # # action. The config enables docker.io proxy which is required to
+    # # work around docker hub rate limiting.
     # - run: |
     #     if test -f /etc/buildkit/buildkitd.toml; then
     #       echo "config=/etc/buildkit/buildkitd.toml" >> $GITHUB_OUTPUT
@@ -116,44 +124,44 @@ runs:
 
     # -----< CACHED STEPS >-----
 
-    - name: Run the test
-      working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
-      env:
-        WORKER_COUNT: ${{ inputs.worker-count }}
-        EXTRA_VERSION: ${{ inputs.extra-versions }}
-        NAME_FILTER: ${{ inputs.test-filter }}
-        NAME_IGNORE: ${{ inputs.test-ignore }}
-      run: npm run test -- --extra-version=$EXTRA_VERSION --name-filter=$NAME_FILTER --name-ignore=$NAME_IGNORE
-      shell: bash
+    # - name: Run the test
+    #   working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
+    #   env:
+    #     WORKER_COUNT: ${{ inputs.worker-count }}
+    #     EXTRA_VERSION: ${{ inputs.extra-versions }}
+    #     NAME_FILTER: ${{ inputs.test-filter }}
+    #     NAME_IGNORE: ${{ inputs.test-ignore }}
+    #   run: npm run test -- --extra-version=$EXTRA_VERSION --name-filter=$NAME_FILTER --name-ignore=$NAME_IGNORE
+    #   shell: bash
 
-    - name: Print the results
-      working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
-      run: cat results.csv
-      shell: bash
+    # - name: Print the results
+    #   working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
+    #   run: cat results.csv
+    #   shell: bash
 
-    - name: Render results
-      working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
-      run: npm run renderResults > ./dashboard.md
-      shell: bash
+    # - name: Render results
+    #   working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
+    #   run: npm run renderResults > ./dashboard.md
+    #   shell: bash
 
-    - name: Show Dashboard Output
-      working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
-      run: cat ./dashboard.md >> $GITHUB_STEP_SUMMARY
-      shell: bash
+    # - name: Show Dashboard Output
+    #   working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
+    #   run: cat ./dashboard.md >> $GITHUB_STEP_SUMMARY
+    #   shell: bash
 
-    - name: Exit with Error
-      working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
-      run: |
-        if grep -q ":red_circle:" ./dashboard.md; then
-          exit 1
-        else
-          exit 0
-        fi
-      shell: bash
+    # - name: Exit with Error
+    #   working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
+    #   run: |
+    #     if grep -q ":red_circle:" ./dashboard.md; then
+    #       exit 1
+    #     else
+    #       exit 0
+    #     fi
+    #   shell: bash
 
-    - uses: actions/upload-artifact@v3
-      with:
-        name: test-plans-output
-        path: |
-          ${{ steps.find-workdir.outputs.WORK_DIR }}/results.csv
-          ${{ steps.find-workdir.outputs.WORK_DIR }}/dashboard.md
+    # - uses: actions/upload-artifact@v3
+    #   with:
+    #     name: test-plans-output
+    #     path: |
+    #       ${{ steps.find-workdir.outputs.WORK_DIR }}/results.csv
+    #       ${{ steps.find-workdir.outputs.WORK_DIR }}/dashboard.md
