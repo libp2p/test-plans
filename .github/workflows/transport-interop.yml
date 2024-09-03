@@ -18,9 +18,9 @@ jobs:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/run-transport-interop-test
         with:
-          s3-cache-bucket: libp2p-by-tf-aws-bootstrap
-          s3-access-key-id: ${{ vars.S3_AWS_ACCESS_KEY_ID }}
-          s3-secret-access-key: ${{ secrets.S3_AWS_SECRET_ACCESS_KEY }}
+          s3-cache-bucket: ${{ vars.S3_LIBP2P_BUILD_CACHE_BUCKET_NAME }}
+          s3-access-key-id: ${{ vars.S3_LIBP2P_BUILD_CACHE_AWS_ACCESS_KEY_ID }}
+          s3-secret-access-key: ${{ secrets.S3_LIBP2P_BUILD_CACHE_AWS_SECRET_ACCESS_KEY }}
           worker-count: 16
   build-without-secrets:
     runs-on: ubuntu-latest

@@ -1,4 +1,4 @@
-const AWS_BUCKET = process.env.AWS_BUCKET || 'libp2p-by-tf-aws-bootstrap';
+const AWS_BUCKET = process.env.AWS_BUCKET;
 const scriptDir = __dirname;
 
 import * as crypto from 'crypto';
@@ -61,6 +61,11 @@ switch (modeStr) {
             files = files.map(f => path.join(implFolder, f))
             const cacheKey = await hashFiles(files)
             console.log("Cache key:", cacheKey)
+
+            if (AWS_BUCKET === "") {
+                console.log("Cache not found", new Error("AWS_BUCKET not set"))
+                continue
+            }
 
             if (mode == Mode.PushCache) {
                 console.log("Pushing cache")
