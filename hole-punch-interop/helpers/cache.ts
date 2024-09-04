@@ -73,7 +73,7 @@ async function loadCacheOrBuild(dir: string, ig: Ignore) {
     const cacheKey = await hashFiles(files)
     console.log("Cache key:", cacheKey)
 
-    if (AWS_BUCKET === "") {
+    if (!AWS_BUCKET) {
         console.log("Cache not found", new Error("AWS_BUCKET not set"))
         return
     }
