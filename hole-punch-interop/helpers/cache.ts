@@ -73,14 +73,12 @@ async function loadCacheOrBuild(dir: string, ig: Ignore) {
     const cacheKey = await hashFiles(files)
     console.log("Cache key:", cacheKey)
 
-    if (!AWS_BUCKET) {
-        console.log("Cache not found", new Error("AWS_BUCKET not set"))
-        return
-    }
-
     if (mode == Mode.PushCache) {
         console.log("Pushing cache")
         try {
+            if (!AWS_BUCKET) {
+                throw new Error("AWS_BUCKET not set")
+            }
             const res = await fetch(`https://s3.amazonaws.com/${AWS_BUCKET}/imageCache/${cacheKey}-${arch}.tar.gz`, {method: "HEAD"})
             if (res.ok) {
                 console.log("Cache already exists")
@@ -101,6 +99,9 @@ async function loadCacheOrBuild(dir: string, ig: Ignore) {
         console.log("Loading cache")
         let cacheHit = false
         try {
+            if (!AWS_BUCKET) {
+                throw new Error("AWS_BUCKET not set")
+            }
             // Check if the cache exists
             const res = await fetch(`https://s3.amazonaws.com/${AWS_BUCKET}/imageCache/${cacheKey}-${arch}.tar.gz`, {method: "HEAD"})
             if (res.ok) {

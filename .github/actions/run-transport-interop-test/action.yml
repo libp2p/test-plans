@@ -78,6 +78,9 @@ runs:
 
     - name: Load cache and build
       working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
+      env:
+        AWS_BUCKET: ${{ inputs.s3-cache-bucket }}
+        AWS_REGION: ${{ inputs.aws-region }}
       run: npm run cache -- load
       shell: bash
 
