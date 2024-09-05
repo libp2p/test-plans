@@ -89,6 +89,8 @@ runs:
       env:
         AWS_BUCKET: ${{ inputs.s3-cache-bucket }}
         AWS_REGION: ${{ inputs.aws-region }}
+        AWS_ACCESS_KEY_ID: ${{ inputs.s3-access-key-id }}
+        AWS_SECRET_ACCESS_KEY: ${{ inputs.s3-secret-access-key }}
       run: npm run cache -- load
       shell: bash
 
