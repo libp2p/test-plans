@@ -1,8 +1,8 @@
 import { execSync } from 'child_process';
-import { PLATFORMS, versions } from './versions.js';
+import { PLATFORMS, versions } from './versions';
 import yargs from 'yargs';
 import fs from 'fs';
-import type { BenchmarkResults, Benchmark, Result, IperfResults, PingResults, ResultValue } from './benchmark-result-type.js';
+import type { BenchmarkResults, Benchmark, Result, IperfResults, PingResults, ResultValue } from './benchmark-result-type';
 
 async function main(clientPublicIP: string, serverPublicIP: string, relayPublicIP: string, testing: boolean) {
     const pings = runPing(clientPublicIP, serverPublicIP, relayPublicIP, testing);
