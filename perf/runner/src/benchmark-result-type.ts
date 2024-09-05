@@ -20,7 +20,7 @@ export type Benchmark = {
     name: string,
     unit: "bit/s" | "s",
     results: Result[],
-    parameters:
+    parameters: Parameters
 }
 
 export type Parameters = {

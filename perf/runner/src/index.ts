@@ -1,12 +1,12 @@
 import { execSync } from 'child_process';
-import { versions } from './versions';
+import { PLATFORMS, versions } from './versions.js';
 import yargs from 'yargs';
 import fs from 'fs';
-import { BenchmarkResults, Benchmark, Result, IperfResults, PingResults, ResultValue } from './benchmark-result-type';
+import type { BenchmarkResults, Benchmark, Result, IperfResults, PingResults, ResultValue } from './benchmark-result-type.js';
 
-async function main(clientPublicIP: string, serverPublicIP: string, testing: boolean) {
-    const pings = runPing(clientPublicIP, serverPublicIP, testing);
-    const iperf = runIPerf(clientPublicIP, serverPublicIP, testing);
+async function main(clientPublicIP: string, serverPublicIP: string, relayPublicIP: string, testing: boolean) {
+    const pings = runPing(clientPublicIP, serverPublicIP, relayPublicIP, testing);
+    const iperf = runIPerf(clientPublicIP, serverPublicIP, relayPublicIP, testing);
 
     copyAndBuildPerfImplementations(serverPublicIP);
     copyAndBuildPerfImplementations(clientPublicIP);
@@ -16,6 +16,7 @@ async function main(clientPublicIP: string, serverPublicIP: string, testing: boo
             name: "throughput/upload",
             clientPublicIP,
             serverPublicIP,
+            relayPublicIP,
             uploadBytes: Number.MAX_SAFE_INTEGER,
             downloadBytes: 0,
             unit: "bit/s",
@@ -26,6 +27,7 @@ async function main(clientPublicIP: string, serverPublicIP: string, testing: boo
             name: "throughput/download",
             clientPublicIP,
             serverPublicIP,
+            relayPublicIP,
             uploadBytes: 0,
             downloadBytes: Number.MAX_SAFE_INTEGER,
             unit: "bit/s",
@@ -36,6 +38,7 @@ async function main(clientPublicIP: string, serverPublicIP: string, testing: boo
             name: "Connection establishment + 1 byte round trip latencies",
             clientPublicIP,
             serverPublicIP,
+            relayPublicIP,
             uploadBytes: 1,
             downloadBytes: 1,
             unit: "s",
@@ -56,7 +59,7 @@ async function main(clientPublicIP: string, serverPublicIP: string, testing: boo
     console.error("== done");
 }
 
-function runPing(clientPublicIP: string, serverPublicIP: string, testing: boolean): PingResults {
+function runPing(clientPublicIP: string, serverPublicIP: string, relayPublicIP: string, testing: boolean): PingResults {
     const pingCount = testing ? 1 : 100;
     console.error(`= run ${pingCount} pings from client to server`);
 
@@ -75,7 +78,7 @@ function runPing(clientPublicIP: string, serverPublicIP: string, testing: boolea
     return { unit: "s", results: times }
 }
 
-function runIPerf(clientPublicIP: string, serverPublicIP: string, testing: boolean): IperfResults {
+function runIPerf(clientPublicIP: string, serverPublicIP: string, relayPublicIP: string, testing: boolean): IperfResults {
     const iPerfIterations = testing ? 1 : 60;
     console.error(`= run ${iPerfIterations} iPerf TCP from client to server`);
 
@@ -113,6 +116,7 @@ interface ArgsRunBenchmarkAcrossVersions {
     name: string,
     clientPublicIP: string;
     serverPublicIP: string;
+    relayPublicIP: string;
     uploadBytes: number,
     downloadBytes: number,
     unit: "bit/s" | "s",
@@ -124,31 +128,40 @@ function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions): Bench
     console.error(`= Benchmark ${args.name}`)
 
     const results: Result[] = [];
+    let relayAddress: string | undefined
+    let listenerAddress: string
 
     for (const version of versions) {
         console.error(`== Version ${version.implementation}/${version.id}`)
 
-        console.error(`=== Starting server ${version.implementation}/${version.id}`);
+        if (version.relay === true) {
+            console.error(`=== Starting relay ${version.implementation}/${version.id}`);
+
+            const relayKillCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.relayPublicIP} 'kill $(cat pidfile); rm pidfile; rm relay.log || true'`;
+            const relayKillSTDOUT = execCommand(relayKillCMD);
+            console.error(relayKillSTDOUT);
+
+            const relayCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.relayPublicIP} 'nohup ./impl/${version.implementation}/${version.id}/perf --role relay --external-ip ${args.relayPublicIP} --listen-port 8001 > relay.log 2>&1 & echo \$! > pidfile '`;
+            relayAddress = execCommand(relayCMD)
+            console.error(relayAddress);
+        }
+
+        console.error(`=== Starting listener ${version.implementation}/${version.id}`);
 
         const killCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.serverPublicIP} 'kill $(cat pidfile); rm pidfile; rm server.log || true'`;
         const killSTDOUT = execCommand(killCMD);
         console.error(killSTDOUT);
 
-        const serverCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.serverPublicIP} 'nohup ./impl/${version.implementation}/${version.id}/perf --run-server --server-address 0.0.0.0:4001 > server.log 2>&1 & echo \$! > pidfile '`;
-        const serverSTDOUT = execCommand(serverCMD);
-        console.error(serverSTDOUT);
+        const listenerCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.serverPublicIP} 'nohup ./impl/${version.implementation}/${version.id}/perf --role listener --external-ip ${args.serverPublicIP} --listen-port 4001${version.server != null ? `--platform ${version.server}` : ''}${relayAddress ? ` --relay-address ${relayAddress}` : ''}> listener.log 2>&1 & echo \$! > pidfile '`;
+        listenerAddress = execCommand(listenerCMD)
+        console.error(listenerAddress);
 
         for (const transportStack of version.transportStacks) {
             const result = runClient({
-                clientPublicIP: args.clientPublicIP,
-                serverPublicIP: args.serverPublicIP,
-                id: version.id,
-                implementation: version.implementation,
-                transportStack: transportStack,
-                uploadBytes: args.uploadBytes,
-                downloadBytes: args.downloadBytes,
-                iterations: args.iterations,
-                durationSecondsPerIteration: args.durationSecondsPerIteration,
+                ...args,
+                ...version,
+                transportStack,
+                listenerAddress
             });
 
             results.push({
@@ -172,22 +185,22 @@ function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions): Bench
 }
 
 interface ArgsRunBenchmark {
-    clientPublicIP: string;
-    serverPublicIP: string;
-    serverAddress?: string;
     id: string,
-    implementation: string,
-    transportStack: string,
-    uploadBytes: number,
-    downloadBytes: number,
-    iterations: number,
-    durationSecondsPerIteration: number,
+    clientPublicIP: string
+    implementation: string
+    transportStack: string
+    uploadBytes: number
+    downloadBytes: number
+    iterations: number
+    durationSecondsPerIteration: number
+    client?: PLATFORMS
+    listenerAddress: string
 }
 
 function runClient(args: ArgsRunBenchmark): ResultValue[] {
     console.error(`=== Starting client ${args.implementation}/${args.id}/${args.transportStack}`);
 
-    const cmd = `./impl/${args.implementation}/${args.id}/perf --server-address ${args.serverPublicIP}:4001 --transport ${args.transportStack} --upload-bytes ${args.uploadBytes} --download-bytes ${args.downloadBytes}`
+    const cmd = `./impl/${args.implementation}/${args.id}/perf --role dialer --listener-address ${args.listenerAddress} --transport ${args.transportStack} --upload-bytes ${args.uploadBytes} --download-bytes ${args.downloadBytes} ${args.client != null ? `--platform ${args.client}` : ''}`
     // Note 124 is timeout's exit code when timeout is hit which is not a failure here.
     const withTimeout = `timeout ${args.durationSecondsPerIteration}s ${cmd} || [ $? -eq 124 ]`
     const withForLoop = `for i in {1..${args.iterations}}; do ${withTimeout}; done`
@@ -213,7 +226,7 @@ function execCommand(cmd: string): string {
             encoding: 'utf8',
             stdio: [process.stdin, 'pipe', process.stderr],
         });
-        return stdout;
+        return stdout.trim();
     } catch (error) {
         console.error((error as Error).message);
         process.exit(1);
@@ -242,6 +255,11 @@ const argv = yargs
             demandOption: true,
             description: 'Server public IP address',
         },
+        'relay-public-ip': {
+            type: 'string',
+            demandOption: true,
+            description: 'Relay public IP address',
+        },
         'testing': {
             type: 'boolean',
             default: false,
@@ -252,4 +270,4 @@ const argv = yargs
     .command('help', 'Print usage information', yargs.help)
     .parseSync();
 
-main(argv['client-public-ip'] as string, argv['server-public-ip'] as string, argv['testing'] as boolean);
+main(argv['client-public-ip'] as string, argv['server-public-ip'] as string, argv['relay-public-ip'] as string, argv['testing'] as boolean);

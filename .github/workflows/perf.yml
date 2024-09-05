@@ -73,6 +73,10 @@ jobs:
         name: Retrieve client's IP
         run: terraform output -raw client_ip
         working-directory: perf/terraform/configs/local
+      - id: relay
+        name: Retrieve relay's IP
+        run: terraform output -raw relay_ip
+        working-directory: perf/terraform/configs/local
       - name: Download dependencies
         run: npm ci
         working-directory: perf/runner
@@ -80,7 +84,7 @@ jobs:
         env:
           SERVER_IP: ${{ steps.server.outputs.stdout }}
           CLIENT_IP: ${{ steps.client.outputs.stdout }}
-        run: npm run start -- --client-public-ip $CLIENT_IP --server-public-ip $SERVER_IP
+        run: npm run start -- --client-public-ip $CLIENT_IP --server-public-ip $SERVER_IP --relay-public-ip $RELAY_IP
         working-directory: perf/runner
       - name: Push
         if: github.event.inputs.push == 'true'

@@ -87,6 +87,19 @@ module "long_lived_client" {
   }
 }
 
+module "long_lived_relay" {
+  count = var.long_lived_enabled ? 1 : 0
+
+  source = "../../modules/long_lived"
+
+  region = "us-east-1"
+  ami    = "ami-051f7e7f6c2f40dc2" // TODO: what should this value be?
+
+  providers = {
+    aws = aws.us-east-1
+  }
+}
+
 module "short_lived_server" {
   count = var.short_lived_enabled ? 1 : 0
 
@@ -111,6 +124,18 @@ module "short_lived_client" {
   depends_on = [module.long_lived_client]
 }
 
+module "short_lived_relay" {
+  count = var.short_lived_enabled ? 1 : 0
+
+  source = "../../modules/short_lived"
+
+  providers = {
+    aws = aws.us-east-1
+  }
+
+  depends_on = [module.long_lived_relay]
+}
+
 output "client_ip" {
   value = var.short_lived_enabled ? module.short_lived_client[0].public_ip : null
 }
@@ -119,3 +144,6 @@ output "server_ip" {
   value = var.short_lived_enabled ? module.short_lived_server[0].public_ip : null
 }
 
+output "relay_ip" {
+  value = var.short_lived_enabled ? module.short_lived_relay[0].public_ip : null
+}

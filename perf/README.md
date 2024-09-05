@@ -32,6 +32,7 @@ Benchmark results can be visualized with https://observablehq.com/@libp2p-worksp
 4. `terraform apply`
 5. `CLIENT_IP=$(terraform output -raw client_ip)`
 6. `SERVER_IP=$(terraform output -raw server_ip)`
+7. `RELAY_IP=$(terraform output -raw relay_ip)`
 
 **Notes**
 - While running terraform you may encounter the following error:
@@ -52,7 +53,7 @@ Given you have provisioned your infrastructure, you can now build and run the li
 
 1. `cd runner`
 2. `npm ci`
-3. `npm run start -- --client-public-ip $CLIENT_IP --server-public-ip $SERVER_IP`
+3. `npm run start -- --client-public-ip $CLIENT_IP --server-public-ip $SERVER_IP --relay-public-ip $RELAY_IP`
    * Note: The default number of iterations that perf will run is 10; desired iterations can be set with the  `--iterations <value>` option.
 
 ### Deprovision infrastructure
