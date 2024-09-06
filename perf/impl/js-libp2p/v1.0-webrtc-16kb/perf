@@ -43,9 +43,6 @@ done
 
 cd $(dirname "$0")
 
-whoami 1>&2
-ls -la node_modules/playwright-test 1>&2
-
 # start something
 if [ "${role}" == "relay" ]; then
   node relay.js &
