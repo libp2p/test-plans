@@ -1,5 +1,5 @@
 import { execSync } from 'child_process';
-import { PLATFORMS, versions } from './versions';
+import { PLATFORM, versions } from './versions';
 import yargs from 'yargs';
 import fs from 'fs';
 import type { BenchmarkResults, Benchmark, Result, IperfResults, PingResults, ResultValue } from './benchmark-result-type';
@@ -137,11 +137,11 @@ function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions): Bench
         if (version.relay === true) {
             console.error(`=== Starting relay ${version.implementation}/${version.id}`);
 
-            const relayKillCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.relayPublicIP} 'kill $(cat pidfile); rm pidfile; rm relay.log || true'`;
+            const relayKillCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.relayPublicIP} 'kill $(cat pidfile); rm pidfile || true'`;
             const relayKillSTDOUT = execCommand(relayKillCMD);
             console.error(relayKillSTDOUT);
 
-            const relayCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.relayPublicIP} 'nohup ./impl/${version.implementation}/${version.id}/perf --role relay --external-ip ${args.relayPublicIP} --listen-port 8001 > relay.log 2>&1 & echo \$! > pidfile '`;
+            const relayCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.relayPublicIP} 'nohup ./impl/${version.implementation}/${version.id}/perf --role relay --external-ip ${args.relayPublicIP} --listen-port 8001 & echo \$! > pidfile '`;
             relayAddress = execCommand(relayCMD)
             console.error('Relay listening on', relayAddress);
         }
@@ -149,14 +149,13 @@ function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions): Bench
         for (const transportStack of version.transportStacks) {
             console.error(`=== Starting ${transportStack} listener ${version.implementation}/${version.id}`);
 
-            const killCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.serverPublicIP} 'kill $(cat pidfile); rm pidfile; rm server.log || true'`;
+            const killCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.serverPublicIP} 'kill $(cat pidfile); rm pidfile || true'`;
             const killSTDOUT = execCommand(killCMD);
             console.error(killSTDOUT);
 
-            const listenerCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.serverPublicIP} 'nohup ./impl/${version.implementation}/${version.id}/perf --role listener --external-ip ${args.serverPublicIP} --listen-port 4001 --transport ${transportStack}${version.server != null ? ` --platform ${version.server}` : ''}${relayAddress ? ` --relay-address ${relayAddress}` : ''}> listener.log 2>&1 & echo \$! > pidfile '`;
+            const listenerCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.serverPublicIP} 'nohup ./impl/${version.implementation}/${version.id}/perf --role listener --external-ip ${args.serverPublicIP} --listen-port 4001 --transport ${transportStack}${version.server != null ? ` --platform ${version.server}` : ''}${relayAddress ? ` --relay-address ${relayAddress}` : ''} & echo \$! > pidfile '`;
             listenerAddress = execCommand(listenerCMD)
             console.error('Listener listening on', listenerAddress);
-
 
             const result = runClient({
                 ...args,
@@ -194,7 +193,7 @@ interface ArgsRunBenchmark {
     downloadBytes: number
     iterations: number
     durationSecondsPerIteration: number
-    client?: PLATFORMS
+    client?: PLATFORM
     listenerAddress: string
 }
 
