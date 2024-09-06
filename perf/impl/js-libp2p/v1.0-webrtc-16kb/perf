@@ -43,9 +43,11 @@ for ((i = 1; i <= $#; i++)); do
     fi
 done
 
+cd $(dirname "$0")
+
 # start something
 if [ "${role}" == "relay" ]; then
-  node $(dirname "$0")/relay.js &
+  node relay.js &
 elif [ "${role}" == "listener" ]; then
   if [ "${platform}" == "chromium" ] || [ "${platform}" == "firefox" ] || [ "${platform}" == "webkit" ]; then
     if [ $RELAY_ADDRESS == "" ]; then
@@ -54,26 +56,26 @@ elif [ "${role}" == "listener" ]; then
     fi
 
     # run browser listener
-    npx pw-test --browser=$platform $(dirname "$0")/listener.js &
+    npx pw-test --browser=$platform listener.js &
   elif [ "${platform}" == "electron" ]; then
     # run electron listener
     echo ERROR: electron electron is not implemented 1>&2
     exit 1
   else
     # run node listener
-    npx node $(dirname "$0")/listener.js &
+    npx node listener.js &
   fi
 elif [ "${role}" == "dialer" ]; then
   if [ "${platform}" == "chromium" ] || [ "${platform}" == "firefox" ] || [ "${platform}" == "webkit" ]; then
     # run browser dialer
-    npx pw-test $(dirname "$0")/dialer.js &
+    npx pw-test dialer.js &
   elif [ "${platform}" == "electron" ]; then
     # run electron dialer
     echo ERROR: electron dialer is not implemented 1>&2
     exit 1
   else
     # run node dialer
-    npx node $(dirname "$0")/dialer.js &
+    npx node dialer.js &
   fi
 else
     echo ERROR: Unknown role "$role" 1>&2
