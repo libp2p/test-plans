@@ -143,7 +143,7 @@ function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions): Bench
 
             const relayCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.relayPublicIP} 'nohup ./impl/${version.implementation}/${version.id}/perf --role relay --external-ip ${args.relayPublicIP} --listen-port 8001 > relay.log 2>&1 & echo \$! > pidfile '`;
             relayAddress = execCommand(relayCMD)
-            console.error(relayAddress);
+            console.error('Relay listening on', relayAddress);
         }
 
         console.error(`=== Starting listener ${version.implementation}/${version.id}`);
@@ -154,7 +154,7 @@ function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions): Bench
 
         const listenerCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.serverPublicIP} 'nohup ./impl/${version.implementation}/${version.id}/perf --role listener --external-ip ${args.serverPublicIP} --listen-port 4001${version.server != null ? `--platform ${version.server}` : ''}${relayAddress ? ` --relay-address ${relayAddress}` : ''}> listener.log 2>&1 & echo \$! > pidfile '`;
         listenerAddress = execCommand(listenerCMD)
-        console.error(listenerAddress);
+        console.error('Listener listening on', listenerAddress);
 
         for (const transportStack of version.transportStacks) {
             const result = runClient({
