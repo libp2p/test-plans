@@ -8,5 +8,15 @@
     "relay": true,
     "client": "chromium",
     "server": "chromium"
+  },
+  {
+    "id": "v1.0-webrtc-256kb",
+    "implementation": "js-libp2p",
+    "transportStacks": [
+      "webrtc"
+    ],
+    "relay": true,
+    "client": "chromium",
+    "server": "chromium"
   }
 ]

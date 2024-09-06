@@ -1,0 +1,87 @@
+#!/bin/bash
+
+# In case this script is `kill`ed, `kill` its child process, namely the `node`
+# process below.
+cleanup() {
+    kill $node_pid
+}
+trap cleanup EXIT TERM
+
+role=""
+platform=""
+
+# Parse named parameters manually
+for ((i = 1; i <= $#; i++)); do
+    if [ "${!i}" == "--external-ip" ]; then
+        export EXTERNAL_IP="${@:i+1:1}"
+    fi
+    if [ "${!i}" == "--listen-port" ]; then
+        export LISTEN_PORT="${@:i+1:1}"
+    fi
+    if [ "${!i}" == "--relay-address" ]; then
+        export RELAY_ADDRESS="${@:i+1:1}"
+    fi
+    if [ "${!i}" == "--listener-address" ]; then
+        export LISTENER_ADDRESS="${@:i+1:1}"
+    fi
+    if [ "${!i}" == "--upload-bytes" ]; then
+        export UPLOAD_BYTES="${@:i+1:1}"
+    fi
+    if [ "${!i}" == "--download-bytes" ]; then
+        export DOWNLOAD_BYTES="${@:i+1:1}"
+    fi
+    if [ "${!i}" == "--transport" ]; then
+        export TRANSPORT="${@:i+1:1}"
+    fi
+    if [ "${!i}" == "--role" ]; then
+        role="${@:i+1:1}"
+    fi
+    if [ "${!i}" == "--platform" ]; then
+        platform="${@:i+1:1}"
+    fi
+done
+
+cd $(dirname "$0")
+
+# start something
+if [ "${role}" == "relay" ]; then
+  node relay.js &
+elif [ "${role}" == "listener" ]; then
+  if [ "${platform}" == "chromium" ] || [ "${platform}" == "firefox" ] || [ "${platform}" == "webkit" ]; then
+    if [ $RELAY_ADDRESS == "" ]; then
+      echo ERROR: a relay address is required to run a browser listener 1>&2
+      exit 1
+    fi
+
+    # run browser listener
+    npx pw-test --browser=$platform listener.js &
+  elif [ "${platform}" == "electron" ]; then
+    # run electron listener
+    echo ERROR: electron electron is not implemented 1>&2
+    exit 1
+  else
+    # run node listener
+    npx node listener.js &
+  fi
+elif [ "${role}" == "dialer" ]; then
+  if [ "${platform}" == "chromium" ] || [ "${platform}" == "firefox" ] || [ "${platform}" == "webkit" ]; then
+    # run browser dialer
+    npx pw-test dialer.js &
+  elif [ "${platform}" == "electron" ]; then
+    # run electron dialer
+    echo ERROR: electron dialer is not implemented 1>&2
+    exit 1
+  else
+    # run node dialer
+    npx node dialer.js &
+  fi
+else
+    echo ERROR: Unknown role "$role" 1>&2
+    exit 1
+fi
+
+node_pid=$!
+
+# Wait for `node_pid` to finish, or for it to be `kill`ed by the above
+# `cleanup`.
+wait $node_pid

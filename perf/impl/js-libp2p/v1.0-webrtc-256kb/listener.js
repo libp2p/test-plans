@@ -50,7 +50,7 @@ if (transport === 'tcp') {
   config.transports.push(circuitRelayTransport())
   config.transports.push(webRTC({
     dataChannel: {
-      maxMessageSize: 16 * 1024
+      maxMessageSize: 256 * 1024
     }
   }))
   config.transports.push(webSockets({

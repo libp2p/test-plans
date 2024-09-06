@@ -223,16 +223,11 @@ function runClient(args: ArgsRunBenchmark): ResultValue[] {
     const withTimeout = `timeout ${args.durationSecondsPerIteration}s ${cmd} || [ $? -eq 124 ]`
     const withForLoop = `for i in {1..${args.iterations}}; do ${withTimeout}; done`
     const withSSH = `ssh -o StrictHostKeyChecking=no ec2-user@${args.clientPublicIP} '${withForLoop}'`
-
     const stdout = execCommand(withSSH);
-
     const lines = stdout.toString().trim().split('\n');
-
     const combined: ResultValue[]= [];
 
     for (const line of lines) {
-        console.error('Parse', line)
-
         // playwright logs to stdout so handle parsing errors
         // https://github.com/microsoft/playwright/issues/32487
         if (!line.includes('{') && !line.includes('}')) {
@@ -255,8 +250,8 @@ function execCommand(cmd: string): string {
             stdio: [process.stdin, 'pipe', process.stderr],
         });
         return stdout.trim();
-    } catch (error) {
-        console.error((error as Error).message);
+    } catch (error: any) {
+        console.error(error.message)
         process.exit(1);
     }
 }
@@ -350,17 +345,12 @@ function waitForMultiaddr (name: string, cmd: string): { proc: ChildProcess, pro
     const deferred = defer<string>()
     const proc = exec(cmd)
     proc.stdout?.on('data', (buf) => {
-        console.error(`[${name} STDOUT]`, buf.toString())
-
         const str = buf.toString('utf8').trim()
 
         // does it look like a multiaddr?
         if (str.includes('/p2p/')) {
             deferred.resolve(str)
         }
-    })
-    proc.stderr?.on('data', (buf) => {
-        console.error(`[${name} STDERR]`, buf.toString())
     })
     proc.on('close', () => {
         deferred.reject(new Error(`${name} exited without listening on an address`))
