@@ -43,6 +43,9 @@ done
 
 cd $(dirname "$0")
 
+# prevent playwright from logging on stdout
+export npm_config_loglevel="error"
+
 # start something
 if [ "${role}" == "relay" ]; then
   node relay.js &
