@@ -5,7 +5,6 @@ all: perf
 
 perf:
 	npm ci
-	sudo npx playwright install-deps
 
 clean:
 	rm -rf node_modules
