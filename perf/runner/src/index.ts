@@ -1,4 +1,4 @@
-import { execSync } from 'child_process';
+import { execSync, exec } from 'child_process';
 import { PLATFORM, versions } from './versions';
 import yargs from 'yargs';
 import fs from 'fs';
@@ -12,7 +12,7 @@ async function main(clientPublicIP: string, serverPublicIP: string, relayPublicI
     copyAndBuildPerfImplementations(clientPublicIP);
 
     const benchmarks = [
-        runBenchmarkAcrossVersions({
+        await runBenchmarkAcrossVersions({
             name: "throughput/upload",
             clientPublicIP,
             serverPublicIP,
@@ -23,7 +23,7 @@ async function main(clientPublicIP: string, serverPublicIP: string, relayPublicI
             iterations: testing ? 1 : 10,
             durationSecondsPerIteration: testing ? 5 : 20,
         }),
-        runBenchmarkAcrossVersions({
+        await runBenchmarkAcrossVersions({
             name: "throughput/download",
             clientPublicIP,
             serverPublicIP,
@@ -34,7 +34,7 @@ async function main(clientPublicIP: string, serverPublicIP: string, relayPublicI
             iterations: testing ? 1 : 10,
             durationSecondsPerIteration: testing ? 5 : 20,
         }),
-        runBenchmarkAcrossVersions({
+        await runBenchmarkAcrossVersions({
             name: "Connection establishment + 1 byte round trip latencies",
             clientPublicIP,
             serverPublicIP,
@@ -124,7 +124,7 @@ interface ArgsRunBenchmarkAcrossVersions {
     durationSecondsPerIteration: number,
 }
 
-function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions): Benchmark {
+async function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions): Promise<Benchmark> {
     console.error(`= Benchmark ${args.name}`)
 
     const results: Result[] = [];
@@ -137,24 +137,36 @@ function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions): Bench
         if (version.relay === true) {
             console.error(`=== Starting relay ${version.implementation}/${version.id}`);
 
-            const relayKillCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.relayPublicIP} 'kill $(cat pidfile); rm pidfile || true'`;
+            const relayKillCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.relayPublicIP} 'kill $(cat pidfile); rm pidfile; rm relay.log || true'`;
             const relayKillSTDOUT = execCommand(relayKillCMD);
             console.error(relayKillSTDOUT);
 
-            const relayCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.relayPublicIP} 'nohup ./impl/${version.implementation}/${version.id}/perf --role relay --external-ip ${args.relayPublicIP} --listen-port 8001 & echo \$! > pidfile '`;
-            relayAddress = execCommand(relayCMD)
+            const relayCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.relayPublicIP} 'nohup ./impl/${version.implementation}/${version.id}/perf --role relay --external-ip ${args.relayPublicIP} --listen-port 8001 > relay.log 2>&1 & echo \$! > pidfile '`;
+            const deferred = defer<string>()
+            const relayProc = exec(relayCMD)
+            relayProc.stdout?.on('data', (buf) => {
+                deferred.resolve(buf.toString('utf8').trim())
+            })
+
+            relayAddress = await deferred.promise
             console.error('Relay listening on', relayAddress);
         }
 
         for (const transportStack of version.transportStacks) {
             console.error(`=== Starting ${transportStack} listener ${version.implementation}/${version.id}`);
 
-            const killCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.serverPublicIP} 'kill $(cat pidfile); rm pidfile || true'`;
+            const killCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.serverPublicIP} 'kill $(cat pidfile); rm pidfile; rm server.log || true'`;
             const killSTDOUT = execCommand(killCMD);
             console.error(killSTDOUT);
 
-            const listenerCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.serverPublicIP} 'nohup ./impl/${version.implementation}/${version.id}/perf --role listener --external-ip ${args.serverPublicIP} --listen-port 4001 --transport ${transportStack}${version.server != null ? ` --platform ${version.server}` : ''}${relayAddress ? ` --relay-address ${relayAddress}` : ''} & echo \$! > pidfile '`;
-            listenerAddress = execCommand(listenerCMD)
+            const listenerCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.serverPublicIP} 'nohup ./impl/${version.implementation}/${version.id}/perf --role listener --external-ip ${args.serverPublicIP} --listen-port 4001 --transport ${transportStack}${version.server != null ? ` --platform ${version.server}` : ''}${relayAddress ? ` --relay-address ${relayAddress}` : ''}> listener.log 2>&1 & echo \$! > pidfile '`;
+            const deferred = defer<string>()
+            const listenerProc = exec(listenerCMD)
+            listenerProc.stdout?.on('data', (buf) => {
+                deferred.resolve(buf.toString('utf8').trim())
+            })
+
+            listenerAddress = await deferred.promise
             console.error('Listener listening on', listenerAddress);
 
             const result = runClient({
@@ -271,3 +283,25 @@ const argv = yargs
     .parseSync();
 
 main(argv['client-public-ip'] as string, argv['server-public-ip'] as string, argv['relay-public-ip'] as string, argv['testing'] as boolean);
+
+interface DeferredPromise<T> {
+    promise: Promise<T>
+    resolve(val: T): void
+    reject(err?: Error): void
+}
+
+function defer <T> (): DeferredPromise<T> {
+    let res: (val: T) => void = () => {}
+    let rej: (err?: Error) => void = () => {}
+
+    const p = new Promise<T>((resolve, reject) => {
+        res = resolve
+        rej = reject
+    })
+
+    return {
+        promise: p,
+        resolve: res,
+        reject: rej
+    }
+}
