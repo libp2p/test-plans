@@ -234,6 +234,7 @@ function runClient(args: ArgsRunBenchmark): ResultValue[] {
         console.error('Parse', line)
 
         // playwright logs to stdout so handle parsing errors
+        // https://github.com/microsoft/playwright/issues/32487
         if (!line.includes('{') && !line.includes('}')) {
             continue
         }
