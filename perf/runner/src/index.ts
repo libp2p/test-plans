@@ -147,7 +147,7 @@ async function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions):
             console.error(relayKillSTDOUT);
 
             const relayCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.relayPublicIP} 'nohup ./impl/${version.implementation}/${version.id}/perf --role relay --external-ip ${args.relayPublicIP} --listen-port 8001 & echo \$! > pidfile '`;
-            const { proc, promise } = await waitForMultiaddr(relayCMD)
+            const { proc, promise } = await waitForMultiaddr('Relay', relayCMD)
             relayProc = proc
             relayAddress = await promise
             console.error('Relay listening on', relayAddress);
@@ -161,7 +161,7 @@ async function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions):
             console.error(killSTDOUT);
 
             const listenerCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.serverPublicIP} 'nohup ./impl/${version.implementation}/${version.id}/perf --role listener --external-ip ${args.serverPublicIP} --listen-port 4001 --transport ${transportStack}${version.server != null ? ` --platform ${version.server}` : ''}${relayAddress ? ` --relay-address ${relayAddress}` : ''} & echo \$! > pidfile '`;
-            const { proc, promise } = await waitForMultiaddr(listenerCMD)
+            const { proc, promise } = await waitForMultiaddr('Listener', listenerCMD)
             const listenerProc = proc
             listenerAddress = await promise
 
@@ -332,10 +332,12 @@ function defer <T = void> (): DeferredPromise<T> {
     }
 }
 
-function waitForMultiaddr (cmd: string): { proc: ChildProcess, promise: Promise<string> } {
+function waitForMultiaddr (name: string, cmd: string): { proc: ChildProcess, promise: Promise<string> } {
     const deferred = defer<string>()
     const proc = exec(cmd)
     proc.stdout?.on('data', (buf) => {
+        console.error(`[${name} STDOUT]`, buf.toString())
+
         const str = buf.toString('utf8').trim()
 
         // does it look like a multiaddr?
@@ -343,8 +345,11 @@ function waitForMultiaddr (cmd: string): { proc: ChildProcess, promise: Promise<
             deferred.resolve(str)
         }
     })
+    proc.stderr?.on('data', (buf) => {
+        console.error(`[${name} STDERR]`, buf.toString())
+    })
     proc.on('close', () => {
-        deferred.reject(new Error('Process exited without listening on an address'))
+        deferred.reject(new Error(`${name} exited without listening on an address`))
     })
     proc.on('error', (err) => {
         deferred.reject(err)
