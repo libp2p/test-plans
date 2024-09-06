@@ -1,8 +1,10 @@
+DOCKER_IMAGE := mcr.microsoft.com/playwright:v1.47.0-noble
+DOCKER_RUN := docker run --rm -v "$(shell pwd)":/usr/src/myapp -w /usr/src/myapp $(DOCKER_IMAGE)
+
 all: perf
 
 perf:
-	npm ci
-	npx playwright install-deps
+	$(DOCKER_RUN) npm ci
 
 clean:
 	rm -rf node_modules
