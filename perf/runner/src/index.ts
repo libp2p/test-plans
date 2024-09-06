@@ -8,9 +8,11 @@ async function main(clientPublicIP: string, serverPublicIP: string, relayPublicI
     const pings = runPing(clientPublicIP, serverPublicIP, relayPublicIP, testing);
     const iperf = runIPerf(clientPublicIP, serverPublicIP, relayPublicIP, testing);
 
-    copyAndBuildPerfImplementations(relayPublicIP);
-    copyAndBuildPerfImplementations(serverPublicIP);
-    copyAndBuildPerfImplementations(clientPublicIP);
+    await Promise.all([
+        copyAndBuildPerfImplementations(relayPublicIP),
+        copyAndBuildPerfImplementations(serverPublicIP),
+        copyAndBuildPerfImplementations(clientPublicIP)
+    ])
 
     const benchmarks = [
         await runBenchmarkAcrossVersions({
@@ -145,22 +147,9 @@ async function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions):
             console.error(relayKillSTDOUT);
 
             const relayCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.relayPublicIP} 'nohup ./impl/${version.implementation}/${version.id}/perf --role relay --external-ip ${args.relayPublicIP} --listen-port 8001 & echo \$! > pidfile '`;
-            console.error(relayCMD)
-            const deferred = defer<string>()
-            const relayProc = exec(relayCMD)
-            relayProc.stdout?.on('data', (buf) => {
-                deferred.resolve(buf.toString('utf8').trim())
-            })
-            relayProc.on('close', () => {
-                if (relayAddress == null) {
-                    deferred.reject(new Error('Relay exited without listening on an address'))
-                }
-            })
-            relayProc.on('error', (err) => {
-                deferred.reject(err)
-            })
-
-            relayAddress = await deferred.promise
+            const { proc, promise } = await waitForMultiaddr(relayCMD)
+            relayProc = proc
+            relayAddress = await promise
             console.error('Relay listening on', relayAddress);
         }
 
@@ -172,21 +161,10 @@ async function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions):
             console.error(killSTDOUT);
 
             const listenerCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.serverPublicIP} 'nohup ./impl/${version.implementation}/${version.id}/perf --role listener --external-ip ${args.serverPublicIP} --listen-port 4001 --transport ${transportStack}${version.server != null ? ` --platform ${version.server}` : ''}${relayAddress ? ` --relay-address ${relayAddress}` : ''} & echo \$! > pidfile '`;
-            const deferred = defer<string>()
-            const listenerProc = exec(listenerCMD)
-            listenerProc.stdout?.on('data', (buf) => {
-                deferred.resolve(buf.toString('utf8').trim())
-            })
-            listenerProc.on('close', () => {
-                if (listenerAddress == null) {
-                    deferred.reject(new Error('Listener exited without listening on an address'))
-                }
-            })
-            listenerProc.on('error', (err) => {
-                deferred.reject(err)
-            })
+            const { proc, promise } = await waitForMultiaddr(listenerCMD)
+            const listenerProc = proc
+            listenerAddress = await promise
 
-            listenerAddress = await deferred.promise
             console.error('Listener listening on', listenerAddress);
 
             const result = runClient({
@@ -269,14 +247,38 @@ function execCommand(cmd: string): string {
     }
 }
 
-function copyAndBuildPerfImplementations(ip: string) {
+async function copyAndBuildPerfImplementations(ip: string): Promise<void> {
     console.error(`= Building implementations on ${ip}`);
 
-    const stdout = execCommand(`rsync -avz --progress --filter=':- .gitignore' -e "ssh -o StrictHostKeyChecking=no" ../impl ec2-user@${ip}:/home/ec2-user`);
-    console.error(stdout.toString());
+    const rsyncDeferred = defer()
+    let rsyncStdout = ''
+    const rsyncProc = exec(`rsync -avz --progress --filter=':- .gitignore' -e "ssh -o StrictHostKeyChecking=no" ../impl ec2-user@${ip}:/home/ec2-user`);
+    rsyncProc.stdout?.on('data', buf => {
+        rsyncStdout += buf.toString()
+    })
+    rsyncProc.on('exit', () => {
+        rsyncDeferred.resolve()
+    })
+    rsyncProc.on('error', err => {
+        rsyncDeferred.reject(err)
+    })
+    await rsyncDeferred.promise
+    console.error(rsyncStdout)
 
-    const stdout2 = execCommand(`ssh -o StrictHostKeyChecking=no ec2-user@${ip} 'cd impl && make'`);
-    console.error(stdout2.toString());
+    const makeDeferred = defer()
+    let makeStdout = ''
+    const makeProc = exec(`ssh -o StrictHostKeyChecking=no ec2-user@${ip} 'cd impl && make'`);
+    makeProc.stdout?.on('data', buf => {
+        makeStdout += buf.toString()
+    })
+    makeProc.on('exit', () => {
+        makeDeferred.resolve()
+    })
+    makeProc.on('error', err => {
+        makeDeferred.reject(err)
+    })
+    await makeDeferred.promise
+    console.error(makeStdout)
 }
 
 const argv = yargs
@@ -314,7 +316,7 @@ interface DeferredPromise<T> {
     reject(err?: Error): void
 }
 
-function defer <T> (): DeferredPromise<T> {
+function defer <T = void> (): DeferredPromise<T> {
     let res: (val: T) => void = () => {}
     let rej: (err?: Error) => void = () => {}
 
@@ -327,5 +329,29 @@ function defer <T> (): DeferredPromise<T> {
         promise: p,
         resolve: res,
         reject: rej
+    }
+}
+
+function waitForMultiaddr (cmd: string): { proc: ChildProcess, promise: Promise<string> } {
+    const deferred = defer<string>()
+    const proc = exec(cmd)
+    proc.stdout?.on('data', (buf) => {
+        const str = buf.toString('utf8').trim()
+
+        // does it look like a multiaddr?
+        if (str.includes('/p2p/')) {
+            deferred.resolve(str)
+        }
+    })
+    proc.on('close', () => {
+        deferred.reject(new Error('Process exited without listening on an address'))
+    })
+    proc.on('error', (err) => {
+        deferred.reject(err)
+    })
+
+    return {
+        proc,
+        promise: deferred.promise
     }
 }
