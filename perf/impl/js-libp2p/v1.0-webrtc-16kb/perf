@@ -43,8 +43,8 @@ done
 
 cd $(dirname "$0")
 
-whoami
-ls -la node_modules/playwright-test
+whoami 1>&2
+ls -la node_modules/playwright-test 1>&2
 
 # start something
 if [ "${role}" == "relay" ]; then
