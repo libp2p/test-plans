@@ -5,8 +5,8 @@ import fs from 'fs';
 import type { BenchmarkResults, Benchmark, Result, IperfResults, PingResults, ResultValue } from './benchmark-result-type';
 
 async function main(clientPublicIP: string, serverPublicIP: string, relayPublicIP: string, testing: boolean) {
-    //const pings = runPing(clientPublicIP, serverPublicIP, relayPublicIP, testing);
-    //const iperf = runIPerf(clientPublicIP, serverPublicIP, relayPublicIP, testing);
+    const pings = runPing(clientPublicIP, serverPublicIP, relayPublicIP, testing);
+    const iperf = runIPerf(clientPublicIP, serverPublicIP, relayPublicIP, testing);
 
     copyAndBuildPerfImplementations(serverPublicIP);
     copyAndBuildPerfImplementations(clientPublicIP);
@@ -46,7 +46,7 @@ async function main(clientPublicIP: string, serverPublicIP: string, relayPublicI
             durationSecondsPerIteration: Number.MAX_SAFE_INTEGER,
         }),
     ];
-/*
+
     const benchmarkResults: BenchmarkResults = {
         benchmarks,
         pings,
@@ -55,7 +55,7 @@ async function main(clientPublicIP: string, serverPublicIP: string, relayPublicI
 
     // Save results to benchmark-results.json
     fs.writeFileSync('./benchmark-results.json', JSON.stringify(benchmarkResults, null, 2));
-*/
+
     console.error("== done");
 }
 
