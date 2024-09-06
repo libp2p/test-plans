@@ -1,15 +1,15 @@
-import { execSync, exec } from 'child_process';
+import { execSync, exec, ChildProcess } from 'child_process';
 import { PLATFORM, versions } from './versions';
 import yargs from 'yargs';
 import fs from 'fs';
 import type { BenchmarkResults, Benchmark, Result, IperfResults, PingResults, ResultValue } from './benchmark-result-type';
 
 async function main(clientPublicIP: string, serverPublicIP: string, relayPublicIP: string, testing: boolean) {
-    const pings = runPing(clientPublicIP, serverPublicIP, relayPublicIP, testing);
-    const iperf = runIPerf(clientPublicIP, serverPublicIP, relayPublicIP, testing);
+    //const pings = runPing(clientPublicIP, serverPublicIP, relayPublicIP, testing);
+    //const iperf = runIPerf(clientPublicIP, serverPublicIP, relayPublicIP, testing);
 
-    copyAndBuildPerfImplementations(serverPublicIP);
-    copyAndBuildPerfImplementations(clientPublicIP);
+    //copyAndBuildPerfImplementations(serverPublicIP);
+    //copyAndBuildPerfImplementations(clientPublicIP);
 
     const benchmarks = [
         await runBenchmarkAcrossVersions({
@@ -46,7 +46,7 @@ async function main(clientPublicIP: string, serverPublicIP: string, relayPublicI
             durationSecondsPerIteration: Number.MAX_SAFE_INTEGER,
         }),
     ];
-
+/*
     const benchmarkResults: BenchmarkResults = {
         benchmarks,
         pings,
@@ -55,7 +55,7 @@ async function main(clientPublicIP: string, serverPublicIP: string, relayPublicI
 
     // Save results to benchmark-results.json
     fs.writeFileSync('./benchmark-results.json', JSON.stringify(benchmarkResults, null, 2));
-
+*/
     console.error("== done");
 }
 
@@ -134,18 +134,26 @@ async function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions):
     for (const version of versions) {
         console.error(`== Version ${version.implementation}/${version.id}`)
 
+        let relayProc: ChildProcess | undefined
+
         if (version.relay === true) {
             console.error(`=== Starting relay ${version.implementation}/${version.id}`);
 
-            const relayKillCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.relayPublicIP} 'kill $(cat pidfile); rm pidfile; rm relay.log || true'`;
+            const relayKillCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.relayPublicIP} 'kill $(cat pidfile); rm pidfile || true'`;
             const relayKillSTDOUT = execCommand(relayKillCMD);
             console.error(relayKillSTDOUT);
 
-            const relayCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.relayPublicIP} 'nohup ./impl/${version.implementation}/${version.id}/perf --role relay --external-ip ${args.relayPublicIP} --listen-port 8001 > relay.log 2>&1 & echo \$! > pidfile '`;
+            const relayCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.relayPublicIP} 'nohup ./impl/${version.implementation}/${version.id}/perf --role relay --external-ip ${args.relayPublicIP} --listen-port 8001 & echo \$! > pidfile '`;
+            console.error(relayCMD)
             const deferred = defer<string>()
             const relayProc = exec(relayCMD)
             relayProc.stdout?.on('data', (buf) => {
+                console.error('[Relay STDOUT]', buf.toString())
                 deferred.resolve(buf.toString('utf8').trim())
+            })
+            relayProc.stderr?.on('data', (buf) => {
+                console.error('[Relay STDERR]', buf.toString())
+                deferred.reject(new Error(buf.toString()))
             })
 
             relayAddress = await deferred.promise
@@ -155,15 +163,20 @@ async function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions):
         for (const transportStack of version.transportStacks) {
             console.error(`=== Starting ${transportStack} listener ${version.implementation}/${version.id}`);
 
-            const killCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.serverPublicIP} 'kill $(cat pidfile); rm pidfile; rm server.log || true'`;
+            const killCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.serverPublicIP} 'kill $(cat pidfile); rm pidfile || true'`;
             const killSTDOUT = execCommand(killCMD);
             console.error(killSTDOUT);
 
-            const listenerCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.serverPublicIP} 'nohup ./impl/${version.implementation}/${version.id}/perf --role listener --external-ip ${args.serverPublicIP} --listen-port 4001 --transport ${transportStack}${version.server != null ? ` --platform ${version.server}` : ''}${relayAddress ? ` --relay-address ${relayAddress}` : ''}> listener.log 2>&1 & echo \$! > pidfile '`;
+            const listenerCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.serverPublicIP} 'nohup ./impl/${version.implementation}/${version.id}/perf --role listener --external-ip ${args.serverPublicIP} --listen-port 4001 --transport ${transportStack}${version.server != null ? ` --platform ${version.server}` : ''}${relayAddress ? ` --relay-address ${relayAddress}` : ''} & echo \$! > pidfile '`;
             const deferred = defer<string>()
             const listenerProc = exec(listenerCMD)
             listenerProc.stdout?.on('data', (buf) => {
+                console.error('[Listener STDOUT]', buf.toString())
                 deferred.resolve(buf.toString('utf8').trim())
+            })
+            listenerProc.stderr?.on('data', (buf) => {
+                console.error('[Listener STDERR]', buf.toString())
+                deferred.reject(new Error(buf.toString()))
             })
 
             listenerAddress = await deferred.promise
@@ -182,7 +195,11 @@ async function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions):
                 version: version.id,
                 transportStack: transportStack,
             });
+
+            listenerProc.kill()
         }
+
+        relayProc?.kill()
     };
 
     return {
