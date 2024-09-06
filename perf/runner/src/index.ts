@@ -229,6 +229,11 @@ function runClient(args: ArgsRunBenchmark): ResultValue[] {
     const combined: ResultValue[]= [];
 
     for (const line of lines) {
+        // playwright logs to stdout so handle parsing errors
+        if (!line.includes('{') && !line.includes('}')) {
+            continue
+        }
+
         try {
             const result = JSON.parse(line) as ResultValue;
             combined.push(result);
