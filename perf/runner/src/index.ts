@@ -224,16 +224,15 @@ function runClient(args: ArgsRunBenchmark): ResultValue[] {
 
     const stdout = execCommand(withSSH);
 
-    console.error('RESULT')
-    console.error(stdout)
-
     const lines = stdout.toString().trim().split('\n');
 
     const combined: ResultValue[]= [];
 
     for (const line of lines) {
-        const result = JSON.parse(line) as ResultValue;
-        combined.push(result);
+        try {
+            const result = JSON.parse(line) as ResultValue;
+            combined.push(result);
+        } catch {}
     }
 
     return combined;
