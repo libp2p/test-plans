@@ -1,8 +1,14 @@
 all: perf
 
-# https://blog.nicoandres.dev/use-playwright-in-arch-linux/
 perf:
-	sudo pacman -S --needed core/nss core/nspr extra/at-spi2-core extra/libcups extra/libdrm core/dbus extra/libxcb extra/libxkbcommon extra/at-spi2-core extra/libx11 extra/libxcomposite extra/libxdamage extra/libxext extra/libxfixes extra/libxrandr extra/mesa extra/pango extra/cairo extra/alsa-lib extra/xorg-server-xvfb
+  # Install Playwright dependencies
+  yum install -y atk at-spi2-atk libdrm libXcomposite libXdamage libXfixes libXrandr mesa-libgbm alsa-lib \
+    cups-libs libXScrnSaver pango ipa-gothic-fonts xorg-x11-fonts-100dpi xorg-x11-fonts-75dpi xorg-x11-utils \
+    xorg-x11-fonts-cyrillic xorg-x11-fonts-Type1 xorg-x11-fonts-misc
+
+  # Install Xvfb for headless execution
+  yum install -y xorg-x11-server-Xvfb
+
 	npm ci
 
 clean:
