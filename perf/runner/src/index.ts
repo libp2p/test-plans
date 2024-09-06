@@ -149,12 +149,15 @@ async function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions):
             const deferred = defer<string>()
             const relayProc = exec(relayCMD)
             relayProc.stdout?.on('data', (buf) => {
-                console.error('[Relay STDOUT]', buf.toString())
                 deferred.resolve(buf.toString('utf8').trim())
             })
-            relayProc.stderr?.on('data', (buf) => {
-                console.error('[Relay STDERR]', buf.toString())
-                deferred.reject(new Error(buf.toString()))
+            relayProc.on('close', () => {
+                if (relayAddress == null) {
+                    deferred.reject(new Error('Relay exited without listening on an address'))
+                }
+            })
+            relayProc.on('error', (err) => {
+                deferred.reject(err)
             })
 
             relayAddress = await deferred.promise
@@ -172,12 +175,15 @@ async function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions):
             const deferred = defer<string>()
             const listenerProc = exec(listenerCMD)
             listenerProc.stdout?.on('data', (buf) => {
-                console.error('[Listener STDOUT]', buf.toString())
                 deferred.resolve(buf.toString('utf8').trim())
             })
-            listenerProc.stderr?.on('data', (buf) => {
-                console.error('[Listener STDERR]', buf.toString())
-                deferred.reject(new Error(buf.toString()))
+            listenerProc.on('close', () => {
+                if (listenerAddress == null) {
+                    deferred.reject(new Error('Listener exited without listening on an address'))
+                }
+            })
+            listenerProc.on('error', (err) => {
+                deferred.reject(err)
             })
 
             listenerAddress = await deferred.promise
