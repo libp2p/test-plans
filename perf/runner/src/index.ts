@@ -181,10 +181,14 @@ async function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions):
                 transportStack: transportStack,
             });
 
-            listenerProc.kill()
+            console.error('Stopping Listener')
+            listenerProc.kill('SIGKILL')
         }
 
-        relayProc?.kill()
+        if (relayProc != null) {
+            console.error('Stopping Relay')
+            relayProc?.kill('SIGKILL')
+        }
     };
 
     return {
