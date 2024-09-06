@@ -5,8 +5,8 @@ import fs from 'fs';
 import type { BenchmarkResults, Benchmark, Result, IperfResults, PingResults, ResultValue } from './benchmark-result-type';
 
 async function main(clientPublicIP: string, serverPublicIP: string, relayPublicIP: string, testing: boolean) {
-    const pings = runPing(clientPublicIP, serverPublicIP, relayPublicIP, testing);
-    const iperf = runIPerf(clientPublicIP, serverPublicIP, relayPublicIP, testing);
+    //const pings = runPing(clientPublicIP, serverPublicIP, relayPublicIP, testing);
+    //const iperf = runIPerf(clientPublicIP, serverPublicIP, relayPublicIP, testing);
 
     copyAndBuildPerfImplementations(serverPublicIP);
     copyAndBuildPerfImplementations(clientPublicIP);
