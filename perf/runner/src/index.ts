@@ -14,8 +14,6 @@ async function main(clientPublicIP: string, serverPublicIP: string, relayPublicI
         copyAndBuildPerfImplementations(clientPublicIP)
     ])
 
-    testing = true
-
     const benchmarks = [
         await runBenchmarkAcrossVersions({
             name: "throughput/upload",
@@ -229,6 +227,8 @@ function runClient(args: ArgsRunBenchmark): ResultValue[] {
     const combined: ResultValue[]= [];
 
     for (const line of lines) {
+        console.error('Parse', line)
+
         // playwright logs to stdout so handle parsing errors
         if (!line.includes('{') && !line.includes('}')) {
             continue
