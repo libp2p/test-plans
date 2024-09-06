@@ -4,7 +4,7 @@ DOCKER_RUN := docker run --rm -v "$(shell pwd)":/usr/src/myapp -w /usr/src/myapp
 all: perf
 
 perf:
-	$(DOCKER_RUN) npm ci
+	$(DOCKER_RUN) npm ci && chown -R ec2-user .
 
 clean:
 	rm -rf node_modules
