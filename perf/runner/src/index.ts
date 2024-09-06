@@ -8,8 +8,8 @@ async function main(clientPublicIP: string, serverPublicIP: string, relayPublicI
     //const pings = runPing(clientPublicIP, serverPublicIP, relayPublicIP, testing);
     //const iperf = runIPerf(clientPublicIP, serverPublicIP, relayPublicIP, testing);
 
-    //copyAndBuildPerfImplementations(serverPublicIP);
-    //copyAndBuildPerfImplementations(clientPublicIP);
+    copyAndBuildPerfImplementations(serverPublicIP);
+    copyAndBuildPerfImplementations(clientPublicIP);
 
     const benchmarks = [
         await runBenchmarkAcrossVersions({
