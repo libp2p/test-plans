@@ -146,17 +146,18 @@ function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions): Bench
             console.error('Relay listening on', relayAddress);
         }
 
-        console.error(`=== Starting listener ${version.implementation}/${version.id}`);
-
-        const killCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.serverPublicIP} 'kill $(cat pidfile); rm pidfile; rm server.log || true'`;
-        const killSTDOUT = execCommand(killCMD);
-        console.error(killSTDOUT);
-
-        const listenerCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.serverPublicIP} 'nohup ./impl/${version.implementation}/${version.id}/perf --role listener --external-ip ${args.serverPublicIP} --listen-port 4001${version.server != null ? `--platform ${version.server}` : ''}${relayAddress ? ` --relay-address ${relayAddress}` : ''}> listener.log 2>&1 & echo \$! > pidfile '`;
-        listenerAddress = execCommand(listenerCMD)
-        console.error('Listener listening on', listenerAddress);
-
         for (const transportStack of version.transportStacks) {
+            console.error(`=== Starting ${transportStack} listener ${version.implementation}/${version.id}`);
+
+            const killCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.serverPublicIP} 'kill $(cat pidfile); rm pidfile; rm server.log || true'`;
+            const killSTDOUT = execCommand(killCMD);
+            console.error(killSTDOUT);
+
+            const listenerCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.serverPublicIP} 'nohup ./impl/${version.implementation}/${version.id}/perf --role listener --external-ip ${args.serverPublicIP} --listen-port 4001 --transport ${transportStack}${version.server != null ? ` --platform ${version.server}` : ''}${relayAddress ? ` --relay-address ${relayAddress}` : ''}> listener.log 2>&1 & echo \$! > pidfile '`;
+            listenerAddress = execCommand(listenerCMD)
+            console.error('Listener listening on', listenerAddress);
+
+
             const result = runClient({
                 ...args,
                 ...version,
