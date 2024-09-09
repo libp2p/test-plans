@@ -1,4 +1,4 @@
-image_name := js-v0.45
+image_name := js-v1.x
 
 # TODO Enable webkit once https://github.com/libp2p/js-libp2p/pull/1627 is in
 all: image.json chromium-image.json firefox-image.json update-lock-file
@@ -30,6 +30,6 @@ image.json:
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
 
 clean:
-	rm -rf *-image.json
+	rm -rf image.json *-image.json
 
 .PHONY: all clean browser-images load-image-json
