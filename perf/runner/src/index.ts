@@ -274,7 +274,7 @@ async function copyAndBuildDir(dir: string, ip: string): Promise<void> {
     const rsyncDeferred = defer()
     let rsyncStdout = ''
     let rsyncStderr = ''
-    const rsyncProc = exec(`rsync -avz --progress --filter=':- .gitignore' -e "ssh -o StrictHostKeyChecking=no" ../impl ec2-user@${ip}:/home/ec2-user`);
+    const rsyncProc = exec(`rsync -avz --progress --filter=':- .gitignore' -e "ssh -o StrictHostKeyChecking=no" ../${dir} ec2-user@${ip}:/home/ec2-user`);
     rsyncProc.stdout?.on('data', buf => {
         rsyncStdout += buf.toString()
     })
