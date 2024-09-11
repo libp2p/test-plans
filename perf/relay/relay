@@ -20,7 +20,7 @@ done
 cd $(dirname "$0")
 
 # start the relay
-node relay.js &
+node index.js &
 
 node_pid=$!
 
