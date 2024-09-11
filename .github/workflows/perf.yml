@@ -99,7 +99,7 @@ jobs:
         working-directory: perf/runner
       - name: Archive
         if: github.event.intputs.push == 'false'
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: benchmark-results
           path: perf/runner/benchmark-results.json
