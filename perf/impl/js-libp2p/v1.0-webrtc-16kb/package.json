@@ -13,6 +13,6 @@
     "@libp2p/webrtc": "^4.1.9",
     "@libp2p/websockets": "^8.2.0",
     "libp2p": "^1.0.5",
-    "playwright-test": "^14.1.4"
+    "playwright-test": "^14.1.6"
   }
 }
