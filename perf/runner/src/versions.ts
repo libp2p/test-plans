@@ -10,12 +10,6 @@ export type Version = {
     transportStacks: TRANSPORT[],
 
     /**
-     * If specified, an invocation of the perf script with `--role=relay` will
-     * occur
-     */
-    relay?: boolean
-
-    /**
      * If specified this will be passed to the client as `--platform=$PLATFORM`
      */
     client?: PLATFORM
@@ -27,4 +21,3 @@ export type Version = {
 }
 
 export const versions: Array<Version> = JSON.parse(fs.readFileSync(path.join(__dirname, '../versionsInput.json'), 'utf8'));
-

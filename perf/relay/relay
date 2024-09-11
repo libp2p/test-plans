@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# In case this script is `kill`ed, `kill` its child process, namely the `node`
+# process below.
+cleanup() {
+    kill $node_pid
+}
+trap cleanup EXIT TERM
+
+# Parse named parameters manually
+for ((i = 1; i <= $#; i++)); do
+    if [ "${!i}" == "--external-ip" ]; then
+        export EXTERNAL_IP="${@:i+1:1}"
+    fi
+    if [ "${!i}" == "--listen-port" ]; then
+        export LISTEN_PORT="${@:i+1:1}"
+    fi
+done
+
+cd $(dirname "$0")
+
+# start the relay
+node relay.js &
+
+node_pid=$!
+
+# Wait for `node_pid` to finish, or for it to be `kill`ed by the above
+# `cleanup`.
+wait $node_pid

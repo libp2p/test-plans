@@ -5,13 +5,18 @@ import { identify } from '@libp2p/identify'
 import { webSockets } from '@libp2p/websockets'
 import { createLibp2p } from 'libp2p'
 
+const {
+  LISTEN_PORT,
+  EXTERNAL_IP
+} = process.env
+
 const node = await createLibp2p({
   addresses: {
     listen: [
-      `/ip4/0.0.0.0/tcp/${process.env.LISTEN_PORT}/ws`
+      `/ip4/0.0.0.0/tcp/${LISTEN_PORT}/ws`
     ],
     announce: [
-      `/ip4/${process.env.EXTERNAL_IP}/tcp/${process.env.LISTEN_PORT}/ws`
+      `/ip4/${EXTERNAL_IP}/tcp/${LISTEN_PORT}/ws`
     ]
   },
   transports: [

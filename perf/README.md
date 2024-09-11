@@ -68,28 +68,21 @@ Given you have provisioned your infrastructure, you can now build and run the li
     - For a new version of an existing implementation, create a folder `impl/<your-implementation-name>/<your-implementation-version>`.
     - In that folder include a `Makefile` that builds an executable and stores it next to the `Makefile` under the name `perf`.
     - Requirements for the executable:
-      - Running as a libp2p circuit relay server:
-        - The relay server must not exit as it will be closed by the test runner.
-        - Input via command line
-          - `--role relay`
-          - `--external-ip` the external IP the container is reachable on
-          - `--listen-port` the port to listen on
-        - The relay server should write the multiaddr it is dialable on to stdout
       - Running as a libp2p-perf server:
         - The perf server must not exit as it will be closed by the test runner.
+        - The executable must accept the command flag `--run-server` which indicates it's running as server.
         - Input via command line
-          - `--role listener`
           - `--external-ip` the external IP the container is reachable on
           - `--listen-port` the port to listen on
           - `--relay-address` if a relay was started as part of the test run, this is the multiadr it is listening on
           - `--transport` (see [`runner/versions.ts`](./runner/src/versions.ts#L7-L43) for possible variants)
           - `--platform` optionally specify what to run the code on (browsers, electron, etc)
-        - The listener should write the multiaddr it is dialable on to stdout
+        - The server should write the multiaddr it is dialable on to stdout to populate the `--server-address` option passed to the client
+        - If it does not `--server-address` will be set to a `host_ip:host_port` pair for the server
       - Running as a libp2p-perf client
         - Given that perf is a client driven set of benchmarks, the performance will be measured by the client.
           - Input via command line
-            - `--role dialer`
-            - `--listener-address` the multiaddr to dial to reach the listener
+            - `--server-address` the multiaddr to dial to reach the server
             - `--transport` (see [`runner/versions.ts`](./runner/src/versions.ts#L7-L43) for possible variants)
             - `--upload-bytes` number of bytes to upload per stream.
             - `--download-bytes` number of bytes to download per stream.

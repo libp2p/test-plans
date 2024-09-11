@@ -9,55 +9,72 @@ async function main(clientPublicIP: string, serverPublicIP: string, relayPublicI
     const iperf = runIPerf(clientPublicIP, serverPublicIP, relayPublicIP, testing);
 
     await Promise.all([
-        copyAndBuildPerfImplementations(relayPublicIP),
-        copyAndBuildPerfImplementations(serverPublicIP),
-        copyAndBuildPerfImplementations(clientPublicIP)
+        copyAndBuildDir('relay', relayPublicIP),
+        copyAndBuildDir('impl', serverPublicIP),
+        copyAndBuildDir('impl', clientPublicIP)
     ])
 
-    const benchmarks = [
-        await runBenchmarkAcrossVersions({
-            name: "throughput/upload",
-            clientPublicIP,
-            serverPublicIP,
-            relayPublicIP,
-            uploadBytes: Number.MAX_SAFE_INTEGER,
-            downloadBytes: 0,
-            unit: "bit/s",
-            iterations: testing ? 1 : 10,
-            durationSecondsPerIteration: testing ? 5 : 20,
-        }),
-        await runBenchmarkAcrossVersions({
-            name: "throughput/download",
-            clientPublicIP,
-            serverPublicIP,
-            relayPublicIP,
-            uploadBytes: 0,
-            downloadBytes: Number.MAX_SAFE_INTEGER,
-            unit: "bit/s",
-            iterations: testing ? 1 : 10,
-            durationSecondsPerIteration: testing ? 5 : 20,
-        }),
-        await runBenchmarkAcrossVersions({
-            name: "Connection establishment + 1 byte round trip latencies",
-            clientPublicIP,
-            serverPublicIP,
-            relayPublicIP,
-            uploadBytes: 1,
-            downloadBytes: 1,
-            unit: "s",
-            iterations: testing ? 1 : 100,
-            durationSecondsPerIteration: Number.MAX_SAFE_INTEGER,
-        }),
-    ];
+    console.error(`=== Starting relay`);
 
-    const benchmarkResults: BenchmarkResults = {
-        benchmarks,
-        pings,
-        iperf,
-    };
+    const relayKillCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${relayPublicIP} 'kill $(cat pidfile); rm pidfile || true'`
+    const relayKillSTDOUT = execCommand(relayKillCMD)
+    console.error(relayKillSTDOUT)
 
-    // Save results to benchmark-results.json
-    fs.writeFileSync('./benchmark-results.json', JSON.stringify(benchmarkResults, null, 2));
+    const relayCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${relayPublicIP} 'nohup ./relay/relay --external-ip ${relayPublicIP} --listen-port 8001 & echo \$! > pidfile '`
+    const { proc, promise } = await waitForMultiaddr('Relay', relayCMD)
+    const relayProc = proc
+    const relayAddress = await promise
+    console.error('Relay listening on', relayAddress)
+
+    try {
+        const benchmarks = [
+            await runBenchmarkAcrossVersions({
+                name: "throughput/upload",
+                clientPublicIP,
+                serverPublicIP,
+                relayAddress,
+                uploadBytes: Number.MAX_SAFE_INTEGER,
+                downloadBytes: 0,
+                unit: "bit/s",
+                iterations: testing ? 1 : 10,
+                durationSecondsPerIteration: testing ? 5 : 20,
+            }),
+            await runBenchmarkAcrossVersions({
+                name: "throughput/download",
+                clientPublicIP,
+                serverPublicIP,
+                relayAddress,
+                uploadBytes: 0,
+                downloadBytes: Number.MAX_SAFE_INTEGER,
+                unit: "bit/s",
+                iterations: testing ? 1 : 10,
+                durationSecondsPerIteration: testing ? 5 : 20,
+            }),
+            await runBenchmarkAcrossVersions({
+                name: "Connection establishment + 1 byte round trip latencies",
+                clientPublicIP,
+                serverPublicIP,
+                relayAddress,
+                uploadBytes: 1,
+                downloadBytes: 1,
+                unit: "s",
+                iterations: testing ? 1 : 100,
+                durationSecondsPerIteration: Number.MAX_SAFE_INTEGER,
+            }),
+        ];
+
+        const benchmarkResults: BenchmarkResults = {
+            benchmarks,
+            pings,
+            iperf,
+        };
+
+        // Save results to benchmark-results.json
+        fs.writeFileSync('./benchmark-results.json', JSON.stringify(benchmarkResults, null, 2));
+    } finally {
+        console.error('=== Stopping Relay')
+        relayProc?.kill('SIGKILL')
+    }
 
     console.error("== done");
 }
@@ -119,7 +136,7 @@ interface ArgsRunBenchmarkAcrossVersions {
     name: string,
     clientPublicIP: string;
     serverPublicIP: string;
-    relayPublicIP: string;
+    relayAddress: string;
     uploadBytes: number,
     downloadBytes: number,
     unit: "bit/s" | "s",
@@ -131,27 +148,9 @@ async function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions):
     console.error(`= Benchmark ${args.name}`)
 
     const results: Result[] = [];
-    let relayAddress: string | undefined
-    let listenerAddress: string
 
     for (const version of versions) {
         console.error(`== Version ${version.implementation}/${version.id}`)
-
-        let relayProc: ChildProcess | undefined
-
-        if (version.relay === true) {
-            console.error(`=== Starting relay ${version.implementation}/${version.id}`);
-
-            const relayKillCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.relayPublicIP} 'kill $(cat pidfile); rm pidfile || true'`;
-            const relayKillSTDOUT = execCommand(relayKillCMD);
-            console.error(relayKillSTDOUT);
-
-            const relayCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.relayPublicIP} 'nohup ./impl/${version.implementation}/${version.id}/perf --role relay --external-ip ${args.relayPublicIP} --listen-port 8001 & echo \$! > pidfile '`;
-            const { proc, promise } = await waitForMultiaddr('Relay', relayCMD)
-            relayProc = proc
-            relayAddress = await promise
-            console.error('Relay listening on', relayAddress);
-        }
 
         for (const transportStack of version.transportStacks) {
             console.error(`=== Starting ${transportStack} listener ${version.implementation}/${version.id}`);
@@ -160,18 +159,26 @@ async function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions):
             const killSTDOUT = execCommand(killCMD);
             console.error(killSTDOUT);
 
-            const listenerCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.serverPublicIP} 'nohup ./impl/${version.implementation}/${version.id}/perf --role listener --external-ip ${args.serverPublicIP} --listen-port 4001 --transport ${transportStack}${version.server != null ? ` --platform ${version.server}` : ''}${relayAddress ? ` --relay-address ${relayAddress}` : ''} & echo \$! > pidfile '`;
-            const { proc, promise } = await waitForMultiaddr('Listener', listenerCMD)
-            const listenerProc = proc
-            listenerAddress = await promise
+            const serverArgs = [
+                '--run-server true',
+                `--external-ip ${args.serverPublicIP}`,
+                '--listen-port 4001',
+                `--transport ${transportStack}`,
+                `--relay-address ${args.relayAddress}`,
+                version.server != null ? ` --platform ${version.server}` : ''
+            ]
+            const serverCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.serverPublicIP} 'nohup ./impl/${version.implementation}/${version.id}/perf ${serverArgs.join(' ')} & echo \$! > pidfile '`;
+            const { proc, promise } = await waitForMultiaddr('Server', serverCMD, `${args.serverPublicIP}:4001`)
+            const serverProc = proc
+            const serverAddress = await promise
 
-            console.error('Listener listening on', listenerAddress);
+            console.error('=== Server listening on', serverAddress);
 
             const result = runClient({
                 ...args,
                 ...version,
                 transportStack,
-                listenerAddress
+                serverAddress
             });
 
             results.push({
@@ -181,13 +188,8 @@ async function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions):
                 transportStack: transportStack,
             });
 
-            console.error('Stopping Listener')
-            listenerProc.kill('SIGKILL')
-        }
-
-        if (relayProc != null) {
-            console.error('Stopping Relay')
-            relayProc?.kill('SIGKILL')
+            console.error('=== Stopping Server')
+            serverProc.kill('SIGKILL')
         }
     };
 
@@ -212,13 +214,20 @@ interface ArgsRunBenchmark {
     iterations: number
     durationSecondsPerIteration: number
     client?: PLATFORM
-    listenerAddress: string
+    serverAddress: string
 }
 
 function runClient(args: ArgsRunBenchmark): ResultValue[] {
-    console.error(`=== Starting client ${args.implementation}/${args.id}/${args.transportStack}`);
+    console.error(`=== Starting client ${args.implementation}/${args.id}/${args.transportStack}`)
 
-    const cmd = `./impl/${args.implementation}/${args.id}/perf --role dialer --listener-address ${args.listenerAddress} --transport ${args.transportStack} --upload-bytes ${args.uploadBytes} --download-bytes ${args.downloadBytes} ${args.client != null ? `--platform ${args.client}` : ''}`
+    const clientArgs = [
+        `--server-address ${args.serverAddress}`,
+        `--transport ${args.transportStack}`,
+        `--upload-bytes ${args.uploadBytes}`,
+        `--download-bytes ${args.downloadBytes}`,
+        args.client != null ? ` --platform ${args.client}` : ''
+    ]
+    const cmd = `./impl/${args.implementation}/${args.id}/perf ${clientArgs.join(' ')}`
     // Note 124 is timeout's exit code when timeout is hit which is not a failure here.
     const withTimeout = `timeout ${args.durationSecondsPerIteration}s ${cmd} || [ $? -eq 124 ]`
     const withForLoop = `for i in {1..${args.iterations}}; do ${withTimeout}; done`
@@ -256,8 +265,8 @@ function execCommand(cmd: string): string {
     }
 }
 
-async function copyAndBuildPerfImplementations(ip: string): Promise<void> {
-    console.error(`= Building implementations on ${ip}`);
+async function copyAndBuildDir(dir: string, ip: string): Promise<void> {
+    console.error(`= Building ${dir} on ${ip}`);
 
     const rsyncDeferred = defer()
     let rsyncStdout = ''
@@ -276,7 +285,7 @@ async function copyAndBuildPerfImplementations(ip: string): Promise<void> {
 
     const makeDeferred = defer()
     let makeStdout = ''
-    const makeProc = exec(`ssh -o StrictHostKeyChecking=no ec2-user@${ip} 'cd impl && make'`);
+    const makeProc = exec(`ssh -o StrictHostKeyChecking=no ec2-user@${ip} 'cd ${dir} && make'`);
     makeProc.stdout?.on('data', buf => {
         makeStdout += buf.toString()
     })
@@ -341,7 +350,11 @@ function defer <T = void> (): DeferredPromise<T> {
     }
 }
 
-function waitForMultiaddr (name: string, cmd: string): { proc: ChildProcess, promise: Promise<string> } {
+/**
+ * Attempts to parse a multiaddr from the output, otherwise returns the passed
+ * host:port pair if passed.
+ */
+function waitForMultiaddr (name: string, cmd: string, defaultAddress?: string): { proc: ChildProcess, promise: Promise<string> } {
     const deferred = defer<string>()
     const proc = exec(cmd)
     proc.stdout?.on('data', (buf) => {
@@ -350,6 +363,10 @@ function waitForMultiaddr (name: string, cmd: string): { proc: ChildProcess, pro
         // does it look like a multiaddr?
         if (str.includes('/p2p/')) {
             deferred.resolve(str)
+        }
+
+        if (defaultAddress != null) {
+            deferred.resolve(defaultAddress)
         }
     })
     proc.on('close', () => {
