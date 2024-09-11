@@ -8,8 +8,11 @@ async function main(clientPublicIP: string, serverPublicIP: string, relayPublicI
     const pings = runPing(clientPublicIP, serverPublicIP, relayPublicIP, testing);
     const iperf = runIPerf(clientPublicIP, serverPublicIP, relayPublicIP, testing);
 
+    console.error('---- start build relay')
+    await copyAndBuildDir('relay', relayPublicIP)
+    console.error('---- finish build relay')
+
     await Promise.all([
-        copyAndBuildDir('relay', relayPublicIP),
         copyAndBuildDir('impl', serverPublicIP),
         copyAndBuildDir('impl', clientPublicIP)
     ])
@@ -270,9 +273,13 @@ async function copyAndBuildDir(dir: string, ip: string): Promise<void> {
 
     const rsyncDeferred = defer()
     let rsyncStdout = ''
+    let rsyncStderr = ''
     const rsyncProc = exec(`rsync -avz --progress --filter=':- .gitignore' -e "ssh -o StrictHostKeyChecking=no" ../impl ec2-user@${ip}:/home/ec2-user`);
     rsyncProc.stdout?.on('data', buf => {
         rsyncStdout += buf.toString()
+    })
+    rsyncProc.stderr?.on('data', buf => {
+        rsyncStderr += buf.toString()
     })
     rsyncProc.on('exit', () => {
         rsyncDeferred.resolve()
@@ -281,13 +288,22 @@ async function copyAndBuildDir(dir: string, ip: string): Promise<void> {
         rsyncDeferred.reject(err)
     })
     await rsyncDeferred.promise
+    console.error('---- build', dir, 'rsync stdout start ----')
     console.error(rsyncStdout)
+    console.error('---- build', dir, 'rsync stdout end ----')
+    console.error('---- build', dir, 'rsync stderr start ----')
+    console.error(rsyncStderr)
+    console.error('---- build', dir, 'rsync stderr end ----')
 
     const makeDeferred = defer()
     let makeStdout = ''
+    let makeStderr = ''
     const makeProc = exec(`ssh -o StrictHostKeyChecking=no ec2-user@${ip} 'cd ${dir} && make'`);
     makeProc.stdout?.on('data', buf => {
         makeStdout += buf.toString()
+    })
+    makeProc.stderr?.on('data', buf => {
+        makeStderr += buf.toString()
     })
     makeProc.on('exit', () => {
         makeDeferred.resolve()
@@ -296,7 +312,12 @@ async function copyAndBuildDir(dir: string, ip: string): Promise<void> {
         makeDeferred.reject(err)
     })
     await makeDeferred.promise
+    console.error('---- build', dir, 'make stdout start ----')
     console.error(makeStdout)
+    console.error('---- build', dir, 'make stdout end ----')
+    console.error('---- build', dir, 'make stderr start ----')
+    console.error(makeStderr)
+    console.error('---- build', dir, 'make stderr end ----')
 }
 
 const argv = yargs
