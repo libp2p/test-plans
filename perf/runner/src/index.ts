@@ -23,7 +23,7 @@ async function main(clientPublicIP: string, serverPublicIP: string, relayPublicI
     const relayKillSTDOUT = execCommand(relayKillCMD)
     console.error(relayKillSTDOUT)
 
-    const relayCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${relayPublicIP} 'nohup ./relay --external-ip ${relayPublicIP} --listen-port 8001 & echo \$! > pidfile '`
+    const relayCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${relayPublicIP} 'nohup ./relay/relay --external-ip ${relayPublicIP} --listen-port 8001 & echo \$! > pidfile '`
     const { proc, promise } = await waitForMultiaddr('Relay', relayCMD)
     const relayProc = proc
     const relayAddress = await promise
