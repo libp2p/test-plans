@@ -359,6 +359,7 @@ function waitForMultiaddr (name: string, cmd: string, defaultAddress?: string): 
     const proc = exec(cmd)
     proc.stdout?.on('data', (buf) => {
         const str = buf.toString('utf8').trim()
+        console.error(`[${name} OUT]`, str)
 
         // does it look like a multiaddr?
         if (str.includes('/p2p/')) {
@@ -368,6 +369,10 @@ function waitForMultiaddr (name: string, cmd: string, defaultAddress?: string): 
         if (defaultAddress != null) {
             deferred.resolve(defaultAddress)
         }
+    })
+    proc.stderr?.on('data', (buf) => {
+        const str = buf.toString('utf8').trim()
+        console.error(`[${name} ERR]`, str)
     })
     proc.on('close', () => {
         deferred.reject(new Error(`${name} exited without listening on an address`))
