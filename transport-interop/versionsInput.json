@@ -1,39 +1,5 @@
 [
   {
-    "id": "rust-v0.51",
-    "transports": [
-      "ws",
-      "tcp",
-      "quic-v1",
-      "webrtc-direct"
-    ],
-    "secureChannels": [
-      "tls",
-      "noise"
-    ],
-    "muxers": [
-      "mplex",
-      "yamux"
-    ]
-  },
-  {
-    "id": "rust-v0.52",
-    "transports": [
-      "ws",
-      "tcp",
-      "quic-v1",
-      "webrtc-direct"
-    ],
-    "secureChannels": [
-      "tls",
-      "noise"
-    ],
-    "muxers": [
-      "mplex",
-      "yamux"
-    ]
-  },
-  {
     "id": "rust-v0.53",
     "transports": [
       "ws",
