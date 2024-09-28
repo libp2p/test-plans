@@ -207,6 +207,24 @@
     ]
   },
   {
+    "id": "js-v2.x",
+    "transports": [
+      "tcp",
+      "ws",
+      {
+        "name": "wss",
+        "onlyDial": true
+      }
+    ],
+    "secureChannels": [
+      "noise"
+    ],
+    "muxers": [
+      "mplex",
+      "yamux"
+    ]
+  },
+  {
     "id": "go-v0.34",
     "transports": [
       "tcp",
