@@ -3,6 +3,7 @@
     "id": "rust-v0.53",
     "transports": [
       "ws",
+      "wss",
       "tcp",
       "quic-v1",
       "webrtc-direct"
@@ -20,6 +21,7 @@
     "id": "rust-v0.54",
     "transports": [
       "ws",
+      "wss",
       "tcp",
       "quic-v1",
       "webrtc-direct"
@@ -47,6 +49,10 @@
       {
         "name": "ws",
         "onlyDial": true
+      },
+      {
+        "name": "wss",
+        "onlyDial": true
       }
     ],
     "secureChannels": [
@@ -70,6 +76,10 @@
       },
       {
         "name": "ws",
+        "onlyDial": true
+      },
+      {
+        "name": "wss",
         "onlyDial": true
       }
     ],
