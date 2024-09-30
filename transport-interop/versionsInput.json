@@ -123,22 +123,6 @@
     ]
   },
   {
-    "id": "go-v0.33",
-    "transports": [
-      "tcp",
-      "ws",
-      "quic-v1",
-      "webrtc-direct"
-    ],
-    "secureChannels": [
-      "tls",
-      "noise"
-    ],
-    "muxers": [
-      "yamux"
-    ]
-  },
-  {
     "id": "nim-v1.0",
     "transports": [
       "tcp",
@@ -230,6 +214,23 @@
       "tcp",
       "ws",
       "wss",
+      "quic-v1",
+      "webtransport",
+      "webrtc-direct"
+    ],
+    "secureChannels": [
+      "tls",
+      "noise"
+    ],
+    "muxers": [
+      "yamux"
+    ]
+  },
+  {
+    "id": "go-v0.36",
+    "transports": [
+      "tcp",
+      "ws",
       "quic-v1",
       "webtransport",
       "webrtc-direct"
