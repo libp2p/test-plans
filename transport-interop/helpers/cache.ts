@@ -1,8 +1,9 @@
-const AWS_BUCKET = process.env.AWS_BUCKET || 'libp2p-by-tf-aws-bootstrap';
+const AWS_BUCKET = process.env.AWS_BUCKET;
 const scriptDir = __dirname;
 
 import * as crypto from 'crypto';
 import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 import * as child_process from 'child_process';
 import ignore, { Ignore } from 'ignore'
@@ -65,10 +66,14 @@ switch (modeStr) {
             if (mode == Mode.PushCache) {
                 console.log("Pushing cache")
                 try {
-                    const res = await fetch(`https://s3.amazonaws.com/${AWS_BUCKET}/imageCache/${cacheKey}-${arch}.tar.gz`, { method: "HEAD" })
-                    if (res.ok) {
+                    if (!AWS_BUCKET) {
+                        throw new Error("AWS_BUCKET not set")
+                    }
+                    try {
+                        child_process.execSync(`aws s3 ls s3://${AWS_BUCKET}/imageCache/${cacheKey}-${arch}.tar.gz`)
                         console.log("Cache already exists")
-                    } else {
+                    } catch (e) {
+                        console.log("Cache doesn't exist", e)
                         // Read image id from image.json
                         const imageID = JSON.parse(fs.readFileSync(path.join(implFolder, 'image.json')).toString()).imageID;
                         console.log(`Pushing cache for ${impl}: ${imageID}`)
@@ -85,18 +90,17 @@ switch (modeStr) {
                 console.log("Loading cache")
                 let cacheHit = false
                 try {
-                    // Check if the cache exists
-                    const res = await fetch(`https://s3.amazonaws.com/${AWS_BUCKET}/imageCache/${cacheKey}-${arch}.tar.gz`, { method: "HEAD" })
-                    if (res.ok) {
-                        const dockerLoadedMsg = child_process.execSync(`curl https://s3.amazonaws.com/${AWS_BUCKET}/imageCache/${cacheKey}-${arch}.tar.gz  | docker image load`).toString();
-                        const loadedImageId = dockerLoadedMsg.match(/Loaded image( ID)?: (.*)/)[2];
-                        if (loadedImageId) {
-                            console.log(`Cache hit for ${loadedImageId}`);
-                            fs.writeFileSync(path.join(implFolder, 'image.json'), JSON.stringify({ imageID: loadedImageId }) + "\n");
-                            cacheHit = true
-                        }
-                    } else {
-                        console.log("Cache not found")
+                    if (!AWS_BUCKET) {
+                        throw new Error("AWS_BUCKET not set")
+                    }
+                    const cachePath = fs.mkdtempSync(path.join(os.tmpdir(), 'cache'))
+                    const archivePath = path.join(cachePath, 'archive.tar.gz')
+                    const dockerLoadedMsg = child_process.execSync(`aws s3 cp s3://${AWS_BUCKET}/imageCache/${cacheKey}-${arch}.tar.gz ${archivePath} && docker image load -i ${archivePath}`).toString();
+                            const loadedImageId = dockerLoadedMsg.match(/Loaded image( ID)?: (.*)/)[2];
+                    if (loadedImageId) {
+                        console.log(`Cache hit for ${loadedImageId}`);
+                        fs.writeFileSync(path.join(implFolder, 'image.json'), JSON.stringify({ imageID: loadedImageId }) + "\n");
+                        cacheHit = true
                     }
                 } catch (e) {
                     console.log("Cache not found:", e)
