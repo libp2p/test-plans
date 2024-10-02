@@ -277,6 +277,7 @@
     "transports": [
       "tcp",
       "ws",
+      "wss",
       "quic-v1",
       "webtransport",
       "webrtc-direct"
@@ -294,6 +295,7 @@
     "transports": [
       "tcp",
       "ws",
+      "wss",
       "quic-v1",
       "webtransport",
       "webrtc-direct"
@@ -311,6 +313,7 @@
     "transports": [
       "tcp",
       "ws",
+      "wss",
       "quic-v1",
       "webtransport",
       "webrtc-direct"
