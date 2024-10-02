@@ -1,5 +1,5 @@
-image_name := go-v0.30
-version := 0.30.0
+image_name := go-v0.34
+version := 0.34.1
 
 all: image.json
 
@@ -29,4 +29,3 @@ clean:
 	rm image.json
 	rm go-libp2p-*.zip
 	rm -rf go-libp2p-*
-

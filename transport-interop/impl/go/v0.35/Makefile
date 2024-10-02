@@ -1,5 +1,5 @@
-image_name := go-v0.33
-version := 0.33.0
+image_name := go-v0.35
+version := 0.35.5
 
 all: image.json
 
