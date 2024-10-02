@@ -113,7 +113,55 @@
     ]
   },
   {
+    "id": "chromium-js-v2.x",
+    "containerImageID": "browser",
+    "transports": [
+      {
+        "name": "webtransport",
+        "onlyDial": true
+      },
+      {
+        "name": "wss",
+        "onlyDial": true
+      },
+      {
+        "name": "webrtc-direct",
+        "onlyDial": true
+      },
+      "webrtc"
+    ],
+    "secureChannels": [
+      "noise"
+    ],
+    "muxers": [
+      "mplex",
+      "yamux"
+    ]
+  },
+  {
     "id": "firefox-js-v1.x",
+    "containerImageID": "browser",
+    "transports": [
+      {
+        "name": "wss",
+        "onlyDial": true
+      },
+      {
+        "name": "webrtc-direct",
+        "onlyDial": true
+      },
+      "webrtc"
+    ],
+    "secureChannels": [
+      "noise"
+    ],
+    "muxers": [
+      "mplex",
+      "yamux"
+    ]
+  },
+  {
+    "id": "firefox-js-v2.x",
     "containerImageID": "browser",
     "transports": [
       {
@@ -186,6 +234,24 @@
   },
   {
     "id": "js-v1.x",
+    "transports": [
+      "tcp",
+      "ws",
+      {
+        "name": "wss",
+        "onlyDial": true
+      }
+    ],
+    "secureChannels": [
+      "noise"
+    ],
+    "muxers": [
+      "mplex",
+      "yamux"
+    ]
+  },
+  {
+    "id": "js-v2.x",
     "transports": [
       "tcp",
       "ws",
