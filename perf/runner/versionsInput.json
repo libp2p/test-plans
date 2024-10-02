@@ -54,34 +54,6 @@
     ]
   },
   {
-    "id": "v0.46",
-    "implementation": "js-libp2p",
-    "transportStacks": [
-      "tcp"
-    ]
-  },
-  {
-    "id": "v1.0",
-    "implementation": "js-libp2p",
-    "transportStacks": [
-      "tcp"
-    ]
-  },
-  {
-    "id": "v1.6",
-    "implementation": "js-libp2p",
-    "transportStacks": [
-      "tcp"
-    ]
-  },
-  {
-    "id": "v1.7",
-    "implementation": "js-libp2p",
-    "transportStacks": [
-      "tcp"
-    ]
-  },
-  {
     "id": "v1.8",
     "implementation": "js-libp2p",
     "transportStacks": [
