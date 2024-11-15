@@ -138,8 +138,8 @@ github.com/libp2p/go-buffer-pool v0.1.0 h1:oK4mSFcQz7cTQIfqbe4MIj9gLW+mnanjyFtc6
 github.com/libp2p/go-buffer-pool v0.1.0/go.mod h1:N+vh8gMqimBzdKkSMVuydVDq+UV5QTWy5HSiZacSbPg=
 github.com/libp2p/go-flow-metrics v0.2.0 h1:EIZzjmeOE6c8Dav0sNv35vhZxATIXWZg6j/C08XmmDw=
 github.com/libp2p/go-flow-metrics v0.2.0/go.mod h1:st3qqfu8+pMfh+9Mzqb2GTiwrAGjIPszEjZmtksN8Jc=
-github.com/libp2p/go-libp2p v0.37.1-0.20241115175736-7b95317cdbbc h1:BbrgUdWN8Divrv0iLOFEoMtII95FpsObxbLBi/5vCPI=
-github.com/libp2p/go-libp2p v0.37.1-0.20241115175736-7b95317cdbbc/go.mod h1:GOKmSN99scDuYGTwaTbQPR8Nt6dxrK3ue7OjW2NGDg4=
+github.com/libp2p/go-libp2p v0.37.1-0.20241115190947-c667a31e0cde h1:V61OIYtkQSTmkuZwekwXcPNi1p41IiBclLZbPlD2my8=
+github.com/libp2p/go-libp2p v0.37.1-0.20241115190947-c667a31e0cde/go.mod h1:GOKmSN99scDuYGTwaTbQPR8Nt6dxrK3ue7OjW2NGDg4=
 github.com/libp2p/go-libp2p-asn-util v0.4.1 h1:xqL7++IKD9TBFMgnLPZR6/6iYhawHKHl950SO9L6n94=
 github.com/libp2p/go-libp2p-asn-util v0.4.1/go.mod h1:d/NI6XZ9qxw67b4e+NgpQexCIiFYJjErASrYW4PFDN8=
 github.com/libp2p/go-libp2p-testing v0.12.0 h1:EPvBb4kKMWO29qP4mZGyhVzUyR25dvfUIK5WDu6iPUA=
