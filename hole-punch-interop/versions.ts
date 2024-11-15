@@ -10,7 +10,7 @@ export type Version = {
 
 export const versions: Array<Version> = [
   {
-    id: "go-v0.35",
+    id: "go-v0.37",
     transports: ["tcp", "quic"]
   },
   {
