@@ -1,0 +1,34 @@
+{
+  "name": "@libp2p/transport-interop-libp2p-1.x",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "clean": "aegir clean",
+    "build": "aegir build --bundle false",
+    "test": "aegir test",
+    "lint": "aegir lint",
+    "dep-check": "aegir dep-check"
+  },
+  "devDependencies": {
+    "@chainsafe/libp2p-noise": "^15.0.0",
+    "@chainsafe/libp2p-yamux": "^6.0.2",
+    "@libp2p/circuit-relay-v2": "^1.0.24",
+    "@libp2p/identify": "^2.0.2",
+    "@libp2p/interface": "^1.4.0",
+    "@libp2p/mplex": "^10.0.24",
+    "@libp2p/ping": "^1.0.19",
+    "@libp2p/tcp": "^9.0.26",
+    "@libp2p/webrtc": "^4.0.33",
+    "@libp2p/websockets": "^8.0.24",
+    "@libp2p/webtransport": "^4.0.32",
+    "@multiformats/multiaddr": "^12.1.10",
+    "aegir": "^42.2.11",
+    "libp2p": "^2.3.1",
+    "p-event": "^6.0.1",
+    "redis": "^4.6.10"
+  },
+  "browser": {
+    "@libp2p/tcp": false
+  }
+}
