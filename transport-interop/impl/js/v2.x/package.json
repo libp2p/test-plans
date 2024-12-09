@@ -19,7 +19,7 @@
     "@libp2p/mplex": "^11.0.6",
     "@libp2p/ping": "^2.0.6",
     "@libp2p/tcp": "^10.0.6",
-    "@libp2p/webrtc": "^5.0.8",
+    "@libp2p/webrtc": "^5.0.19",
     "@libp2p/websockets": "^9.0.6",
     "@libp2p/webtransport": "^5.0.8",
     "@multiformats/multiaddr": "^12.3.1",
