@@ -4,12 +4,12 @@ FROM node:lts
 
 WORKDIR /app
 
-ADD package*.json .aegir.js tsconfig.json ./
-ADD src ./src
-ADD test ./test
+COPY package*.json .aegir.js tsconfig.json ./
+COPY src ./src
+COPY test ./test
 
 # disable colored output and CLI animation from test runners
-ENV CI true
+ENV CI=true
 
 RUN cat test/fixtures/relay.ts
 RUN npm ci
