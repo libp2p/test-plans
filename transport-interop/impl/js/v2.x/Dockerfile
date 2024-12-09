@@ -4,7 +4,9 @@ FROM node:lts
 
 WORKDIR /app
 
-COPY . ./
+COPY package*.json .aegir.js tsconfig.json ./
+COPY src ./src
+COPY test ./test
 
 # disable colored output and CLI animation from test runners
 ENV CI true
