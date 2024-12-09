@@ -11,9 +11,9 @@ COPY test ./test
 # disable colored output and CLI animation from test runners
 ENV CI true
 
+RUN ls -laR
 RUN npm ci
-RUN cat package.json
-RUN npm ls libp2p
+RUN cat test/fixtures/relay.ts
 RUN npm run build
 
 ENTRYPOINT npm test -- -t node
