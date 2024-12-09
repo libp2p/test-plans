@@ -12,6 +12,8 @@ COPY test ./test
 ENV CI true
 
 RUN npm ci
+RUN cat package.json
+RUN npm ls libp2p
 RUN npm run build
 
 ENTRYPOINT npm test -- -t node
