@@ -16,7 +16,7 @@
     "@libp2p/circuit-relay-v2": "^2.1.1",
     "@libp2p/identify": "^3.0.6",
     "@libp2p/interface": "^2.1.2",
-    "@libp2p/mplex": "^11.0.6",
+    "@libp2p/mplex": "^11.0.13",
     "@libp2p/ping": "^2.0.6",
     "@libp2p/tcp": "^10.0.6",
     "@libp2p/webrtc": "^5.0.8",
