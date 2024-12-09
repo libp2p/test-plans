@@ -26,7 +26,7 @@ update-lock-file: image.json
 
 image.json:
 	cat $(PWD)/test/fixtures/relay.ts
-	docker build -t ${image_name} -f ./Dockerfile $(PWD)
+	docker build -t ${image_name} -f ./Dockerfile .
 	docker image inspect ${image_name} -f "{{.Id}}" | \
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
 
