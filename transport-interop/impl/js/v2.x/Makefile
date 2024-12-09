@@ -8,12 +8,12 @@ load-image-json: image.json
 	docker image tag $$(jq -r .imageID image.json) ${image_name}
 
 chromium-image.json: load-image-json BrowserDockerfile
-	docker build --no-cache -f BrowserDockerfile --build-arg=BASE_IMAGE=${image_name} --build-arg=BROWSER=chromium -t chromium-${image_name} .
+	docker build -f BrowserDockerfile --build-arg=BASE_IMAGE=${image_name} --build-arg=BROWSER=chromium -t chromium-${image_name} .
 	docker image inspect chromium-${image_name} -f "{{.Id}}" | \
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
 
 firefox-image.json: load-image-json BrowserDockerfile
-	docker build --no-cache -f BrowserDockerfile --build-arg=BASE_IMAGE=${image_name} --build-arg=BROWSER=firefox -t firefox-${image_name} .
+	docker build -f BrowserDockerfile --build-arg=BASE_IMAGE=${image_name} --build-arg=BROWSER=firefox -t firefox-${image_name} .
 	docker image inspect firefox-${image_name} -f "{{.Id}}" | \
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
 
@@ -25,8 +25,9 @@ update-lock-file: image.json
 	docker rm $$CONTAINER_ID
 
 image.json:
+	echo $(PWD)
 	cat test/fixtures/relay.ts
-	docker build --no-cache -t ${image_name} -f ./Dockerfile .
+	docker build -t ${image_name} -f ./Dockerfile .
 	docker image inspect ${image_name} -f "{{.Id}}" | \
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
 
