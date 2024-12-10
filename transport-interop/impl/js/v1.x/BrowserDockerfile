@@ -4,7 +4,7 @@
 
 # Workaround: https://github.com/docker/cli/issues/996
 ARG BASE_IMAGE=node-js-libp2p-head
-FROM ${BASE_IMAGE} as js-libp2p-base
+FROM ${BASE_IMAGE} AS js-libp2p-base
 
 FROM mcr.microsoft.com/playwright
 

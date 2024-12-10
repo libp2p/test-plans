@@ -9,7 +9,7 @@ COPY src ./src
 COPY test ./test
 
 # disable colored output and CLI animation from test runners
-ENV CI true
+ENV CI=true
 
 RUN npm ci
 RUN npm run build
