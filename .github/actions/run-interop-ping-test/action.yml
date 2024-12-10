@@ -50,9 +50,9 @@ runs:
       shell: bash
       id: find-workdir
 
-    - uses: actions/setup-node@v3
+    - uses: actions/setup-node@v4
       with:
-        node-version: 18
+        node-version: lts/*
 
     # Existence of /etc/buildkit/buildkitd.toml indicates that this is a
     # self-hosted runner. If so, we need to pass the config to the buildx
