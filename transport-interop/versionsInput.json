@@ -298,5 +298,23 @@
     "muxers": [
       "yamux"
     ]
+  },
+  {
+    "id": "js-v2.4",
+    "transports": [
+      "tcp",
+      "ws",
+      {
+        "name": "wss",
+        "onlyDial": true
+      }
+    ],
+    "secureChannels": [
+      "noise"
+    ],
+    "muxers": [
+      "mplex",
+      "yamux"
+    ]
   }
 ]
