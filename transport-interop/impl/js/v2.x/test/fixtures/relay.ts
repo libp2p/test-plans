@@ -32,3 +32,6 @@ export async function createRelay (): Promise<Libp2p> {
 
   return server
 }
+
+// why is this comment necessary?
+// it seems to bust a mystery cache used by CI
