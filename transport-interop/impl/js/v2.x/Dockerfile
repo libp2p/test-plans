@@ -4,6 +4,9 @@ FROM node:lts
 
 WORKDIR /app
 
+ARG CACHE_BUST=1
+ENV CACHE_BUST=$CACHE_BUST
+
 COPY package*.json .aegir.js tsconfig.json ./
 COPY src ./src
 COPY test ./test
