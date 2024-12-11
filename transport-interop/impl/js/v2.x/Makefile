@@ -25,6 +25,7 @@ update-lock-file: image.json
 	docker rm $$CONTAINER_ID
 
 image.json:
+	docker builder prune -af
 	docker build -t ${image_name} -f ./Dockerfile .
 	docker image inspect ${image_name} -f "{{.Id}}" | \
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
