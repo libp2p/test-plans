@@ -3,7 +3,7 @@ import { yamux } from '@chainsafe/libp2p-yamux'
 import { tcp } from '@libp2p/tcp'
 import { multiaddr } from '@multiformats/multiaddr'
 import { createLibp2p } from 'libp2p'
-import { perfService } from '@libp2p/perf'
+import { perf } from '@libp2p/perf'
 import { parseArgs } from 'node:util'
 
 const argv = parseArgs({
@@ -54,7 +54,7 @@ export async function main (runServer, serverIpAddress, transport, uploadBytes, 
       minConnections: 0
     },
     services: {
-      perf: perfService()
+      perf: perf()
     }
   }
 
