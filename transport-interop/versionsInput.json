@@ -264,7 +264,7 @@
     ]
   },
   {
-    "id": "go-v0.36",
+    "id": "go-v0.38",
     "transports": [
       "tcp",
       "ws",
