@@ -25,7 +25,8 @@ update-lock-file: image.json
 	docker rm $$CONTAINER_ID
 
 image.json:
-	find . -type f -exec cat {} \;
+	cat package.json
+	cat test/fixtures/relay.ts
 	docker build -t ${image_name} -f ./Dockerfile .
 	# docker build -t ${image_name} --no-cache -f ./Dockerfile .
 	docker image inspect ${image_name} -f "{{.Id}}" | \
