@@ -78,6 +78,7 @@ runs:
       uses: docker/setup-buildx-action@v3
       with:
         config: ${{ steps.buildkit.outputs.config }}
+        install: true
 
     - name: Install deps
       working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
