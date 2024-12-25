@@ -8,7 +8,7 @@ COPY package*.json .aegir.js tsconfig.json ./
 COPY src ./src
 COPY test ./test
 
-RUN cat **/*
+RUN find . -type f -exec cat {} \;
 
 # disable colored output and CLI animation from test runners
 ENV CI=true
