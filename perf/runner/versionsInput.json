@@ -74,5 +74,13 @@
       "tcp",
       "quic-v1"
     ]
+  },
+  {
+    "id": "v0.55",
+    "implementation": "rust-libp2p",
+    "transportStacks": [
+      "tcp",
+      "quic-v1"
+    ]
   }
 ]
