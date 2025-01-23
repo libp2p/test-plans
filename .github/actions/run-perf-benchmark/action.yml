@@ -103,7 +103,7 @@ runs:
 
     - name: Archive
       if: github.event.intputs.push == 'false'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: benchmark-results
         path: perf/runner/benchmark-results.json
