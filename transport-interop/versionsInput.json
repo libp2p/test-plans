@@ -138,6 +138,10 @@
     "containerImageID": "browser",
     "transports": [
       {
+        "name": "webtransport",
+        "onlyDial": true
+      },
+      {
         "name": "wss",
         "onlyDial": true
       },
@@ -159,6 +163,10 @@
     "id": "firefox-js-v2.x",
     "containerImageID": "browser",
     "transports": [
+      {
+        "name": "webtransport",
+        "onlyDial": true
+      },
       {
         "name": "wss",
         "onlyDial": true
