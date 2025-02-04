@@ -178,6 +178,50 @@
     ]
   },
   {
+    "id": "webkit-js-v1.x",
+    "containerImageID": "browser",
+    "transports": [
+      {
+        "name": "wss",
+        "onlyDial": true
+      },
+      {
+        "name": "webrtc-direct",
+        "onlyDial": true
+      },
+      "webrtc"
+    ],
+    "secureChannels": [
+      "noise"
+    ],
+    "muxers": [
+      "mplex",
+      "yamux"
+    ]
+  },
+  {
+    "id": "webkit-js-v2.x",
+    "containerImageID": "browser",
+    "transports": [
+      {
+        "name": "wss",
+        "onlyDial": true
+      },
+      {
+        "name": "webrtc-direct",
+        "onlyDial": true
+      },
+      "webrtc"
+    ],
+    "secureChannels": [
+      "noise"
+    ],
+    "muxers": [
+      "mplex",
+      "yamux"
+    ]
+  },
+  {
     "id": "nim-v1.0",
     "transports": [
       "tcp",
