@@ -17,11 +17,6 @@ firefox-image.json: load-image-json BrowserDockerfile
 	docker image inspect firefox-${image_name} -f "{{.Id}}" | \
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
 
-webkit-image.json: load-image-json BrowserDockerfile
-	docker build -f BrowserDockerfile --build-arg=BASE_IMAGE=${image_name} --build-arg=BROWSER=webkit -t webkit-${image_name} .
-	docker image inspect webkit-${image_name} -f "{{.Id}}" | \
-		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
-
 # We update the lock file here so that we make sure we are always using the correct lock file.
 # If this changes, CI will fail since there are unstaged changes.
 update-lock-file: image.json
