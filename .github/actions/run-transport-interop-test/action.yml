@@ -153,7 +153,7 @@ runs:
       if: ${{ inputs.upload-results == 'true' }}
       uses: actions/upload-artifact@v4
       with:
-        name: test-plans-output${{ inputs.test-results-suffix != '' ? '-' + inputs.test-results-suffix : '' }}
+        name: test-plans-output${{ (inputs.test-results-suffix && ('-' + inputs.test-results-suffix)) || '' }}
         path: |
           ${{ steps.find-workdir.outputs.WORK_DIR }}/results.csv
           ${{ steps.find-workdir.outputs.WORK_DIR }}/dashboard.md
