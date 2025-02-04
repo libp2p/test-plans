@@ -30,4 +30,5 @@ jobs:
       - uses: ./.github/actions/run-transport-interop-test
         with:
           # It's okay to not run the tests, we only care to check if the tests build without cache.
+          upload-results: false
           test-filter: '"no test matches this, skip all"'

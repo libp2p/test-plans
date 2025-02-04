@@ -5,6 +5,10 @@ inputs:
     description: "Filter which tests to run out of the created matrix"
     required: false
     default: ""
+  upload-results:
+    description: "Upload the test results as an artifact"
+    required: false
+    default: "true"
   test-ignore:
     description: "Exclude tests from the created matrix that include this string in their name"
     required: false
@@ -141,8 +145,9 @@ runs:
           exit 0
         fi
       shell: bash
-
-    - uses: actions/upload-artifact@v4
+    - name: Upload test results
+      if: ${{ inputs.upload-results == 'true' }}
+      uses: actions/upload-artifact@v4
       with:
         name: test-plans-output
         path: |
