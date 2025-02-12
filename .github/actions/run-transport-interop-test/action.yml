@@ -41,6 +41,9 @@ inputs:
     description: "How many workers to use for the test"
     required: false
     default: "2"
+  timeout:
+    description: "How many seconds to let each test run for"
+    required: false
 runs:
   using: "composite"
   steps:
@@ -122,6 +125,7 @@ runs:
         EXTRA_VERSION: ${{ inputs.extra-versions }}
         NAME_FILTER: ${{ inputs.test-filter }}
         NAME_IGNORE: ${{ inputs.test-ignore }}
+        TIMEOUT: ${{ inputs.timeout }}
       run: npm run test -- --extra-version=$EXTRA_VERSION --name-filter=$NAME_FILTER --name-ignore=$NAME_IGNORE
       shell: bash
 
