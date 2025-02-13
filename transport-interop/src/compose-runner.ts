@@ -14,7 +14,7 @@ function getTimeout (): number {
     const timeout = parseInt(process.env.TIMEOUT, 10)
 
     if (isNaN(timeout)) {
-        return 3 * 60
+        return 10 * 60
     }
 
     return timeout
