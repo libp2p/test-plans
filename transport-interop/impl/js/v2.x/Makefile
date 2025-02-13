@@ -5,7 +5,7 @@ all: image.json chromium-image.json firefox-image.json update-lock-file
 
 # Necessary because multistage builds require a docker image name rather than a digest to be used
 load-image-json: image.json
-	docker image tag $$(jq -r .imageID image.json) ${image_name}
+	docker image tag $$(jq -r .imageID image.json) node-${image_name}
 
 image.json:
 	docker builder prune -af
