@@ -352,5 +352,23 @@
     "muxers": [
       "yamux"
     ]
+  },
+  {
+    "id": "go-v0.41",
+    "transports": [
+      "tcp",
+      "ws",
+      "wss",
+      "quic-v1",
+      "webtransport",
+      "webrtc-direct"
+    ],
+    "secureChannels": [
+      "tls",
+      "noise"
+    ],
+    "muxers": [
+      "yamux"
+    ]
   }
 ]
