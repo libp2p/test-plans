@@ -8,6 +8,9 @@
     "@chainsafe/libp2p-yamux": "^7.0.1",
     "@libp2p/perf": "^4.0.30",
     "@libp2p/tcp": "^10.1.6",
+    "@libp2p/tls": "^2.1.0",
+    "@libp2p/webrtc": "^5.2.7",
+    "@libp2p/websockets": "^9.2.6",
     "@multiformats/multiaddr": "^12.4.0",
     "libp2p": "^2.8.0"
   }
