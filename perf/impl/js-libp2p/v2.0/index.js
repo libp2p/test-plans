@@ -32,13 +32,13 @@ const argv = parseArgs({
 
 /**
  * @param {boolean} runServer
- * @param {string} serverIpAddress
+ * @param {string} serverAddress
  * @param {string} transport
  * @param {number} uploadBytes
  * @param {number} downloadBytes
  */
-export async function main (runServer, serverIpAddress, transport, uploadBytes, downloadBytes) {
-  const { host, port } = splitHostPort(serverIpAddress)
+export async function main (runServer, serverAddress, transport, uploadBytes, downloadBytes) {
+  const { host, port } = splitHostPort(serverAddress)
 
   const config = {
     transports: [
@@ -47,12 +47,9 @@ export async function main (runServer, serverIpAddress, transport, uploadBytes, 
     streamMuxers: [
       yamux()
     ],
-    connectionEncryption: [
+    connectionEncrypters: [
       noise()
     ],
-    connectionManager: {
-      minConnections: 0
-    },
     services: {
       perf: perf()
     }
