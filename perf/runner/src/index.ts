@@ -253,7 +253,7 @@ function execCommand(cmd: string): string {
             encoding: 'utf8',
             stdio: [process.stdin, 'pipe', process.stderr],
         });
-        return stdout;
+        return stdout.trim();
     } catch (error) {
         console.error((error as Error).message);
         process.exit(1);
@@ -306,18 +306,20 @@ function waitForMultiaddr (serverPublicIP: string): Promise<string | undefined> 
             const serverCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${serverPublicIP} 'tail -n 100 server.log'`;
             const serverSTDOUT = execCommand(serverCMD);
 
-            console.error(serverSTDOUT);
+            if (serverSTDOUT.length > 0) {
+                console.error(serverSTDOUT);
 
-            for (let line of serverSTDOUT.split('\n')) {
-                line = line.trim()
+                for (let line of serverSTDOUT.split('\n')) {
+                    line = line.trim()
 
-                if (line.length === 0) {
-                    continue
-                }
+                    if (line.length === 0) {
+                        continue
+                    }
 
-                // does it look like a multiaddr?
-                if (line.includes('/p2p/')) {
-                  deferred.resolve(line)
+                    // does it look like a multiaddr?
+                    if (line.includes('/p2p/')) {
+                    deferred.resolve(line)
+                    }
                 }
             }
 
