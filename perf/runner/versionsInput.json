@@ -1,15 +1,43 @@
 [
   {
+    "id": "v1.0",
+    "implementation": "js-libp2p",
+    "transports": [{
+      "transport": "tcp",
+      "encryption": "noise"
+    }, {
+      "transport": "ws",
+      "encryption": "noise"
+    }]
+  },
+  {
+    "id": "v2.0",
+    "implementation": "js-libp2p",
+    "transports": [{
+      "transport": "tcp",
+      "encryption": "noise"
+    }, {
+      "transport": "tcp",
+      "encryption": "tls"
+    }, {
+      "transport": "ws",
+      "encryption": "noise"
+    }, {
+      "transport": "ws",
+      "encryption": "tls"
+    }]
+  },
+  {
     "id": "v0.34",
     "implementation": "quic-go",
-    "transportStacks": [
+    "transports": [
       "quic-v1"
     ]
   },
   {
     "id": "v0.53",
     "implementation": "rust-libp2p",
-    "transportStacks": [
+    "transports": [
       "tcp",
       "quic-v1"
     ]
@@ -17,14 +45,14 @@
   {
     "id": "v0.1",
     "implementation": "https",
-    "transportStacks": [
+    "transports": [
       "tcp"
     ]
   },
   {
     "id": "v0.27",
     "implementation": "go-libp2p",
-    "transportStacks": [
+    "transports": [
       "tcp",
       "quic-v1"
     ]
@@ -32,7 +60,7 @@
   {
     "id": "v0.28",
     "implementation": "go-libp2p",
-    "transportStacks": [
+    "transports": [
       "tcp",
       "quic-v1"
     ]
@@ -40,7 +68,7 @@
   {
     "id": "v0.29",
     "implementation": "go-libp2p",
-    "transportStacks": [
+    "transports": [
       "tcp",
       "quic-v1"
     ]
@@ -48,30 +76,9 @@
   {
     "id": "v0.31",
     "implementation": "go-libp2p",
-    "transportStacks": [
+    "transports": [
       "tcp",
       "quic-v1"
-    ]
-  },
-  {
-    "id": "v0.46",
-    "implementation": "js-libp2p",
-    "transportStacks": [
-      "tcp"
-    ]
-  },
-  {
-    "id": "v1.0",
-    "implementation": "js-libp2p",
-    "transportStacks": [
-      "tcp"
-    ]
-  },
-  {
-    "id": "v2.0",
-    "implementation": "js-libp2p",
-    "transportStacks": [
-      "tcp"
     ]
   }
 ]
