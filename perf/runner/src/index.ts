@@ -306,6 +306,8 @@ function waitForMultiaddr (serverPublicIP: string): Promise<string | undefined> 
             const serverCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${serverPublicIP} 'tail -n 100 server.log'`;
             const serverSTDOUT = execCommand(serverCMD);
 
+            console.error(serverSTDOUT);
+
             for (let line of serverSTDOUT.split('\n')) {
                 line = line.trim()
 
