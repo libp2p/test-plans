@@ -95,7 +95,7 @@ export async function main (runServer, serverPublicSocketAddress, serverMultiadd
   if (runServer) {
     // print our multiaddr (may have certhashes in it)
     for (const addr of node.getMultiaddrs()) {
-      console.error(addr)
+      console.error(addr.toString())
     }
   } else {
     // replace server host/port with values from public address
