@@ -1,4 +1,4 @@
-DOCKER_IMAGE := node:20-alpine
+DOCKER_IMAGE := node:22
 DOCKER_RUN := docker run --rm -v "$(shell pwd)":/usr/src/myapp -w /usr/src/myapp $(DOCKER_IMAGE)
 
 all: perf

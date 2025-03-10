@@ -12,8 +12,8 @@ import { createLibp2p } from 'libp2p'
 const argv = parseArgs({
   options: {
     'run-server': {
-      type: 'string',
-      default: 'false'
+      type: 'boolean',
+      default: false
     },
     'server-address': {
       type: 'string'
@@ -106,7 +106,9 @@ export async function main (runServer, serverPublicSocketAddress, serverMultiadd
 
   if (runServer) {
     // print our multiaddr (may have certhashes in it)
-    console.error(node.getMultiaddrs()[0].toString())
+    for (const addr of node.getMultiaddrs()) {
+      console.error(addr.toString())
+    }
   } else {
     // replace server host/port with values from public address
     const privateMa = multiaddr(serverMultiaddr)
@@ -153,7 +155,7 @@ function splitHostPort (address) {
   }
 }
 
-main(argv.values['run-server'] === 'true', argv.values['server-address'], argv.values['server-multiaddr'], argv.values.transport, argv.values.encryption, Number(argv.values['upload-bytes']), Number(argv.values['download-bytes'])).catch((err) => {
+main(argv.values['run-server'], argv.values['server-address'], argv.values['server-multiaddr'], argv.values.transport, argv.values.encryption, Number(argv.values['upload-bytes']), Number(argv.values['download-bytes'])).catch((err) => {
   // eslint-disable-next-line no-console
   console.error(err)
   process.exit(1)

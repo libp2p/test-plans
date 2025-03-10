@@ -307,8 +307,6 @@ function waitForMultiaddr (serverPublicIP: string): Promise<string | undefined> 
             const serverSTDOUT = execCommand(serverCMD);
 
             if (serverSTDOUT.length > 0) {
-                console.error(serverSTDOUT);
-
                 for (let line of serverSTDOUT.split('\n')) {
                     line = line.trim()
 

@@ -10,8 +10,8 @@ import { createLibp2p } from 'libp2p'
 const argv = parseArgs({
   options: {
     'run-server': {
-      type: 'string',
-      default: 'false'
+      type: 'boolean',
+      default: false
     },
     'server-address': {
       type: 'string'
@@ -49,8 +49,6 @@ const argv = parseArgs({
  */
 export async function main (runServer, serverPublicSocketAddress, serverMultiaddr, transport, encryption, uploadBytes, downloadBytes) {
   const { host, port } = splitHostPort(serverPublicSocketAddress)
-
-  console.error(runServer, serverPublicSocketAddress, serverMultiaddr, transport, encryption, uploadBytes, downloadBytes)
 
   const config = {
     addresses: {},
@@ -116,8 +114,6 @@ export async function main (runServer, serverPublicSocketAddress, serverMultiadd
 
     const serverMa = fromStringTuples(tuples)
 
-    console.error('dial', serverMa.toString())
-
     for await (const output of node.services.perf.measurePerformance(serverMa, uploadBytes, downloadBytes)) {
       // eslint-disable-next-line no-console
       console.log(JSON.stringify(output))
@@ -145,7 +141,7 @@ function splitHostPort (address) {
   }
 }
 
-main(argv.values['run-server'] === 'true', argv.values['server-address'], argv.values['server-multiaddr'], argv.values.transport, argv.values.encryption, Number(argv.values['upload-bytes']), Number(argv.values['download-bytes'])).catch((err) => {
+main(argv.values['run-server'], argv.values['server-address'], argv.values['server-multiaddr'], argv.values.transport, argv.values.encryption, Number(argv.values['upload-bytes']), Number(argv.values['download-bytes'])).catch((err) => {
   // eslint-disable-next-line no-console
   console.error(err)
   process.exit(1)
