@@ -302,9 +302,11 @@ function waitForMultiaddr (serverPublicIP: string): Promise<string | undefined> 
     const delay = 1000
 
     Promise.resolve().then(async () => {
+        let serverSTDOUT = ''
+
         for (let i = 0; i < repeat; i++) {
             const serverCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${serverPublicIP} 'tail -n 100 server.log'`;
-            const serverSTDOUT = execCommand(serverCMD);
+            serverSTDOUT = execCommand(serverCMD);
 
             if (serverSTDOUT.length > 0) {
                 for (let line of serverSTDOUT.split('\n')) {
@@ -328,6 +330,9 @@ function waitForMultiaddr (serverPublicIP: string): Promise<string | undefined> 
                 }, delay)
             })
         }
+
+        console.error('no multiaddr found in logs')
+        console.error(serverSTDOUT)
 
         // resolve if no multiaddr is printed into the logs
         deferred.resolve(undefined)
