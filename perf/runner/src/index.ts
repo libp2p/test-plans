@@ -233,18 +233,25 @@ function runClient(args: ArgsRunBenchmark): ResultValue[] {
     const withForLoop = `for i in {1..${args.iterations}}; do ${withTimeout}; done`
     const withSSH = `ssh -o StrictHostKeyChecking=no ec2-user@${args.clientPublicIP} '${withForLoop}'`
 
-    const stdout = execCommand(withSSH);
+    try {
+        const stdout = execCommand(withSSH);
 
-    const lines = stdout.toString().trim().split('\n');
+        const lines = stdout.toString().trim().split('\n');
 
-    const combined: ResultValue[] = [];
+        const combined: ResultValue[] = [];
 
-    for (const line of lines) {
-        const result = JSON.parse(line) as ResultValue;
-        combined.push(result);
+        for (const line of lines) {
+            const result = JSON.parse(line) as ResultValue;
+            combined.push(result);
+        }
+
+        return combined;
+    } catch (err) {
+        console.error('=== Client failed, server logs:')
+        console.error(getServerLogs(args.serverPublicIP))
+
+        throw err
     }
-
-    return combined;
 }
 
 function execCommand(cmd: string): string {
@@ -305,8 +312,7 @@ function waitForMultiaddr (serverPublicIP: string): Promise<string | undefined> 
         let serverSTDOUT = ''
 
         for (let i = 0; i < repeat; i++) {
-            const serverCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${serverPublicIP} 'tail -n 100 server.log'`;
-            serverSTDOUT = execCommand(serverCMD);
+            serverSTDOUT = getServerLogs(serverPublicIP);
 
             if (serverSTDOUT.length > 0) {
                 for (let line of serverSTDOUT.split('\n')) {
@@ -339,6 +345,11 @@ function waitForMultiaddr (serverPublicIP: string): Promise<string | undefined> 
     })
 
     return deferred.promise
+}
+
+function getServerLogs (serverPublicIP: string): string {
+    const serverCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${serverPublicIP} 'tail -n 100 server.log'`;
+    return execCommand(serverCMD);
 }
 
 const argv = yargs
