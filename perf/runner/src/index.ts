@@ -263,7 +263,8 @@ function execCommand(cmd: string): string {
         return stdout.trim();
     } catch (error) {
         console.error((error as Error).message);
-        process.exit(1);
+
+        throw error
     }
 }
 
