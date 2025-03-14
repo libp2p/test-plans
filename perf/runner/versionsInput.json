@@ -64,8 +64,7 @@
       "transport": "ws",
       "encryption": "tls"
     },
-      "quic-v1",
-      "webrtc-direct"
+      "quic-v1"
     ]
   }
 ]
