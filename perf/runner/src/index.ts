@@ -5,10 +5,10 @@ import fs from 'fs';
 import { BenchmarkResults, Benchmark, Result, IperfResults, PingResults, ResultValue } from './benchmark-result-type';
 
 async function main(clientPublicIP: string, serverPublicIP: string, testing: boolean, testFilter: string[]) {
-    const iterations = testing ? 1 : 5;
-    const durationSecondsPerIteration = testing ? 5 : 10;
-    const pingCount = testing ? 1 : 50;
-    const iPerfIterations = testing ? 1 : 30;
+    const iterations = testing ? 1 : 10;
+    const durationSecondsPerIteration = testing ? 5 : 20;
+    const pingCount = testing ? 1 : 100;
+    const iPerfIterations = testing ? 1 : 60;
 
     console.error(`= Starting benchmark with ${iterations} iterations on implementations ${testFilter}`);
 
