@@ -18,7 +18,7 @@ resource "aws_lambda_function" "cleanup" {
     variables = {
       REGIONS         = jsonencode(var.regions)
       TAGS            = jsonencode(var.tags)
-      MAX_AGE_MINUTES = 360
+      MAX_AGE_MINUTES = 330 # 5h 30m - 30m less than the GHA job execution time limit
     }
   }
 }
