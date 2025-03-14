@@ -22,22 +22,6 @@
     ]
   },
   {
-    "id": "v0.27",
-    "implementation": "go-libp2p",
-    "transports": [
-      "tcp",
-      "quic-v1"
-    ]
-  },
-  {
-    "id": "v0.28",
-    "implementation": "go-libp2p",
-    "transports": [
-      "tcp",
-      "quic-v1"
-    ]
-  },
-  {
     "id": "v0.29",
     "implementation": "go-libp2p",
     "transports": [
