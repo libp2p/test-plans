@@ -18,7 +18,7 @@ resource "aws_lambda_function" "cleanup" {
     variables = {
       REGIONS         = jsonencode(var.regions)
       TAGS            = jsonencode(var.tags)
-      MAX_AGE_MINUTES = 540
+      MAX_AGE_MINUTES = 120
     }
   }
 }
