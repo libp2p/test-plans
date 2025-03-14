@@ -338,9 +338,6 @@ function waitForMultiaddr (serverPublicIP: string): Promise<string | undefined> 
             })
         }
 
-        console.error('no multiaddr found in logs')
-        console.error(serverSTDOUT)
-
         // resolve if no multiaddr is printed into the logs
         deferred.resolve(undefined)
     })

@@ -5,6 +5,7 @@
   "type": "module",
   "dependencies": {
     "@chainsafe/libp2p-noise": "^16.0.3",
+    "@chainsafe/libp2p-quic": "^1.0.5",
     "@chainsafe/libp2p-yamux": "^7.0.1",
     "@libp2p/perf": "^4.0.30",
     "@libp2p/tcp": "^10.1.6",

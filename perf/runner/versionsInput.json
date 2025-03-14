@@ -1,33 +1,5 @@
 [
   {
-    "id": "v1.0",
-    "implementation": "js-libp2p",
-    "transports": [{
-      "transport": "tcp",
-      "encryption": "noise"
-    }, {
-      "transport": "ws",
-      "encryption": "noise"
-    }]
-  },
-  {
-    "id": "v2.0",
-    "implementation": "js-libp2p",
-    "transports": [{
-      "transport": "tcp",
-      "encryption": "noise"
-    }, {
-      "transport": "tcp",
-      "encryption": "tls"
-    }, {
-      "transport": "ws",
-      "encryption": "noise"
-    }, {
-      "transport": "ws",
-      "encryption": "tls"
-    }]
-  },
-  {
     "id": "v0.34",
     "implementation": "quic-go",
     "transports": [
@@ -79,6 +51,37 @@
     "transports": [
       "tcp",
       "quic-v1"
+    ]
+  },
+  {
+    "id": "v1.0",
+    "implementation": "js-libp2p",
+    "transports": [{
+      "transport": "tcp",
+      "encryption": "noise"
+    }, {
+      "transport": "ws",
+      "encryption": "noise"
+    }]
+  },
+  {
+    "id": "v2.0",
+    "implementation": "js-libp2p",
+    "transports": [{
+      "transport": "tcp",
+      "encryption": "noise"
+    }, {
+      "transport": "tcp",
+      "encryption": "tls"
+    }, {
+      "transport": "ws",
+      "encryption": "noise"
+    }, {
+      "transport": "ws",
+      "encryption": "tls"
+    },
+      "quic-v1",
+      "webrtc-direct"
     ]
   }
 ]

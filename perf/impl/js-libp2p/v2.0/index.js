@@ -1,5 +1,6 @@
 import { parseArgs } from 'node:util'
 import { noise } from '@chainsafe/libp2p-noise'
+import { quic } from '@chainsafe/libp2p-quic'
 import { yamux } from '@chainsafe/libp2p-yamux'
 import { perf } from '@libp2p/perf'
 import { tls } from '@libp2p/tls'
@@ -82,6 +83,10 @@ export async function main (runServer, serverPublicSocketAddress, serverMultiadd
     config.transports = [
       webSockets()
     ]
+  } else if (transport === 'quic-v1') {
+    config.transports = [
+      quic()
+    ]
   }
 
   if (runServer) {
@@ -96,6 +101,10 @@ export async function main (runServer, serverPublicSocketAddress, serverMultiadd
     } else if (transport === 'ws') {
       config.addresses.listen = [
         `/ip4/${host}/tcp/${port}/ws`
+      ]
+    } else if (transport === 'quic-v1') {
+      config.addresses.listen = [
+        `/ip4/${host}/udp/${port}/quic-v1`
       ]
     }
   }

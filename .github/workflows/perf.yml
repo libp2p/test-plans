@@ -22,7 +22,7 @@ jobs:
   perf:
     name: Perf
     runs-on: ubuntu-latest
-    timeout-minutes: 580
+    timeout-minutes: 540
     defaults:
       run:
         shell: bash
