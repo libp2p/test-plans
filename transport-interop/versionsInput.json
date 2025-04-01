@@ -228,6 +228,21 @@
     ]
   },
   {
+    "id": "java-v0.9",
+    "transports": [
+      "tcp",
+      "quic-v1",
+    ],
+    "secureChannels": [
+      "tls",
+      "noise"
+    ],
+    "muxers": [
+      "mplex",
+      "yamux"
+    ]
+  },
+  {
     "id": "js-v1.x",
     "transports": [
       "tcp",
