@@ -231,7 +231,7 @@
     "id": "java-v0.9",
     "transports": [
       "tcp",
-      "quic-v1",
+      "quic-v1"
     ],
     "secureChannels": [
       "tls",
