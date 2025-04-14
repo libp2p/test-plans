@@ -18,7 +18,6 @@ func main() {
 	runServer := flag.Bool("run-server", false, "Should run as server")
 	serverAddr := flag.String("server-address", "", "Server address")
 	transport := flag.String("transport", "tcp", "Transport to use")
-	encryption := flag.String("encryption", "noise", "Encryption to use")
 	uploadBytes := flag.Uint64("upload-bytes", 0, "Upload bytes")
 	downloadBytes := flag.Uint64("download-bytes", 0, "Download bytes")
 	flag.Parse()
