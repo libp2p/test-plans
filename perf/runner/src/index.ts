@@ -141,7 +141,7 @@ async function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions, 
     for (const version of versionsToRun) {
         console.error(`== Version ${version.implementation}/${version.id}`)
 
-        for (const transportStack of version.transports) {
+        for (const transportStack of version.transportStacks) {
             const killCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.serverPublicIP} 'kill $(cat pidfile); rm pidfile; rm server.log || true'`;
             const killSTDOUT = execCommand(killCMD);
             if (killSTDOUT) {
