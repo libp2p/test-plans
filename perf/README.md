@@ -68,13 +68,22 @@ Given you have provisioned your infrastructure, you can now build and run the li
     - In that folder include a `Makefile` that builds an executable and stores it next to the `Makefile` under the name `perf`.
     - Requirements for the executable:
       - Running as a libp2p-perf server:
+        - Input via command line
+          - `--run-server` this flag is passed without a value
+          - `--server-address` an IPv4 socket address to listen on (e.g. `0.0.0.0:4001`) - the port can be used as TCP or UDP and should be used with the specified transport as appropriate
+          - `--transport` (see [`runner/versions.ts`](./runner/src/versions.ts) for possible variants)
+          - `--encryption` (see [`runner/versions.ts`](./runner/src/versions.ts) for possible variants)
         - The perf server must not exit as it will be closed by the test runner.
-        - The executable must accept the command flag `--run-server` which indicates it's running as server.
+        - It should print any multiaddrs that it is listening on to STDOUT, including the `/p2p/$PEER_ID` tuple and any ephemeral information such as cert hashes
+          - The first address will be selected & the host/port replaced with values mapped publicly to the container
+          - The updated address will be passed to the perf client as the `--server-address` argument
+          - If it does not do this (legacy), the socket address will be passed instead
       - Running as a libp2p-perf client
         - Given that perf is a client driven set of benchmarks, the performance will be measured by the client.
           - Input via command line
-            - `--server-address`
-            - `--transport` (see [`runner/versions.ts`](./runner/src/versions.ts#L7-L43) for possible variants)
+            - `--server-address` either the updated multiaddr (see libp2p-perf server section above) or a `host:port` socket address
+            - `--transport` (see [`runner/versions.ts`](./runner/src/versions.ts) for possible variants)
+            - `--encryption` (see [`runner/versions.ts`](./runner/src/versions.ts) for possible variants)
             - `--upload-bytes` number of bytes to upload per stream.
             - `--download-bytes` number of bytes to download per stream.
           - Output

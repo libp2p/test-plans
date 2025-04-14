@@ -4,7 +4,7 @@ import { yamux } from '@chainsafe/libp2p-yamux'
 import { perf } from '@libp2p/perf'
 import { tcp } from '@libp2p/tcp'
 import { webSockets } from '@libp2p/websockets'
-import { multiaddr, fromStringTuples } from '@multiformats/multiaddr'
+import { multiaddr } from '@multiformats/multiaddr'
 import { createLibp2p } from 'libp2p'
 
 const argv = parseArgs({
@@ -14,9 +14,6 @@ const argv = parseArgs({
       default: false
     },
     'server-address': {
-      type: 'string'
-    },
-    'server-multiaddr': {
       type: 'string'
     },
     transport: {
@@ -40,16 +37,13 @@ const argv = parseArgs({
 
 /**
  * @param {boolean} runServer
- * @param {string} serverPublicSocketAddress
- * @param {string} serverMultiaddr
+ * @param {string} serverAddress
  * @param {string} transport
  * @param {string} encryption
  * @param {number} uploadBytes
  * @param {number} downloadBytes
  */
-export async function main (runServer, serverPublicSocketAddress, serverMultiaddr, transport, encryption, uploadBytes, downloadBytes) {
-  const { host, port } = splitHostPort(serverPublicSocketAddress)
-
+export async function main (runServer, serverAddress, transport, encryption, uploadBytes, downloadBytes) {
   const config = {
     addresses: {},
     transports: [],
@@ -75,6 +69,8 @@ export async function main (runServer, serverPublicSocketAddress, serverMultiadd
   }
 
   if (runServer) {
+    const { host, port } = splitHostPort(serverAddress)
+
     if (transport === 'tcp') {
       config.addresses.listen = [
         `/ip4/${host}/tcp/${port}`
@@ -88,31 +84,13 @@ export async function main (runServer, serverPublicSocketAddress, serverMultiadd
 
   const node = await createLibp2p(config)
 
-  await node.start()
-
   if (runServer) {
     // print our multiaddr (may have certhashes in it)
     for (const addr of node.getMultiaddrs()) {
       console.error(addr.toString())
     }
   } else {
-    // replace server host/port with values from public address
-    const privateMa = multiaddr(serverMultiaddr)
-    const tuples = privateMa.stringTuples()
-
-    for (let i = 0; i < tuples.length; i++) {
-      // ipv4
-      if (tuples[i][0] === 4) {
-        tuples[i][1] = host
-      }
-
-      // udp
-      if (tuples[i][0] === 6 || tuples[i][0] === 273) {
-        tuples[i][1] = port
-      }
-    }
-
-    const serverMa = fromStringTuples(tuples)
+    const serverMa = multiaddr(serverAddress)
 
     for await (const output of node.services.perf.measurePerformance(serverMa, uploadBytes, downloadBytes)) {
       // eslint-disable-next-line no-console
@@ -141,7 +119,7 @@ function splitHostPort (address) {
   }
 }
 
-main(argv.values['run-server'], argv.values['server-address'], argv.values['server-multiaddr'], argv.values.transport, argv.values.encryption, Number(argv.values['upload-bytes']), Number(argv.values['download-bytes'])).catch((err) => {
+main(argv.values['run-server'], argv.values['server-address'], argv.values.transport, argv.values.encryption, Number(argv.values['upload-bytes']), Number(argv.values['download-bytes'])).catch((err) => {
   // eslint-disable-next-line no-console
   console.error(err)
   process.exit(1)

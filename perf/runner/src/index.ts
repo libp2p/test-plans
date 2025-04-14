@@ -3,6 +3,7 @@ import { Version, versions } from './versions';
 import yargs from 'yargs';
 import fs from 'fs';
 import { BenchmarkResults, Benchmark, Result, IperfResults, PingResults, ResultValue } from './benchmark-result-type';
+import { fromStringTuples, multiaddr } from '@multiformats/multiaddr';
 
 async function main(clientPublicIP: string, serverPublicIP: string, testing: boolean, testFilter: string[]) {
     const iterations = testing ? 1 : 10;
@@ -155,11 +156,18 @@ async function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions, 
             const serverArgs = [
                 `nohup ./impl/${version.implementation}/${version.id}/perf`,
                 '--run-server',
-                '--server-address 0.0.0.0:4001',
-                // TODO: go and rust refuse to run with unknown cli args
-                version.implementation === 'js-libp2p' ? `--transport ${transport}` : '',
-                version.implementation === 'js-libp2p' && encryption ? `--encryption ${encryption}` : ''
+                '--server-address 0.0.0.0:4001'
             ]
+
+            // TODO: the server should accept a `transport` flag, currently rust does not
+            if (typeof transportStack !== 'string') {
+                serverArgs.push(`--transport ${transport}`)
+            }
+
+            if (encryption != null) {
+                serverArgs.push(`--encryption ${encryption}`)
+            }
+
             const serverCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.serverPublicIP} '${serverArgs.join(' ')} > server.log 2>&1 & echo \$! > pidfile '`;
             const serverSTDOUT = execCommand(serverCMD);
             if (serverSTDOUT) {
@@ -168,7 +176,7 @@ async function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions, 
 
             const result = runClient({
                 clientPublicIP: args.clientPublicIP,
-                serverPublicIP: args.serverPublicIP,
+                serverAddress: await waitForMultiaddr(args.serverPublicIP, 4001),
                 id: version.id,
                 implementation: version.implementation,
                 transport,
@@ -176,8 +184,7 @@ async function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions, 
                 uploadBytes: args.uploadBytes,
                 downloadBytes: args.downloadBytes,
                 iterations: args.iterations,
-                durationSecondsPerIteration: args.durationSecondsPerIteration,
-                serverMultiaddr: version.implementation === 'js-libp2p' ? (await waitForMultiaddr(args.serverPublicIP)) : undefined
+                durationSecondsPerIteration: args.durationSecondsPerIteration
             });
 
             results.push({
@@ -202,8 +209,7 @@ async function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions, 
 
 interface ArgsRunBenchmark {
     clientPublicIP: string;
-    serverPublicIP: string;
-    serverMultiaddr?: string;
+    serverAddress: string;
     id: string,
     implementation: string,
     transport: string,
@@ -219,14 +225,16 @@ function runClient(args: ArgsRunBenchmark): ResultValue[] {
 
     const clientArgs = [
         `./impl/${args.implementation}/${args.id}/perf`,
-        `--server-address ${args.serverPublicIP}:4001`,
-        // TODO: go and rust refuse to run with unknown cli args
-        args.implementation === 'js-libp2p' && args.serverMultiaddr ? `--server-multiaddr ${args.serverMultiaddr}` : '',
-        args.implementation === 'js-libp2p' && args.encryption ? `--encryption ${args.encryption}` : '',
+        `--server-address ${args.serverAddress}`,
         `--transport ${args.transport}`,
         `--upload-bytes ${args.uploadBytes}`,
         `--download-bytes ${args.downloadBytes}`
     ]
+
+    if (args.encryption != null) {
+        clientArgs.push(`--encryption ${args.encryption}`)
+    }
+
     const cmd = clientArgs.join(' ')
     // Note 124 is timeout's exit code when timeout is hit which is not a failure here.
     const withTimeout = `timeout ${args.durationSecondsPerIteration}s ${cmd} || [ $? -eq 124 ]`
@@ -248,7 +256,7 @@ function runClient(args: ArgsRunBenchmark): ResultValue[] {
         return combined;
     } catch (err) {
         console.error('=== Client failed, server logs:')
-        console.error(getServerLogs(args.serverPublicIP))
+        console.error(getServerLogs(args.serverAddress))
 
         throw err
     }
@@ -304,8 +312,8 @@ function defer <T = void> (): DeferredPromise<T> {
  * Attempts to parse a multiaddr from the output, otherwise returns the passed
  * host:port pair if passed.
  */
-function waitForMultiaddr (serverPublicIP: string): Promise<string | undefined> {
-    const deferred = defer<string | undefined>()
+function waitForMultiaddr (serverPublicIP: string, port: number): Promise<string> {
+    const deferred = defer<string>()
     const repeat = 10
     const delay = 1000
 
@@ -325,7 +333,25 @@ function waitForMultiaddr (serverPublicIP: string): Promise<string | undefined> 
 
                     // does it look like a multiaddr?
                     if (line.includes('/p2p/')) {
-                    deferred.resolve(line)
+                        // replace server host/port with values from public address
+                        const privateMa = multiaddr(line)
+                        const tuples = privateMa.stringTuples()
+
+                        for (let i = 0; i < tuples.length; i++) {
+                            // ipv4
+                            if (tuples[i][0] === 4) {
+                                tuples[i][1] = serverPublicIP
+                            }
+
+                            // udp
+                            if (tuples[i][0] === 6 || tuples[i][0] === 273) {
+                                tuples[i][1] = port.toString()
+                            }
+                        }
+
+                        const serverMa = fromStringTuples(tuples)
+
+                        deferred.resolve(serverMa.toString())
                     }
                 }
             }
@@ -339,14 +365,26 @@ function waitForMultiaddr (serverPublicIP: string): Promise<string | undefined> 
         }
 
         // resolve if no multiaddr is printed into the logs
-        deferred.resolve(undefined)
+        deferred.resolve(`${serverPublicIP}:${port}`)
     })
 
     return deferred.promise
 }
 
 function getServerLogs (serverPublicIP: string): string {
-    const serverCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${serverPublicIP} 'tail -n 100 server.log'`;
+    let host: string
+
+    if (serverPublicIP.startsWith('/')) {
+        // multiaddr string
+        const opts = multiaddr(serverPublicIP).toOptions()
+        host = opts.host
+    } else if (serverPublicIP.includes(':')) {
+        host = serverPublicIP.split(':')[0]
+    } else {
+        throw new Error(`Could not parse host from ${serverPublicIP}`)
+    }
+
+    const serverCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${host} 'tail -n 100 server.log'`;
     return execCommand(serverCMD);
 }
 
