@@ -15,7 +15,6 @@
     "typescript": "^5.0.4"
   },
   "dependencies": {
-    "@multiformats/multiaddr": "^12.4.0",
     "yargs": "^17.7.1"
   }
 }

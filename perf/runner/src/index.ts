@@ -3,7 +3,6 @@ import { Version, versions } from './versions';
 import yargs from 'yargs';
 import fs from 'fs';
 import { BenchmarkResults, Benchmark, Result, IperfResults, PingResults, ResultValue } from './benchmark-result-type';
-import { fromStringTuples, multiaddr } from '@multiformats/multiaddr';
 
 async function main(clientPublicIP: string, serverPublicIP: string, testing: boolean, testFilter: string[]) {
     const iterations = testing ? 1 : 10;
@@ -334,24 +333,18 @@ function waitForMultiaddr (serverPublicIP: string, port: number): Promise<string
                     // does it look like a multiaddr?
                     if (line.includes('/p2p/')) {
                         // replace server host/port with values from public address
-                        const privateMa = multiaddr(line)
-                        const tuples = privateMa.stringTuples()
-
-                        for (let i = 0; i < tuples.length; i++) {
-                            // ipv4
-                            if (tuples[i][0] === 4) {
-                                tuples[i][1] = serverPublicIP
+                        const parts = line.trim().split('/')
+                        for (let i = 0; i < parts.length; i++) {
+                            if (parts[i] === 'ip4') {
+                                parts[i + 1] = serverPublicIP
                             }
 
-                            // udp
-                            if (tuples[i][0] === 6 || tuples[i][0] === 273) {
-                                tuples[i][1] = port.toString()
+                            if (parts[i] === 'tcp' || parts[i] === 'udp') {
+                                parts[i + 1] = port.toString()
                             }
                         }
 
-                        const serverMa = fromStringTuples(tuples)
-
-                        deferred.resolve(serverMa.toString())
+                        deferred.resolve(parts.join('/'))
                     }
                 }
             }
@@ -372,15 +365,23 @@ function waitForMultiaddr (serverPublicIP: string, port: number): Promise<string
 }
 
 function getServerLogs (serverPublicIP: string): string {
-    let host: string
+    let host: string | undefined
 
     if (serverPublicIP.startsWith('/')) {
         // multiaddr string
-        const opts = multiaddr(serverPublicIP).toOptions()
-        host = opts.host
+        const parts = serverPublicIP.split('/')
+
+        for (let i = 0; i < parts.length; i++) {
+            if (parts[i] === 'ip4') {
+                host = parts[i + 1]
+                break
+            }
+        }
     } else if (serverPublicIP.includes(':')) {
         host = serverPublicIP.split(':')[0]
-    } else {
+    }
+
+    if (host == null) {
         throw new Error(`Could not parse host from ${serverPublicIP}`)
     }
 
