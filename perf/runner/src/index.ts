@@ -377,7 +377,7 @@ function getServerLogs (serverPublicIP: string): string {
                 break
             }
         }
-    } else if (serverPublicIP.includes(':')) {
+    } else {
         host = serverPublicIP.split(':')[0]
     }
 
