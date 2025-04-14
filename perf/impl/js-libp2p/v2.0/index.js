@@ -123,8 +123,6 @@ export async function main (runServer, serverAddress, transport, encryption, upl
       console.error(addr.toString())
     }
   } else {
-    console.error('runServer', runServer, 'serverAddress', serverAddress, 'transport', transport, 'encryption', encryption, 'uploadBytes', uploadBytes, 'downloadBytes', downloadBytes)
-    console.error('dialing', serverAddress)
     const serverMa = multiaddr(serverAddress)
 
     for await (const output of node.services.perf.measurePerformance(serverMa, uploadBytes, downloadBytes)) {
