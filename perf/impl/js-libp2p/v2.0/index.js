@@ -10,6 +10,16 @@ import { webSockets } from '@libp2p/websockets'
 import { multiaddr } from '@multiformats/multiaddr'
 import { createLibp2p } from 'libp2p'
 
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception', err.stack ?? err)
+  process.exit(1)
+})
+
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled rejection', err.stack ?? err)
+  process.exit(1)
+})
+
 const argv = parseArgs({
   options: {
     'run-server': {
@@ -113,6 +123,8 @@ export async function main (runServer, serverAddress, transport, encryption, upl
       console.error(addr.toString())
     }
   } else {
+    console.error('runServer', runServer, 'serverAddress', serverAddress, 'transport', transport, 'encryption', encryption, 'uploadBytes', uploadBytes, 'downloadBytes', downloadBytes)
+    console.error('dialing', serverAddress)
     const serverMa = multiaddr(serverAddress)
 
     for await (const output of node.services.perf.measurePerformance(serverMa, uploadBytes, downloadBytes)) {

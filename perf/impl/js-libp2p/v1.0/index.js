@@ -7,6 +7,16 @@ import { webSockets } from '@libp2p/websockets'
 import { multiaddr } from '@multiformats/multiaddr'
 import { createLibp2p } from 'libp2p'
 
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception', err.stack ?? err)
+  process.exit(1)
+})
+
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled rejection', err.stack ?? err)
+  process.exit(1)
+})
+
 const argv = parseArgs({
   options: {
     'run-server': {
