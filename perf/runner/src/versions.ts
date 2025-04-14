@@ -2,8 +2,8 @@ import fs from 'fs';
 import path from 'path';
 
 export interface TransportStack {
-    transport: 'tcp' | 'ws'
-    encryption: 'noise' | 'tls'
+    transport: 'tcp' | 'quic-v1' | 'ws' | 'webrtc-direct'
+    encryption: 'noise' | 'tls' | 'native'
 }
 
 export interface Version {

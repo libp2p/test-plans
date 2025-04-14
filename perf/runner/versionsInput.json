@@ -63,8 +63,9 @@
     }, {
       "transport": "ws",
       "encryption": "tls"
-    },
-      "quic-v1"
-    ]
+    },{
+      "transport": "quic-v1",
+      "encryption": "native"
+    }]
   }
 ]
