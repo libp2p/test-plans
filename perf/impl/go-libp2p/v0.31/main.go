@@ -22,11 +22,6 @@ func main() {
 	downloadBytes := flag.Uint64("download-bytes", 0, "Download bytes")
 	flag.Parse()
 
-	host, port, err := net.SplitHostPort(*serverAddr)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	var opts []libp2p.Option
 	if *runServer {
 		host, port, err := net.SplitHostPort(*serverAddr)
