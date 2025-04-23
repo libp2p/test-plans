@@ -1,5 +1,6 @@
 ARG NimVersion="1.6.16"
-FROM nimlang/nim:${NimVersion}-alpine as builder
+ARG ImageHash="sha256:b4bb14fb74465a91a4e042194e1e9308965e7f2f824a06a7092ed938dc04015f"
+FROM nimlang/nim:${NimVersion}-alpine@${ImageHash} AS builder
 
 WORKDIR /app
 
