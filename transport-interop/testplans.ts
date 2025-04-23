@@ -61,12 +61,12 @@ import path from "path";
 
 
     let nameFilter: string[] | null = null
-    const rawNameFilter = string | undefined = argv["name-filter"]
+    const rawNameFilter: string | undefined = argv["name-filter"]
     if (rawNameFilter) {
         nameFilter = rawNameFilter.split(',').map(item => item.trim());
     }
     let nameIgnore: string[] | null = null
-    const rawNameIgnore = string | undefined = argv["name-ignore"]
+    const rawNameIgnore: string | undefined = argv["name-ignore"]
     if (rawNameIgnore) {
         nameIgnore = rawNameIgnore.split(',').map(item => item.trim());
     }
