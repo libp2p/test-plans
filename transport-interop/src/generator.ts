@@ -8,7 +8,7 @@ function buildExtraEnv(timeoutOverride: { [key: string]: number }, test1ID: stri
     return maxTimeout > 0 ? { "test_timeout_seconds": maxTimeout.toString(10) } : {}
 }
 
-export async function buildTestSpecs(versions: Array<Version>, nameFilter: string | null, nameIgnore: string | null): Promise<Array<ComposeSpecification>> {
+export async function buildTestSpecs(versions: Array<Version>, nameFilter: string | null, nameIgnore: string[] | null): Promise<Array<ComposeSpecification>> {
     const containerImages: { [key: string]: () => string } = {}
     const timeoutOverride: { [key: string]: number } = {}
     versions.forEach(v => containerImages[v.id] = () => {
@@ -100,11 +100,11 @@ export async function buildTestSpecs(versions: Array<Version>, nameFilter: strin
     return testSpecs
 }
 
-function buildSpec(containerImages: { [key: string]: () => string }, { name, dialerID, listenerID, transport, muxer, security, extraEnv }: { name: string, dialerID: string, listenerID: string, transport: string, muxer?: string, security?: string, extraEnv?: { [key: string]: string } }, nameFilter: string | null, nameIgnore: string | null): ComposeSpecification | null {
+function buildSpec(containerImages: { [key: string]: () => string }, { name, dialerID, listenerID, transport, muxer, security, extraEnv }: { name: string, dialerID: string, listenerID: string, transport: string, muxer?: string, security?: string, extraEnv?: { [key: string]: string } }, nameFilter: string | null, nameIgnore: string[] | null): ComposeSpecification | null {
     if (nameFilter && !name.includes(nameFilter)) {
         return null
     }
-    if (nameIgnore && name.includes(nameIgnore)) {
+    if (nameIgnore && nameIgnore.some(n => name.includes(n))) {
         return null
     }
     return {

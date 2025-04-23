@@ -64,9 +64,10 @@ import path from "path";
     if (nameFilter === "") {
         nameFilter = null
     }
-    let nameIgnore: string | null = argv["name-ignore"]
-    if (nameIgnore === "") {
-        nameIgnore = null
+    let nameIgnore: string[] | null = null
+    const rawNameIgnore = string | null = argv["name-ignore"]
+    if (rawNameIgnore) {
+        nameIgnore = rawNameIgnore.split(',').map(item => item.trim());
     }
     let testSpecs = await buildTestSpecs(versions.concat(extraVersions), nameFilter, nameIgnore)
 
