@@ -105,9 +105,9 @@ function acceptSpec(name: string, nameFilter: string[] | null, nameIgnore: strin
     let reason: string = ""
     let result: string[] = ["Checking " + name]
 
-    let filterMatch: string = ""
+    let filterMatch: string = "*"
     if (nameFilter && !nameFilter.some(n => {
-        let msg: string = "filter match (" + n + ")"
+        let msg: string = "filter match ('" + n + "')"
         let included: boolean = name.includes(n)
 
         if (included) {
@@ -127,7 +127,7 @@ function acceptSpec(name: string, nameFilter: string[] | null, nameIgnore: strin
         accept = false
     } else {
         if (verbose) {
-            result.push("...selected because of (" + filterMatch + ")")
+            result.push("...selected because of ('" + filterMatch + "')")
         }
         reason = "filter match: '" + filterMatch + "'"
     }
@@ -135,7 +135,7 @@ function acceptSpec(name: string, nameFilter: string[] | null, nameIgnore: strin
     if (accept) {
         let ignoreMatch: string = ""
         if (nameIgnore && nameIgnore.some(n => {
-            let msg: string = "ignore match (" + n + ")"
+            let msg: string = "ignore match ('" + n + "')"
             let included: boolean = name.includes(n)
 
             if (included) {
@@ -149,7 +149,7 @@ function acceptSpec(name: string, nameFilter: string[] | null, nameIgnore: strin
             return included
         })) {
             if (verbose) {
-                result.push("...ignored because of (" + ignoreMatch + ")")
+                result.push("...ignored because of ('" + ignoreMatch + "')")
             }
             reason = "ignore match: '" + ignoreMatch + "'"
             accept = false
