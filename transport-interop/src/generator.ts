@@ -102,9 +102,11 @@ export async function buildTestSpecs(versions: Array<Version>, nameFilter: strin
 
 function buildSpec(containerImages: { [key: string]: () => string }, { name, dialerID, listenerID, transport, muxer, security, extraEnv }: { name: string, dialerID: string, listenerID: string, transport: string, muxer?: string, security?: string, extraEnv?: { [key: string]: string } }, nameFilter: string[] | null, nameIgnore: string[] | null): ComposeSpecification | null {
     if (nameFilter && !nameFilter.some(n => name.includes(n))) {
+        console.log("Filtering out test spec: " + name)
         return null
     }
     if (nameIgnore && nameIgnore.some(n => name.includes(n))) {
+        console.log("Ignoring test spec: " + name)
         return null
     }
     return {

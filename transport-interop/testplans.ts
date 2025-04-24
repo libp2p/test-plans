@@ -12,11 +12,11 @@ import path from "path";
     const argv = await yargs(process.argv.slice(2))
         .options({
             'name-filter': {
-                description: 'Only run tests including any of these names (comma separated)',
+                description: 'Only run tests including any of these names (pipe separated)',
                 default: "",
             },
             'name-ignore': {
-                description: 'Do not run any tests including any of these names (comma separated)',
+                description: 'Do not run any tests including any of these names (pipe separated)',
                 default: "",
             },
             'emit-only': {
@@ -63,12 +63,12 @@ import path from "path";
     let nameFilter: string[] | null = null
     const rawNameFilter: string | undefined = argv["name-filter"]
     if (rawNameFilter) {
-        nameFilter = rawNameFilter.split(',').map(item => item.trim());
+        nameFilter = rawNameFilter.split('|').map(item => item.trim());
     }
     let nameIgnore: string[] | null = null
     const rawNameIgnore: string | undefined = argv["name-ignore"]
     if (rawNameIgnore) {
-        nameIgnore = rawNameIgnore.split(',').map(item => item.trim());
+        nameIgnore = rawNameIgnore.split('|').map(item => item.trim());
     }
     let testSpecs = await buildTestSpecs(versions.concat(extraVersions), nameFilter, nameIgnore)
 
