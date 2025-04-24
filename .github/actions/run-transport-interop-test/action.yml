@@ -126,7 +126,7 @@ runs:
         NAME_FILTER: ${{ inputs.test-filter }}
         NAME_IGNORE: ${{ inputs.test-ignore }}
         TIMEOUT: ${{ inputs.timeout }}
-      run: npm run test -- --extra-version=$EXTRA_VERSION --name-filter=$NAME_FILTER --name-ignore=$NAME_IGNORE
+      run: npm run test -- --extra-version=$EXTRA_VERSION --name-filter="$NAME_FILTER" --name-ignore="$NAME_IGNORE"
       shell: bash
 
     - name: Print the results
