@@ -8,7 +8,7 @@ function buildExtraEnv(timeoutOverride: { [key: string]: number }, test1ID: stri
     return maxTimeout > 0 ? { "test_timeout_seconds": maxTimeout.toString(10) } : {}
 }
 
-export async function buildTestSpecs(versions: Array<Version>, nameFilter: string[] | null, nameIgnore: string[] | null): Promise<Array<ComposeSpecification>> {
+export async function buildTestSpecs(versions: Array<Version>, nameFilter: string[] | null, nameIgnore: string[] | null, verbose: boolean): Promise<Array<ComposeSpecification>> {
     const containerImages: { [key: string]: () => string } = {}
     const timeoutOverride: { [key: string]: number } = {}
     versions.forEach(v => containerImages[v.id] = () => {
@@ -85,8 +85,8 @@ export async function buildTestSpecs(versions: Array<Version>, nameFilter: strin
             transport: test.transport,
             muxer: test.muxer,
             security: test.sec,
-            extraEnv: buildExtraEnv(timeoutOverride, test.id1, test.id2)
-        }, nameFilter, nameIgnore)
+            extraEnv: buildExtraEnv(timeoutOverride, test.id1, test.id2),
+        }, nameFilter, nameIgnore, verbose)
     )).concat(
         standaloneTransportsQueryResults
             .map((test): ComposeSpecification => buildSpec(containerImages, {
@@ -94,45 +94,93 @@ export async function buildTestSpecs(versions: Array<Version>, nameFilter: strin
                 dialerID: test.id1,
                 listenerID: test.id2,
                 transport: test.transport,
-                extraEnv: buildExtraEnv(timeoutOverride, test.id1, test.id2)
-            }, nameFilter, nameIgnore))).filter((spec): spec is ComposeSpecification => spec !== null)
+                extraEnv: buildExtraEnv(timeoutOverride, test.id1, test.id2),
+            }, nameFilter, nameIgnore, verbose))).filter((spec): spec is ComposeSpecification => spec !== null)
 
     return testSpecs
 }
 
-function buildSpec(containerImages: { [key: string]: () => string }, { name, dialerID, listenerID, transport, muxer, security, extraEnv }: { name: string, dialerID: string, listenerID: string, transport: string, muxer?: string, security?: string, extraEnv?: { [key: string]: string } }, nameFilter: string[] | null, nameIgnore: string[] | null): ComposeSpecification | null {
-    console.log("Checking" + name)
+function acceptSpec(name: string, nameFilter: string[] | null, nameIgnore: string[] | null, verbose: boolean): boolean {
+    let accept: boolean = true
+    let reason: string = ""
+    let result: string[] = ["Checking " + name]
+
     let filterMatch: string = ""
     if (nameFilter && !nameFilter.some(n => {
+        let msg: string = "filter match (" + n + ")"
         let included: boolean = name.includes(n)
+
         if (included) {
-            console.log("\t" + n + "...included")
             filterMatch = n
-        } else {
-            console.log("\t" + n + "...NOT included")
         }
+
+        if (verbose) {
+            result.push("..." + (included ? "" : "NO ") + msg)
+        }
+
         return included
     })) {
-        console.log("\tFiltering out test spec: " + name)
-        return null
+        if (verbose) {
+            result.push("...NOT selected")
+        }
+        reason = "NO filter match"
+        accept = false
     } else {
-        console.log("\tSelecting because " + filterMatch + " is in " + name)
-    }
-    let ignoreMatch: string = ""
-    if (nameIgnore && nameIgnore.some(n => {
-        let included: boolean = name.includes(n)
-        if (included) {
-            console.log("\t" + n + "...included")
-            ignoreMatch = n
-        } else {
-            console.log("\t" + n + "...NOT included")
+        if (verbose) {
+            result.push("...selected because of (" + filterMatch + ")")
         }
-        return included
-    })) {
-        console.log("\tIgnoring because " + ignoreMatch + " is in " + name)
+        reason = "filter match: '" + filterMatch + "'"
+    }
+
+    if (accept) {
+        let ignoreMatch: string = ""
+        if (nameIgnore && nameIgnore.some(n => {
+            let msg: string = "ignore match (" + n + ")"
+            let included: boolean = name.includes(n)
+
+            if (included) {
+                ignoreMatch = n
+            }
+
+            if (verbose) {
+                result.push("..." + (included ? "": "NO ") + msg)
+            }
+
+            return included
+        })) {
+            if (verbose) {
+                result.push("...ignored because of (" + ignoreMatch + ")")
+            }
+            reason = "ignore match: '" + ignoreMatch + "'"
+            accept = false
+        } else {
+            if (verbose) {
+                result.push("...NOT ignored")
+            }
+        }
+    }
+
+    if (accept) {
+        result.push("...ACCEPTED (" + reason + ")")
+    } else {
+        result.push("...REJECTED (" + reason + ")")
+    }
+
+    if (verbose) {
+        console.log(result.join("\n\t"))
+    } else {
+        console.log(result.join(""))
+    }
+
+    return accept
+}
+
+function buildSpec(containerImages: { [key: string]: () => string }, { name, dialerID, listenerID, transport, muxer, security, extraEnv }: { name: string, dialerID: string, listenerID: string, transport: string, muxer?: string, security?: string, extraEnv?: { [key: string]: string } }, nameFilter: string[] | null, nameIgnore: string[] | null, verbose: boolean): ComposeSpecification | null {
+    
+    if (!acceptSpec(name, nameFilter, nameIgnore, verbose)) {
         return null
     }
-    console.log("WINNER: " + name)
+
     return {
         name,
         services: {

@@ -35,6 +35,11 @@ import path from "path";
                 default: [],
                 type: 'array'
             },
+            'verbose': {
+                description: 'Enable verbose logging',
+                default: false,
+                type: 'boolean'
+            }
         })
         .help()
         .version(false)
@@ -59,11 +64,14 @@ import path from "path";
         extraVersions.push(JSON.parse(contents.toString()))
     }
 
+    const verbose: boolean = argv.verbose
 
     let nameFilter: string[] | null = null
     const rawNameFilter: string | undefined = argv["name-filter"]
     if (rawNameFilter) {
-        console.log("rawNameFilter: " + rawNameFilter)
+        if (verbose) {
+            console.log("rawNameFilter: " + rawNameFilter)
+        }
         nameFilter = rawNameFilter.split('|').map(item => item.trim());
     }
     if (nameFilter) {
@@ -73,15 +81,17 @@ import path from "path";
     let nameIgnore: string[] | null = null
     const rawNameIgnore: string | undefined = argv["name-ignore"]
     if (rawNameIgnore) {
-        console.log("rawNameIgnore: " + rawNameIgnore)
+        if (verbose) {
+            console.log("rawNameIgnore: " + rawNameIgnore)
+        }
         nameIgnore = rawNameIgnore.split('|').map(item => item.trim());
     }
     if (nameIgnore) {
         console.log("Name Ignores:")
         nameIgnore.map(n => console.log("\t" + n))
     }
-    let testSpecs = await buildTestSpecs(versions.concat(extraVersions), nameFilter, nameIgnore)
 
+    let testSpecs = await buildTestSpecs(versions.concat(extraVersions), nameFilter, nameIgnore, verbose)
 
     if (argv["emit-only"]) {
         for (const testSpec of testSpecs) {

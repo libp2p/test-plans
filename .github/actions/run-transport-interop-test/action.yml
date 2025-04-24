@@ -44,6 +44,10 @@ inputs:
   timeout:
     description: "How many seconds to let each test run for"
     required: false
+  verbose:
+    description: "Enable verbose output"
+    required: false
+    default: false
 runs:
   using: "composite"
   steps:
@@ -126,7 +130,8 @@ runs:
         NAME_FILTER: ${{ inputs.test-filter }}
         NAME_IGNORE: ${{ inputs.test-ignore }}
         TIMEOUT: ${{ inputs.timeout }}
-      run: npm run test -- --extra-version=$EXTRA_VERSION --name-filter="$NAME_FILTER" --name-ignore="$NAME_IGNORE"
+        VERBOSE: ${{ inputs.verbose }}
+      run: npm run test -- --extra-version=$EXTRA_VERSION --name-filter="$NAME_FILTER" --name-ignore="$NAME_IGNORE" --verbose="$VERBOSE"
       shell: bash
 
     - name: Print the results
