@@ -63,12 +63,22 @@ import path from "path";
     let nameFilter: string[] | null = null
     const rawNameFilter: string | undefined = argv["name-filter"]
     if (rawNameFilter) {
+        console.log("rawNameFilter: " + rawNameFilter)
         nameFilter = rawNameFilter.split('|').map(item => item.trim());
+    }
+    if (nameFilter) {
+        console.log("Name Filters:")
+        nameFilter.map(n => console.log("\t" + n))
     }
     let nameIgnore: string[] | null = null
     const rawNameIgnore: string | undefined = argv["name-ignore"]
     if (rawNameIgnore) {
+        console.log("rawNameIgnore: " + rawNameIgnore)
         nameIgnore = rawNameIgnore.split('|').map(item => item.trim());
+    }
+    if (nameIgnore) {
+        console.log("Name Ignores:")
+        nameIgnore.map(n => console.log("\t" + n))
     }
     let testSpecs = await buildTestSpecs(versions.concat(extraVersions), nameFilter, nameIgnore)
 

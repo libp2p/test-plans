@@ -101,14 +101,38 @@ export async function buildTestSpecs(versions: Array<Version>, nameFilter: strin
 }
 
 function buildSpec(containerImages: { [key: string]: () => string }, { name, dialerID, listenerID, transport, muxer, security, extraEnv }: { name: string, dialerID: string, listenerID: string, transport: string, muxer?: string, security?: string, extraEnv?: { [key: string]: string } }, nameFilter: string[] | null, nameIgnore: string[] | null): ComposeSpecification | null {
-    if (nameFilter && !nameFilter.some(n => name.includes(n))) {
-        console.log("Filtering out test spec: " + name)
+    console.log("Checking" + name)
+    let filterMatch: string = ""
+    if (nameFilter && !nameFilter.some(n => {
+        let included: boolean = name.includes(n)
+        if (included) {
+            console.log("\t" + n + "...included")
+            filterMatch = n
+        } else {
+            console.log("\t" + n + "...NOT included")
+        }
+        return included
+    })) {
+        console.log("\tFiltering out test spec: " + name)
+        return null
+    } else {
+        console.log("\tSelecting because " + filterMatch + " is in " + name)
+    }
+    let ignoreMatch: string = ""
+    if (nameIgnore && nameIgnore.some(n => {
+        let included: boolean = name.includes(n)
+        if (included) {
+            console.log("\t" + n + "...included")
+            ignoreMatch = n
+        } else {
+            console.log("\t" + n + "...NOT included")
+        }
+        return included
+    })) {
+        console.log("\tIgnoring because " + ignoreMatch + " is in " + name)
         return null
     }
-    if (nameIgnore && nameIgnore.some(n => name.includes(n))) {
-        console.log("Ignoring test spec: " + name)
-        return null
-    }
+    console.log("WINNER: " + name)
     return {
         name,
         services: {
