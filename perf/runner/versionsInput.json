@@ -1,6 +1,6 @@
 [
   {
-    "id": "v0.51",
+    "id": "v0.45",
     "implementation": "quic-go",
     "transportStacks": [
       "quic-v1"
