@@ -1,6 +1,6 @@
 [
   {
-    "id": "v0.50",
+    "id": "v0.51",
     "implementation": "quic-go",
     "transportStacks": [
       "quic-v1"
@@ -27,13 +27,6 @@
     "transportStacks": [
       "tcp",
       "quic-v1"
-    ]
-  },
-  {
-    "id": "v2.0",
-    "implementation": "js-libp2p",
-    "transportStacks": [
-      "tcp"
     ]
   },
   {
