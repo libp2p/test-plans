@@ -82,12 +82,12 @@ version_compare() {
 # Check required dependencies and their versions
 check_dependencies() {
   local has_error=false
-  
+
   # Required minimum versions
   local MIN_NODE_VERSION="16.0.0"
   local MIN_NPM_VERSION="7.0.0"
   local MIN_DOCKER_VERSION="20.10.0"
-  
+
   # Check Node.js
   if ! command -v node &> /dev/null; then
     echo "Error: Node.js is not installed or not in PATH"
@@ -101,7 +101,7 @@ check_dependencies() {
       echo "✓ Node.js version $node_version (minimum: $MIN_NODE_VERSION)"
     fi
   fi
-  
+
   # Check npm
   if ! command -v npm &> /dev/null; then
     echo "Error: npm is not installed or not in PATH"
@@ -115,7 +115,7 @@ check_dependencies() {
       echo "✓ npm version $npm_version (minimum: $MIN_NPM_VERSION)"
     fi
   fi
-  
+
   # Check Docker
   if ! command -v docker &> /dev/null; then
     echo "Error: Docker is not installed or not in PATH"
@@ -128,7 +128,7 @@ check_dependencies() {
     else
       echo "✓ Docker version $docker_version (minimum: $MIN_DOCKER_VERSION)"
     fi
-    
+
     # Check Docker Buildx
     if ! docker buildx version &> /dev/null; then
       if command -v docker-buildx &> /dev/null || docker help | grep -q buildx; then
@@ -146,7 +146,7 @@ check_dependencies() {
       echo "✓ Docker Buildx is installed"
     fi
   fi
-  
+
   # Check git
   if ! command -v git &> /dev/null; then
     echo "Error: git is not installed or not in PATH"
@@ -154,20 +154,20 @@ check_dependencies() {
   else
     echo "✓ git is installed"
   fi
-  
+
   # Optional: Check pandoc
   if ! command -v pandoc &> /dev/null; then
     echo "Warning: pandoc is not installed. HTML report generation will be skipped."
   else
     echo "✓ pandoc is installed (optional)"
   fi
-  
+
   # Exit if any required dependency is missing or version is too low
   if [[ "$has_error" = true ]]; then
     echo "Please install the required dependencies with the minimum versions and try again."
     return 1
   fi
-  
+
   echo "All required dependencies are installed with compatible versions."
   return 0
 }
@@ -175,10 +175,10 @@ check_dependencies() {
 # Setup the local cache
 setup_local_cache() {
   echo "Setting up local cache in $LOCAL_CACHE_DIR..."
-  
+
   # Create cache directory if it doesn't exist
   mkdir -p "$LOCAL_CACHE_DIR"
-  
+
   # Ensure the script is executable
   chmod +x "$(dirname "$0")/helpers/local-cache.js"
 }
@@ -317,11 +317,11 @@ fi
 if [ "$CACHE_MODULES" = "true" ]; then
   mkdir -p "$NODE_MODULES_CACHE_DIR"
   echo "Node modules cache directory: $NODE_MODULES_CACHE_DIR"
-  
+
   # Create cache key based on package.json and package-lock.json
   CACHE_KEY=$(cat package.json package-lock.json | sha256sum | cut -d ' ' -f 1)
   NODE_MODULES_CACHE_PATH="$NODE_MODULES_CACHE_DIR/$CACHE_KEY.tar.gz"
-  
+
   # Check if cache exists
   if [ -f "$NODE_MODULES_CACHE_PATH" ]; then
     echo "Restoring node_modules from cache..."
@@ -331,7 +331,7 @@ if [ "$CACHE_MODULES" = "true" ]; then
   else
     echo "No cache found. Installing dependencies..."
     npm ci
-    
+
     # Cache the node_modules directory
     echo "Caching node_modules for future use..."
     tar -czf "$NODE_MODULES_CACHE_PATH" node_modules
@@ -347,19 +347,19 @@ fi
 if [ "$USE_LOCAL_CACHE" = "true" ]; then
   echo "Using local cache directory: $LOCAL_CACHE_DIR"
   setup_local_cache
-  
+
   # Load cache
   echo "Loading from local cache..."
   export LOCAL_CACHE_DIR="$LOCAL_CACHE_DIR"
   node "$(dirname "$0")/helpers/local-cache.js" load
-  
+
   # Assert Git tree is clean
   if [[ -n "$(git status --porcelain)" ]]; then
     echo "Git tree is dirty. This means that building an impl generated something that should probably be .gitignore'd"
     git status
     exit 1
   fi
-  
+
   # Push updated cache
   echo "Pushing to local cache..."
   node "$(dirname "$0")/helpers/local-cache.js" push
@@ -374,14 +374,14 @@ else
     export AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID"
     export AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY"
     npm run cache -- load
-  
+
     # Assert Git tree is clean
     if [[ -n "$(git status --porcelain)" ]]; then
       echo "Git tree is dirty. This means that building an impl generated something that should probably be .gitignore'd"
       git status
       exit 1
     fi
-  
+
     # Push cache if credentials are provided
     if [[ "$PUSH_CACHE" = true ]]; then
       echo "Pushing cache to S3..."

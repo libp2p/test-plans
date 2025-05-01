@@ -108,9 +108,9 @@ function addGitignoreIfPresent(ig, pathStr) {
                         // Read image id from image.json
                         const imageID = JSON.parse(fs.readFileSync(path.join(implFolder, 'image.json')).toString()).imageID;
                         console.log(`Pushing cache for ${impl}: ${imageID}`);
-                        
+
                         const cacheFilePath = path.join(LOCAL_CACHE_DIR, `${cacheKey}-${arch}.tar.gz`);
-                        
+
                         // Skip if cache already exists
                         if (fs.existsSync(cacheFilePath)) {
                             console.log("Cache already exists");
@@ -130,20 +130,20 @@ function addGitignoreIfPresent(ig, pathStr) {
                     console.log("Already built");
                     continue;
                 }
-                
+
                 console.log("Loading from local cache");
                 let cacheHit = false;
-                
+
                 try {
                     const cacheFilePath = path.join(LOCAL_CACHE_DIR, `${cacheKey}-${arch}.tar.gz`);
-                    
+
                     if (fs.existsSync(cacheFilePath)) {
                         console.log(`Found cache file: ${cacheFilePath}`);
-                        
+
                         // Load the image from cache
                         const dockerLoadedMsg = child_process.execSync(`docker image load -i "${cacheFilePath}"`).toString();
                         const loadedImageIdMatch = dockerLoadedMsg.match(/Loaded image( ID)?: (.*)/);
-                        
+
                         if (loadedImageIdMatch && loadedImageIdMatch[2]) {
                             const loadedImageId = loadedImageIdMatch[2];
                             console.log(`Cache hit for ${loadedImageId}`);
