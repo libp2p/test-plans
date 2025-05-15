@@ -70,9 +70,11 @@ example, the output folder is
 
 ## Adding an implementation
 
-Reference `./test-specs/implementation.md`.
+To build the implementation reference `./test-specs/implementation.md`.
 
-Make sure to add instruction to build your binary in the Makefile `binaries` recipe.
+After implementing it, make sure to add build commands in the Makefile's `binaries` recipe.
+
+Finally, add it to the `composition` function in `experiment.py`.
 
 ## Future work (contributions welcome)
 

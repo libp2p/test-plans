@@ -41,7 +41,7 @@ def scenario(scenario_name: str, node_count: int) -> ExperimentParams:
 def composition(preset_name: str) -> List[Binary]:
     match preset_name:
         case "all-go":
-            return [Binary("gossipsub-v0.13.1/gossipsub-bin", percent_of_nodes=100)]
+            return [Binary("go-libp2p/gossipsub-bin", percent_of_nodes=100)]
         case "all-rust":
             # Always use debug. We don't measure compute performance here.
             return [
@@ -54,7 +54,7 @@ def composition(preset_name: str) -> List[Binary]:
                 Binary(
                     "rust-libp2p/target/debug/rust-libp2p-gossip", percent_of_nodes=50
                 ),
-                Binary("gossipsub-v0.13.1/gossipsub-bin", percent_of_nodes=50),
+                Binary("go-libp2p/gossipsub-bin", percent_of_nodes=50),
             ]
     raise ValueError(f"Unknown preset name: {preset_name}")
 
