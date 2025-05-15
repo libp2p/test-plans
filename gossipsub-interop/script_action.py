@@ -19,6 +19,11 @@ class IfNodeIDEquals(BaseModel):
 
 
 class WaitUntil(BaseModel):
+    """
+    Implementations MUST wait until elapsedSeconds is greater than or equal to the specified value.
+    They MUST NOT execute any proceeding actions until the wait is complete.
+    They MUST still handle message delivery and forwarding as normal.
+    """
     type: Literal["waitUntil"] = "waitUntil"
     elapsedSeconds: int  # Seconds elapsed since test start
 

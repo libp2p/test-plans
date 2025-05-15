@@ -1,131 +1,81 @@
-# pubsub-shadow
+# GossipSub Interop testing framework
 
 ## Overview
 
-This repo hopes to serve as a benchmark to compare various GossipSub proposals
-and how they interact with the PeerDAS use case.
+This framework is designed to reproducibly test interoperability between
+different GossipSub implementations. It can also be used to benchmark the effect
+of different implementations and protocol designs in a controlled simulation.
 
-## The benchmark
+This framework leverages [Shadow](https://shadow.github.io/) as its simulator.
 
-The benchmark runs the following simulations:
+There are three components to our interoperability test:
 
-**Clear Skies**
-This simluation runs the following steps:
-1. Warmup
-  1. This phase sends a 64 messages throught the network.
-2. Message dissemenation
-  1. This phase sends 64 messages.
+1. The _scenario_ we are running. This defines the specific actions each node in
+   the network takes at a specific point in time. Actions such as publishing a
+   message, connecting to other nodes, or subcribing. See `script_action.py` for a
+   list of actions.
+2. The _composition_ of the network. This defines what percent of the network is
+   running what implementation. For example you can have a network composed of 50%
+   go-libp2p nodes and 50% rust-libp2p nodes.
+3. The _GossipSub Parameters_. This defines the specific parameters of the
+   GossipSub protocol.
 
-**High Churn**
-- TODO
+A key aspect of this framework is that scenarios, compositions, and GossipSub
+parameters can be modified without modifying implementations.
 
-**Sudden node failures**
-- TODO
+After running a test, there are three key results we can extract from the simulation:
 
-**Adversarial nodes**
-- TODO
+1. The _reliability_ of the message dissemenation. This is the percentage of
+   messages that were successfully delivered to all nodes in the network.
+2. The dissementation _latency_ to disseminate all received messages.
+3. The _bandwidth efficiency_ in terms of the number of _duplicate messages_ received.
 
-Simulations are evaluated by:
-- Reliability
-- Latency to disseminate messages to 90%, 95%, 99%, and 100% of the network
-- The average number of duplicates in the network
-  - Maybe the p95 number of duplicates in the network
-- Average bandwidth usage per node
-  - Maybe p95 bandwidth usage per non-publishing node
-
-## Future Benchmarks
-
-In the future, I'd like to add the following benchmarks:
-- Simulating at least 10,000 nodes with 128 subnets.
-- Something with Ethshadowe
-
-## Defining the network
-
-TODO explain. Network is deterministic. Pass a seed
-
-## Running your implementation in the simulation
-
-TODO explain. you accept a json blob as your experiment params.
-
-### Message id
-TODO explain. Read u64 from first 8 bytes of message big endian. That's your id
-
-### Publish schedule
-TODO explain which node is in charge of publishing.
-
-### Metrics
-
-TODO explain structured log format
+Implementations are deemed interoperable if variations in composition do not
+result in any significant differences in observed behavior or outputs. For
+example, a network of all go-libp2p nodes should behave the same as a network
+with an even mix of go-libp2p and rust-libp2p nodes.
 
 ## Requirements
 
-- Go 1.24 for synctest experiments
 - [Shadow](https://shadow.github.io/) for shadow experiments.
-- [uv](https://docs.astral.sh/uv/) for python deps (or just dependencies
-  available on your machine).
+- [uv](https://docs.astral.sh/uv/) for python dependencies.
+- Implementation specific requirements for building the implementations (Go, Rust, etc...)
 
-## Simulations
-
-This repo contains two ways to run this experiment in a simulation.
-
-1. A new synctest based simulator using the new simulated networks from
-   go-libp2p: https://github.com/libp2p/go-libp2p/pull/3262.
-2. Shadow, a more generic and capable simulator.
-
-The synctest based simulator is generally faster than Shadow and can run
-anywhere Go runs. Shadow is crafted specifically for network simulations, is
-application agnostic, has more network topology knobs, and is more mature.
-
-My recommendation:
-
-1. Use the synctest based simulator to quickly iterate on the experiment.
-2. Use Shadow for the actual data you want to publish.
-3. Keep the logic of the experiment in `experiment.go` to let both simulators
-   run the same code.
-
-The synctest and Shadow should agree at a very high level, but details in
-network topology may cause the results to look different. Specifically
-go-libp2p's simnet does not yet support the Shadow's graph configuration for
-simulating latencies between networks (e.g. latency from europe to america).
-Synctest only supports latencies at the node level, where each node defines its
-uplink/downlink latencies. 
-
-### synctest based simulator
-
-Modify the experiment parameters in `synctest_test.go`, then run tests with
-`GOEXPERIMENT=synctest` or `-tags goexperiment.synctest`.
-
-For a single test:
-```bash
- go test -tags goexperiment.synctest -v -run TestGossipSubPublishInOrder .
-```
-
-All Tests:
-```bash
- go test -tags goexperiment.synctest -v .
-```
-
-
-## Shadow simulator
-
+## Running a simulation
 
 ```bash
-make run node_count=256 publish_strategy=inOrder target_conns=64
+uv run run.py --help
 ```
 
-
-## Plotting data:
+For example, to run a simulation with an even mix of go-libp2p and rust-libp2p
+nodes with default GossipSub parameters and sending large messages to a network
+of 700 nodes:
 
 ```bash
-uv run analyse_logs.py <data output folder>
+uv run run.py --node_count 700 --experiment "default-params" --composition "rust-and-go" --scenario "subnet-blob-msg"
 ```
 
-Example for synctest simulation:
-```bash
-uv run analyse_logs.py synctest-8-blobs-256-rarestFirst.data
-```
+The definitions of the experiment, composition, and scenarios are defined in `experiment.py`.
 
-Example for a shadow simulation:
-```
-uv run analyse_logs.py shadow-32-blobs-256-inOrder.data
-```
+After running an experiment all the results and configuration needed to
+reproduce the test are saved in an output folder which, by default, is named by
+the specific experiment, scenario, node count, and composition. For the above
+example, the output folder is
+`default-params-subnet-blob-msg-700-rust-and-go.data`. This output folder contains the following files:
+
+- shadow.yaml: The Shadow config defining the binaries and network.
+- graph.gml: The graph of the network links for Shadow.
+- params.json: The parameters passed to each binary with GossipSub parameters and the actions to run.
+- plots/
+  - analysis_*.txt: A text file containing a high level analysis of the 3 key results
+  - Charts visualizing the results.
+
+## Adding an implementation
+
+Reference `./test-specs/implementation.md`.
+
+## Future work (contributions welcome)
+
+- Add more scenarios.
+- Add other implementations.
+- Add more plots and visualizations.
