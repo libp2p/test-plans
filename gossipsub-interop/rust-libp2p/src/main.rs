@@ -200,9 +200,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     config_builder
         .validation_mode(ValidationMode::Anonymous)
         .message_id_fn(experiment::message_id_fn);
-    // Apply custom params if provided
-    if let Some(params) = &params.gossip_sub_params {
-        apply_gossipsub_params(&mut config_builder, params);
+
+    // look for InitGossipSub action
+    let script_params = experiment::extract_gossipsub_params(&params.script, node_id);
+    if let Some(init_params) = script_params {
+        slog::info!(
+            stderr_logger,
+            "Applying GossipSub params from InitGossipSub action"
+        );
+        apply_gossipsub_params(&mut config_builder, &init_params);
     }
     // Create gossipsub configuration
     let gossipsub_config = config_builder.build().expect("Valid gossipsub config");

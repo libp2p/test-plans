@@ -165,7 +165,9 @@ def generate_graph(
 
     for i, binary_path in enumerate(binary_paths):
         location = random.choices(locations, weights=[lc.weight for lc in locations])[0]
-        node_type = random.choices(node_types, weights=[nt.weight for nt in node_types])[0]
+        node_type = random.choices(
+            node_types, weights=[nt.weight for nt in node_types]
+        )[0]
 
         config["hosts"][f"node{i}"] = {
             "network_node_id": ids[f"{location.name}-{node_type.name}"],

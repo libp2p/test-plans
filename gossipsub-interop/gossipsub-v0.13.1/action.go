@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	
+	pubsub "github.com/libp2p/go-libp2p-pubsub"
 )
 
 // ScriptAction is an interface that represents any action in the script
@@ -57,6 +59,15 @@ type SubscribeToTopicAction struct {
 
 // isAction implements the ScriptAction interface
 func (SubscribeToTopicAction) isAction() {}
+
+// InitGossipSubAction represents an action to initialize GossipSub with specific parameters
+type InitGossipSubAction struct {
+	Type            string               `json:"type"`
+	GossipSubParams pubsub.GossipSubParams `json:"gossipSubParams"`
+}
+
+// isAction implements the ScriptAction interface
+func (InitGossipSubAction) isAction() {}
 
 // UnmarshalScriptAction unmarshals a JSON object into the appropriate ScriptAction type
 func UnmarshalScriptAction(data []byte) (ScriptAction, error) {
@@ -120,6 +131,28 @@ func UnmarshalScriptAction(data []byte) (ScriptAction, error) {
 			return nil, err
 		}
 		return action, nil
+		
+	case "initGossipSub":
+		var tempAction struct {
+			Type            string          `json:"type"`
+			GossipSubParams json.RawMessage `json:"gossipSubParams"`
+		}
+		if err := json.Unmarshal(data, &tempAction); err != nil {
+			return nil, err
+		}
+		
+		// Start with default parameters
+		params := pubsub.DefaultGossipSubParams()
+		
+		// Only override values that are specified in the JSON
+		if err := json.Unmarshal(tempAction.GossipSubParams, &params); err != nil {
+			return nil, err
+		}
+		
+		return InitGossipSubAction{
+			Type:            tempAction.Type,
+			GossipSubParams: params,
+		}, nil
 
 	default:
 		return nil, fmt.Errorf("unknown action type: %s", temp.Type)

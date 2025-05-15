@@ -69,8 +69,6 @@ func nodePrivKey(id int) crypto.PrivKey {
 }
 
 type ExperimentParams struct {
-	GossipSubParams pubsub.GossipSubParams `json:"gossipSubParams"`
-
 	Script ScriptActions `json:"script"`
 }
 
@@ -92,7 +90,6 @@ func readParams(path string) (ExperimentParams, error) {
 	defer f.Close()
 
 	var params ExperimentParams
-	params.GossipSubParams = pubsub.DefaultGossipSubParams()
 	if err := json.NewDecoder(f).Decode(&params); err != nil {
 		return ExperimentParams{}, fmt.Errorf("failed to decode params file: %w", err)
 	}

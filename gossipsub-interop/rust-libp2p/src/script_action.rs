@@ -41,13 +41,17 @@ pub enum ScriptAction {
         #[serde(rename = "topicID")]
         topic_id: String,
     },
+
+    #[serde(rename = "initGossipSub")]
+    InitGossipSub {
+        #[serde(rename = "gossipSubParams")]
+        gossip_sub_params: GossipSubParams,
+    },
 }
 
 /// ExperimentParams contains all parameters for an experiment.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExperimentParams {
-    #[serde(rename = "gossipSubParams")]
-    pub gossip_sub_params: Option<GossipSubParams>,
     pub script: Vec<ScriptAction>,
 }
 

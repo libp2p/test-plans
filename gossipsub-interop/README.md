@@ -8,7 +8,7 @@ of different implementations and protocol designs in a controlled simulation.
 
 This framework leverages [Shadow](https://shadow.github.io/) as its simulator.
 
-There are three components to our interoperability test:
+There are two components to our interoperability test:
 
 1. The _scenario_ we are running. This defines the specific actions each node in
    the network takes at a specific point in time. Actions such as publishing a
@@ -17,8 +17,6 @@ There are three components to our interoperability test:
 2. The _composition_ of the network. This defines what percent of the network is
    running what implementation. For example you can have a network composed of 50%
    go-libp2p nodes and 50% rust-libp2p nodes.
-3. The _GossipSub Parameters_. This defines the specific parameters of the
-   GossipSub protocol.
 
 A key aspect of this framework is that scenarios, compositions, and GossipSub
 parameters can be modified without modifying implementations.
@@ -52,16 +50,16 @@ nodes with default GossipSub parameters and sending large messages to a network
 of 700 nodes:
 
 ```bash
-uv run run.py --node_count 700 --experiment "default-params" --composition "rust-and-go" --scenario "subnet-blob-msg"
+uv run run.py --node_count 700 --composition "rust-and-go" --scenario "subnet-blob-msg"
 ```
 
 The definitions of the experiment, composition, and scenarios are defined in `experiment.py`.
 
 After running an experiment all the results and configuration needed to
 reproduce the test are saved in an output folder which, by default, is named by
-the specific experiment, scenario, node count, and composition. For the above
+the specific scenario, node count, and composition. For the above
 example, the output folder is
-`default-params-subnet-blob-msg-700-rust-and-go.data`. This output folder contains the following files:
+`subnet-blob-msg-700-rust-and-go.data`. This output folder contains the following files:
 
 - shadow.yaml: The Shadow config defining the binaries and network.
 - graph.gml: The graph of the network links for Shadow.
@@ -74,8 +72,12 @@ example, the output folder is
 
 Reference `./test-specs/implementation.md`.
 
+Make sure to add instruction to build your binary in the Makefile `binaries` recipe.
+
 ## Future work (contributions welcome)
 
 - Add more scenarios.
 - Add other implementations.
 - Add more plots and visualizations.
+- Add a helper to make it easier to rerun an experiment given an output folder.
+- Add to CI

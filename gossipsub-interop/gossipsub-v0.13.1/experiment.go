@@ -40,16 +40,8 @@ func newScriptedNode(
 	slogger *slog.Logger,
 	h host.Host,
 	connector HostConnector,
-	gossipSubParams pubsub.GossipSubParams,
 ) (*scriptedNode, error) {
 	slogger.Info("PeerID", "id", h.ID(), "node_id", nodeID)
-
-	// create a gossipsub node and subscribe to the topic
-	psOpts := pubsubOptions(slogger, gossipSubParams)
-	ps, err := pubsub.NewGossipSub(ctx, h, psOpts...)
-	if err != nil {
-		return nil, err
-	}
 
 	n := &scriptedNode{
 		nodeID:    nodeID,
@@ -57,7 +49,6 @@ func newScriptedNode(
 		logger:    logger,
 		slogger:   slogger,
 		connector: connector,
-		pubsub:    ps,
 		startTime: startTime,
 		subCtx:    ctx,
 	}
@@ -67,6 +58,13 @@ func newScriptedNode(
 func (n *scriptedNode) runAction(ctx context.Context, action ScriptAction) error {
 	// Process each script action
 	switch a := action.(type) {
+	case InitGossipSubAction:
+		psOpts := pubsubOptions(n.slogger, a.GossipSubParams)
+		ps, err := pubsub.NewGossipSub(ctx, n.h, psOpts...)
+		if err != nil {
+			return err
+		}
+		n.pubsub = ps
 	case ConnectAction:
 		for _, targetNodeId := range a.ConnectTo {
 			err := n.connector.ConnectTo(ctx, n.h, targetNodeId)
@@ -126,7 +124,7 @@ func (n *scriptedNode) runAction(ctx context.Context, action ScriptAction) error
 			}
 		}()
 	default:
-		return fmt.Errorf("unknown action type")
+		return fmt.Errorf("unknown action type: %T", action)
 	}
 
 	return nil
@@ -149,7 +147,7 @@ func (n *scriptedNode) getTopic(topicStr string) (*pubsub.Topic, error) {
 }
 
 func RunExperiment(ctx context.Context, startTime time.Time, logger *log.Logger, slogger *slog.Logger, h host.Host, nodeId int, connector HostConnector, params ExperimentParams) error {
-	n, err := newScriptedNode(ctx, startTime, nodeId, logger, slogger, h, connector, params.GossipSubParams)
+	n, err := newScriptedNode(ctx, startTime, nodeId, logger, slogger, h, connector)
 	if err != nil {
 		return err
 	}

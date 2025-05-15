@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 import random
 from typing import List, Dict, Set
 
-from script_action import ScriptAction, NodeID
+from script_action import GossipSubParams, ScriptAction, NodeID
 import script_action
 
 
@@ -15,16 +15,14 @@ class Binary:
 
 @dataclass
 class ExperimentParams:
-    gossipSubParams: dict
     script: List[ScriptAction] = field(default_factory=list)
 
 
-def scenario(
-    scenario_name: str, node_count: int
-) -> List[ScriptAction]:
+def scenario(scenario_name: str, node_count: int) -> ExperimentParams:
     actions: List[ScriptAction] = []
     match scenario_name:
         case "subnet-blob-msg":
+            actions.extend(init_gossipsub())
             number_of_conns_per_node = 10
             if number_of_conns_per_node >= node_count:
                 number_of_conns_per_node = node_count - 1
@@ -37,7 +35,7 @@ def scenario(
         case _:
             raise ValueError(f"Unknown scenario name: {scenario_name}")
 
-    return actions
+    return ExperimentParams(script=actions)
 
 
 def composition(preset_name: str) -> List[Binary]:
@@ -46,31 +44,24 @@ def composition(preset_name: str) -> List[Binary]:
             return [Binary("gossipsub-v0.13.1/gossipsub-bin", percent_of_nodes=100)]
         case "all-rust":
             # Always use debug. We don't measure compute performance here.
-            return [Binary("rust-libp2p/target/debug/rust-libp2p-gossip", percent_of_nodes=100)]
+            return [
+                Binary(
+                    "rust-libp2p/target/debug/rust-libp2p-gossip", percent_of_nodes=100
+                )
+            ]
         case "rust-and-go":
             return [
-                Binary("rust-libp2p/target/debug/rust-libp2p-gossip", percent_of_nodes=50),
-                Binary("gossipsub-v0.13.1/gossipsub-bin", percent_of_nodes=50)
+                Binary(
+                    "rust-libp2p/target/debug/rust-libp2p-gossip", percent_of_nodes=50
+                ),
+                Binary("gossipsub-v0.13.1/gossipsub-bin", percent_of_nodes=50),
             ]
     raise ValueError(f"Unknown preset name: {preset_name}")
 
 
-def params(experiment_name: str) -> ExperimentParams:
-    match experiment_name:
-        case "default-params":
-            return ExperimentParams(gossipSubParams={})
-        case "gossipsub-v0.13.1-stock-smaller-D":
-            return ExperimentParams(
-                gossipSubParams={
-                    "D": 4,
-                    "Dlo": 1,
-                    "Dhi": 6,
-                    "Dscore": 1,
-                    "Dout": 0,
-                },
-            )
-
-    raise ValueError(f"Unknown experiment name: {experiment_name}")
+def init_gossipsub() -> List[ScriptAction]:
+    # Default gossipsub parameters
+    return [script_action.InitGossipSub(gossipSubParams=GossipSubParams())]
 
 
 def random_network_mesh(
@@ -106,9 +97,7 @@ def random_publish_every_12s(
 ) -> List[ScriptAction]:
     topicStr = "foobar"
     actions = []
-    actions.append(script_action.SubscribeToTopic(
-        topicID=topicStr
-    ))
+    actions.append(script_action.SubscribeToTopic(topicID=topicStr))
 
     # Start at 120 seconds (2 minutes) to allow for setup time
     elapsed_seconds = 120

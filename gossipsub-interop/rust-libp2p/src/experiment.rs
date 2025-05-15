@@ -196,6 +196,10 @@ impl ScriptedNode {
                         }
                     }
                 }
+                ScriptAction::InitGossipSub { gossip_sub_params: _ } => {
+                    // This is handled before node creation in main.rs, so we don't need to do anything here
+                    info!(self.stderr_logger, "InitGossipSub action already processed");
+                }
             }
 
             Ok(())
@@ -230,4 +234,30 @@ pub async fn run_experiment(
         node.run_action(action).await?;
     }
     Ok(())
+}
+
+// Extract InitGossipSub parameters from script actions
+pub fn extract_gossipsub_params(
+    script: &[ScriptAction],
+    node_id: NodeID,
+) -> Option<crate::script_action::GossipSubParams> {
+    for action in script {
+        match action {
+            ScriptAction::InitGossipSub { gossip_sub_params } => {
+                return Some(gossip_sub_params.clone());
+            }
+            ScriptAction::IfNodeIDEquals { node_id: action_node_id, action } => {
+                if *action_node_id == node_id {
+                    match action.as_ref() {
+                        ScriptAction::InitGossipSub { gossip_sub_params } => {
+                            return Some(gossip_sub_params.clone());
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+    None
 }

@@ -8,9 +8,9 @@ fulfill in order to be testable.
 Each node in the simulation is given a unique integer ID from 0 to `num_nodes-1`. Implementations can learn their node id by calling `hostname`. Example:
 
 ```go
-	hostname, err := os.Hostname()
-	var nodeId int
-	_, err = fmt.Sscanf(hostname, "node%d", &nodeId)
+hostname, err := os.Hostname()
+var nodeId int
+_, err = fmt.Sscanf(hostname, "node%d", &nodeId)
 ```
 
 ## Peer IDs

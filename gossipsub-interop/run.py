@@ -24,7 +24,6 @@ def main():
     )
     parser.add_argument("--node_count", type=int, required=True)
     parser.add_argument("--seed", type=int, required=False, default=1)
-    parser.add_argument("--experiment", type=str, required=True)
     parser.add_argument(
         "--scenario", type=str, required=False, default="subnet-blob-msg"
     )
@@ -33,13 +32,12 @@ def main():
     args = parser.parse_args()
 
     if args.output_dir is None:
-        args.output_dir = f"{args.experiment}-{args.scenario}-{args.node_count}-{args.composition}.data"
+        args.output_dir = f"{args.scenario}-{args.node_count}-{args.composition}.data"
 
     random.seed(args.seed)
 
     binaries = experiment.composition(args.composition)
-    experiment_params = experiment.params(args.experiment)
-    experiment_params.script = experiment.scenario(args.scenario, args.node_count)
+    experiment_params = experiment.scenario(args.scenario, args.node_count)
 
     with open(params_file_name, "w") as f:
         d = asdict(experiment_params)

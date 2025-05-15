@@ -85,10 +85,12 @@ def analyse_message_deliveries(folder):
         msg_ids.append(msgID)
         time_diffs.append(time_diff)
         avg_duplicate_count = duplicate_count[msgID] / total_nodes
-        reached = len(deliveries) / (total_nodes - 1) # Minus 1 for the original sender
+        reached = len(deliveries) / (total_nodes - 1)  # Minus 1 for the original sender
         if reached > 1.0:
             if len(deliveries) > total_nodes:
-                raise ValueError(f"Message {msgID} was delivered to more nodes than exist")
+                raise ValueError(
+                    f"Message {msgID} was delivered to more nodes than exist"
+                )
             # We overshot because the original publisher received a duplicate message
             reached = 1.0
         analysis_txt.append(f"{msgID}, {time_diff}s, {avg_duplicate_count}, {reached}")
