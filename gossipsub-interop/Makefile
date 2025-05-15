@@ -1,17 +1,13 @@
 # Default target
-all: run
+all: binaries
+
+binaries:
+	cd go-libp2p && go build -linkshared -o gossipsub-bin
+	cd rust-libp2p && cargo build
 
 # Clean all generated shadow simulation files
 clean:
 	rm -rf *.data || true
 	rm plots/* || true
 
-binaries:
-	cd go-libp2p && go build -linkshared -o gossipsub-bin
-	cd rust-libp2p && cargo build
-
-# Run the shadow simulation
-run:
-	uv run run.py
-
-.PHONY: binaries all run clean
+.PHONY: binaries all clean
