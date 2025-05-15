@@ -1,4 +1,4 @@
-module github.com/ppopth/pubsub-shadow
+module github.com/libp2p/test-plans/gossipsub-interop/go-libp2p
 
 go 1.24.1
 

@@ -24,8 +24,8 @@ parameters can be modified without modifying implementations.
 After running a test, there are three key results we can extract from the simulation:
 
 1. The _reliability_ of the message dissemenation. This is the percentage of
-   messages that were successfully delivered to all nodes in the network.
-2. The dissementation _latency_ to disseminate all received messages.
+   nodes that a message was delivered to.
+2. The dissementation _latency_ to disseminate the message.
 3. The _bandwidth efficiency_ in terms of the number of _duplicate messages_ received.
 
 Implementations are deemed interoperable if variations in composition do not
