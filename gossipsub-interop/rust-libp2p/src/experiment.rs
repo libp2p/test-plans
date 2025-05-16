@@ -12,7 +12,7 @@ use crate::connector::HostConnector;
 use crate::script_action::{ExperimentParams, NodeID, ScriptAction};
 
 // Calculate message ID based on content (equivalent to Go's CalcID)
-pub fn calc_id(data: &[u8]) -> String {
+pub fn format_message_id(data: &[u8]) -> String {
     if data.len() >= 8 {
         format!("{}", BigEndian::read_u64(data))
     } else {
@@ -129,13 +129,13 @@ impl ScriptedNode {
                                     // Process any messages that arrive during sleep
                                     if let libp2p::swarm::SwarmEvent::Behaviour( MyBehaviorEvent::Gossipsub(gossipsub::Event::Message {
                                         propagation_source: peer_id,
-                                        message_id: _,
+                                        message_id: mid,
                                         message,
                                     })) = event {
                                         if message.data.len() >= 8 {
                                             info!(self.stdout_logger, "Received Message";
                                                 "topic" => message.topic.into_string(),
-                                                "id" => calc_id(&message.data),
+                                                "id" => format_message_id(&mid.0),
                                                 "from" => peer_id.to_string());
                                         }
                                     }
@@ -196,7 +196,9 @@ impl ScriptedNode {
                         }
                     }
                 }
-                ScriptAction::InitGossipSub { gossip_sub_params: _ } => {
+                ScriptAction::InitGossipSub {
+                    gossip_sub_params: _,
+                } => {
                     // This is handled before node creation in main.rs, so we don't need to do anything here
                     info!(self.stderr_logger, "InitGossipSub action already processed");
                 }
@@ -246,7 +248,10 @@ pub fn extract_gossipsub_params(
             ScriptAction::InitGossipSub { gossip_sub_params } => {
                 return Some(gossip_sub_params.clone());
             }
-            ScriptAction::IfNodeIDEquals { node_id: action_node_id, action } => {
+            ScriptAction::IfNodeIDEquals {
+                node_id: action_node_id,
+                action,
+            } => {
                 if *action_node_id == node_id {
                     match action.as_ref() {
                         ScriptAction::InitGossipSub { gossip_sub_params } => {

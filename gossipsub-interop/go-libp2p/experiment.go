@@ -13,7 +13,8 @@ import (
 )
 
 func CalcID(msg []byte) string {
-	return fmt.Sprintf("%d", binary.BigEndian.Uint64(msg))
+	// The first 8 bytes of the message are the message ID
+	return string(msg[0:8])
 }
 
 type HostConnector interface {

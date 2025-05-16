@@ -45,11 +45,10 @@ where
                 })
                 .collect::<Vec<u8>>();
 
-            let msg_id =
-                u64::from_be_bytes(bytes.try_into().expect("Message ID should be 8 bytes"));
+            let msg_id = crate::experiment::format_message_id(&bytes);
 
-            // Emit specified output format. Note that we use the `%` operator to format the message ID as a string.
-            slog::info!(self.stdout_logger, "Received Message"; "id" => %msg_id);
+            // Emit specified output format.
+            slog::info!(self.stdout_logger, "Received Message"; "id" => msg_id);
         }
     }
 }

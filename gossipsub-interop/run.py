@@ -41,7 +41,9 @@ def main():
 
     with open(params_file_name, "w") as f:
         d = asdict(experiment_params)
-        d["script"] = [action.model_dump() for action in experiment_params.script]
+        d["script"] = [
+            action.model_dump(exclude_none=True) for action in experiment_params.script
+        ]
         json.dump(d, f)
 
     # Define the binaries we are running

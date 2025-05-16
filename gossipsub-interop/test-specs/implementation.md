@@ -95,3 +95,5 @@ Message ID is calculated by reading the first 8 bytes of the message and
 interpreting them as a big endian encoded 64 bit unsigned integer.
 
 Messages MUST be sized to the specified `messageSizeBytes` parameter.
+
+When logging the Message ID, implementations MUST format the message ID as a base 10 integer.
