@@ -25,6 +25,7 @@ clap = { version = "4.4.4", features = ["derive"] }
 log = "0.4.20"
 time = "0.3.41"
 slog = "2.7.0"
+sha2 = "0.10.9"
 slog-json = "2.6.1"
 slog-term = "2.9.0"
 slog-async = "2.8.0"
