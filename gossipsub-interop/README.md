@@ -19,7 +19,7 @@ There are two components to our interoperability test:
    go-libp2p nodes and 50% rust-libp2p nodes.
 
 A key aspect of this framework is that scenarios, compositions, and GossipSub
-parameters can be modified without modifying implementations.
+parameters can be modified without modifying implementations. See `experiment.py`, where this can be configured
 
 After running a test, there are three key results we can extract from the simulation:
 
