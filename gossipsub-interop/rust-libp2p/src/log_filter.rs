@@ -26,7 +26,7 @@ where
 
         impl<'a> Visit for MessageVisitor<'a> {
             fn record_debug(&mut self, _field: &Field, value: &dyn std::fmt::Debug) {
-                self.0.push(format!("{:?}", value));
+                self.0.push(format!("{value:?}"));
             }
         }
 
@@ -101,7 +101,7 @@ fn test_layer_transforms_duplicate_trace() {
 
     tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
 
-    let msg_id = MessageId::from((0 as u64).to_be_bytes());
+    let msg_id = MessageId::from(0_u64.to_be_bytes());
 
     // This is what rust-libp2p logs, so we test against this specific message. If rust-libp2p changes we should change this too.
     tracing::debug!(target: "gossipsub", message=%msg_id, "Message already received, ignoring");
