@@ -104,3 +104,5 @@ require (
 )
 
 replace github.com/libp2p/go-libp2p => github.com/libp2p/go-libp2p v0.41.1-0.20250403044410-708bc12b01b4
+
+replace github.com/quic-go/quic-go => /Users/marco/pl/quic-go/quic-go

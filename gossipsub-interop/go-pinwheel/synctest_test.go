@@ -26,14 +26,23 @@ import (
 )
 
 func TestPinwheel(t *testing.T) {
-	nodeCount := 1000
+	// const nodeCount = 1000
+	const nodeCount = 3
+	const treeBranchingFactor = 32
+	const messageSize = 512 << 10
+
+	const latency = 10 * time.Millisecond
+	const bandwidth = 1000 * simlibp2p.OneMbps
+
+	testStart := time.Now()
 	testName := "pinwheel"
 	synctest.Run(func() {
-		// qlogDir := fmt.Sprintf("/tmp/gossipsub-%d-%s", subnetCount, publishStrategy)
-		qlogDir := ""
+		qlogDir := fmt.Sprintf("/tmp/pinwheel/%s", testStart.Format(time.RFC3339))
+		// qlogDir := ""
 
-		const latency = 10 * time.Millisecond
-		const bandwidth = 1000 * simlibp2p.OneMbps
+		var firstPublishTime time.Time
+		var lastPublishTimeMu sync.Mutex
+		var lastPublishTime time.Time
 
 		network, meta, err := simlibp2p.SimpleLibp2pNetwork([]simlibp2p.NodeLinkSettingsAndCount{
 			{LinkSettings: simconn.NodeBiDiLinkSettings{
@@ -86,20 +95,16 @@ func TestPinwheel(t *testing.T) {
 		differentBroadcastTreeCount := 1
 		allBroadcastTrees := make([][]int, differentBroadcastTreeCount)
 		for i := range allBroadcastTrees {
-			// _ = shuffleTree
 			shuffleTree()
 			allBroadcastTrees[i] = make([]int, nodeCount)
 			copy(allBroadcastTrees[i], allNodesList)
 		}
-		const treeBranchingFactor = 32
 		getChildren := func(broadcastTree []int, nodeID int) []int {
 			nodeIDPos := slices.IndexFunc(broadcastTree, func(e int) bool { return e == nodeID })
 			start := min(nodeIDPos*treeBranchingFactor+1, len(broadcastTree))
 			end := min(nodeIDPos*treeBranchingFactor+treeBranchingFactor, len(broadcastTree))
 			return broadcastTree[start:end]
 		}
-
-		const messageSize = 1024 * 100
 
 		const pinwheelProtocolID = "/pinwheel/0.0.1"
 		var wg sync.WaitGroup
@@ -126,8 +131,14 @@ func TestPinwheel(t *testing.T) {
 					broadcastTreeIdx := binary.BigEndian.Uint16(msg[0:2])
 					count := receivedMessageCount.Add(1)
 					// if count == uint32(differentBroadcastTreeCount/2) {
-					if count == uint32(differentBroadcastTreeCount) {
+					if nodeIdx != 0 && count >= uint32(differentBroadcastTreeCount) {
 						fmt.Println("NodeIDx", nodeIdx, "Received Message", time.Now(), count)
+						lastPublishTimeMu.Lock()
+						now := time.Now()
+						if lastPublishTime.IsZero() || lastPublishTime.Before(now) {
+							lastPublishTime = now
+						}
+						lastPublishTimeMu.Unlock()
 					}
 					// forward data to the rest of the network
 					for _, child := range getChildren(allBroadcastTrees[broadcastTreeIdx], nodeIdx) {
@@ -173,10 +184,17 @@ func TestPinwheel(t *testing.T) {
 				// Broadcast a message to all peers
 
 				if nodeIdx == 0 {
-					const publishCount = 2
+					const publishCount = 20
 
 					for i := range publishCount {
+						lastPublishTimeMu.Lock()
+						if !lastPublishTime.IsZero() {
+							fmt.Println("Publishing took", lastPublishTime.Sub(firstPublishTime))
+						}
+						lastPublishTimeMu.Unlock()
 
+						firstPublishTime = time.Now()
+						fmt.Println("enter publish loop")
 						for treeIdx, broadcastTree := range allBroadcastTrees {
 							go func(treeIdx int, broadcastTree []int) {
 								rootOfBroadcastTree := broadcastTree[0]
@@ -203,6 +221,12 @@ func TestPinwheel(t *testing.T) {
 			}(nodeIdx, node)
 		}
 		wg.Wait()
+
+		lastPublishTimeMu.Lock()
+		if !lastPublishTime.IsZero() {
+			fmt.Println("Publishing took", lastPublishTime.Sub(firstPublishTime))
+		}
+		lastPublishTimeMu.Unlock()
 	})
 }
 
