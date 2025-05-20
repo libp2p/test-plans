@@ -73,6 +73,7 @@ def analyse_message_deliveries(folder):
     # Prepare data for plotting
     msg_ids = []
     time_diffs = []
+    avg_duplicates = []
 
     total_nodes = len(node_id_to_peer_id)
     messagesIDs = list(messages.keys())
@@ -85,6 +86,7 @@ def analyse_message_deliveries(folder):
         msg_ids.append(msgID)
         time_diffs.append(time_diff)
         avg_duplicate_count = duplicate_count[msgID] / total_nodes
+        avg_duplicates.append(avg_duplicate_count)
         reached = len(deliveries) / (total_nodes - 1)  # Minus 1 for the original sender
         if reached > 1.0:
             if len(deliveries) > total_nodes:
@@ -95,7 +97,7 @@ def analyse_message_deliveries(folder):
             reached = 1.0
         analysis_txt.append(f"{msgID}, {time_diff}s, {avg_duplicate_count}, {reached}")
 
-    # Create the plot
+    # Create the plots
     plt.figure(figsize=(12, 6))
     plt.bar(range(len(msg_ids)), time_diffs)
     plt.xlabel("Message Index")
@@ -107,6 +109,17 @@ def analyse_message_deliveries(folder):
     if not os.path.exists("plots"):
         os.makedirs("plots")
     plt.savefig(f"plots/message_delivery_times_{folder}.png")
+    plt.close()
+
+    plt.figure(figsize=(12, 6))
+    plt.bar(range(len(msg_ids)), avg_duplicates)
+    plt.xlabel("Message Index")
+    plt.ylabel("Avg Duplicate Count")
+    plt.title("Avg Message Duplicate Differences")
+    plt.xticks(range(len(msg_ids)), msg_ids, rotation=45, ha="right")
+    plt.tight_layout()
+
+    plt.savefig(f"plots/avg_msg_duplicate_count_{folder}.png")
     plt.close()
 
     # Print the analysis and save it to a file
