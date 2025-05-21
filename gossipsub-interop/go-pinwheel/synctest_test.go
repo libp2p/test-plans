@@ -5,8 +5,8 @@ package main
 import (
 	"context"
 	"encoding/binary"
+	"errors"
 	"fmt"
-	"io"
 	"math/rand/v2"
 	"os"
 	"slices"
@@ -17,19 +17,50 @@ import (
 	"time"
 
 	"github.com/libp2p/go-libp2p/core/host"
-	libp2pnetwork "github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
+	packethost "github.com/libp2p/go-libp2p/p2p/host/packet"
 	"github.com/libp2p/go-libp2p/p2p/net/simconn"
 	simlibp2p "github.com/libp2p/go-libp2p/p2p/net/simconn/libp2p"
 	"github.com/libp2p/go-libp2p/p2p/transport/quicreuse"
 	"github.com/stretchr/testify/require"
 )
 
+const pinwheelProtocolID = "/pinwheel/0.0.1"
+
+type tree []int
+
+func newTree(nodeCount int) tree {
+	t := make([]int, nodeCount)
+	for i := range t {
+		t[i] = i
+	}
+	return t
+}
+
+func (t tree) shuffle(r *rand.Rand) {
+	r.Shuffle(len(t), func(i int, j int) {
+		t[i], t[j] = t[j], t[i]
+	})
+}
+
+func (t tree) children(treeBranchingFactor, id int) []int {
+	nodeIDPos := slices.IndexFunc(t, func(e int) bool { return e == id })
+	start := min(nodeIDPos*treeBranchingFactor+1, len(t))
+	end := min(nodeIDPos*treeBranchingFactor+treeBranchingFactor, len(t))
+	return t[start:end]
+}
+
+func (t tree) clone() tree {
+	return slices.Clone(t)
+}
+
 func TestPinwheel(t *testing.T) {
-	// const nodeCount = 1000
-	const nodeCount = 3
+	const nodeCount = 1_000
 	const treeBranchingFactor = 32
-	const messageSize = 512 << 10
+	const chunkSize = 1 << 10
+	const chunkCount = 64
+
+	const publishCount = 1
 
 	const latency = 10 * time.Millisecond
 	const bandwidth = 1000 * simlibp2p.OneMbps
@@ -81,87 +112,34 @@ func TestPinwheel(t *testing.T) {
 		// Use current time for simulation start time
 		startTime := time.Now()
 
-		allNodesList := make([]int, nodeCount)
-		for i := range allNodesList {
-			allNodesList[i] = i
-		}
 		r := rand.New(rand.NewChaCha8([32]byte{}))
-		shuffleTree := func() {
-			r.Shuffle(nodeCount, func(i int, j int) {
-				allNodesList[i], allNodesList[j] = allNodesList[j], allNodesList[i]
-			})
-		}
-
-		differentBroadcastTreeCount := 1
-		allBroadcastTrees := make([][]int, differentBroadcastTreeCount)
+		allBroadcastTrees := make([]tree, chunkCount)
 		for i := range allBroadcastTrees {
-			shuffleTree()
-			allBroadcastTrees[i] = make([]int, nodeCount)
-			copy(allBroadcastTrees[i], allNodesList)
-		}
-		getChildren := func(broadcastTree []int, nodeID int) []int {
-			nodeIDPos := slices.IndexFunc(broadcastTree, func(e int) bool { return e == nodeID })
-			start := min(nodeIDPos*treeBranchingFactor+1, len(broadcastTree))
-			end := min(nodeIDPos*treeBranchingFactor+treeBranchingFactor, len(broadcastTree))
-			return broadcastTree[start:end]
+			t := newTree(nodeCount)
+			t.shuffle(r)
+			allBroadcastTrees[i] = t
 		}
 
-		const pinwheelProtocolID = "/pinwheel/0.0.1"
 		var wg sync.WaitGroup
 		for nodeIdx, node := range meta.Nodes {
 			wg.Add(1)
 			go func(nodeIdx int, node host.Host) {
 				defer wg.Done()
-				var receivedMessageCount atomic.Uint32
+				var recvdChunkCount atomic.Uint32
 
-				node.SetStreamHandler(pinwheelProtocolID, func(stream libp2pnetwork.Stream) {
-					defer stream.Close()
+				ph := packethost.Host{
+					Network: node.Network(),
+				}
+				ph.Start()
+				defer ph.Close()
 
-					msg := make([]byte, messageSize)
-					_, err := io.ReadFull(stream, msg)
-					if err != nil {
-						fmt.Println("NodeIDx", nodeIdx, "error reading message:", err)
-						return
-					}
-					if len(msg) < 2 {
-						fmt.Println("NodeIDx", nodeIdx, "received invalid message:", string(msg))
-						return
-					}
+				ctx, cancel := context.WithCancel(context.Background())
+				defer cancel()
 
-					broadcastTreeIdx := binary.BigEndian.Uint16(msg[0:2])
-					count := receivedMessageCount.Add(1)
-					// if count == uint32(differentBroadcastTreeCount/2) {
-					if nodeIdx != 0 && count >= uint32(differentBroadcastTreeCount) {
-						fmt.Println("NodeIDx", nodeIdx, "Received Message", time.Now(), count)
-						lastPublishTimeMu.Lock()
-						now := time.Now()
-						if lastPublishTime.IsZero() || lastPublishTime.Before(now) {
-							lastPublishTime = now
-						}
-						lastPublishTimeMu.Unlock()
-					}
-					// forward data to the rest of the network
-					for _, child := range getChildren(allBroadcastTrees[broadcastTreeIdx], nodeIdx) {
-						go func(child int) {
-							s, err := node.NewStream(context.Background(), meta.Nodes[child].ID(), pinwheelProtocolID)
-							if err != nil {
-								fmt.Println("NodeIDx", nodeIdx, "error creating stream to child", child, ":", err)
-								return
-							}
-
-							_, err = s.Write(msg)
-							if err != nil {
-								fmt.Println("NodeIDx", nodeIdx, "error writing message to child", child, ":", err)
-							}
-							s.Close()
-						}(child)
-					}
-				})
-				time.Sleep(10 * time.Second)
-
-				ctx := context.Background()
+				// Initial discovery.
+				// With 0rtt we'd be able to close these connections later and still send 0rtt datagrams .
 				for _, broadcastTree := range allBroadcastTrees {
-					for _, childID := range getChildren(broadcastTree, nodeIdx) {
+					for _, childID := range broadcastTree.children(treeBranchingFactor, nodeIdx) {
 						err := connector.ConnectTo(ctx, node, childID)
 						if err != nil {
 							t.Errorf("error connecting node %d to %d: %s", nodeIdx, childID, err)
@@ -169,6 +147,7 @@ func TestPinwheel(t *testing.T) {
 					}
 				}
 
+				// The publisher (nodeIdx = 0) will connect to the root of all broadcast trees
 				if nodeIdx == 0 {
 					for _, broadcastTree := range allBroadcastTrees {
 						rootOfBroadcastTree := broadcastTree[0]
@@ -179,13 +158,56 @@ func TestPinwheel(t *testing.T) {
 					}
 				}
 
-				time.Sleep(time.Until(startTime.Add(2 * time.Minute)))
-				fmt.Println(nodeIdx, "connected to", len(node.Network().Peers()), "peers at", time.Now())
-				// Broadcast a message to all peers
+				// Handle datagrams and forward
+				go func() {
+					for {
+						// Handle inbound datagrams
+						_, msg, err := ph.ReceiveDatagram(ctx, pinwheelProtocolID)
+						if err != nil {
+							if errors.Is(err, context.Canceled) {
+								return
+							}
+							fmt.Println("NodeIDx", nodeIdx, "error reading message:", err)
+							return
+						}
+						if len(msg) < 2 {
+							fmt.Println("NodeIDx", nodeIdx, "received invalid message:", string(msg))
+							return
+						}
 
+						broadcastTreeIdx := binary.BigEndian.Uint16(msg[0:2])
+						recvCount := recvdChunkCount.Add(1)
+
+						if nodeIdx != 0 && recvCount >= uint32(chunkCount/2) {
+							// fmt.Println("NodeIDx", nodeIdx, "Received Message", time.Now(), count)
+
+							// Update our stats
+							lastPublishTimeMu.Lock()
+							now := time.Now()
+							if lastPublishTime.IsZero() || lastPublishTime.Before(now) {
+								lastPublishTime = now
+							}
+							lastPublishTimeMu.Unlock()
+						}
+
+						// forward data to the rest of the network
+						for _, child := range allBroadcastTrees[broadcastTreeIdx].children(treeBranchingFactor, nodeIdx) {
+							go func(child int) {
+								msg := make([]byte, chunkSize)
+								err = ph.SendDatagram(ctx, pinwheelProtocolID, meta.Nodes[child].ID(), msg)
+								if err != nil {
+									fmt.Println("NodeIDx", nodeIdx, "error writing message to child", child, ":", err)
+									return
+								}
+							}(child)
+						}
+					}
+				}()
+
+				time.Sleep(time.Until(startTime.Add(time.Minute)))
+
+				// Publisher publishes
 				if nodeIdx == 0 {
-					const publishCount = 20
-
 					for i := range publishCount {
 						lastPublishTimeMu.Lock()
 						if !lastPublishTime.IsZero() {
@@ -194,30 +216,24 @@ func TestPinwheel(t *testing.T) {
 						lastPublishTimeMu.Unlock()
 
 						firstPublishTime = time.Now()
-						fmt.Println("enter publish loop")
 						for treeIdx, broadcastTree := range allBroadcastTrees {
 							go func(treeIdx int, broadcastTree []int) {
 								rootOfBroadcastTree := broadcastTree[0]
 								fmt.Println("NodeIDx", nodeIdx, "Sent Message", time.Now(), "to", rootOfBroadcastTree)
-								err := connector.ConnectTo(ctx, node, rootOfBroadcastTree)
-								s, err := node.NewStream(context.Background(), meta.Nodes[rootOfBroadcastTree].ID(), pinwheelProtocolID)
+								msg := make([]byte, chunkSize)
+								binary.BigEndian.PutUint16(msg, uint16(treeIdx))
+								ph.SendDatagram(context.Background(), pinwheelProtocolID, meta.Nodes[rootOfBroadcastTree].ID(), msg)
 								if err != nil {
-									fmt.Println("NodeIDx", nodeIdx, "error creating stream to child", rootOfBroadcastTree, ":", err)
+									fmt.Println("NodeIDx", nodeIdx, "error sending msg", rootOfBroadcastTree, ":", err)
 									return
 								}
-								msg := make([]byte, messageSize)
-								binary.BigEndian.PutUint16(msg, uint16(treeIdx))
-								s.Write(msg)
-								s.Close()
 							}(treeIdx, broadcastTree)
 						}
-
 						time.Sleep(time.Until(startTime.Add(time.Duration(i+1) * 30 * time.Second)))
 					}
 				}
 
 				time.Sleep(2 * time.Minute)
-
 			}(nodeIdx, node)
 		}
 		wg.Wait()
