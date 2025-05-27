@@ -1,39 +1,10 @@
 [
   {
-    "id": "v0.45",
-    "implementation": "quic-go",
-    "transportStacks": [
-      "quic-v1"
-    ]
-  },
-  {
-    "id": "v0.55",
-    "implementation": "rust-libp2p",
-    "transportStacks": [
-      "tcp",
-      "quic-v1"
-    ]
-  },
-  {
-    "id": "v0.1",
-    "implementation": "https",
-    "transportStacks": [
-      "tcp"
-    ]
-  },
-  {
     "id": "v0.41",
     "implementation": "go-libp2p",
     "transportStacks": [
       "tcp",
       "quic-v1"
-    ]
-  },
-  {
-    "id": "v2.8",
-    "implementation": "js-libp2p",
-    "transportStacks": [
-      "tcp"
     ]
   }
 ]
