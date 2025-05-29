@@ -32,8 +32,15 @@ def main():
     args = parser.parse_args()
 
     if args.output_dir is None:
+        try:
+            git_describe = subprocess.check_output(["git", "describe", "--always", "--dirty"])
+        except subprocess.CalledProcessError:
+            git_describe = "unknown"
+
+        import datetime
+        timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
         args.output_dir = (
-            f"{args.scenario}-{args.node_count}-{args.composition}-{args.seed}.data"
+            f"{args.scenario}-{args.node_count}-{args.composition}-{args.seed}-{timestamp}-{git_describe}.data"
         )
 
     random.seed(args.seed)
