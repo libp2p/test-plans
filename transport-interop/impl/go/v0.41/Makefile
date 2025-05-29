@@ -1,9 +1,14 @@
-image_name := go-v0.36
-version := 0.36.5
+image_name := go-v0.41
+version := 0.41.1
 
 all: image.json
 
-image.json: verify-checksum go-libp2p-${version}
+define verify_checksum
+	shasum -a 256 -c version.lock
+endef
+
+image.json: go-libp2p-${version}
+	$(call verify_checksum)
 	cd go-libp2p-${version} && IMAGE_NAME=${image_name} ../../../../dockerBuildWrapper.sh -f test-plans/PingDockerfile .
 	docker image inspect ${image_name} -f "{{.Id}}" | \
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
@@ -21,6 +26,7 @@ version.lock: go-libp2p-${version}.zip
 	shasum -a 256 go-libp2p-${version}.zip > $@
 
 verify-checksum: go-libp2p-${version}.zip
+	$(call verify_checksum)
 	shasum -a 256 -c version.lock
 
 .PHONY: clean all verify-checksum
