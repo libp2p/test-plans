@@ -1,5 +1,5 @@
-image_name := rust-chromium-v0.54
-commitSha := d7beb55f672dce54017fa4b30f67ecb8d66b9810
+image_name := chromium-rust-v0.53
+commitSha := b7914e407da34c99fb76dcc300b3d44b9af97fac
 
 all: image.json
 
