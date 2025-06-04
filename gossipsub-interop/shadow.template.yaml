@@ -1,5 +1,5 @@
 general:
-  # model_unblocked_syscall_latency: true
+  model_unblocked_syscall_latency: true
   stop_time: 10 min
 
 # For QUIC transports
