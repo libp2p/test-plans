@@ -349,5 +349,18 @@
     "muxers": [
       "yamux"
     ]
+  },
+  {
+    "id": "c-v0.0.1",
+    "transports": [
+      "tcp"
+    ],
+    "secureChannels": [
+      "noise"
+    ],
+    "muxers": [
+      "mplex", 
+      "yamux"
+    ]
   }
 ]
