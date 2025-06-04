@@ -33,15 +33,16 @@ def main():
 
     if args.output_dir is None:
         try:
-            git_describe = subprocess.check_output(["git", "describe", "--always", "--dirty"])
+            git_describe = subprocess.check_output(
+                ["git", "describe", "--always", "--dirty"]
+            )
         except subprocess.CalledProcessError:
             git_describe = "unknown"
 
         import datetime
+
         timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-        args.output_dir = (
-            f"{args.scenario}-{args.node_count}-{args.composition}-{args.seed}-{timestamp}-{git_describe}.data"
-        )
+        args.output_dir = f"{args.scenario}-{args.node_count}-{args.composition}-{args.seed}-{timestamp}-{git_describe}.data"
 
     random.seed(args.seed)
 
@@ -51,7 +52,8 @@ def main():
     with open(params_file_name, "w") as f:
         d = asdict(experiment_params)
         d["script"] = [
-            action.model_dump(exclude_none=True) for action in experiment_params.script
+            instruction.model_dump(exclude_none=True)
+            for instruction in experiment_params.script
         ]
         json.dump(d, f)
 

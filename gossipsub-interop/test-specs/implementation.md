@@ -42,10 +42,10 @@ type.
 
 This may change in the future.
 
-### Script Actions
+### Script Instructions
 
-Script actions are how each node knows what to do during the experiment.
-Implementations MUST handle each action. See `script_action.py` for the actions
+Script instructions are how each node knows what to do during the experiment.
+Implementations MUST handle each instruction. See `script_instruction.py` for the instructions
 you need to support.
 
 ## Output

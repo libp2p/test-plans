@@ -1,4 +1,4 @@
-use crate::script_action::NodeID;
+use crate::script_instruction::NodeID;
 use dns_lookup::lookup_host;
 use libp2p::identity::Keypair;
 use libp2p::swarm::{DialError, NetworkBehaviour};

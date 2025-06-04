@@ -1,4 +1,4 @@
-use crate::script_action::NodeID;
+use crate::script_instruction::NodeID;
 use byteorder::{ByteOrder, LittleEndian};
 use libp2p::identity;
 

@@ -10,10 +10,10 @@ This framework leverages [Shadow](https://shadow.github.io/) as its simulator.
 
 There are two components to our interoperability test:
 
-1. The _scenario_ we are running. This defines the specific actions each node in
-   the network takes at a specific point in time. Actions such as publishing a
-   message, connecting to other nodes, or subcribing. See `script_action.py` for a
-   list of actions.
+1. The _scenario_ we are running. This defines the specific instructions each node in
+   the network takes at a specific point in time. Instructions such as publishing a
+   message, connecting to other nodes, or subcribing. See `script_instruction.py` for a
+   list of instructions.
 2. The _composition_ of the network. This defines what percent of the network is
    running what implementation. For example you can have a network composed of 50%
    go-libp2p nodes and 50% rust-libp2p nodes.
@@ -63,7 +63,7 @@ example, the output folder is
 
 - shadow.yaml: The Shadow config defining the binaries and network.
 - graph.gml: The graph of the network links for Shadow.
-- params.json: The parameters passed to each binary with GossipSub parameters and the actions to run.
+- params.json: The parameters passed to each binary with GossipSub parameters and the instructions to run.
 - plots/
   - analysis_*.txt: A text file containing a high level analysis of the 3 key results
   - Charts visualizing the results.

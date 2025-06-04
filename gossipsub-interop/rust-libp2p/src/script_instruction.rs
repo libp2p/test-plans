@@ -47,10 +47,10 @@ impl From<NodeID> for Keypair {
         Keypair::ed25519_from_bytes(seed).expect("Failed to create keypair")
     }
 }
-/// ScriptAction represents an action that can be executed in a script.
+/// ScriptInstruction represents an instruction that can be executed in a script.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
-pub enum ScriptAction {
+pub enum ScriptInstruction {
     #[serde(rename = "connect")]
     Connect {
         #[serde(rename = "connectTo")]
@@ -61,7 +61,8 @@ pub enum ScriptAction {
     IfNodeIDEquals {
         #[serde(rename = "nodeID")]
         node_id: NodeID,
-        action: Box<ScriptAction>,
+        #[serde(rename = "instruction")]
+        instruction: Box<ScriptInstruction>,
     },
 
     #[serde(rename = "waitUntil")]
@@ -96,7 +97,7 @@ pub enum ScriptAction {
 /// ExperimentParams contains all parameters for an experiment.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExperimentParams {
-    pub script: Vec<ScriptAction>,
+    pub script: Vec<ScriptInstruction>,
 }
 
 impl ExperimentParams {

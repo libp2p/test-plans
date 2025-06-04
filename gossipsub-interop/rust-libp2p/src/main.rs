@@ -13,10 +13,10 @@ use tracing_subscriber::{layer::SubscriberExt, Layer};
 mod connector;
 mod experiment;
 mod log_filter;
-mod script_action;
+mod script_instruction;
 
 use experiment::{run_experiment, MyBehavior};
-use script_action::{ExperimentParams, NodeID};
+use script_instruction::{ExperimentParams, NodeID};
 
 #[derive(Parser, Debug)]
 #[clap(author, version, about)]
@@ -112,7 +112,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Some(params) => {
             slog::info!(
                 stderr_logger,
-                "Applying GossipSub params from InitGossipSub action"
+                "Applying GossipSub params from InitGossipSub instruction"
             );
             params.into()
         }

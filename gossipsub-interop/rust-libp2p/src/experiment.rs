@@ -9,7 +9,7 @@ use std::time::{Duration, Instant};
 use tokio::time::sleep;
 
 use crate::connector;
-use crate::script_action::{ExperimentParams, NodeID, ScriptAction};
+use crate::script_instruction::{ExperimentParams, NodeID, ScriptInstruction};
 
 // Calculate message ID based on content (equivalent to Go's CalcID)
 pub fn format_message_id(data: &[u8]) -> String {
@@ -59,12 +59,12 @@ impl ScriptedNode {
         }
     }
 
-    pub async fn run_action(
+    pub async fn run_instruction(
         &mut self,
-        action: ScriptAction,
+        instruction: ScriptInstruction,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        match action {
-            ScriptAction::Connect { connect_to } => {
+        match instruction {
+            ScriptInstruction::Connect { connect_to } => {
                 for target_node_id in connect_to {
                     match connector::connect_to(&mut self.swarm, target_node_id).await {
                         Ok(_) => {
@@ -84,12 +84,12 @@ impl ScriptedNode {
                     "Node {} connected to peers", self.node_id
                 );
             }
-            ScriptAction::IfNodeIDEquals { node_id, action } => {
+            ScriptInstruction::IfNodeIDEquals { node_id, instruction } => {
                 if node_id == self.node_id {
-                    Box::pin(self.run_action(*action)).await?;
+                    Box::pin(self.run_instruction(*instruction)).await?;
                 }
             }
-            ScriptAction::WaitUntil { elapsed_seconds } => {
+            ScriptInstruction::WaitUntil { elapsed_seconds } => {
                 let target_time = self.start_time + Duration::from_secs(elapsed_seconds);
                 let now = Instant::now();
 
@@ -129,7 +129,7 @@ impl ScriptedNode {
                     }
                 }
             }
-            ScriptAction::Publish {
+            ScriptInstruction::Publish {
                 message_id,
                 message_size_bytes,
                 topic_id,
@@ -159,7 +159,7 @@ impl ScriptedNode {
                     }
                 }
             }
-            ScriptAction::SubscribeToTopic { topic_id } => {
+            ScriptInstruction::SubscribeToTopic { topic_id } => {
                 let topic = self.get_topic(&topic_id);
 
                 match self.swarm.behaviour_mut().gossipsub.subscribe(&topic) {
@@ -175,11 +175,11 @@ impl ScriptedNode {
                     }
                 }
             }
-            ScriptAction::InitGossipSub {
+            ScriptInstruction::InitGossipSub {
                 gossip_sub_params: _,
             } => {
                 // This is handled before node creation in main.rs, so we don't need to do anything here
-                info!(self.stderr_logger, "InitGossipSub action already processed");
+                info!(self.stderr_logger, "InitGossipSub instruction already processed");
             }
         }
 
@@ -208,28 +208,28 @@ pub async fn run_experiment(
         stdout_logger.clone(),
         start_time,
     );
-    for action in params.script {
-        node.run_action(action).await?;
+    for instruction in params.script {
+        node.run_instruction(instruction).await?;
     }
     Ok(())
 }
 
-// Extract InitGossipSub parameters from script actions
+// Extract InitGossipSub parameters from script instructions
 pub fn extract_gossipsub_params(
-    script: &[ScriptAction],
+    script: &[ScriptInstruction],
     node_id: NodeID,
-) -> Option<crate::script_action::GossipSubParams> {
-    for action in script {
-        match action {
-            ScriptAction::InitGossipSub { gossip_sub_params } => {
+) -> Option<crate::script_instruction::GossipSubParams> {
+    for instruction in script {
+        match instruction {
+            ScriptInstruction::InitGossipSub { gossip_sub_params } => {
                 return Some(**gossip_sub_params);
             }
-            ScriptAction::IfNodeIDEquals {
-                node_id: action_node_id,
-                action,
+            ScriptInstruction::IfNodeIDEquals {
+                node_id: instruction_node_id,
+                instruction,
             } => {
-                if *action_node_id == node_id {
-                    if let ScriptAction::InitGossipSub { gossip_sub_params } = action.as_ref() {
+                if *instruction_node_id == node_id {
+                    if let ScriptInstruction::InitGossipSub { gossip_sub_params } = instruction.as_ref() {
                         return Some(**gossip_sub_params);
                     }
                 }

@@ -3,8 +3,8 @@ from dataclasses import dataclass, field
 import random
 from typing import List, Dict, Set
 
-from script_action import GossipSubParams, ScriptAction, NodeID
-import script_action
+from script_instruction import GossipSubParams, ScriptInstruction, NodeID
+import script_instruction
 
 
 @dataclass
@@ -15,27 +15,27 @@ class Binary:
 
 @dataclass
 class ExperimentParams:
-    script: List[ScriptAction] = field(default_factory=list)
+    script: List[ScriptInstruction] = field(default_factory=list)
 
 
 def scenario(scenario_name: str, node_count: int) -> ExperimentParams:
-    actions: List[ScriptAction] = []
+    instructions: List[ScriptInstruction] = []
     match scenario_name:
         case "subnet-blob-msg":
-            actions.extend(init_gossipsub())
+            instructions.extend(init_gossipsub())
             number_of_conns_per_node = 10
             if number_of_conns_per_node >= node_count:
                 number_of_conns_per_node = node_count - 1
-            actions.extend(random_network_mesh(node_count, number_of_conns_per_node))
+            instructions.extend(random_network_mesh(node_count, number_of_conns_per_node))
             message_size = 2 * 1024 * 48
             num_messages = 32
-            actions.extend(
+            instructions.extend(
                 random_publish_every_12s(node_count, num_messages, message_size)
             )
         case _:
             raise ValueError(f"Unknown scenario name: {scenario_name}")
 
-    return ExperimentParams(script=actions)
+    return ExperimentParams(script=instructions)
 
 
 def composition(preset_name: str) -> List[Binary]:
@@ -59,14 +59,14 @@ def composition(preset_name: str) -> List[Binary]:
     raise ValueError(f"Unknown preset name: {preset_name}")
 
 
-def init_gossipsub() -> List[ScriptAction]:
+def init_gossipsub() -> List[ScriptInstruction]:
     # Default gossipsub parameters
-    return [script_action.InitGossipSub(gossipSubParams=GossipSubParams())]
+    return [script_instruction.InitGossipSub(gossipSubParams=GossipSubParams())]
 
 
 def random_network_mesh(
     node_count: int, number_of_connections: int
-) -> List[ScriptAction]:
+) -> List[ScriptInstruction]:
     connections: Dict[NodeID, Set[NodeID]] = defaultdict(set)
     connect_to: Dict[NodeID, List[NodeID]] = defaultdict(list)
     for node_id in range(node_count):
@@ -79,36 +79,36 @@ def random_network_mesh(
 
             connect_to[node_id].append(target)
 
-    actions = []
+    instructions = []
     for node_id, node_connections in connect_to.items():
-        actions.append(
-            script_action.IfNodeIDEquals(
+        instructions.append(
+            script_instruction.IfNodeIDEquals(
                 nodeID=node_id,
-                action=script_action.Connect(
+                instruction=script_instruction.Connect(
                     connectTo=list(node_connections),
                 ),
             )
         )
-    return actions
+    return instructions
 
 
 def random_publish_every_12s(
     node_count: int, numMessages: int, messageSize: int
-) -> List[ScriptAction]:
+) -> List[ScriptInstruction]:
     topicStr = "foobar"
-    actions = []
-    actions.append(script_action.SubscribeToTopic(topicID=topicStr))
+    instructions = []
+    instructions.append(script_instruction.SubscribeToTopic(topicID=topicStr))
 
     # Start at 120 seconds (2 minutes) to allow for setup time
     elapsed_seconds = 120
-    actions.append(script_action.WaitUntil(elapsedSeconds=elapsed_seconds))
+    instructions.append(script_instruction.WaitUntil(elapsedSeconds=elapsed_seconds))
 
     for i in range(numMessages):
         random_node = random.randint(0, node_count - 1)
-        actions.append(
-            script_action.IfNodeIDEquals(
+        instructions.append(
+            script_instruction.IfNodeIDEquals(
                 nodeID=random_node,
-                action=script_action.Publish(
+                instruction=script_instruction.Publish(
                     messageID=i,
                     topicID=topicStr,
                     messageSizeBytes=messageSize,
@@ -116,9 +116,9 @@ def random_publish_every_12s(
             )
         )
         elapsed_seconds += 12  # Add 12 seconds for each subsequent message
-        actions.append(script_action.WaitUntil(elapsedSeconds=elapsed_seconds))
+        instructions.append(script_instruction.WaitUntil(elapsedSeconds=elapsed_seconds))
 
     elapsed_seconds += 30  # wait a bit more to allow all messages to flush
-    actions.append(script_action.WaitUntil(elapsedSeconds=elapsed_seconds))
+    instructions.append(script_instruction.WaitUntil(elapsedSeconds=elapsed_seconds))
 
-    return actions
+    return instructions

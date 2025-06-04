@@ -56,17 +56,17 @@ func newScriptedNode(
 	return n, nil
 }
 
-func (n *scriptedNode) runAction(ctx context.Context, action ScriptAction) error {
-	// Process each script action
-	switch a := action.(type) {
-	case InitGossipSubAction:
+func (n *scriptedNode) runInstruction(ctx context.Context, instruction ScriptInstruction) error {
+	// Process each script instruction
+	switch a := instruction.(type) {
+	case InitGossipSubInstruction:
 		psOpts := pubsubOptions(n.slogger, a.GossipSubParams)
 		ps, err := pubsub.NewGossipSub(ctx, n.h, psOpts...)
 		if err != nil {
 			return err
 		}
 		n.pubsub = ps
-	case ConnectAction:
+	case ConnectInstruction:
 		for _, targetNodeId := range a.ConnectTo {
 			err := n.connector.ConnectTo(ctx, n.h, targetNodeId)
 			if err != nil {
@@ -74,18 +74,18 @@ func (n *scriptedNode) runAction(ctx context.Context, action ScriptAction) error
 			}
 		}
 		n.logger.Printf("Node %d connected to %d peers", n.nodeID, len(n.h.Network().Peers()))
-	case IfNodeIDEqualsAction:
+	case IfNodeIDEqualsInstruction:
 		if a.NodeID == n.nodeID {
-			n.runAction(ctx, a.Action)
+			n.runInstruction(ctx, a.Instruction)
 		}
-	case WaitUntilAction:
+	case WaitUntilInstruction:
 		targetTime := n.startTime.Add(time.Duration(a.ElapsedSeconds) * time.Second)
 		waitTime := time.Until(targetTime)
 		if waitTime > 0 {
 			n.logger.Printf("Waiting %s (until elapsed: %ds)\n", waitTime, a.ElapsedSeconds)
 			time.Sleep(waitTime)
 		}
-	case PublishAction:
+	case PublishInstruction:
 		topic, err := n.getTopic(a.TopicID)
 		if err != nil {
 			return fmt.Errorf("failed to get topic %s: %w", a.TopicID, err)
@@ -99,7 +99,7 @@ func (n *scriptedNode) runAction(ctx context.Context, action ScriptAction) error
 			return fmt.Errorf("failed to publish message %d: %w", a.MessageID, err)
 		}
 		n.logger.Printf("Published message %d\n", a.MessageID)
-	case SubscribeToTopicAction:
+	case SubscribeToTopicInstruction:
 		topic, err := n.getTopic(a.TopicID)
 		if err != nil {
 			return fmt.Errorf("failed to get topic %s: %w", a.TopicID, err)
@@ -125,7 +125,7 @@ func (n *scriptedNode) runAction(ctx context.Context, action ScriptAction) error
 			}
 		}()
 	default:
-		return fmt.Errorf("unknown action type: %T", action)
+		return fmt.Errorf("unknown instruction type: %T", instruction)
 	}
 
 	return nil
@@ -153,9 +153,9 @@ func RunExperiment(ctx context.Context, startTime time.Time, logger *log.Logger,
 		return err
 	}
 
-	for _, action := range params.Script {
-		if err := n.runAction(ctx, action); err != nil {
-			return fmt.Errorf("failed to run action: %w", err)
+	for _, instruction := range params.Script {
+		if err := n.runInstruction(ctx, instruction); err != nil {
+			return fmt.Errorf("failed to run instruction: %w", err)
 		}
 	}
 

@@ -14,14 +14,14 @@ class Connect(BaseModel):
 class IfNodeIDEquals(BaseModel):
     type: Literal["ifNodeIDEquals"] = "ifNodeIDEquals"
     nodeID: NodeID
-    # Action to run if the NodeID is equal to the above value
-    action: ScriptAction
+    # Instruction to run if the NodeID is equal to the above value
+    instruction: ScriptInstruction
 
 
 class WaitUntil(BaseModel):
     """
     Implementations MUST wait until elapsedSeconds is greater than or equal to the specified value.
-    They MUST NOT execute any proceeding actions until the wait is complete.
+    They MUST NOT execute any proceeding instruction until the wait is complete.
     They MUST still handle message delivery and forwarding as normal.
     """
 
@@ -43,10 +43,10 @@ class SubscribeToTopic(BaseModel):
 
 class InitGossipSub(BaseModel):
     """
-    InitGossipSub is an action that initializes the GossipSub protocol with the
+    InitGossipSub is an instruction that initializes the GossipSub protocol with the
     given parameters.
 
-    It is undefined behavior to not have every node InitGossipSub before any other actions.
+    It is undefined behavior to not have every node InitGossipSub before any other instruction.
     """
 
     type: Literal["initGossipSub"] = "initGossipSub"
@@ -129,6 +129,6 @@ class GossipSubParams(BaseModel):
     IDontWantMessageTTL: int | None = None  # TTL in seconds for IDONTWANT messages
 
 
-ScriptAction = Union[
+ScriptInstruction = Union[
     Connect, IfNodeIDEquals, WaitUntil, Publish, SubscribeToTopic, InitGossipSub
 ]
