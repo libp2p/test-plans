@@ -1,29 +1,17 @@
 image_name := c-v0.0.1
-commitSha := 412167cd62b141c2bc48374cb5b39eb8d6042402
-# directory name based on commit
- dir_name := c-libp2p-$(commitSha)
+commitSha := f7c2f9386cd45489d768f7e0424a3022d0d21d69
+zip_name := c-libp2p-$(commitSha).zip
+dir_name := c-libp2p-$(commitSha)
 
 all: image.json
 
 image.json:
-	# Clean previous source
-	rm -rf $(dir_name)
-	# Clone repo with submodules for the specific commit
-	git clone https://github.com/Pier-Two/c-libp2p.git $(dir_name)
-	cd $(dir_name) && git checkout $(commitSha) && git submodule update --init --recursive
-	# Generate Dockerfile from interop-tests, stripping stray 'en', fixing base image tag, and removing strip
-	@echo "Generating Dockerfile from interop-tests, applying patches"
-	@sed -e '/^en$$/d' \
-	     -e 's|FROM ubuntu:22.04-slim|FROM ubuntu:22.04|' \
-	     -e 's| && strip interop-c||' \
-	     $(dir_name)/interop-tests/Dockerfile > $(dir_name)/Dockerfile
-	# Build Docker image using the generated Dockerfile
-	cd $(dir_name) && docker build -t $(image_name) -f Dockerfile .
-	# Record image ID
+	wget -O $(zip_name) https://github.com/Pier-Two/c-libp2p/archive/$(commitSha).zip && unzip -o $(zip_name)
+	cd $(dir_name) && IMAGE_NAME=$(image_name) ../../../../dockerBuildWrapper.sh --platform linux/amd64 -f interop-tests/Dockerfile .
 	docker image inspect $(image_name) -f '{{.Id}}' | \
-		xargs -I {} echo '{"imageID": "{}"}' > image.json
+		xargs -I {} echo '{"imageID": "{}"}' > $@
 
 clean:
-	rm -rf image.json $(dir_name)
+	rm -rf image.json $(dir_name) $(zip_name)
 
 .PHONY: all clean
