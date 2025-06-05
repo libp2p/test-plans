@@ -8,7 +8,7 @@ import subprocess
 from network_graph import generate_graph
 import experiment
 
-from analyze_message_deliveries import analyse_message_deliveries
+from analyze_message_deliveries import analyse_message_deliveries, analyse_message_dessemination_rate
 
 params_file_name = "params.json"
 
@@ -83,6 +83,7 @@ def main():
 
     # Analyse message deliveries
     analyse_message_deliveries(args.output_dir)
+    analyse_message_dessemination_rate(args.output_dir)
 
     # Move files to output_dir
     os.rename("shadow.yaml", os.path.join(args.output_dir, "shadow.yaml"))
