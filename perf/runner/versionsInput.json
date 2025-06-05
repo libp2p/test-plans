@@ -30,6 +30,13 @@
     ]
   },
   {
+    "id": "v1.1",
+    "implementation": "nim-libp2p",
+    "transportStacks": [
+      "tcp"
+    ]
+  },
+  {
     "id": "v2.8",
     "implementation": "js-libp2p",
     "transportStacks": [
