@@ -14,22 +14,24 @@ type Flags = object
   downloadBytes: uint
 
 proc initFlagsFromParams(flags: var Flags) =
-  for arg in commandLineParams():
-    let parts = arg.split("=")
-    let key = if parts.len >= 1: parts[0] else: ""
-    let val = if parts.len >= 2: parts[1] else: ""
-
-    case key
+  var i = 0
+  while i < paramCount():
+    i += 1
+    case paramStr(i)
     of "--run-server":
-      flags.runServer = val == "true"
+      flags.runServer = true
     of "--server-address":
-      flags.serverIpAddress = initTAddress(val)
+      i += 1
+      flags.serverIpAddress = initTAddress(paramStr(i))
     of "--transport":
-      flags.transport = val
+      i += 1
+      flags.transport = paramStr(i)
     of "--upload-bytes":
-      flags.uploadBytes = parseUInt(val)
+      i += 1
+      flags.uploadBytes = parseUInt(paramStr(i))
     of "--download-bytes":
-      flags.downloadBytes = parseUInt(val)
+      i += 1
+      flags.downloadBytes = parseUInt(paramStr(i))
     else:
       stderr.writeLine("unsupported flag: " & arg)
   
@@ -98,8 +100,10 @@ proc main() {.async.} =
   stderr.writeLine("using flags: " & $flags)
 
   if flags.runServer:
+    stderr.writeLine("running server")
     await runServer(flags)
   else:
+    stderr.writeLine("running client")
     await runClient(flags)
 
 waitFor(main())
