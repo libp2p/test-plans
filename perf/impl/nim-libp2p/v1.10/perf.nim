@@ -14,26 +14,24 @@ type Flags = object
   downloadBytes: uint
 
 proc initFlagsFromParams(flags: var Flags) =
-  var i = 1
-  while i < paramCount():
-    case paramStr(i)
+  for arg in commandLineParams():
+    let parts = arg.split("=")
+    let key = if parts.len >= 1: parts[0] else: ""
+    let val = if parts.len >= 2: parts[1] else: ""
+
+    case key
     of "--run-server":
-      flags.runServer = true
+      flags.runServer = val == "true"
     of "--server-address":
-      flags.serverIpAddress = initTAddress(paramStr(i + 1))
-      i += 1
+      flags.serverIpAddress = val
     of "--transport":
-      flags.transport = paramStr(i + 1)
-      i += 1
+      flags.transport = val
     of "--upload-bytes":
-      flags.uploadBytes = parseUInt(paramStr(i + 1))
-      i += 1
+      flags.uploadBytes = parseUInt(val)
     of "--download-bytes":
-      flags.downloadBytes = parseUInt(paramStr(i + 1))
-      i += 1
+      flags.downloadBytes = parseUInt(val)
     else:
-      discard
-    i += 1
+      stderr.writeLine("unsupported flag: " & arg)
 
 proc seededRng(): ref HmacDrbgContext =
   var seed: cint = 0
@@ -69,7 +67,7 @@ proc runClient(f: Flags) {.async.} =
       switchBuilder.withTcpTransport().build()
     # of "quic-v1": switchBuilder.withQuicTransport().build()
     else:
-      raise (ref Defect)()
+      raise newException(ValueError, "unsupported transport: " & f.transport)
   await switch.start()
 
   let startTime = Moment.now()
@@ -93,6 +91,7 @@ proc runClient(f: Flags) {.async.} =
 proc main() {.async.} =
   var flags = Flags()
   flags.initFlagsFromParams()
+  stderr.writeLine("using flags: " & $flags)
 
   if flags.runServer:
     await runServer(flags)
