@@ -1,0 +1,8 @@
+nimble.develop
+nimble.paths
+
+
+nimlibp2p
+nim-libp2p
+nim-libp2p-*
+nim-libp2p-*.zip
