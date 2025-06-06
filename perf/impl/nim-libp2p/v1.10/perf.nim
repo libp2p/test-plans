@@ -23,7 +23,7 @@ proc initFlagsFromParams(flags: var Flags) =
     of "--run-server":
       flags.runServer = val == "true"
     of "--server-address":
-      flags.serverIpAddress = val
+      flags.serverIpAddress = initTAddress(val)
     of "--transport":
       flags.transport = val
     of "--upload-bytes":
@@ -32,6 +32,10 @@ proc initFlagsFromParams(flags: var Flags) =
       flags.downloadBytes = parseUInt(val)
     else:
       stderr.writeLine("unsupported flag: " & arg)
+  
+  if flags.serverIpAddress == TransportAddress():
+    raise newException(ValueError, "server-address is not set")
+
 
 proc seededRng(): ref HmacDrbgContext =
   var seed: cint = 0
