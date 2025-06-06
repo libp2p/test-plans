@@ -76,15 +76,13 @@ proc runClient(f: Flags) {.async.} =
       raise newException(ValueError, "unsupported transport: " & f.transport)
   await switch.start()
 
-  let startTime = Moment.now()
   let conn = await switch.dial(
     PeerId.init(fixedPeerId).tryGet(),
     @[MultiAddress.init(f.serverIpAddress).tryGet()],
     PerfCodec,
   )
-  discard await PerfClient.perf(conn, f.uploadBytes, f.downloadBytes)
+  let dur = await PerfClient.perf(conn, f.uploadBytes, f.downloadBytes)
 
-  let dur = Moment.now() - startTime
   let resultFinal =
     %*{
       "type": "final",
