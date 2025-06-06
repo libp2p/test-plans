@@ -33,7 +33,7 @@ proc initFlagsFromParams(flags: var Flags) =
       i += 1
       flags.downloadBytes = parseUInt(paramStr(i))
     else:
-      stderr.writeLine("unsupported flag: " & arg)
+      stderr.writeLine("unsupported flag: " & paramStr(i))
   
   if flags.serverIpAddress == TransportAddress():
     raise newException(ValueError, "server-address is not set")
