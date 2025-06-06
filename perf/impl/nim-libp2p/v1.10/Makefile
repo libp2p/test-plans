@@ -7,7 +7,7 @@ perf: perf.nim nim-libp2p
 	docker run --rm \
             -v "$(shell pwd)":/usr/src/myapp -w /usr/src/myapp nimlang/nim:2.2.0 \
             sh -c ' \
-			  rm nimlibp2p && \
+			  rm -f nimlibp2p && \
 			  ln -s nim-libp2p nimlibp2p && \
               cd nim-libp2p && \
               nimble install_pinned && cd ../ && \
