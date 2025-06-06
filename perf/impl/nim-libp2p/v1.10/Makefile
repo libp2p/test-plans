@@ -1,5 +1,5 @@
-# commit corresponds to v1.10.1 version of nim-libp2p
-commitSha := cd60b254a0700b0daac7a6cb2c0c48860b57c539
+# commit corresponds to v1.10.2 (draft) version of nim-libp2p
+commitSha := 3a7745f920d11fb29305070cd9991874529dfc28
 
 all: perf
 
