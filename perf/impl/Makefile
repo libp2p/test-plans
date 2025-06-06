@@ -33,6 +33,8 @@ https: $(HTTPS_SUBDIRS)
 
 quic-go: $(QUIC_GO_SUBDIRS)
 
+nim-libp2p: $(NIM_SUBDIRS)
+
 js-libp2p: $(JS_SUBDIRS)
 
 clean: $(RUST_SUBDIRS:%=%clean) $(GO_SUBDIRS:%=%clean) $(HTTPS_SUBDIRS:%=%clean) $(QUIC_GO_SUBDIRS:%=%clean) $(NIM_SUBDIRS:%=%clean) $(JS_SUBDIRS:%=%clean)
