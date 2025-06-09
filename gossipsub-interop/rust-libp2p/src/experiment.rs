@@ -84,7 +84,10 @@ impl ScriptedNode {
                     "Node {} connected to peers", self.node_id
                 );
             }
-            ScriptInstruction::IfNodeIDEquals { node_id, instruction } => {
+            ScriptInstruction::IfNodeIDEquals {
+                node_id,
+                instruction,
+            } => {
                 if node_id == self.node_id {
                     Box::pin(self.run_instruction(*instruction)).await?;
                 }
@@ -114,7 +117,7 @@ impl ScriptedNode {
                                 // Process any messages that arrive during sleep
                                 if let SwarmEvent::Behaviour(MyBehaviorEvent::Gossipsub(gossipsub::Event::Message {
                                     propagation_source: peer_id,
-                                    message_id: _,
+                                    message_id,
                                     message,
                                 })) = event {
                                     if message.data.len() >= 8 {
@@ -123,6 +126,17 @@ impl ScriptedNode {
                                             "id" => format_message_id(&message.data),
                                             "from" => peer_id.to_string());
                                     }
+                                    // Shadow doesn’t model CPU execution time,
+                                    // instructions execute instantly in the simulations.
+                                    // Usually in lighthouse blob verification takes ~5ms,
+                                    // so calling `thread::sleep` aims at replicating the same behaviour.
+                                    // See https://github.com/shadow/shadow/issues/2060 for more info.
+                                    std::thread::sleep(Duration::from_millis(5));
+                                    self.swarm.behaviour_mut()
+                                        .gossipsub
+                                        .report_message_validation_result(&message_id,
+                                            &peer_id, gossipsub::MessageAcceptance::Accept
+                                        );
                                 }
                             }
                         }
@@ -179,7 +193,10 @@ impl ScriptedNode {
                 gossip_sub_params: _,
             } => {
                 // This is handled before node creation in main.rs, so we don't need to do anything here
-                info!(self.stderr_logger, "InitGossipSub instruction already processed");
+                info!(
+                    self.stderr_logger,
+                    "InitGossipSub instruction already processed"
+                );
             }
         }
 
@@ -229,7 +246,9 @@ pub fn extract_gossipsub_params(
                 instruction,
             } => {
                 if *instruction_node_id == node_id {
-                    if let ScriptInstruction::InitGossipSub { gossip_sub_params } = instruction.as_ref() {
+                    if let ScriptInstruction::InitGossipSub { gossip_sub_params } =
+                        instruction.as_ref()
+                    {
                         return Some(**gossip_sub_params);
                     }
                 }
