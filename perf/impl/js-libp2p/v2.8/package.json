@@ -1,5 +1,5 @@
 {
-  "name": "@libp2p/perf-js-libp2p-2-0",
+  "name": "@libp2p/perf-js-libp2p-2-8",
   "private": true,
   "main": "index.js",
   "type": "module",

@@ -10,38 +10,30 @@ import (
 
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p/core/crypto"
+	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/multiformats/go-multiaddr"
 )
 
 func main() {
 	runServer := flag.Bool("run-server", false, "Should run as server")
-	serverAddr := flag.String("server-address", "0.0.0.0:4001", "Server address")
+	serverAddr := flag.String("server-address", "", "Server address")
 	transport := flag.String("transport", "tcp", "Transport to use")
 	uploadBytes := flag.Uint64("upload-bytes", 0, "Upload bytes")
 	downloadBytes := flag.Uint64("download-bytes", 0, "Download bytes")
 	flag.Parse()
 
+	host, port, err := net.SplitHostPort(*serverAddr)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	tcpMultiAddrStr := fmt.Sprintf("/ip4/%s/tcp/%s", host, port)
+	quicMultiAddrStr := fmt.Sprintf("/ip4/%s/udp/%s/quic-v1", host, port)
+
 	var opts []libp2p.Option
 	if *runServer {
-		host, port, err := net.SplitHostPort(*serverAddr)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		tcpMultiAddrStr := fmt.Sprintf("/ip4/%s/tcp/%s", host, port)
-		quicMultiAddrStr := fmt.Sprintf("/ip4/%s/udp/%s/quic-v1", host, port)
-
-		switch *transport {
-		case "tcp":
-			opts = append(opts, libp2p.ListenAddrStrings(tcpMultiAddrStr))
-		case "quic-v1":
-			opts = append(opts, libp2p.ListenAddrStrings(quicMultiAddrStr))
-		default:
-			fmt.Println("Invalid transport. Accepted values: 'tcp' or 'quic-v1'")
-			return
-		}
-
+		opts = append(opts, libp2p.ListenAddrStrings(tcpMultiAddrStr, quicMultiAddrStr))
 		// Generate stable fake identity.
 		//
 		// Using a stable identity (i.e. peer ID) allows the client to
@@ -53,6 +45,8 @@ func main() {
 		}
 		opts = append(opts, libp2p.Identity(priv))
 	}
+
+	opts = append(opts, libp2p.ResourceManager(&network.NullResourceManager{}))
 
 	h, err := libp2p.New(opts...)
 	if err != nil {
@@ -68,7 +62,19 @@ func main() {
 		select {} // run forever, exit on interrupt
 	}
 
-	serverInfo, err := peer.AddrInfoFromString(*serverAddr)
+	var multiAddrStr string
+	switch *transport {
+	case "tcp":
+		multiAddrStr = tcpMultiAddrStr
+	case "quic-v1":
+		multiAddrStr = quicMultiAddrStr
+	default:
+		fmt.Println("Invalid transport. Accepted values: 'tcp' or 'quic-v1'")
+		return
+	}
+	// Peer ID corresponds to the above fake identity.
+	multiAddrStr = multiAddrStr + "/p2p/12D3KooWDpJ7As7BWAwRMfu1VU2WCqNjvq387JEYKDBj4kx6nXTN"
+	serverInfo, err := peer.AddrInfoFromString(multiAddrStr)
 	if err != nil {
 		log.Fatalf("failed to build address info: %s", err)
 	}
