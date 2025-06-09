@@ -1,8 +1,7 @@
 import os, strutils, strformat, json
 import chronos, bearssl/[rand, hash]
-import ./nimlibp2p/libp2p
-import
-  ./nimlibp2p/libp2p/[protocols/perf/client, protocols/perf/server, protocols/perf/core]
+import libp2p
+import libp2p/[protocols/perf/client, protocols/perf/server, protocols/perf/core]
 
 const fixedPeerId = "12D3KooWPnQpbXGqzgESFrkaFh1xvCrB64ADnLQQRYfMhnbSuFHF"
 
@@ -33,11 +32,11 @@ proc initFlagsFromParams(flags: var Flags) =
       i += 1
       flags.downloadBytes = parseUInt(paramStr(i))
     else:
-      stderr.writeLine("unsupported flag: " & paramStr(i))
-  
+      discard
+      # stderr.writeLine("unsupported flag: " & paramStr(i))
+
   if flags.serverIpAddress == TransportAddress():
     raise newException(ValueError, "server-address is not set")
-
 
 proc seededRng(): ref HmacDrbgContext =
   var seed: cint = 0
@@ -95,13 +94,13 @@ proc runClient(f: Flags) {.async.} =
 proc main() {.async.} =
   var flags = Flags()
   flags.initFlagsFromParams()
-  stderr.writeLine("using flags: " & $flags)
+  # stderr.writeLine("using flags: " & $flags)
 
   if flags.runServer:
-    stderr.writeLine("running server")
+    # stderr.writeLine("running server")
     await runServer(flags)
   else:
-    stderr.writeLine("running client")
+    # stderr.writeLine("running client")
     await runClient(flags)
 
 waitFor(main())
