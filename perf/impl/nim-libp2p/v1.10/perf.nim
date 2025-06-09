@@ -52,19 +52,35 @@ proc runServer(f: Flags) {.async.} =
     .withAddresses(@[MultiAddress.init(f.serverIpAddress).tryGet()])
     .withTcpTransport()
     # .withQuicTransport()
-    .withMplex()
+    .withYamux()
     .withNoise()
     .build()
   switch.mount(Perf.new())
   await switch.start()
   await endlessFut # Await forever, exit on interrupt
 
+proc intermediateReport(p: PerfClient) {.async.} =
+  while true:
+    await sleepAsync(1000.milliseconds)
+    let stats = p.stats
+    if stats.isFinal: 
+      return
+
+    let resultFinal =
+      %*{
+        "type": "intermediary",
+        "timeSeconds": stats.duration.nanoseconds.float / 1_000_000_000.0,
+        "uploadBytes": stats.uploadBytes,
+        "downloadBytes": stats.downloadBytes,
+      }
+    stdout.writeLine($resultFinal)
+
 proc runClient(f: Flags) {.async.} =
   let switchBuilder = SwitchBuilder
     .new()
     .withRng(newRng())
     .withAddress(MultiAddress.init("/ip4/127.0.0.1/tcp/0").tryGet())
-    .withMplex()
+    .withYamux()
     .withNoise()
   let switch =
     case f.transport
@@ -80,16 +96,19 @@ proc runClient(f: Flags) {.async.} =
     @[MultiAddress.init(f.serverIpAddress).tryGet()],
     PerfCodec,
   )
-  let dur = await PerfClient.perf(conn, f.uploadBytes, f.downloadBytes)
+  var perfClient = PerfClient.new()
+  let durFut = perfClient.perf(conn, f.uploadBytes, f.downloadBytes)
+  asyncSpawn intermediateReport(perfClient)
 
+  let dur = await durFut
   let resultFinal =
     %*{
       "type": "final",
-      "timeSeconds": dur.seconds,
+      "timeSeconds": dur.nanoseconds.float / 1_000_000_000.0,
       "uploadBytes": f.uploadBytes,
       "downloadBytes": f.downloadBytes,
     }
-  echo $resultFinal
+  stdout.writeLine($resultFinal)
 
 proc main() {.async.} =
   var flags = Flags()
