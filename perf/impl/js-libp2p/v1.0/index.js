@@ -1,11 +1,8 @@
 import { parseArgs } from 'node:util'
 import { noise } from '@chainsafe/libp2p-noise'
-import { quic } from '@chainsafe/libp2p-quic'
 import { yamux } from '@chainsafe/libp2p-yamux'
 import { perf } from '@libp2p/perf'
-import { tls } from '@libp2p/tls'
 import { tcp } from '@libp2p/tcp'
-import { webRTCDirect } from '@libp2p/webrtc'
 import { webSockets } from '@libp2p/websockets'
 import { multiaddr } from '@multiformats/multiaddr'
 import { createLibp2p } from 'libp2p'
@@ -63,33 +60,21 @@ export async function main (runServer, serverAddress, transport, encryption, upl
     streamMuxers: [
       yamux()
     ],
-    connectionEncrypters: [],
+    connectionEncryption: [
+      noise()
+    ],
     services: {
       perf: perf()
     }
-  }
-
-  if (encryption === 'tls') {
-    config.connectionEncrypters.push(tls())
-  } else if (encryption === 'noise') {
-    config.connectionEncrypters.push(noise())
   }
 
   if (transport === 'tcp') {
     config.transports = [
       tcp()
     ]
-  } else if (transport === 'webrtc-direct') {
-    config.transports = [
-      webRTCDirect()
-    ]
   } else if (transport === 'ws') {
     config.transports = [
       webSockets()
-    ]
-  } else if (transport === 'quic-v1') {
-    config.transports = [
-      quic()
     ]
   }
 
@@ -100,17 +85,9 @@ export async function main (runServer, serverAddress, transport, encryption, upl
       config.addresses.listen = [
         `/ip4/${host}/tcp/${port}`
       ]
-    } else if (transport === 'webrtc-direct') {
-      config.addresses.listen = [
-        `/ip4/${host}/udp/${port}/webrtc-direct`
-      ]
     } else if (transport === 'ws') {
       config.addresses.listen = [
         `/ip4/${host}/tcp/${port}/ws`
-      ]
-    } else if (transport === 'quic-v1') {
-      config.addresses.listen = [
-        `/ip4/${host}/udp/${port}/quic-v1`
       ]
     }
   }

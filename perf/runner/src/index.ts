@@ -6,11 +6,14 @@ import { BenchmarkResults, Benchmark, Result, IperfResults, PingResults, ResultV
 
 async function main(clientPublicIP: string, serverPublicIP: string, testing: boolean, testFilter: string[]) {
     const iterations = testing ? 1 : 10;
+    const durationSecondsPerIteration = testing ? 5 : 20;
+    const pingCount = testing ? 1 : 100;
+    const iPerfIterations = testing ? 1 : 60;
 
     console.error(`= Starting benchmark with ${iterations} iterations on implementations ${testFilter}`);
 
-    const pings = runPing(clientPublicIP, serverPublicIP, testing);
-    const iperf = runIPerf(clientPublicIP, serverPublicIP, testing);
+    const pings = runPing(clientPublicIP, serverPublicIP, pingCount);
+    const iperf = runIPerf(clientPublicIP, serverPublicIP, iPerfIterations);
 
     const versionsToRun = versions.filter(version => testFilter.includes('all') || testFilter.includes(version.implementation))
 
@@ -20,7 +23,7 @@ async function main(clientPublicIP: string, serverPublicIP: string, testing: boo
     copyAndBuildPerfImplementations(clientPublicIP, implsToBuild);
 
     const benchmarks = [
-        runBenchmarkAcrossVersions({
+        await runBenchmarkAcrossVersions({
             name: "throughput/upload",
             clientPublicIP,
             serverPublicIP,
@@ -28,9 +31,9 @@ async function main(clientPublicIP: string, serverPublicIP: string, testing: boo
             downloadBytes: 0,
             unit: "bit/s",
             iterations,
-            durationSecondsPerIteration: testing ? 5 : 20,
+            durationSecondsPerIteration: durationSecondsPerIteration,
         }, versionsToRun),
-        runBenchmarkAcrossVersions({
+        await runBenchmarkAcrossVersions({
             name: "throughput/download",
             clientPublicIP,
             serverPublicIP,
@@ -38,16 +41,16 @@ async function main(clientPublicIP: string, serverPublicIP: string, testing: boo
             downloadBytes: Number.MAX_SAFE_INTEGER,
             unit: "bit/s",
             iterations,
-            durationSecondsPerIteration: testing ? 5 : 20,
+            durationSecondsPerIteration: durationSecondsPerIteration,
         }, versionsToRun),
-        runBenchmarkAcrossVersions({
+        await runBenchmarkAcrossVersions({
             name: "Connection establishment + 1 byte round trip latencies",
             clientPublicIP,
             serverPublicIP,
             uploadBytes: 1,
             downloadBytes: 1,
             unit: "s",
-            iterations: testing ? 1 : 100,
+            iterations: pingCount,
             durationSecondsPerIteration: Number.MAX_SAFE_INTEGER,
         }, versionsToRun),
     ];
@@ -55,7 +58,7 @@ async function main(clientPublicIP: string, serverPublicIP: string, testing: boo
     const benchmarkResults: BenchmarkResults = {
         benchmarks,
         pings,
-        iperf,
+        iperf
     };
 
     // Save results to benchmark-results.json
@@ -64,8 +67,7 @@ async function main(clientPublicIP: string, serverPublicIP: string, testing: boo
     console.error("== done");
 }
 
-function runPing(clientPublicIP: string, serverPublicIP: string, testing: boolean): PingResults {
-    const pingCount = testing ? 1 : 100;
+function runPing(clientPublicIP: string, serverPublicIP: string, pingCount: number): PingResults {
     console.error(`= run ${pingCount} pings from client to server`);
 
     const cmd = `ssh -o StrictHostKeyChecking=no ec2-user@${clientPublicIP} 'ping -c ${pingCount} ${serverPublicIP}'`;
@@ -83,17 +85,20 @@ function runPing(clientPublicIP: string, serverPublicIP: string, testing: boolea
     return { unit: "s", results: times }
 }
 
-function runIPerf(clientPublicIP: string, serverPublicIP: string, testing: boolean): IperfResults {
-    const iPerfIterations = testing ? 1 : 60;
+function runIPerf(clientPublicIP: string, serverPublicIP: string, iPerfIterations: number): IperfResults {
     console.error(`= run ${iPerfIterations} iPerf TCP from client to server`);
 
     const killCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${serverPublicIP} 'kill $(cat pidfile); rm pidfile; rm server.log || true'`;
     const killSTDOUT = execCommand(killCMD);
-    console.error(killSTDOUT);
+    if (killSTDOUT) {
+        console.error(killSTDOUT);
+    }
 
     const serverCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${serverPublicIP} 'nohup iperf3 -s > server.log 2>&1 & echo \$! > pidfile '`;
     const serverSTDOUT = execCommand(serverCMD);
-    console.error(serverSTDOUT);
+    if (serverSTDOUT) {
+        console.error(serverSTDOUT);
+    }
 
     const cmd = `ssh -o StrictHostKeyChecking=no ec2-user@${clientPublicIP} 'iperf3 -c ${serverPublicIP} -t ${iPerfIterations} -N'`;
     const stdout = execSync(cmd).toString();
@@ -128,7 +133,7 @@ interface ArgsRunBenchmarkAcrossVersions {
     durationSecondsPerIteration: number,
 }
 
-function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions, versionsToRun: Version[]): Benchmark {
+async function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions, versionsToRun: Version[]): Promise<Benchmark> {
     console.error(`= Benchmark ${args.name} on versions ${versionsToRun.map(v => v.implementation).join(', ')}`)
 
     const results: Result[] = [];
@@ -136,34 +141,56 @@ function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions, versio
     for (const version of versionsToRun) {
         console.error(`== Version ${version.implementation}/${version.id}`)
 
-        console.error(`=== Starting server ${version.implementation}/${version.id}`);
-
-        const killCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.serverPublicIP} 'kill $(cat pidfile); rm pidfile; rm server.log || true'`;
-        const killSTDOUT = execCommand(killCMD);
-        console.error(killSTDOUT);
-
-        const serverCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.serverPublicIP} 'nohup ./impl/${version.implementation}/${version.id}/perf --run-server --server-address 0.0.0.0:4001 > server.log 2>&1 & echo \$! > pidfile '`;
-        const serverSTDOUT = execCommand(serverCMD);
-        console.error(serverSTDOUT);
-
         for (const transportStack of version.transportStacks) {
+            const killCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.serverPublicIP} 'kill $(cat pidfile); rm pidfile; rm server.log || true'`;
+            const killSTDOUT = execCommand(killCMD);
+            if (killSTDOUT) {
+                console.error(killSTDOUT);
+            }
+
+            const transport = typeof transportStack === 'string' ? transportStack : transportStack.transport
+            const encryption = typeof transportStack === 'string' ? undefined : transportStack.encryption
+
+            console.error(`=== Starting server ${version.implementation}/${version.id}/${transport}${encryption ? `/${encryption}` : ''}`);
+            const serverArgs = [
+                `nohup ./impl/${version.implementation}/${version.id}/perf`,
+                '--run-server',
+                '--server-address 0.0.0.0:4001'
+            ]
+
+            // TODO: the server should accept a `transport` flag, currently rust does not
+            if (typeof transportStack !== 'string') {
+                serverArgs.push(`--transport ${transport}`)
+            }
+
+            if (encryption != null) {
+                serverArgs.push(`--encryption ${encryption}`)
+            }
+
+            const serverCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${args.serverPublicIP} '${serverArgs.join(' ')} > server.log 2>&1 & echo \$! > pidfile '`;
+            const serverSTDOUT = execCommand(serverCMD);
+            if (serverSTDOUT) {
+                console.error(serverSTDOUT);
+            }
+
             const result = runClient({
                 clientPublicIP: args.clientPublicIP,
-                serverPublicIP: args.serverPublicIP,
+                serverAddress: await waitForMultiaddr(args.serverPublicIP, 4001),
                 id: version.id,
                 implementation: version.implementation,
-                transportStack: transportStack,
+                transport,
+                encryption,
                 uploadBytes: args.uploadBytes,
                 downloadBytes: args.downloadBytes,
                 iterations: args.iterations,
-                durationSecondsPerIteration: args.durationSecondsPerIteration,
+                durationSecondsPerIteration: args.durationSecondsPerIteration
             });
 
             results.push({
                 result,
                 implementation: version.implementation,
                 version: version.id,
-                transportStack: transportStack,
+                transportStack: typeof transportStack === 'string' ? transportStack : `${transportStack.transport}/${transportStack.encryption}`
             });
         }
     };
@@ -181,11 +208,11 @@ function runBenchmarkAcrossVersions(args: ArgsRunBenchmarkAcrossVersions, versio
 
 interface ArgsRunBenchmark {
     clientPublicIP: string;
-    serverPublicIP: string;
-    serverAddress?: string;
+    serverAddress: string;
     id: string,
     implementation: string,
-    transportStack: string,
+    transport: string,
+    encryption?: string,
     uploadBytes: number,
     downloadBytes: number,
     iterations: number,
@@ -193,26 +220,45 @@ interface ArgsRunBenchmark {
 }
 
 function runClient(args: ArgsRunBenchmark): ResultValue[] {
-    console.error(`=== Starting client ${args.implementation}/${args.id}/${args.transportStack}`);
+    console.error(`=== Starting client ${args.implementation}/${args.id}/${args.transport}${args.encryption ? `/${args.encryption}` : ''}`);
 
-    const cmd = `./impl/${args.implementation}/${args.id}/perf --server-address ${args.serverPublicIP}:4001 --transport ${args.transportStack} --upload-bytes ${args.uploadBytes} --download-bytes ${args.downloadBytes}`
+    const clientArgs = [
+        `./impl/${args.implementation}/${args.id}/perf`,
+        `--server-address ${args.serverAddress}`,
+        `--transport ${args.transport}`,
+        `--upload-bytes ${args.uploadBytes}`,
+        `--download-bytes ${args.downloadBytes}`
+    ]
+
+    if (args.encryption != null) {
+        clientArgs.push(`--encryption ${args.encryption}`)
+    }
+
+    const cmd = clientArgs.join(' ')
     // Note 124 is timeout's exit code when timeout is hit which is not a failure here.
     const withTimeout = `timeout ${args.durationSecondsPerIteration}s ${cmd} || [ $? -eq 124 ]`
     const withForLoop = `for i in {1..${args.iterations}}; do ${withTimeout}; done`
     const withSSH = `ssh -o StrictHostKeyChecking=no ec2-user@${args.clientPublicIP} '${withForLoop}'`
 
-    const stdout = execCommand(withSSH);
+    try {
+        const stdout = execCommand(withSSH);
 
-    const lines = stdout.toString().trim().split('\n');
+        const lines = stdout.toString().trim().split('\n');
 
-    const combined: ResultValue[] = [];
+        const combined: ResultValue[] = [];
 
-    for (const line of lines) {
-        const result = JSON.parse(line) as ResultValue;
-        combined.push(result);
+        for (const line of lines) {
+            const result = JSON.parse(line) as ResultValue;
+            combined.push(result);
+        }
+
+        return combined;
+    } catch (err) {
+        console.error('=== Client failed, server logs:')
+        console.error(getServerLogs(args.serverAddress))
+
+        throw err
     }
-
-    return combined;
 }
 
 function execCommand(cmd: string): string {
@@ -221,10 +267,11 @@ function execCommand(cmd: string): string {
             encoding: 'utf8',
             stdio: [process.stdin, 'pipe', process.stderr],
         });
-        return stdout;
+        return stdout.trim();
     } catch (error) {
         console.error((error as Error).message);
-        process.exit(1);
+
+        throw error
     }
 }
 
@@ -236,6 +283,110 @@ function copyAndBuildPerfImplementations(ip: string, impls: string) {
 
     const stdout2 = execCommand(`ssh -o StrictHostKeyChecking=no ec2-user@${ip} 'cd impl && make ${impls}'`);
     console.error(stdout2.toString());
+}
+
+interface DeferredPromise<T> {
+    promise: Promise<T>
+    resolve(val: T): void
+    reject(err?: Error): void
+}
+
+function defer <T = void> (): DeferredPromise<T> {
+    let res: (val: T) => void = () => {}
+    let rej: (err?: Error) => void = () => {}
+
+    const p = new Promise<T>((resolve, reject) => {
+        res = resolve
+        rej = reject
+    })
+
+    return {
+        promise: p,
+        resolve: res,
+        reject: rej
+    }
+}
+
+/**
+ * Attempts to parse a multiaddr from the output, otherwise returns the passed
+ * host:port pair if passed.
+ */
+function waitForMultiaddr (serverPublicIP: string, port: number): Promise<string> {
+    const deferred = defer<string>()
+    const repeat = 10
+    const delay = 1000
+
+    Promise.resolve().then(async () => {
+        let serverSTDOUT = ''
+
+        for (let i = 0; i < repeat; i++) {
+            serverSTDOUT = getServerLogs(serverPublicIP);
+
+            if (serverSTDOUT.length > 0) {
+                for (let line of serverSTDOUT.split('\n')) {
+                    line = line.trim()
+
+                    if (line.length === 0) {
+                        continue
+                    }
+
+                    // does it look like a multiaddr?
+                    if (line.includes('/p2p/')) {
+                        // replace server host/port with values from public address
+                        const parts = line.trim().split('/')
+                        for (let i = 0; i < parts.length; i++) {
+                            if (parts[i] === 'ip4') {
+                                parts[i + 1] = serverPublicIP
+                            }
+
+                            if (parts[i] === 'tcp' || parts[i] === 'udp') {
+                                parts[i + 1] = port.toString()
+                            }
+                        }
+
+                        deferred.resolve(parts.join('/'))
+                    }
+                }
+            }
+
+            // nothing found, wait a second before retrying
+            await new Promise<void>((resolve) => {
+                setTimeout(() => {
+                    resolve()
+                }, delay)
+            })
+        }
+
+        // resolve if no multiaddr is printed into the logs
+        deferred.resolve(`${serverPublicIP}:${port}`)
+    })
+
+    return deferred.promise
+}
+
+function getServerLogs (serverPublicIP: string): string {
+    let host: string | undefined
+
+    if (serverPublicIP.startsWith('/')) {
+        // multiaddr string
+        const parts = serverPublicIP.split('/')
+
+        for (let i = 0; i < parts.length; i++) {
+            if (parts[i] === 'ip4') {
+                host = parts[i + 1]
+                break
+            }
+        }
+    } else {
+        host = serverPublicIP.split(':')[0]
+    }
+
+    if (host == null) {
+        throw new Error(`Could not parse host from ${serverPublicIP}`)
+    }
+
+    const serverCMD = `ssh -o StrictHostKeyChecking=no ec2-user@${host} 'tail -n 100 server.log'`;
+    return execCommand(serverCMD);
 }
 
 const argv = yargs
@@ -262,7 +413,7 @@ const argv = yargs
             choices: ['js-libp2p', 'rust-libp2p', 'go-libp2p', 'https', 'quic-go', 'all'],
             description: 'Filter tests to run, only the implementations here will be run. It defaults to all.',
             demandOption: false,
-            default: 'all'
+            default: ['all']
         }
     })
     .command('help', 'Print usage information', yargs.help)
