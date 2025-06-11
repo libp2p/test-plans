@@ -63,6 +63,7 @@ proc writeReport(p: PerfClient, done: Future[void]) {.async.} =
     await sleepAsync(1000.milliseconds)
     let stats = p.currentStats()
     if stats.isFinal:
+      stderr.writeLine("isFinal")
       let result =
         %*{
           "type": "final",
