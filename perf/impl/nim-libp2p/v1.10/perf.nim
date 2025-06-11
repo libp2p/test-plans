@@ -32,8 +32,7 @@ proc initFlagsFromParams(flags: var Flags) =
       i += 1
       flags.downloadBytes = parseUInt(paramStr(i))
     else:
-      discard
-      # stderr.writeLine("unsupported flag: " & paramStr(i))
+      stderr.writeLine("unsupported flag: " & paramStr(i))
 
   if flags.serverIpAddress == TransportAddress():
     raise newException(ValueError, "server-address is not set")
@@ -52,35 +51,44 @@ proc runServer(f: Flags) {.async.} =
     .withAddresses(@[MultiAddress.init(f.serverIpAddress).tryGet()])
     .withTcpTransport()
     # .withQuicTransport()
-    .withYamux()
+    .withMplex()
     .withNoise()
     .build()
   switch.mount(Perf.new())
   await switch.start()
   await endlessFut # Await forever, exit on interrupt
 
-proc intermediateReport(p: PerfClient) {.async.} =
+proc writeReport(p: PerfClient, done: Future[void]) {.async.} =
   while true:
     await sleepAsync(1000.milliseconds)
-    let stats = p.stats
-    if stats.isFinal: 
+    let stats = p.currentStats()
+    if stats.isFinal:
+      let result =
+        %*{
+          "type": "final",
+          "timeSeconds": stats.duration.nanoseconds.float / 1_000_000_000.0,
+          "uploadBytes": stats.uploadBytes,
+          "downloadBytes": stats.downloadBytes,
+        }
+      stdout.writeLine($result)
+      done.complete()
       return
 
-    let resultFinal =
+    let result =
       %*{
         "type": "intermediary",
         "timeSeconds": stats.duration.nanoseconds.float / 1_000_000_000.0,
         "uploadBytes": stats.uploadBytes,
         "downloadBytes": stats.downloadBytes,
       }
-    stdout.writeLine($resultFinal)
+    stdout.writeLine($result)
 
 proc runClient(f: Flags) {.async.} =
   let switchBuilder = SwitchBuilder
     .new()
     .withRng(newRng())
     .withAddress(MultiAddress.init("/ip4/127.0.0.1/tcp/0").tryGet())
-    .withYamux()
+    .withMplex()
     .withNoise()
   let switch =
     case f.transport
@@ -97,29 +105,22 @@ proc runClient(f: Flags) {.async.} =
     PerfCodec,
   )
   var perfClient = PerfClient.new()
-  let durFut = perfClient.perf(conn, f.uploadBytes, f.downloadBytes)
-  asyncSpawn intermediateReport(perfClient)
+  var done = newFuture[void]("report done")
+  discard perfClient.perf(conn, f.uploadBytes, f.downloadBytes)
+  asyncSpawn writeReport(perfClient, done)
 
-  let dur = await durFut
-  let resultFinal =
-    %*{
-      "type": "final",
-      "timeSeconds": dur.nanoseconds.float / 1_000_000_000.0,
-      "uploadBytes": f.uploadBytes,
-      "downloadBytes": f.downloadBytes,
-    }
-  stdout.writeLine($resultFinal)
+  await done # block until reporting finishes
 
 proc main() {.async.} =
   var flags = Flags()
   flags.initFlagsFromParams()
-  # stderr.writeLine("using flags: " & $flags)
+  stderr.writeLine("using flags: " & $flags)
 
   if flags.runServer:
-    # stderr.writeLine("running server")
+    stderr.writeLine("running server")
     await runServer(flags)
   else:
-    # stderr.writeLine("running client")
+    stderr.writeLine("running client")
     await runClient(flags)
 
 waitFor(main())
