@@ -70,6 +70,7 @@ proc writeReport(p: PerfClient, done: Future[void]) {.async.} =
           "uploadBytes": stats.uploadBytes,
           "downloadBytes": stats.downloadBytes,
         }
+      stderr.writeLine($result)
       stdout.writeLine($result)
       done.complete()
       return
@@ -81,6 +82,7 @@ proc writeReport(p: PerfClient, done: Future[void]) {.async.} =
         "uploadBytes": stats.uploadBytes,
         "downloadBytes": stats.downloadBytes,
       }
+    stderr.writeLine($result)
     stdout.writeLine($result)
 
 proc runClient(f: Flags) {.async.} =
