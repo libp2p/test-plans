@@ -1,4 +1,4 @@
-commitSha := b7914e407da34c99fb76dcc300b3d44b9af97fac
+commitSha := 9698607c72ea7b8f5e661963ab0e24384aef1e4e
 
 all: perf
 
@@ -6,7 +6,7 @@ perf: rust-libp2p-${commitSha}/target/release/perf
 	cp ./rust-libp2p-${commitSha}/target/release/perf .
 
 rust-libp2p-${commitSha}/target/release/perf: rust-libp2p-${commitSha}
-	docker run --rm --user "$(shell id -u):$(shell id -g)" -v "$(shell pwd)/rust-libp2p-${commitSha}":/usr/src/myapp -w /usr/src/myapp rust:1.73 cargo build --release --bin perf
+	docker run --rm --user "$(shell id -u):$(shell id -g)" -v "$(shell pwd)/rust-libp2p-${commitSha}":/usr/src/myapp -w /usr/src/myapp rust:1.83 cargo build --release --bin perf
 
 rust-libp2p-${commitSha}: rust-libp2p-${commitSha}.zip
 	unzip -o rust-libp2p-${commitSha}.zip
