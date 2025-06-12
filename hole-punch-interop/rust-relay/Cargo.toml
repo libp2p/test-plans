@@ -9,7 +9,20 @@ publish = false
 [dependencies]
 anyhow = "1.0.72"
 env_logger = "0.10.0"
-libp2p = { version = "0.52.1", features = ["tokio", "relay", "ed25519", "quic", "tcp", "yamux", "noise", "macros", "identify", "ping"] }
+libp2p = { git = "https://github.com/Prabhat1308/rust-libp2p.git", branch = "fix/return-limit-to-dialer", features = [
+    "tokio",
+    "relay",
+    "ed25519",
+    "quic",
+    "tcp",
+    "yamux",
+    "noise",
+    "macros",
+    "identify",
+    "ping",
+] }
 log = "0.4.19"
-redis = { version = "0.23.0", default-features = false, features = ["tokio-comp"] }
-tokio = { version = "1.29.1", features = ["rt-multi-thread", "macros"] }
+redis = { version = "0.23.0", default-features = false, features = [
+    "tokio-comp",
+] }
+tokio = { version = "1.38", features = ["rt-multi-thread", "macros"] }
