@@ -1,0 +1,6 @@
+# nim project
+nimble.develop
+nimble.paths
+
+# the binary output
+perf
