@@ -10,6 +10,7 @@ import (
 
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p/core/crypto"
+	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/multiformats/go-multiaddr"
 )
@@ -33,7 +34,6 @@ func main() {
 	var opts []libp2p.Option
 	if *runServer {
 		opts = append(opts, libp2p.ListenAddrStrings(tcpMultiAddrStr, quicMultiAddrStr))
-
 		// Generate stable fake identity.
 		//
 		// Using a stable identity (i.e. peer ID) allows the client to
@@ -45,6 +45,8 @@ func main() {
 		}
 		opts = append(opts, libp2p.Identity(priv))
 	}
+
+	opts = append(opts, libp2p.ResourceManager(&network.NullResourceManager{}))
 
 	h, err := libp2p.New(opts...)
 	if err != nil {
