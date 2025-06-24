@@ -59,9 +59,10 @@ proc runServer(f: Flags) {.async.} =
   await endlessFut # Await forever, exit on interrupt
 
 proc writeReport(p: PerfClient, done: Future[void]) {.async.} =
+  var prevStats: Stats 
   while true:
     await sleepAsync(1000.milliseconds)
-    let stats = p.currentStats()
+    var stats = p.currentStats()
     if stats.isFinal:
       let result =
         %*{
@@ -73,6 +74,13 @@ proc writeReport(p: PerfClient, done: Future[void]) {.async.} =
       stdout.writeLine($result)
       done.complete()
       return
+
+    # intermediary stats report should be diff from last intermediary report
+    let statsInitial = stats
+    stats.duration -= prevStats.duration
+    stats.uploadBytes -= prevStats.uploadBytes
+    stats.downloadBytes -= prevStats.downloadBytes
+    prevStats = statsInitial
 
     let result =
       %*{
