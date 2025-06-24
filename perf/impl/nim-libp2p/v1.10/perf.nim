@@ -51,7 +51,7 @@ proc runServer(f: Flags) {.async.} =
     .withAddresses(@[MultiAddress.init(f.serverIpAddress).tryGet()])
     .withTcpTransport()
     # .withQuicTransport()
-    .withMplex()
+    .withYamux()
     .withNoise()
     .build()
   switch.mount(Perf.new())
@@ -88,7 +88,7 @@ proc runClient(f: Flags) {.async.} =
     .new()
     .withRng(newRng())
     .withAddress(MultiAddress.init("/ip4/127.0.0.1/tcp/0").tryGet())
-    .withMplex()
+    .withYamux()
     .withNoise()
   let switch =
     case f.transport
