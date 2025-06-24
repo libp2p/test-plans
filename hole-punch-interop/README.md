@@ -79,6 +79,6 @@ The router container masquerades all traffic upon forwarding, see the [README](.
 ## Running a single test
 
 1. Build all containers using `make`
-1. Generate all test definitions using `npm run test -- --no-run`
+1. Generate all test definitions using `npm run test -- --dry-run`
 1. Pick the desired test from the [runs](./runs) directory
 1. Execute it using `docker compose up`
