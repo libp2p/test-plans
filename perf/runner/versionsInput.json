@@ -30,6 +30,14 @@
     ]
   },
   {
+    "id": "v0.42",
+    "implementation": "go-libp2p",
+    "transportStacks": [
+      "tcp",
+      "quic-v1"
+    ]
+  },
+  {
     "id": "v2.8",
     "implementation": "js-libp2p",
     "transportStacks": [
