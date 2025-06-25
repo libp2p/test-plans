@@ -43,15 +43,30 @@ proc seededRng(): ref HmacDrbgContext =
   hmacDrbgInit(rng[], addr sha256Vtable, cast[pointer](addr seed), sizeof(seed).uint)
   return rng
 
-proc runServer(f: Flags) {.async.} =
-  var switch = SwitchBuilder
+proc makeSwitch(f: Flags): Switch =
+  let addrs =
+    if f.runServer:
+      @[MultiAddress.init(f.serverIpAddress).tryGet()]
+    else:
+      @[MultiAddress.init("/ip4/127.0.0.1/tcp/0").tryGet()]
+
+  let rng =
+    if f.runServer:
+      seededRng() # use fixed seed that will match fixedPeerId
+    else:
+      newRng() 
+
+  return SwitchBuilder
     .new()
-    .withRng(seededRng()) # use fixed seed that will match fixedPeerId
-    .withAddresses(@[MultiAddress.init(f.serverIpAddress).tryGet()])
+    .withRng(rng)
+    .withAddresses(addrs)
     .withTcpTransport()
     .withYamux()
     .withNoise()
     .build()
+
+proc runServer(f: Flags) {.async.} =
+  var switch = makeSwitch(f)
   switch.mount(Perf.new())
   await switch.start()
 
@@ -68,7 +83,7 @@ proc writeReport(p: PerfClient, done: Future[void]) {.async.} =
       }
     stdout.writeLine($result)
 
-  var prevStats: Stats 
+  var prevStats: Stats
   while true:
     await sleepAsync(1000.milliseconds)
     var stats = p.currentStats()
@@ -87,14 +102,7 @@ proc writeReport(p: PerfClient, done: Future[void]) {.async.} =
     writeStats(stats)
 
 proc runClient(f: Flags) {.async.} =
-  let switch = SwitchBuilder
-    .new()
-    .withRng(newRng())
-    .withAddress(MultiAddress.init("/ip4/127.0.0.1/tcp/0").tryGet())
-    .withYamux()
-    .withNoise()
-    .withTcpTransport()
-    .build()
+  let switch = makeSwitch(f)
   await switch.start()
 
   let conn = await switch.dial(
