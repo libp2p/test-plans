@@ -1,5 +1,5 @@
 image_name := c-v0.0.1
-commitSha := 0806cfccc969b166ef88c042e9cfb5ddf7dd8796
+commitSha := a60ff942063eaf1b379b918396640672518af056
 zip_name := c-libp2p-$(commitSha).zip
 dir_name := c-libp2p-$(commitSha)
 
