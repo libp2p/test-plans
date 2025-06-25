@@ -44,34 +44,36 @@ proc seededRng(): ref HmacDrbgContext =
   return rng
 
 proc runServer(f: Flags) {.async.} =
-  let endlessFut = newFuture[void]()
   var switch = SwitchBuilder
     .new()
-    .withRng(seededRng())
+    .withRng(seededRng()) # use fixed seed that will match fixedPeerId
     .withAddresses(@[MultiAddress.init(f.serverIpAddress).tryGet()])
     .withTcpTransport()
-    # .withQuicTransport()
     .withYamux()
     .withNoise()
     .build()
   switch.mount(Perf.new())
   await switch.start()
-  await endlessFut # Await forever, exit on interrupt
+
+  await newFuture[void]() # await forever, exit on interrupt
 
 proc writeReport(p: PerfClient, done: Future[void]) {.async.} =
+  proc writeStats(stats: Stats) =
+    let result =
+      %*{
+        "type": if stats.isFinal: "final" else: "intermediary",
+        "timeSeconds": stats.duration.nanoseconds.float / 1_000_000_000.0,
+        "uploadBytes": stats.uploadBytes,
+        "downloadBytes": stats.downloadBytes,
+      }
+    stdout.writeLine($result)
+
   var prevStats: Stats 
   while true:
     await sleepAsync(1000.milliseconds)
     var stats = p.currentStats()
     if stats.isFinal:
-      let result =
-        %*{
-          "type": "final",
-          "timeSeconds": stats.duration.nanoseconds.float / 1_000_000_000.0,
-          "uploadBytes": stats.uploadBytes,
-          "downloadBytes": stats.downloadBytes,
-        }
-      stdout.writeLine($result)
+      writeStats(stats)
       done.complete()
       return
 
@@ -82,29 +84,17 @@ proc writeReport(p: PerfClient, done: Future[void]) {.async.} =
     stats.downloadBytes -= prevStats.downloadBytes
     prevStats = statsInitial
 
-    let result =
-      %*{
-        "type": "intermediary",
-        "timeSeconds": stats.duration.nanoseconds.float / 1_000_000_000.0,
-        "uploadBytes": stats.uploadBytes,
-        "downloadBytes": stats.downloadBytes,
-      }
-    stdout.writeLine($result)
+    writeStats(stats)
 
 proc runClient(f: Flags) {.async.} =
-  let switchBuilder = SwitchBuilder
+  let switch = SwitchBuilder
     .new()
     .withRng(newRng())
     .withAddress(MultiAddress.init("/ip4/127.0.0.1/tcp/0").tryGet())
     .withYamux()
     .withNoise()
-  let switch =
-    case f.transport
-    of "tcp":
-      switchBuilder.withTcpTransport().build()
-    # of "quic-v1": switchBuilder.withQuicTransport().build()
-    else:
-      raise newException(ValueError, "unsupported transport: " & f.transport)
+    .withTcpTransport()
+    .build()
   await switch.start()
 
   let conn = await switch.dial(
