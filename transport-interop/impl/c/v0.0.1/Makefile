@@ -7,7 +7,7 @@ all: image.json
 
 image.json:
 	wget -O $(zip_name) https://github.com/Pier-Two/c-libp2p/archive/$(commitSha).zip && unzip -o $(zip_name)
-	cd $(dir_name) && IMAGE_NAME=$(image_name) ../../../../dockerBuildWrapper.sh --platform linux/amd64 -f interop-tests/Dockerfile .
+	cd $(dir_name) && IMAGE_NAME=$(image_name) ../../../../dockerBuildWrapper.sh -f interop-tests/Dockerfile .
 	docker image inspect $(image_name) -f '{{.Id}}' | \
 		xargs -I {} echo '{"imageID": "{}"}' > $@
 
