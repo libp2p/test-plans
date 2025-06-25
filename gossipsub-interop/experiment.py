@@ -23,12 +23,14 @@ def scenario(scenario_name: str, node_count: int) -> ExperimentParams:
     match scenario_name:
         case "subnet-blob-msg":
             instructions.extend(init_gossipsub())
-            number_of_conns_per_node = 10
+            number_of_conns_per_node = 20
             if number_of_conns_per_node >= node_count:
                 number_of_conns_per_node = node_count - 1
-            instructions.extend(random_network_mesh(node_count, number_of_conns_per_node))
+            instructions.extend(
+                random_network_mesh(node_count, number_of_conns_per_node)
+            )
             message_size = 2 * 1024 * 48
-            num_messages = 32
+            num_messages = 16
             instructions.extend(
                 random_publish_every_12s(node_count, num_messages, message_size)
             )
@@ -42,6 +44,8 @@ def composition(preset_name: str) -> List[Binary]:
     match preset_name:
         case "all-go":
             return [Binary("go-libp2p/gossipsub-bin", percent_of_nodes=100)]
+        case "all-wfr":
+            return [Binary("go-libp2p-wfr/gossipsub-bin", percent_of_nodes=100)]
         case "all-rust":
             # Always use debug. We don't measure compute performance here.
             return [
@@ -116,7 +120,9 @@ def random_publish_every_12s(
             )
         )
         elapsed_seconds += 12  # Add 12 seconds for each subsequent message
-        instructions.append(script_instruction.WaitUntil(elapsedSeconds=elapsed_seconds))
+        instructions.append(
+            script_instruction.WaitUntil(elapsedSeconds=elapsed_seconds)
+        )
 
     elapsed_seconds += 30  # wait a bit more to allow all messages to flush
     instructions.append(script_instruction.WaitUntil(elapsedSeconds=elapsed_seconds))
