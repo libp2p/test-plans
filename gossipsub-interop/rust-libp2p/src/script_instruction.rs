@@ -186,11 +186,12 @@ impl From<GossipSubParams> for ConfigBuilder {
             builder.mesh_n_high(d_high);
         }
         if let Some(heartbeat_initial_delay) = params.heartbeat_initial_delay {
-            builder.heartbeat_initial_delay(Duration::from_secs_f64(heartbeat_initial_delay));
+            builder.heartbeat_initial_delay(Duration::from_nanos(heartbeat_initial_delay as u64));
         }
         if let Some(heartbeat_interval) = params.heartbeat_interval {
-            builder.heartbeat_interval(Duration::from_secs_f64(heartbeat_interval));
+            builder.heartbeat_interval(Duration::from_nanos(heartbeat_interval as u64));
         }
+        // TODO: change all instances of time.Duration to use nanos here
         if let Some(fanout_ttl) = params.fanout_ttl {
             builder.fanout_ttl(Duration::from_secs_f64(fanout_ttl));
         }
