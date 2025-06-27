@@ -25,9 +25,7 @@ def spread_heartbeat_delay(node_count: int, template_gs_params: GossipSubParams)
     for i in range(node_count):
         initial_delay += timedelta(milliseconds=0.100)
         gs_params = template_gs_params.model_copy()
-        gs_params.HeartbeatInitialDelay = f"{
-            initial_delay.total_seconds()}s"
-
+        gs_params.HeartbeatInitialDelay = initial_delay.microseconds * 1_000
         instructions.append(
             script_instruction.IfNodeIDEquals(
                 nodeID=i,
@@ -38,10 +36,14 @@ def spread_heartbeat_delay(node_count: int, template_gs_params: GossipSubParams)
     return instructions
 
 
-def scenario(scenario_name: str, node_count: int) -> ExperimentParams:
+def scenario(scenario_name: str, node_count: int, disable_gossip: bool) -> ExperimentParams:
     instructions: List[ScriptInstruction] = []
     match scenario_name:
         case "subnet-blob-msg":
+            gs_params = GossipSubParams()
+            if disable_gossip:
+                gs_params.Dlazy = 0
+                gs_params.GossipFactor = 0
             instructions.extend(spread_heartbeat_delay(
                 node_count, GossipSubParams()))
 

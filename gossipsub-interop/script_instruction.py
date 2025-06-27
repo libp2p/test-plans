@@ -78,7 +78,7 @@ class GossipSubParams(BaseModel):
     )
 
     # Heartbeat parameters
-    HeartbeatInitialDelay: str | None = (
+    HeartbeatInitialDelay: float | None = (
         None  # Initial delay in seconds before heartbeat timer begins
     )
     HeartbeatInterval: int | None = None  # Time between heartbeats in seconds
