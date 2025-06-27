@@ -418,7 +418,6 @@ def analyse_message_deliveries(folder, output_folder="plots", skip_messages=0):
         f"{folder}/shadow.yaml")
     node_delivery_times = create_node_delivery_times_mapping(ordered_messages)
     network_to_label = parse_gml_node_labels(f"{folder}/graph.gml")
-    print(network_to_label)
     plot_delivery_times_per_network_id(
         plt, network_to_nodes_mapping, node_delivery_times, network_to_label)
     plt.savefig(f"{output_folder}/delivery_times_per_network.png")
