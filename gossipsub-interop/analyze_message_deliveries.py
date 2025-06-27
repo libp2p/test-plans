@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import Dict, List, Tuple, Set, Optional, OrderedDict as OrderedDictType
 from dataclasses import dataclass
 import matplotlib.pyplot as plt
+import yaml
 
 peer_id_to_node_id = dict()
 node_id_to_peer_id = dict()
@@ -37,6 +38,46 @@ class FileParseResult:
 
 def nodeIDFromFilename(filename):
     return filename.split(".")[0]
+
+
+def parse_node_id_to_network_id(shadow_yaml_path: str) -> Tuple[Dict[NodeId, int], Dict[int, List[NodeId]]]:
+    """
+    Parse shadow.yaml file and return mappings between node_id and network_node_id.
+
+    Args:
+        shadow_yaml_path: Path to the shadow.yaml file
+
+    Returns:
+        Tuple containing:
+        - Dictionary mapping NodeId to network_node_id (int)
+        - Dictionary mapping network_node_id (int) to List[NodeId]
+    """
+    node_to_network_mapping = {}
+    network_to_nodes_mapping = defaultdict(list)
+
+    try:
+        with open(shadow_yaml_path, "r") as f:
+            shadow_config = yaml.safe_load(f)
+
+        if "hosts" in shadow_config:
+            for host_name, host_config in shadow_config["hosts"].items():
+                # Extract node_id from host name (e.g., "node0" -> 0)
+                if host_name.startswith("node"):
+                    try:
+                        node_id_str = host_name[4:]  # Remove "node" prefix
+                        node_id = NodeId(node_id_str)
+                        network_node_id = host_config.get("network_node_id")
+                        if network_node_id is not None:
+                            node_to_network_mapping[node_id] = network_node_id
+                            network_to_nodes_mapping[network_node_id].append(node_id)
+                    except ValueError:
+                        # Skip hosts that don't follow the "nodeX" pattern
+                        continue
+
+    except (FileNotFoundError, yaml.YAMLError) as e:
+        print(f"Warning: Could not parse shadow.yaml file: {e}")
+
+    return node_to_network_mapping, dict(network_to_nodes_mapping)
 
 
 def logfile_iterator(folder):
@@ -142,6 +183,38 @@ def parse_log_file(lines) -> FileParseResult:
         duplicate_counts=dict(duplicate_counts),
     )
 
+
+def create_node_delivery_times_mapping(
+    ordered_messages: OrderedDict[MessageId, List[MessageDelivery]]
+) -> Dict[NodeId, Dict[MessageId, float]]:
+    """
+    Create a mapping from NodeID to Dict[MessageID, TimeToDeliver(as seconds)].
+
+    Args:
+        ordered_messages: OrderedDict mapping MessageId to list of MessageDelivery
+
+    Returns:
+        Dictionary mapping NodeId to Dict[MessageId, delivery_time_in_seconds]
+        where delivery_time_in_seconds is the time from first delivery to this node's delivery
+    """
+    node_delivery_times: Dict[NodeId, Dict[MessageId, float]] = defaultdict(dict)
+
+    for msg_id, deliveries in ordered_messages.items():
+        if not deliveries:
+            continue
+
+        # First delivery timestamp for this message
+        first_delivery_time = deliveries[0].timestamp
+
+        # Calculate delivery time for each node
+        for delivery in deliveries:
+            time_to_deliver = (delivery.timestamp - first_delivery_time).total_seconds()
+            node_delivery_times[delivery.node_id][msg_id] = time_to_deliver
+
+    return dict(node_delivery_times)
+
+def plot_delivery_times_per_network_id(plt, network_to_nodes_mapping, node_delivery_times):
+    pass
 
 def analyse_message_deliveries(folder, output_folder="plots", skip_messages=0):
     analysis_txt = []
