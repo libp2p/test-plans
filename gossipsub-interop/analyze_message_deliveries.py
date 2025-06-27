@@ -8,9 +8,6 @@ from typing import Dict, List, Tuple, Set, Optional, OrderedDict as OrderedDictT
 from dataclasses import dataclass
 import matplotlib.pyplot as plt
 
-messages = defaultdict(list)
-duplicate_count = defaultdict(lambda: 0)
-duplicate_count_by_message_and_node = defaultdict(lambda: defaultdict(int))
 peer_id_to_node_id = dict()
 node_id_to_peer_id = dict()
 
@@ -36,7 +33,6 @@ class FileParseResult:
     node_id: NodeId
     message_deliveries: OrderedDictType[MessageId, List[MessageDelivery]]
     duplicate_counts: Dict[MessageId, int]
-    duplicate_counts_by_node: Dict[MessageId, Dict[NodeId, int]]
 
 
 def nodeIDFromFilename(filename):
@@ -67,17 +63,17 @@ def plot_msg_delivery_cdf(plt, deliveries):
         return
 
     # Sort deliveries by timestamp
-    sorted_deliveries = sorted(deliveries, key=lambda x: x[0])
+    sorted_deliveries = sorted(deliveries, key=lambda x: x.timestamp)
 
     # Get the initial timestamp as reference point
-    start_time = sorted_deliveries[0][0]
+    start_time = sorted_deliveries[0].timestamp
 
     # Calculate time differences from start and cumulative count
     times = []
     cumulative_count = []
 
-    for i, (ts, node_id) in enumerate(sorted_deliveries):
-        time_diff = (ts - start_time).total_seconds()
+    for i, delivery in enumerate(sorted_deliveries):
+        time_diff = (delivery.timestamp - start_time).total_seconds()
         times.append(time_diff)
         cumulative_count.append(i + 1)
 
@@ -99,7 +95,6 @@ def parse_log_file(lines) -> FileParseResult:
     seen_message_ids = set()
     message_deliveries = defaultdict(list)
     duplicate_counts = defaultdict(int)
-    duplicate_counts_by_node = defaultdict(lambda: defaultdict(int))
 
     for line in lines:
         try:
@@ -115,10 +110,9 @@ def parse_log_file(lines) -> FileParseResult:
         if msg_type == "PeerID":
             parsed_node_id = parsed.get("node_id", "")
             peer_id = parsed.get("id", "")
-            if parsed_node_id and peer_id:
-                node_id = NodeId(parsed_node_id)
-                peer_id_to_node_id[peer_id] = parsed_node_id
-                node_id_to_peer_id[parsed_node_id] = peer_id
+            node_id = NodeId(parsed_node_id)
+            peer_id_to_node_id[peer_id] = parsed_node_id
+            node_id_to_peer_id[parsed_node_id] = peer_id
             continue
 
         if msg_type == "Received Message" and "time" in parsed:
@@ -133,7 +127,6 @@ def parse_log_file(lines) -> FileParseResult:
                     )
                 else:
                     duplicate_counts[message_id] += 1
-                    duplicate_counts_by_node[message_id][node_id] += 1
 
     # Sort message_deliveries by first delivery time
     sorted_message_deliveries = OrderedDict()
@@ -147,49 +140,48 @@ def parse_log_file(lines) -> FileParseResult:
         node_id=node_id,
         message_deliveries=sorted_message_deliveries,
         duplicate_counts=dict(duplicate_counts),
-        duplicate_counts_by_node=dict(duplicate_counts_by_node),
     )
 
 
 def analyse_message_deliveries(folder, output_folder="plots"):
     analysis_txt = []
+    messages: Dict[MessageId, List[MessageDelivery]] = defaultdict(list)
+    duplicate_count: Dict[MessageId, int] = defaultdict(lambda: 0)
 
     for file in logfile_iterator(folder):
         with open(file, "r") as f:
             result = parse_log_file(f)
 
-            # Add message deliveries to global messages dict
+            # Add message deliveries to messages dict
             for msg_id, deliveries in result.message_deliveries.items():
                 for delivery in deliveries:
-                    messages[msg_id.id].append(
-                        (delivery.timestamp, delivery.node_id.id)
-                    )
+                    messages[msg_id].append(delivery)
 
-            # Add duplicate counts to global counters
+            # Add duplicate counts to counters
             for msg_id, count in result.duplicate_counts.items():
-                duplicate_count[msg_id.id] += count
+                duplicate_count[msg_id] += count
 
-            for msg_id, node_counts in result.duplicate_counts_by_node.items():
-                for node, count in node_counts.items():
-                    duplicate_count_by_message_and_node[msg_id.id][node.id] += count
+    # Sort messages by first delivery time
+    ordered_messages: OrderedDict[MessageId, List[MessageDelivery]] = OrderedDict()
+    message_items = list(messages.items())
+    message_items.sort(key=lambda x: x[1][0].timestamp if x[1] else datetime.max)
+
+    for msg_id, deliveries in message_items:
+        deliveries.sort(key=lambda x: x.timestamp)
+        ordered_messages[msg_id] = deliveries
 
     # Prepare data for plotting
-    msg_ids = []
-    time_diffs = []
-    avg_duplicates = []
+    msg_ids: List[MessageId] = []
+    time_diffs: List[float] = []
+    avg_duplicates: List[float] = []
 
     total_nodes = len(node_id_to_peer_id)
     messagesIDs = list(messages.keys())
-    messagesIDs.sort(key=lambda x: int(x))
 
-    for msgID in messagesIDs:
-        deliveries = messages[msgID]
-        deliveries.sort(key=lambda x: x[0])
-        # Update to be sorted
-        messages[msgID] = deliveries
-        time_diff = (deliveries[-1][0] - deliveries[0][0]).total_seconds()
+    for msgID, deliveries in ordered_messages.items():
+        time_diff = (deliveries[-1].timestamp - deliveries[0].timestamp).total_seconds()
         p50Idx = len(deliveries) // 2
-        p50 = (deliveries[p50Idx][0] - deliveries[0][0]).total_seconds()
+        p50 = (deliveries[p50Idx].timestamp - deliveries[0].timestamp).total_seconds()
 
         msg_ids.append(msgID)
         time_diffs.append(time_diff)
@@ -199,12 +191,12 @@ def analyse_message_deliveries(folder, output_folder="plots"):
         if reached > 1.0:
             if len(deliveries) > total_nodes:
                 raise ValueError(
-                    f"Message {msgID} was delivered to more nodes than exist"
+                    f"Message {msgID.id} was delivered to more nodes than exist"
                 )
             # We overshot because the original publisher received a duplicate message
             reached = 1.0
         analysis_txt.append(
-            f"{msgID}, {time_diff}s, {p50}s, {avg_duplicate_count}, {reached}"
+            f"{msgID.id}, {time_diff}s, {p50}s, {avg_duplicate_count}, {reached}"
         )
 
     # Create the plots
@@ -213,7 +205,9 @@ def analyse_message_deliveries(folder, output_folder="plots"):
     plt.xlabel("Message Index")
     plt.ylabel("Delivery Time Difference (seconds)")
     plt.title("Message Delivery Time Differences")
-    plt.xticks(range(len(msg_ids)), msg_ids, rotation=45, ha="right")
+    plt.xticks(
+        range(len(msg_ids)), [mid.id for mid in msg_ids], rotation=45, ha="right"
+    )
     plt.tight_layout()
 
     if not os.path.exists(output_folder):
@@ -226,7 +220,9 @@ def analyse_message_deliveries(folder, output_folder="plots"):
     plt.xlabel("Message Index")
     plt.ylabel("Avg Duplicate Count")
     plt.title("Avg Message Duplicate Differences")
-    plt.xticks(range(len(msg_ids)), msg_ids, rotation=45, ha="right")
+    plt.xticks(
+        range(len(msg_ids)), [mid.id for mid in msg_ids], rotation=45, ha="right"
+    )
     plt.tight_layout()
 
     plt.savefig(f"{output_folder}/avg_msg_duplicate_count.png")
