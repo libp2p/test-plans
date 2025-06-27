@@ -1,9 +1,11 @@
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 import json
 import os
 import sys
 import argparse
 from datetime import datetime
+from typing import Dict, List, Tuple, Set, Optional, OrderedDict as OrderedDictType
+from dataclasses import dataclass
 import matplotlib.pyplot as plt
 
 messages = defaultdict(list)
@@ -11,6 +13,30 @@ duplicate_count = defaultdict(lambda: 0)
 duplicate_count_by_message_and_node = defaultdict(lambda: defaultdict(int))
 peer_id_to_node_id = dict()
 node_id_to_peer_id = dict()
+
+
+@dataclass(frozen=True)
+class MessageId:
+    id: str
+
+
+@dataclass(frozen=True)
+class NodeId:
+    id: str
+
+
+@dataclass
+class MessageDelivery:
+    timestamp: datetime
+    node_id: NodeId
+
+
+@dataclass
+class FileParseResult:
+    node_id: NodeId
+    message_deliveries: OrderedDictType[MessageId, List[MessageDelivery]]
+    duplicate_counts: Dict[MessageId, int]
+    duplicate_counts_by_node: Dict[MessageId, Dict[NodeId, int]]
 
 
 def nodeIDFromFilename(filename):
@@ -59,40 +85,93 @@ def plot_msg_delivery_cdf(plt, deliveries):
     plt.plot(times, cumulative_count, marker="o", markersize=2, alpha=0.7)
 
 
+def parse_log_file(lines) -> FileParseResult:
+    """
+    Parse all lines from a log file iterator and extract relevant information.
+
+    Args:
+        lines: Iterator of log lines from a file
+
+    Returns:
+        FileParseResult containing parsed data from the file
+    """
+    node_id = NodeId("")
+    seen_message_ids = set()
+    message_deliveries = defaultdict(list)
+    duplicate_counts = defaultdict(int)
+    duplicate_counts_by_node = defaultdict(lambda: defaultdict(int))
+
+    for line in lines:
+        try:
+            parsed = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+
+        if "msg" not in parsed:
+            continue
+
+        msg_type = parsed["msg"]
+
+        if msg_type == "PeerID":
+            parsed_node_id = parsed.get("node_id", "")
+            peer_id = parsed.get("id", "")
+            if parsed_node_id and peer_id:
+                node_id = NodeId(parsed_node_id)
+                peer_id_to_node_id[peer_id] = parsed_node_id
+                node_id_to_peer_id[parsed_node_id] = peer_id
+            continue
+
+        if msg_type == "Received Message" and "time" in parsed:
+            timestamp = datetime.fromisoformat(parsed["time"])
+            message_id_str = parsed.get("id", "")
+            if message_id_str:
+                message_id = MessageId(message_id_str)
+                if message_id_str not in seen_message_ids:
+                    seen_message_ids.add(message_id_str)
+                    message_deliveries[message_id].append(
+                        MessageDelivery(timestamp, node_id)
+                    )
+                else:
+                    duplicate_counts[message_id] += 1
+                    duplicate_counts_by_node[message_id][node_id] += 1
+
+    # Sort message_deliveries by first delivery time
+    sorted_message_deliveries = OrderedDict()
+    message_items = list(message_deliveries.items())
+    message_items.sort(key=lambda x: x[1][0].timestamp if x[1] else datetime.max)
+
+    for msg_id, deliveries in message_items:
+        sorted_message_deliveries[msg_id] = deliveries
+
+    return FileParseResult(
+        node_id=node_id,
+        message_deliveries=sorted_message_deliveries,
+        duplicate_counts=dict(duplicate_counts),
+        duplicate_counts_by_node=dict(duplicate_counts_by_node),
+    )
+
+
 def analyse_message_deliveries(folder, output_folder="plots"):
     analysis_txt = []
 
     for file in logfile_iterator(folder):
         with open(file, "r") as f:
-            node_id = ""
-            seen_message_ids = set()
-            for line in f:
-                try:
-                    parsed = json.loads(line)
-                except json.JSONDecodeError:
-                    continue
+            result = parse_log_file(f)
 
-                if parsed["msg"] == "PeerID":
-                    node_id = parsed["node_id"]
-                    peer_id_to_node_id[parsed["id"]] = node_id
-                    node_id_to_peer_id[node_id] = parsed["id"]
-                    continue
+            # Add message deliveries to global messages dict
+            for msg_id, deliveries in result.message_deliveries.items():
+                for delivery in deliveries:
+                    messages[msg_id.id].append(
+                        (delivery.timestamp, delivery.node_id.id)
+                    )
 
-                if "msg" not in parsed or "time" not in parsed:
-                    continue
+            # Add duplicate counts to global counters
+            for msg_id, count in result.duplicate_counts.items():
+                duplicate_count[msg_id.id] += count
 
-                # Parse timestamp RFC3339
-                ts = datetime.fromisoformat(parsed["time"])
-
-                match parsed["msg"]:
-                    case "Received Message":
-                        msgID = parsed["id"]
-                        if msgID not in seen_message_ids:
-                            seen_message_ids.add(msgID)
-                            messages[msgID].append((ts, node_id))
-                        else:
-                            duplicate_count[msgID] += 1
-                            duplicate_count_by_message_and_node[msgID][node_id] += 1
+            for msg_id, node_counts in result.duplicate_counts_by_node.items():
+                for node, count in node_counts.items():
+                    duplicate_count_by_message_and_node[msg_id.id][node.id] += count
 
     # Prepare data for plotting
     msg_ids = []
