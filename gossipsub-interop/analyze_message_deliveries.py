@@ -58,7 +58,7 @@ def logfile_iterator(folder):
             yield os.path.join(folder, file)
 
 
-def plot_msg_delivery_cdf(plt, deliveries):
+def plot_msg_delivery_cdf(plt, deliveries, label=None):
     if not deliveries:
         return
 
@@ -77,8 +77,8 @@ def plot_msg_delivery_cdf(plt, deliveries):
         times.append(time_diff)
         cumulative_count.append(i + 1)
 
-    # Plot the CDF
-    plt.plot(times, cumulative_count, marker="o", markersize=2, alpha=0.7)
+    # Plot the CDF with label
+    plt.plot(times, cumulative_count, marker="o", markersize=2, alpha=0.7, label=label)
 
 
 def parse_log_file(lines) -> FileParseResult:
@@ -143,7 +143,7 @@ def parse_log_file(lines) -> FileParseResult:
     )
 
 
-def analyse_message_deliveries(folder, output_folder="plots"):
+def analyse_message_deliveries(folder, output_folder="plots", skip_messages=0):
     analysis_txt = []
     messages: Dict[MessageId, List[MessageDelivery]] = defaultdict(list)
     duplicate_count: Dict[MessageId, int] = defaultdict(lambda: 0)
@@ -170,13 +170,20 @@ def analyse_message_deliveries(folder, output_folder="plots"):
         deliveries.sort(key=lambda x: x.timestamp)
         ordered_messages[msg_id] = deliveries
 
+    # Skip the first N messages if requested
+    if skip_messages > 0:
+        ordered_messages_list = list(ordered_messages.items())
+        if skip_messages < len(ordered_messages_list):
+            ordered_messages = OrderedDict(ordered_messages_list[skip_messages:])
+        else:
+            ordered_messages = OrderedDict()
+
     # Prepare data for plotting
     msg_ids: List[MessageId] = []
     time_diffs: List[float] = []
     avg_duplicates: List[float] = []
 
     total_nodes = len(node_id_to_peer_id)
-    messagesIDs = list(messages.keys())
 
     for msgID, deliveries in ordered_messages.items():
         time_diff = (deliveries[-1].timestamp - deliveries[0].timestamp).total_seconds()
@@ -233,8 +240,9 @@ def analyse_message_deliveries(folder, output_folder="plots"):
     plt.ylabel("Number of Nodes with Message")
     plt.title("Message Delivery CDF")
     plt.xlim(0, 1)
-    for msgID in messagesIDs:
-        plot_msg_delivery_cdf(plt, messages[msgID])
+    for msgID, deliveries in ordered_messages.items():
+        plot_msg_delivery_cdf(plt, deliveries, label=msgID.id)
+    plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
     plt.tight_layout()
 
     plt.savefig(f"{output_folder}/message_delivery_cdf.png")
@@ -260,9 +268,16 @@ def main():
         default="plots",
         help="Output folder for plots and analysis (default: plots)",
     )
+    parser.add_argument(
+        "-s",
+        "--skip",
+        type=int,
+        default=0,
+        help="Number of messages to skip from the beginning (default: 0)",
+    )
 
     args = parser.parse_args()
-    analyse_message_deliveries(args.folder, args.output)
+    analyse_message_deliveries(args.folder, args.output, args.skip)
 
 
 if __name__ == "__main__":
