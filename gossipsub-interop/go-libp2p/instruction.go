@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 )
@@ -148,7 +147,6 @@ func UnmarshalScriptInstruction(data []byte) (ScriptInstruction, error) {
 		if err := json.Unmarshal(tempInstruction.GossipSubParams, &params); err != nil {
 			return nil, err
 		}
-		
 		return InitGossipSubInstruction{
 			Type:            tempInstruction.Type,
 			GossipSubParams: params,
