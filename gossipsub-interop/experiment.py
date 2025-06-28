@@ -45,7 +45,7 @@ def scenario(scenario_name: str, node_count: int, disable_gossip: bool) -> Exper
                 gs_params.Dlazy = 0
                 gs_params.GossipFactor = 0
             instructions.extend(spread_heartbeat_delay(
-                node_count, GossipSubParams()))
+                node_count, gs_params))
 
             number_of_conns_per_node = 20
             if number_of_conns_per_node >= node_count:
