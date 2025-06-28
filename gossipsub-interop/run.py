@@ -90,8 +90,8 @@ def main():
     os.rename("graph.gml", os.path.join(args.output_dir, "graph.gml"))
     os.rename("params.json", os.path.join(args.output_dir, "params.json"))
 
-    # Analyse message deliveries
-    analyse_message_deliveries(args.output_dir, f"{args.output_dir}/plots")
+    # Analyse message deliveries. Skip the first 4 as warmup messages
+    analyse_message_deliveries(args.output_dir, f"{args.output_dir}/plots", 4)
 
 
 if __name__ == "__main__":
