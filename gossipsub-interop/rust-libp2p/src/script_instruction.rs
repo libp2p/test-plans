@@ -191,9 +191,8 @@ impl From<GossipSubParams> for ConfigBuilder {
         if let Some(heartbeat_interval) = params.heartbeat_interval {
             builder.heartbeat_interval(Duration::from_nanos(heartbeat_interval as u64));
         }
-        // TODO: change all instances of time.Duration to use nanos here
         if let Some(fanout_ttl) = params.fanout_ttl {
-            builder.fanout_ttl(Duration::from_secs_f64(fanout_ttl));
+            builder.fanout_ttl(Duration::from_nanos(fanout_ttl as u64));
         }
         if let Some(history_length) = params.history_length {
             builder.history_length(history_length);
@@ -211,7 +210,7 @@ impl From<GossipSubParams> for ConfigBuilder {
             builder.max_ihave_messages(max_ihave_messages);
         }
         if let Some(iwant_followup_time) = params.iwant_followup_time {
-            builder.iwant_followup_time(Duration::from_secs_f64(iwant_followup_time));
+            builder.iwant_followup_time(Duration::from_nanos(iwant_followup_time as u64));
         }
 
         // Just disable this by using a large value
