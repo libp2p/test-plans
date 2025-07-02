@@ -60,6 +60,16 @@ type SubscribeToTopicInstruction struct {
 // isInstruction implements the ScriptInstruction interface
 func (SubscribeToTopicInstruction) isInstruction() {}
 
+// SetTopicValidationDelayInstruction represents a set topic validation delay instruction in the script
+type SetTopicValidationDelayInstruction struct {
+	Type         string  `json:"type"`
+	TopicID      string  `json:"topicID"`
+	DelaySeconds float64 `json:"delaySeconds"`
+}
+
+// isInstruction implements the ScriptInstruction interface
+func (SetTopicValidationDelayInstruction) isInstruction() {}
+
 // InitGossipSubInstruction represents an instruction to initialize GossipSub with specific parameters
 type InitGossipSubInstruction struct {
 	Type            string                 `json:"type"`
@@ -126,6 +136,13 @@ func UnmarshalScriptInstruction(data []byte) (ScriptInstruction, error) {
 
 	case "subscribeToTopic":
 		var instruction SubscribeToTopicInstruction
+		if err := json.Unmarshal(data, &instruction); err != nil {
+			return nil, err
+		}
+		return instruction, nil
+
+	case "setTopicValidationDelay":
+		var instruction SetTopicValidationDelayInstruction
 		if err := json.Unmarshal(data, &instruction); err != nil {
 			return nil, err
 		}

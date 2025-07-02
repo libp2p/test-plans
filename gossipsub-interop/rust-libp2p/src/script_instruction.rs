@@ -87,6 +87,14 @@ pub enum ScriptInstruction {
         topic_id: String,
     },
 
+    #[serde(rename = "setTopicValidationDelay")]
+    SetTopicValidationDelay {
+        #[serde(rename = "topicID")]
+        topic_id: String,
+        #[serde(rename = "delaySeconds")]
+        delay_seconds: f64,
+    },
+
     #[serde(rename = "initGossipSub")]
     InitGossipSub {
         #[serde(rename = "gossipSubParams")]

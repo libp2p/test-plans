@@ -37,6 +37,7 @@ pub struct ScriptedNode {
     stderr_logger: Logger,
     stdout_logger: Logger,
     topics: HashMap<String, IdentTopic>,
+    topic_validation_delays: HashMap<String, Duration>,
     start_time: Instant,
 }
 
@@ -49,13 +50,14 @@ impl ScriptedNode {
         start_time: Instant,
     ) -> Self {
         info!(stdout_logger, "PeerID"; "id" => %swarm.local_peer_id(), "node_id" => %node_id);
-        let (gossipsub_validation_tx, gossipsub_validation_rx) = mpsc::channel(2);
+        let (gossipsub_validation_tx, gossipsub_validation_rx) = mpsc::channel(16);
         Self {
             node_id,
             swarm,
             stderr_logger,
             stdout_logger,
             topics: HashMap::new(),
+            topic_validation_delays: HashMap::new(),
             start_time,
             gossipsub_validation_rx,
             gossipsub_validation_tx,
@@ -144,9 +146,10 @@ impl ScriptedNode {
                                     message_id,
                                     message,
                                 })) = event {
+                                    let topic = message.topic.into_string();
                                     if message.data.len() >= 8 {
                                         info!(self.stdout_logger, "Received Message";
-                                            "topic" => message.topic.into_string(),
+                                            "topic" => &topic,
                                             "id" => format_message_id(&message.data),
                                             "from" => peer_id.to_string());
                                     }
@@ -157,14 +160,22 @@ impl ScriptedNode {
                                     // See https://github.com/shadow/shadow/issues/2060 for more info.
 
                                     let mut tx = self.gossipsub_validation_tx.clone();
-                                    tokio::spawn(async move {
-                                        sleep(Duration::from_millis(5)).await;
+                                    if let Some(&delay) = self.topic_validation_delays.get(&topic) {
+                                        tokio::spawn(async move {
+                                            sleep(delay).await;
+                                            tx.send(ValidationResult {
+                                                peer_id,
+                                                msg_id: message_id,
+                                                result: gossipsub::MessageAcceptance::Accept,
+                                            }).await.unwrap();
+                                        });
+                                    } else {
                                         tx.send(ValidationResult {
                                             peer_id,
                                             msg_id: message_id,
                                             result: gossipsub::MessageAcceptance::Accept,
                                         }).await.unwrap();
-                                    });
+                                    }
                                 }
                             }
                         }
@@ -216,6 +227,13 @@ impl ScriptedNode {
                         return Err(Box::new(std::io::Error::other(e.to_string())));
                     }
                 }
+            }
+            ScriptInstruction::SetTopicValidationDelay {
+                topic_id,
+                delay_seconds,
+            } => {
+                let delay = Duration::from_secs_f64(delay_seconds);
+                self.topic_validation_delays.insert(topic_id.clone(), delay);
             }
             ScriptInstruction::InitGossipSub {
                 gossip_sub_params: _,
