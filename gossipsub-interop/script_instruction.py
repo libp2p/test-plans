@@ -41,6 +41,17 @@ class SubscribeToTopic(BaseModel):
     topicID: str
 
 
+class SetTopicValidationDelay(BaseModel):
+    """
+    SetTopicValidationDelay is an instruction that lets us mock some
+    validation process by delaying the validation results by some number of
+    seconds.
+    """
+    type: Literal["setTopicValidationDelay"] = "setTopicValidationDelay"
+    topicID: str
+    delaySeconds: float
+
+
 class InitGossipSub(BaseModel):
     """
     InitGossipSub is an instruction that initializes the GossipSub protocol with the
@@ -136,5 +147,6 @@ class GossipSubParams(BaseModel):
 
 
 ScriptInstruction = Union[
-    Connect, IfNodeIDEquals, WaitUntil, Publish, SubscribeToTopic, InitGossipSub
+    Connect, IfNodeIDEquals, WaitUntil, Publish, SubscribeToTopic,
+    SetTopicValidationDelay, InitGossipSub
 ]

@@ -47,17 +47,25 @@ def scenario(scenario_name: str, node_count: int, disable_gossip: bool) -> Exper
             instructions.extend(spread_heartbeat_delay(
                 node_count, gs_params))
 
+            topic = "a-subnet"
+            blob_count = 48
+            # According to data gathered by lighthouse, a column takes around
+            # 5ms.
+            instructions.append(
+                script_instruction.SetTopicValidationDelay(
+                    topicID=topic, delaySeconds=0.005)
+            )
             number_of_conns_per_node = 20
             if number_of_conns_per_node >= node_count:
                 number_of_conns_per_node = node_count - 1
             instructions.extend(
                 random_network_mesh(node_count, number_of_conns_per_node)
             )
-            message_size = 2 * 1024 * 48
+            message_size = 2 * 1024 * blob_count
             num_messages = 16
             instructions.extend(
                 random_publish_every_12s(
-                    node_count, num_messages, message_size)
+                    node_count, num_messages, message_size, topic)
             )
         case _:
             raise ValueError(f"Unknown scenario name: {scenario_name}")
@@ -115,9 +123,8 @@ def random_network_mesh(
 
 
 def random_publish_every_12s(
-    node_count: int, numMessages: int, messageSize: int
+    node_count: int, numMessages: int, messageSize: int, topicStr: str
 ) -> List[ScriptInstruction]:
-    topicStr = "foobar"
     instructions = []
     instructions.append(script_instruction.SubscribeToTopic(topicID=topicStr))
 

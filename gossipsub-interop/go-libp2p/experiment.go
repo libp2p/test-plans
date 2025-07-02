@@ -10,6 +10,7 @@ import (
 
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/libp2p/go-libp2p/core/host"
+	"github.com/libp2p/go-libp2p/core/peer"
 )
 
 func CalcID(msg []byte) string {
@@ -124,6 +125,13 @@ func (n *scriptedNode) runInstruction(ctx context.Context, instruction ScriptIns
 				n.logger.Printf("Received message %d\n", msgID)
 			}
 		}()
+	case SetTopicValidationDelayInstruction:
+		n.pubsub.RegisterTopicValidator(a.TopicID, func(context.Context, peer.ID, *pubsub.Message) pubsub.ValidationResult {
+			duration := time.Duration(a.DelaySeconds * float64(time.Second))
+			time.Sleep(duration)
+			return pubsub.ValidationAccept
+		})
+
 	default:
 		return fmt.Errorf("unknown instruction type: %T", instruction)
 	}

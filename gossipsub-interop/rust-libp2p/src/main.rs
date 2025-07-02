@@ -121,6 +121,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     config_builder
         .validation_mode(ValidationMode::Anonymous)
         // Custom message ID function similar to Go implementation
+        .validate_messages()
         .message_id_fn(|message| MessageId::from(&message.data[0..8]));
 
     // Create gossipsub configuration
