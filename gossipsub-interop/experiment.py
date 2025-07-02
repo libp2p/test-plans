@@ -77,6 +77,8 @@ def composition(preset_name: str) -> List[Binary]:
     match preset_name:
         case "all-go":
             return [Binary("go-libp2p/gossipsub-bin", percent_of_nodes=100)]
+        case "all-wfr":
+            return [Binary("go-libp2p-wfr/gossipsub-bin", percent_of_nodes=100)]
         case "all-rust":
             # Always use debug. We don't measure compute performance here.
             return [
