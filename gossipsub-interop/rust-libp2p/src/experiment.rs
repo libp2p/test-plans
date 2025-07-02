@@ -1,5 +1,6 @@
 use byteorder::{BigEndian, ByteOrder};
-use futures::StreamExt;
+use futures::channel::mpsc;
+use futures::{SinkExt, StreamExt};
 use libp2p::gossipsub::{self, IdentTopic};
 use libp2p::swarm::{NetworkBehaviour, SwarmEvent};
 use libp2p::{identify, Swarm};
@@ -21,9 +22,18 @@ pub fn format_message_id(data: &[u8]) -> String {
     }
 }
 
+#[derive(Debug)]
+pub struct ValidationResult {
+    peer_id: libp2p::PeerId,
+    msg_id: gossipsub::MessageId,
+    result: gossipsub::MessageAcceptance,
+}
+
 pub struct ScriptedNode {
     node_id: NodeID,
     swarm: Swarm<MyBehavior>,
+    gossipsub_validation_rx: mpsc::Receiver<ValidationResult>,
+    gossipsub_validation_tx: mpsc::Sender<ValidationResult>,
     stderr_logger: Logger,
     stdout_logger: Logger,
     topics: HashMap<String, IdentTopic>,
@@ -39,6 +49,7 @@ impl ScriptedNode {
         start_time: Instant,
     ) -> Self {
         info!(stdout_logger, "PeerID"; "id" => %swarm.local_peer_id(), "node_id" => %node_id);
+        let (gossipsub_validation_tx, gossipsub_validation_rx) = mpsc::channel(2);
         Self {
             node_id,
             swarm,
@@ -46,6 +57,8 @@ impl ScriptedNode {
             stdout_logger,
             topics: HashMap::new(),
             start_time,
+            gossipsub_validation_rx,
+            gossipsub_validation_tx,
         }
     }
 
@@ -113,6 +126,17 @@ impl ScriptedNode {
                                 // Timeout complete, we can continue
                                 break;
                             }
+                            res = self.gossipsub_validation_rx.next() => {
+                                if let Some(res) = res {
+                                    info!(self.stdout_logger, "Validation Result"; "result" => format!("{:?}", res));
+
+                                    self.swarm.behaviour_mut()
+                                        .gossipsub
+                                        .report_message_validation_result(
+                                            &res.msg_id, &res.peer_id, res.result
+                                        );
+                                }
+                            }
                             event = self.swarm.select_next_some() => {
                                 // Process any messages that arrive during sleep
                                 if let SwarmEvent::Behaviour(MyBehaviorEvent::Gossipsub(gossipsub::Event::Message {
@@ -131,12 +155,16 @@ impl ScriptedNode {
                                     // Usually in lighthouse blob verification takes ~5ms,
                                     // so calling `thread::sleep` aims at replicating the same behaviour.
                                     // See https://github.com/shadow/shadow/issues/2060 for more info.
-                                    std::thread::sleep(Duration::from_millis(5));
-                                    self.swarm.behaviour_mut()
-                                        .gossipsub
-                                        .report_message_validation_result(&message_id,
-                                            &peer_id, gossipsub::MessageAcceptance::Accept
-                                        );
+
+                                    let mut tx = self.gossipsub_validation_tx.clone();
+                                    tokio::spawn(async move {
+                                        sleep(Duration::from_millis(5)).await;
+                                        tx.send(ValidationResult {
+                                            peer_id,
+                                            msg_id: message_id,
+                                            result: gossipsub::MessageAcceptance::Accept,
+                                        }).await.unwrap();
+                                    });
                                 }
                             }
                         }
