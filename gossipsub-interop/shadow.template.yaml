@@ -6,3 +6,4 @@ general:
 experimental:
   socket_recv_buffer: 7500000
   socket_send_buffer: 7500000
+  # use_memory_manager: true

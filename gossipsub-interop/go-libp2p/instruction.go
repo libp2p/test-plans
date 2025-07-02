@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	
+
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 )
 
@@ -62,7 +62,7 @@ func (SubscribeToTopicInstruction) isInstruction() {}
 
 // InitGossipSubInstruction represents an instruction to initialize GossipSub with specific parameters
 type InitGossipSubInstruction struct {
-	Type            string               `json:"type"`
+	Type            string                 `json:"type"`
 	GossipSubParams pubsub.GossipSubParams `json:"gossipSubParams"`
 }
 
@@ -123,14 +123,14 @@ func UnmarshalScriptInstruction(data []byte) (ScriptInstruction, error) {
 			return nil, err
 		}
 		return instruction, nil
-		
+
 	case "subscribeToTopic":
 		var instruction SubscribeToTopicInstruction
 		if err := json.Unmarshal(data, &instruction); err != nil {
 			return nil, err
 		}
 		return instruction, nil
-		
+
 	case "initGossipSub":
 		var tempInstruction struct {
 			Type            string          `json:"type"`
@@ -139,15 +139,14 @@ func UnmarshalScriptInstruction(data []byte) (ScriptInstruction, error) {
 		if err := json.Unmarshal(data, &tempInstruction); err != nil {
 			return nil, err
 		}
-		
+
 		// Start with default parameters
 		params := pubsub.DefaultGossipSubParams()
-		
+
 		// Only override values that are specified in the JSON
 		if err := json.Unmarshal(tempInstruction.GossipSubParams, &params); err != nil {
 			return nil, err
 		}
-		
 		return InitGossipSubInstruction{
 			Type:            tempInstruction.Type,
 			GossipSubParams: params,

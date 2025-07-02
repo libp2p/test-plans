@@ -186,13 +186,13 @@ impl From<GossipSubParams> for ConfigBuilder {
             builder.mesh_n_high(d_high);
         }
         if let Some(heartbeat_initial_delay) = params.heartbeat_initial_delay {
-            builder.heartbeat_initial_delay(Duration::from_secs_f64(heartbeat_initial_delay));
+            builder.heartbeat_initial_delay(Duration::from_nanos(heartbeat_initial_delay as u64));
         }
         if let Some(heartbeat_interval) = params.heartbeat_interval {
-            builder.heartbeat_interval(Duration::from_secs_f64(heartbeat_interval));
+            builder.heartbeat_interval(Duration::from_nanos(heartbeat_interval as u64));
         }
         if let Some(fanout_ttl) = params.fanout_ttl {
-            builder.fanout_ttl(Duration::from_secs_f64(fanout_ttl));
+            builder.fanout_ttl(Duration::from_nanos(fanout_ttl as u64));
         }
         if let Some(history_length) = params.history_length {
             builder.history_length(history_length);
@@ -210,7 +210,7 @@ impl From<GossipSubParams> for ConfigBuilder {
             builder.max_ihave_messages(max_ihave_messages);
         }
         if let Some(iwant_followup_time) = params.iwant_followup_time {
-            builder.iwant_followup_time(Duration::from_secs_f64(iwant_followup_time));
+            builder.iwant_followup_time(Duration::from_nanos(iwant_followup_time as u64));
         }
 
         // Just disable this by using a large value

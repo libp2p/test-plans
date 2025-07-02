@@ -71,13 +71,14 @@ class GossipSubParams(BaseModel):
     Dlazy: int | None = (
         None  # Minimum number of peers to emit gossip to at each heartbeat
     )
-    GossipFactor: float | None = None  # Factor affecting how many peers receive gossip
+    # Factor affecting how many peers receive gossip
+    GossipFactor: float | None = None
     GossipRetransmission: int | None = (
         None  # Limit for IWANT requests before ignoring a peer
     )
 
     # Heartbeat parameters
-    HeartbeatInitialDelay: int | None = (
+    HeartbeatInitialDelay: float | None = (
         None  # Initial delay in seconds before heartbeat timer begins
     )
     HeartbeatInterval: int | None = None  # Time between heartbeats in seconds
@@ -89,12 +90,15 @@ class GossipSubParams(BaseModel):
     FanoutTTL: int | None = None  # Time in seconds to track fanout state
     PrunePeers: int | None = None  # Number of peers to include in prune Peer eXchange
     PruneBackoff: int | None = None  # Backoff time in seconds for pruned peers
-    UnsubscribeBackoff: int | None = None  # Backoff time in seconds after unsubscribing
+    # Backoff time in seconds after unsubscribing
+    UnsubscribeBackoff: int | None = None
 
     # Connection management
     Connectors: int | None = None  # Number of active connection attempts for PX peers
-    MaxPendingConnections: int | None = None  # Maximum number of pending connections
-    ConnectionTimeout: int | None = None  # Timeout in seconds for connection attempts
+    # Maximum number of pending connections
+    MaxPendingConnections: int | None = None
+    # Timeout in seconds for connection attempts
+    ConnectionTimeout: int | None = None
     DirectConnectTicks: int | None = (
         None  # Heartbeat ticks for reconnecting direct peers
     )
@@ -118,11 +122,13 @@ class GossipSubParams(BaseModel):
     MaxIHaveMessages: int | None = (
         None  # Maximum IHAVE messages to accept per heartbeat
     )
-    MaxIDontWantLength: int | None = None  # Maximum messages in an IDONTWANT message
+    # Maximum messages in an IDONTWANT message
+    MaxIDontWantLength: int | None = None
     MaxIDontWantMessages: int | None = (
         None  # Maximum IDONTWANT messages to accept per heartbeat
     )
-    IWantFollowupTime: int | None = None  # Time in seconds to wait for IWANT followup
+    # Time in seconds to wait for IWANT followup
+    IWantFollowupTime: int | None = None
     IDontWantMessageThreshold: int | None = (
         None  # Size threshold for IDONTWANT messages
     )

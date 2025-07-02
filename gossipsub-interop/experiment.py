@@ -1,5 +1,6 @@
 from collections import defaultdict
 from dataclasses import dataclass, field
+from datetime import timedelta
 import random
 from typing import List, Dict, Set
 
@@ -18,19 +19,45 @@ class ExperimentParams:
     script: List[ScriptInstruction] = field(default_factory=list)
 
 
-def scenario(scenario_name: str, node_count: int) -> ExperimentParams:
+def spread_heartbeat_delay(node_count: int, template_gs_params: GossipSubParams) -> List[ScriptInstruction]:
+    instructions = []
+    initial_delay = timedelta(seconds=0.1)
+    for i in range(node_count):
+        initial_delay += timedelta(milliseconds=0.100)
+        gs_params = template_gs_params.model_copy()
+        gs_params.HeartbeatInitialDelay = initial_delay.microseconds * 1_000
+        instructions.append(
+            script_instruction.IfNodeIDEquals(
+                nodeID=i,
+                instruction=script_instruction.InitGossipSub(
+                    gossipSubParams=gs_params)
+            )
+        )
+    return instructions
+
+
+def scenario(scenario_name: str, node_count: int, disable_gossip: bool) -> ExperimentParams:
     instructions: List[ScriptInstruction] = []
     match scenario_name:
         case "subnet-blob-msg":
-            instructions.extend(init_gossipsub())
-            number_of_conns_per_node = 10
+            gs_params = GossipSubParams()
+            if disable_gossip:
+                gs_params.Dlazy = 0
+                gs_params.GossipFactor = 0
+            instructions.extend(spread_heartbeat_delay(
+                node_count, gs_params))
+
+            number_of_conns_per_node = 20
             if number_of_conns_per_node >= node_count:
                 number_of_conns_per_node = node_count - 1
-            instructions.extend(random_network_mesh(node_count, number_of_conns_per_node))
-            message_size = 2 * 1024 * 48
-            num_messages = 32
             instructions.extend(
-                random_publish_every_12s(node_count, num_messages, message_size)
+                random_network_mesh(node_count, number_of_conns_per_node)
+            )
+            message_size = 2 * 1024 * 48
+            num_messages = 16
+            instructions.extend(
+                random_publish_every_12s(
+                    node_count, num_messages, message_size)
             )
         case _:
             raise ValueError(f"Unknown scenario name: {scenario_name}")
@@ -57,11 +84,6 @@ def composition(preset_name: str) -> List[Binary]:
                 Binary("go-libp2p/gossipsub-bin", percent_of_nodes=50),
             ]
     raise ValueError(f"Unknown preset name: {preset_name}")
-
-
-def init_gossipsub() -> List[ScriptInstruction]:
-    # Default gossipsub parameters
-    return [script_instruction.InitGossipSub(gossipSubParams=GossipSubParams())]
 
 
 def random_network_mesh(
@@ -101,7 +123,8 @@ def random_publish_every_12s(
 
     # Start at 120 seconds (2 minutes) to allow for setup time
     elapsed_seconds = 120
-    instructions.append(script_instruction.WaitUntil(elapsedSeconds=elapsed_seconds))
+    instructions.append(script_instruction.WaitUntil(
+        elapsedSeconds=elapsed_seconds))
 
     for i in range(numMessages):
         random_node = random.randint(0, node_count - 1)
@@ -116,9 +139,12 @@ def random_publish_every_12s(
             )
         )
         elapsed_seconds += 12  # Add 12 seconds for each subsequent message
-        instructions.append(script_instruction.WaitUntil(elapsedSeconds=elapsed_seconds))
+        instructions.append(
+            script_instruction.WaitUntil(elapsedSeconds=elapsed_seconds)
+        )
 
     elapsed_seconds += 30  # wait a bit more to allow all messages to flush
-    instructions.append(script_instruction.WaitUntil(elapsedSeconds=elapsed_seconds))
+    instructions.append(script_instruction.WaitUntil(
+        elapsedSeconds=elapsed_seconds))
 
     return instructions
