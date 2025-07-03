@@ -9,7 +9,7 @@ perf: perf.nim
             -v "$(shell pwd)":/usr/src/myapp -w /usr/src/myapp nimlang/nim:2.2.0 \
             sh -c ' \
             nimble install -y --depsOnly && \
-            nim c --hints:off --verbosity:0 --warning[all]:off --threads:off --NimblePath:nim-libp2p/nimbledeps/pkgs -p:nim-libp2p -d:chronicles_enabled=off -d:release -d:danger --opt:speed --passC:-flto --passL:-flto perf.nim && \
+            nim c --hints:off --verbosity:0 --warning[all]:off --threads:off --NimblePath:nim-libp2p/nimbledeps/pkgs -p:nim-libp2p -d:chronicles_enabled=off -d:release -d:danger -d:lto --opt:speed --stacktrace:off perf.nim && \
             chown -R $(shell id -u):$(shell id -g) .'
 
 clean:
