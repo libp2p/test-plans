@@ -1,6 +1,7 @@
+import csv
 from dataclasses import dataclass
 import random
-from typing import List
+from typing import List, Dict
 import networkx as nx
 import yaml
 
@@ -123,14 +124,13 @@ edges = [
     Edge(west_asia, west_asia, 5),
 ]
 
-
-def generate_graph(
+def generate_random_graph(
     binary_paths: List[str],
     graph_file_name: str,
     shadow_yaml_file_name: str,
     params_file_location: str,
 ):
-    ids = {}
+    ids: Dict[str, int] = {}
     for node_type in node_types:
         for location in locations:
             name = f"{location.name}-{node_type.name}"
@@ -186,3 +186,105 @@ def generate_graph(
 
     with open(shadow_yaml_file_name, "w") as file:
         yaml.dump(config, file)
+
+def generate_custom_graph(
+    binary_paths: List[str],
+    graph_file_name: str,
+    shadow_yaml_file_name: str,
+    params_file_location: str,
+    **kwargs
+):
+    node_count = 0
+    with open(kwargs["nodes_file"], 'r') as nodes_file:
+        nodes_csv = csv.DictReader(nodes_file)
+        for node_dict in nodes_csv:
+            node_count+=1
+            id = node_dict['id']
+            bandwidth_up = f"{node_dict['bandwidth_up']} Mbit" if node_dict['bandwidth_up'] != '' else "50 Mbit"
+            bandwidth_down = f"{node_dict['bandwidth_down']} Mbit" if node_dict['bandwidth_down'] != '' else "50 Mbit"
+            G.add_node(
+                id,
+                host_bandwidth_up=bandwidth_up,
+                host_bandwidth_down=bandwidth_down,
+            )
+            # Hardcoded intra node bandwidth
+            G.add_edge(
+                id,
+                id,
+                label=f"{id} to {id}",
+                latency="2 ms",
+                packet_loss=0.0,
+            )
+
+    with open(kwargs["edges_file"], 'r') as edges_file:
+        edges_csv = csv.DictReader(edges_file)
+        for edges_dict in edges_csv:
+            G.add_edge(
+                edges_dict['src'],
+                edges_dict['dst'],
+                label=f"{edges_dict['src']} to {edges_dict['dst']}",
+                latency=f"{edges_dict['latency']} ms",
+                packet_loss=0.0,
+            )
+
+    with open(graph_file_name, "w") as file:
+        file.write("\n".join(nx.generate_gml(G)))
+        file.close()
+
+    with open("shadow.template.yaml", "r") as file:
+        config = yaml.safe_load(file)
+
+    config["network"] = {"graph": {"type": "gml", "file": {"path": "graph.gml"}}}
+
+    config["hosts"] = {}
+
+    binaries = kwargs["binaries"]
+    binary_paths = random.choices(
+        [b.path for b in binaries],
+        weights=[b.percent_of_nodes for b in binaries],
+        k=node_count
+    )
+
+    for i, binary_path in enumerate(binary_paths):
+        config["hosts"][f"node{i}"] = {
+            "network_node_id": i,
+            "processes": [
+                {
+                    "args": f"--params {params_file_location}",
+                    # For Debugging:
+                    "environment": {
+                        # "GOLOG_LOG_LEVEL": "debug",
+                        # "RUST_LOG": "debug",
+                    },
+                    "path": binary_path,
+                }
+            ],
+        }
+
+    with open(shadow_yaml_file_name, "w") as file:
+        yaml.dump(config, file)
+
+def generate_graph(
+    graph: str,
+    binary_paths: List[str],
+    graph_file_name: str,
+    shadow_yaml_file_name: str,
+    params_file_location: str,
+    **kwargs
+):
+    if graph == "custom":
+        generate_custom_graph(
+            binary_paths,
+            graph_file_name,
+            shadow_yaml_file_name,
+            params_file_location,
+            **kwargs
+        )
+    else:
+        # Default
+        generate_random_graph(
+            binary_paths,
+            graph_file_name,
+            shadow_yaml_file_name,
+            params_file_location,
+        )
