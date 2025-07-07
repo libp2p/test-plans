@@ -149,8 +149,8 @@ github.com/libp2p/go-yamux/v5 v5.0.0 h1:2djUh96d3Jiac/JpGkKs4TO49YhsfLopAoryfPmf
 github.com/libp2p/go-yamux/v5 v5.0.0/go.mod h1:en+3cdX51U0ZslwRdRLrvQsdayFt3TSUKvBGErzpWbU=
 github.com/lunixbochs/vtclean v1.0.0/go.mod h1:pHhQNgMf3btfWnGBVipUOjRYhoOsdGqdm/+2c2E2WMI=
 github.com/mailru/easyjson v0.0.0-20190312143242-1de009706dbe/go.mod h1:C1wdFJiN94OJF2b5HbByQZoLdCWB1Yqtg26g4irojpc=
-github.com/marcopolo/go-libp2p-pubsub v0.13.2-0.20250627180831-ca5e91318c6e h1:3jSWkeFg5ehRyTxzuWWZwlXiawhk+rSTedvHRg1AkXg=
-github.com/marcopolo/go-libp2p-pubsub v0.13.2-0.20250627180831-ca5e91318c6e/go.mod h1:MKPU5vMI8RRFyTP0HfdsF9cLmL1nHAeJm44AxJGJx44=
+github.com/marcopolo/go-libp2p-pubsub v0.13.2-0.20250707183813-d7ff3c96ac6b h1:3CA9A1ega8Cj/d5yhD6bxsviz5mqFus8Hjjdg+97ApY=
+github.com/marcopolo/go-libp2p-pubsub v0.13.2-0.20250707183813-d7ff3c96ac6b/go.mod h1:MKPU5vMI8RRFyTP0HfdsF9cLmL1nHAeJm44AxJGJx44=
 github.com/marten-seemann/tcp v0.0.0-20210406111302-dfbc87cc63fd h1:br0buuQ854V8u83wA0rVZ8ttrq5CpaPZdvrK0LP2lOk=
 github.com/marten-seemann/tcp v0.0.0-20210406111302-dfbc87cc63fd/go.mod h1:QuCEs1Nt24+FYQEqAAncTDPJIuGs+LxK1MCiFL25pMU=
 github.com/mattn/go-isatty v0.0.14/go.mod h1:7GGIvUiUoEMVVmxf/4nioHXj79iQHKdU27kJ6hsGG94=
