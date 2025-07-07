@@ -24,6 +24,7 @@ def main():
     )
     parser.add_argument("--node_count", type=int, required=True)
     parser.add_argument("--disable_gossip", type=bool, required=False)
+    parser.add_argument("--wfr_d_robust", type=int, required=False)
     parser.add_argument("--seed", type=int, required=False, default=1)
     parser.add_argument(
         "--scenario", type=str, required=False, default="subnet-blob-msg"
@@ -37,7 +38,7 @@ def main():
         try:
             git_describe = subprocess.check_output(
                 ["git", "describe", "--always", "--dirty"]
-            )
+            ).decode("utf-8").strip()
         except subprocess.CalledProcessError:
             git_describe = "unknown"
 
@@ -51,7 +52,7 @@ def main():
 
     binaries = experiment.composition(args.composition)
     experiment_params = experiment.scenario(
-        args.scenario, args.node_count, args.disable_gossip)
+        args.scenario, args.node_count, args.disable_gossip, wfr_d_robust=args.wfr_d_robust)
 
     with open(params_file_name, "w") as f:
         d = asdict(experiment_params)

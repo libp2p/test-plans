@@ -82,6 +82,10 @@ class GossipSubParams(BaseModel):
     Dlazy: int | None = (
         None  # Minimum number of peers to emit gossip to at each heartbeat
     )
+
+    Drobust: int | None = (
+        None  # D robust value for WFR gossipsub
+    )
     # Factor affecting how many peers receive gossip
     GossipFactor: float | None = None
     GossipRetransmission: int | None = (

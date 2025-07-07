@@ -36,7 +36,7 @@ def spread_heartbeat_delay(node_count: int, template_gs_params: GossipSubParams)
     return instructions
 
 
-def scenario(scenario_name: str, node_count: int, disable_gossip: bool) -> ExperimentParams:
+def scenario(scenario_name: str, node_count: int, disable_gossip: bool, **kwargs) -> ExperimentParams:
     instructions: List[ScriptInstruction] = []
     match scenario_name:
         case "subnet-blob-msg":
@@ -44,6 +44,10 @@ def scenario(scenario_name: str, node_count: int, disable_gossip: bool) -> Exper
             if disable_gossip:
                 gs_params.Dlazy = 0
                 gs_params.GossipFactor = 0
+            if (d_robust := kwargs.get("wfr_d_robust")) is not None:
+                gs_params.Drobust = d_robust
+                pass
+
             instructions.extend(spread_heartbeat_delay(
                 node_count, gs_params))
 
