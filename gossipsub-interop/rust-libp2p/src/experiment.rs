@@ -1,5 +1,6 @@
 use byteorder::{BigEndian, ByteOrder};
-use futures::StreamExt;
+use futures::channel::mpsc;
+use futures::{SinkExt, StreamExt};
 use libp2p::gossipsub::{self, IdentTopic};
 use libp2p::swarm::{NetworkBehaviour, SwarmEvent};
 use libp2p::{identify, Swarm};
@@ -7,10 +8,8 @@ use slog::{error, info, Logger};
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 use tokio::time::sleep;
-
 use crate::connector;
 use crate::script_instruction::{ExperimentParams, NodeID, ScriptInstruction};
-
 // Calculate message ID based on content (equivalent to Go's CalcID)
 pub fn format_message_id(data: &[u8]) -> String {
     if data.len() >= 8 {
@@ -21,12 +20,22 @@ pub fn format_message_id(data: &[u8]) -> String {
     }
 }
 
+#[derive(Debug)]
+pub struct ValidationResult {
+    peer_id: libp2p::PeerId,
+    msg_id: gossipsub::MessageId,
+    result: gossipsub::MessageAcceptance,
+}
+
 pub struct ScriptedNode {
     node_id: NodeID,
     swarm: Swarm<MyBehavior>,
+    gossipsub_validation_rx: mpsc::Receiver<ValidationResult>,
+    gossipsub_validation_tx: mpsc::Sender<ValidationResult>,
     stderr_logger: Logger,
     stdout_logger: Logger,
     topics: HashMap<String, IdentTopic>,
+    topic_validation_delays: HashMap<String, Duration>,
     start_time: Instant,
 }
 
@@ -39,13 +48,17 @@ impl ScriptedNode {
         start_time: Instant,
     ) -> Self {
         info!(stdout_logger, "PeerID"; "id" => %swarm.local_peer_id(), "node_id" => %node_id);
+        let (gossipsub_validation_tx, gossipsub_validation_rx) = mpsc::channel(16);
         Self {
             node_id,
             swarm,
             stderr_logger,
             stdout_logger,
             topics: HashMap::new(),
+            topic_validation_delays: HashMap::new(),
             start_time,
+            gossipsub_validation_rx,
+            gossipsub_validation_tx,
         }
     }
 
@@ -58,7 +71,6 @@ impl ScriptedNode {
             topic
         }
     }
-
     pub async fn run_instruction(
         &mut self,
         instruction: ScriptInstruction,
@@ -84,7 +96,10 @@ impl ScriptedNode {
                     "Node {} connected to peers", self.node_id
                 );
             }
-            ScriptInstruction::IfNodeIDEquals { node_id, instruction } => {
+            ScriptInstruction::IfNodeIDEquals {
+                node_id,
+                instruction,
+            } => {
                 if node_id == self.node_id {
                     Box::pin(self.run_instruction(*instruction)).await?;
                 }
@@ -92,17 +107,14 @@ impl ScriptedNode {
             ScriptInstruction::WaitUntil { elapsed_seconds } => {
                 let target_time = self.start_time + Duration::from_secs(elapsed_seconds);
                 let now = Instant::now();
-
                 if now < target_time {
                     let wait_time = target_time.duration_since(now);
                     info!(
                         self.stderr_logger,
                         "Waiting {:?} (until elapsed: {}s)", wait_time, elapsed_seconds
                     );
-
                     // Create a timeout future
                     let mut timeout = Box::pin(sleep(wait_time));
-
                     // Process events while waiting for the timeout
                     loop {
                         tokio::select! {
@@ -110,18 +122,53 @@ impl ScriptedNode {
                                 // Timeout complete, we can continue
                                 break;
                             }
+                            res = self.gossipsub_validation_rx.next() => {
+                                if let Some(res) = res {
+                                    info!(self.stdout_logger, "Validation Result"; "result" => format!("{:?}", res));
+
+                                    self.swarm.behaviour_mut()
+                                        .gossipsub
+                                        .report_message_validation_result(
+                                            &res.msg_id, &res.peer_id, res.result
+                                        );
+                                }
+                            }
                             event = self.swarm.select_next_some() => {
                                 // Process any messages that arrive during sleep
                                 if let SwarmEvent::Behaviour(MyBehaviorEvent::Gossipsub(gossipsub::Event::Message {
                                     propagation_source: peer_id,
-                                    message_id: _,
+                                    message_id,
                                     message,
                                 })) = event {
+                                    let topic = message.topic.into_string();
                                     if message.data.len() >= 8 {
                                         info!(self.stdout_logger, "Received Message";
-                                            "topic" => message.topic.into_string(),
+                                            "topic" => &topic,
                                             "id" => format_message_id(&message.data),
                                             "from" => peer_id.to_string());
+                                    }
+                                    // Shadow doesn’t model CPU execution time,
+                                    // instructions execute instantly in the simulations.
+                                    // Usually in lighthouse blob verification takes ~5ms,
+                                    // so calling `thread::sleep` aims at replicating the same behaviour.
+                                    // See https://github.com/shadow/shadow/issues/2060 for more info.
+
+                                    let mut tx = self.gossipsub_validation_tx.clone();
+                                    if let Some(&delay) = self.topic_validation_delays.get(&topic) {
+                                        tokio::spawn(async move {
+                                            sleep(delay).await;
+                                            tx.send(ValidationResult {
+                                                peer_id,
+                                                msg_id: message_id,
+                                                result: gossipsub::MessageAcceptance::Accept,
+                                            }).await.unwrap();
+                                        });
+                                    } else {
+                                        tx.send(ValidationResult {
+                                            peer_id,
+                                            msg_id: message_id,
+                                            result: gossipsub::MessageAcceptance::Accept,
+                                        }).await.unwrap();
                                     }
                                 }
                             }
@@ -135,12 +182,9 @@ impl ScriptedNode {
                 topic_id,
             } => {
                 let topic = self.get_topic(&topic_id);
-
                 info!(self.stderr_logger, "Publishing message {}", message_id);
-
                 let mut msg = vec![0u8; message_size_bytes];
                 BigEndian::write_u64(&mut msg, message_id);
-
                 match self
                     .swarm
                     .behaviour_mut()
@@ -161,7 +205,6 @@ impl ScriptedNode {
             }
             ScriptInstruction::SubscribeToTopic { topic_id } => {
                 let topic = self.get_topic(&topic_id);
-
                 match self.swarm.behaviour_mut().gossipsub.subscribe(&topic) {
                     Ok(_) => {
                         info!(self.stderr_logger, "Subscribed to topic {}", topic_id);
@@ -175,24 +218,32 @@ impl ScriptedNode {
                     }
                 }
             }
+            ScriptInstruction::SetTopicValidationDelay {
+                topic_id,
+                delay_seconds,
+            } => {
+                let delay = Duration::from_secs_f64(delay_seconds);
+                self.topic_validation_delays.insert(topic_id.clone(), delay);
+            }
             ScriptInstruction::InitGossipSub {
                 gossip_sub_params: _,
             } => {
                 // This is handled before node creation in main.rs, so we don't need to do anything here
-                info!(self.stderr_logger, "InitGossipSub instruction already processed");
+                info!(
+                    self.stderr_logger,
+                    "InitGossipSub instruction already processed"
+                );
             }
         }
 
         Ok(())
     }
 }
-
 #[derive(NetworkBehaviour)]
 pub struct MyBehavior {
     pub gossipsub: gossipsub::Behaviour,
     pub identify: identify::Behaviour,
 }
-
 pub async fn run_experiment(
     start_time: Instant,
     stderr_logger: Logger,
@@ -213,7 +264,6 @@ pub async fn run_experiment(
     }
     Ok(())
 }
-
 // Extract InitGossipSub parameters from script instructions
 pub fn extract_gossipsub_params(
     script: &[ScriptInstruction],
@@ -229,7 +279,9 @@ pub fn extract_gossipsub_params(
                 instruction,
             } => {
                 if *instruction_node_id == node_id {
-                    if let ScriptInstruction::InitGossipSub { gossip_sub_params } = instruction.as_ref() {
+                    if let ScriptInstruction::InitGossipSub { gossip_sub_params } =
+                        instruction.as_ref()
+                    {
                         return Some(**gossip_sub_params);
                     }
                 }
