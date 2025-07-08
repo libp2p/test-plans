@@ -85,7 +85,7 @@ src,dst,latency
 ```
 Where `id` can be any unique string and the `src` and `dst` correspond to an `id` from `nodes.csv`. Fields other than `id` will have default values if not specified.
 
-The argument into `--node_count` should be the number of nodes specified in `nodes.csv`.
+The argument into `--node_count` can be the same, more, or less than the number of nodes in `nodes.csv`. If the node count is higher, it would essentially be like two gossipsub implementaions running on the same machine. If the node count is lower, it will randomly choose some nodes from `nodes.csv` to place on the network graph.
 
 ## Adding an implementation
 

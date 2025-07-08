@@ -238,16 +238,14 @@ def generate_custom_graph(
 
     config["hosts"] = {}
 
-    binaries = kwargs["binaries"]
-    binary_paths = random.choices(
-        [b.path for b in binaries],
-        weights=[b.percent_of_nodes for b in binaries],
-        k=node_count
-    )
+    if node_count == len(binary_paths):
+        nodes = list(range(node_count))
+    else:
+        nodes = random.choices(range(node_count), k=len(binary_paths))
 
     for i, binary_path in enumerate(binary_paths):
         config["hosts"][f"node{i}"] = {
-            "network_node_id": i,
+            "network_node_id": nodes[i],
             "processes": [
                 {
                     "args": f"--params {params_file_location}",
