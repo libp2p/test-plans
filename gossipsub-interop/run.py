@@ -74,7 +74,6 @@ def main():
     optional_args = {
         "nodes_file": args.nodes_file,
         "edges_file": args.edges_file,
-        "binaries": binaries,
     }
     # Generate the network graph and the Shadow config for the binaries
     generate_graph(
