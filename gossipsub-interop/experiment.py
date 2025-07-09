@@ -46,6 +46,7 @@ def scenario(
     node_count: int,
     disable_gossip: bool,
     d_value: int | None = None,
+    d_robust_value: int | None = None,
 ) -> ExperimentParams:
     if scenario_name != "subnet-blob-msg":
         raise ValueError(f"Unknown scenario name: {scenario_name}")
@@ -53,6 +54,8 @@ def scenario(
     gs_params = GossipSubParams()
     if d_value is not None:
         gs_params.D = d_value
+    if d_robust_value is not None:
+        gs_params.DRobust = d_robust_value
     if disable_gossip:
         gs_params.Dlazy = 0
         gs_params.GossipFactor = 0

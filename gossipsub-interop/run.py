@@ -37,7 +37,9 @@ def _auto_output_dir(
     try:
         git_describe = subprocess.check_output(
             ["git", "describe", "--always", "--dirty"], text=True
-        ).strip()
+        ).decode("utf-8").strip()
+
+
     except subprocess.CalledProcessError:
         git_describe = "unknown"
 
@@ -57,9 +59,8 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--scenario", default="subnet-blob-msg")
     parser.add_argument("--composition", default="all-go")
     parser.add_argument("--output_dir")
-    # NEW flag that overrides GossipSubParams.D
-    parser.add_argument("--d", "--d_robust", dest="d_value", type=int,
-                        help="Override GossipSubParams.D (robust degree)")
+    parser.add_argument("--wfr_d_robust", type=int, required=False)
+
 
     args = parser.parse_args(argv)
 
@@ -81,7 +82,7 @@ def main(argv: list[str] | None = None) -> None:
         scenario_name=args.scenario,
         node_count=args.node_count,
         disable_gossip=args.disable_gossip,
-        d_value=args.d_value,
+        wfr_d_robust=args.wfr_d_robust,
     )
 
     with open(_PARAMS_FILE, "w") as f:
