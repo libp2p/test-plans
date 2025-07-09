@@ -45,8 +45,9 @@ def _auto_output_dir(
     timestamp = _dt.datetime.now().strftime("%Y%m%d%H%M%S")
     # Use the new, more descriptive variable name here for clarity
     d_part = f"d{d_robust_value}" if d_robust_value is not None else "d-default"
-    return f"{scenario}-{node_count}-{composition}-{d_part}-{seed}-{timestamp}-{git_describe}.data"
-
+    gossip_part = "no_gossip" if is_gossip_disabled else "gossip"
+    
+    return f"{scenario}-{node_count}-{composition}-{d_part}-{seed}-{timestamp}-{git_describe}--{gossip_part}.data"
 
 # ------------------------- main ----------------------------
 
