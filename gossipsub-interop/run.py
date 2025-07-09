@@ -1,6 +1,6 @@
 """Run a Shadow simulation with optional sweep over GossipSub *D*.
 
-Folder‑naming tweak: if you pass ``--d 5`` the auto‑generated
+Folder-naming tweak: if you pass `--wfr_d_robust 5` the auto-generated
 output directory becomes, e.g.::
 
     subnet-blob-msg-3-all-wfr-d5-1-20250702104500-g123abc.data/
@@ -31,20 +31,20 @@ def _auto_output_dir(
     node_count: int,
     composition: str,
     seed: int,
-    d_value: int | None,
+    d_robust_value: int | None,
 ) -> str:
-    """Build a deterministic-ish folder name that now embeds the D value."""
+    """Build a deterministic-ish folder name that now embeds the D_robust value."""
     try:
+        # Use text=True to get a string directly, no need for .decode()
         git_describe = subprocess.check_output(
             ["git", "describe", "--always", "--dirty"], text=True
-        ).decode("utf-8").strip()
-
-
+        ).strip()
     except subprocess.CalledProcessError:
         git_describe = "unknown"
 
     timestamp = _dt.datetime.now().strftime("%Y%m%d%H%M%S")
-    d_part = f"d{d_value}" if d_value is not None else "d‑default"
+    # Use the new, more descriptive variable name here for clarity
+    d_part = f"d{d_robust_value}" if d_robust_value is not None else "d-default"
     return f"{scenario}-{node_count}-{composition}-{d_part}-{seed}-{timestamp}-{git_describe}.data"
 
 
@@ -59,8 +59,8 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--scenario", default="subnet-blob-msg")
     parser.add_argument("--composition", default="all-go")
     parser.add_argument("--output_dir")
+    # Use the clear and specific flag for the WFR-Gossip parameter
     parser.add_argument("--wfr_d_robust", type=int, required=False)
-
 
     args = parser.parse_args(argv)
 
@@ -71,24 +71,30 @@ def main(argv: list[str] | None = None) -> None:
             args.node_count,
             args.composition,
             args.seed,
-            args.d_value,
+            # Pass the correct variable
+            args.wfr_d_robust,
         )
 
     random.seed(args.seed)
 
     # ---------------- experiment & graph -------------
     binaries = experiment.composition(args.composition)
+    # Ensure the parameter name here matches the one in experiment.py
     experiment_params = experiment.scenario(
         scenario_name=args.scenario,
         node_count=args.node_count,
         disable_gossip=args.disable_gossip,
-        wfr_d_robust=args.wfr_d_robust,
+        # Pass the correct variable to the correct parameter
+        d_robust_value=args.wfr_d_robust,
     )
 
     with open(_PARAMS_FILE, "w") as f:
         data = asdict(experiment_params)
-        data["script"] = [inst.model_dump(exclude_none=True) for inst in experiment_params.script]
-        json.dump(data, f)
+        # Ensure your ScriptInstruction class has a model_dump method
+        if hasattr(experiment_params.script[0], 'model_dump'):
+             data["script"] = [inst.model_dump(exclude_none=True) for inst in experiment_params.script]
+        json.dump(data, f, indent=4)
+
 
     binary_paths = random.choices(
         [b.path for b in binaries],
@@ -104,7 +110,7 @@ def main(argv: list[str] | None = None) -> None:
     )
 
     if args.dry_run:
-        print("[dry‑run] artefacts generated →", os.getcwd())
+        print(f"[dry-run] artefacts generated -> {os.getcwd()}")
         return
 
     # ---------------- build + run Shadow -------------
@@ -120,4 +126,3 @@ def main(argv: list[str] | None = None) -> None:
 
 if __name__ == "__main__":
     main()
-

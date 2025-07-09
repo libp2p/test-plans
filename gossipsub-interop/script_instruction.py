@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from typing import List, Literal, TypeAlias, Union
-from pydantic import BaseModel
+from typing import List, Literal, Optional, TypeAlias, Union
+from pydantic import BaseModel, Field
 
 NodeID: TypeAlias = int
 
@@ -15,7 +15,7 @@ class IfNodeIDEquals(BaseModel):
     type: Literal["ifNodeIDEquals"] = "ifNodeIDEquals"
     nodeID: NodeID
     # Instruction to run if the NodeID is equal to the above value
-    instruction: ScriptInstruction
+    instruction: "ScriptInstruction"
 
 
 class WaitUntil(BaseModel):
@@ -61,96 +61,66 @@ class InitGossipSub(BaseModel):
     """
 
     type: Literal["initGossipSub"] = "initGossipSub"
-    gossipSubParams: GossipSubParams
+    gossipSubParams: "GossipSubParams"
 
 
 class GossipSubParams(BaseModel):
     # Overlay parameters
-    D: int | None = None  # Optimal degree for a GossipSub topic mesh
-    Dlo: int | None = None  # Lower bound on the number of peers in a topic mesh
-    Dhi: int | None = None  # Upper bound on the number of peers in a topic mesh
-    Dscore: int | None = None  # Number of high-scoring peers to retain when pruning
-    Dout: int | None = (
-        None  # Quota for outbound connections to maintain in a topic mesh
-    )
+    D: Optional[int] = None  # Optimal degree for a GossipSub topic mesh
+    Dlo: Optional[int] = None  # Lower bound on the number of peers in a topic mesh
+    Dhi: Optional[int] = None  # Upper bound on the number of peers in a topic mesh
+    Dscore: Optional[int] = None  # Number of high-scoring peers to retain when pruning
+    Dout: Optional[int] = None  # Quota for outbound connections to maintain in a topic mesh
+    DRobust: Optional[int] = Field(default=None, alias="d-robust") # D robust value for WFR gossipsub
 
     # Gossip parameters
-    HistoryLength: int | None = None  # Size of the message cache used for gossip
-    HistoryGossip: int | None = (
-        None  # Number of cached message IDs to advertise in IHAVE
-    )
-    Dlazy: int | None = (
-        None  # Minimum number of peers to emit gossip to at each heartbeat
-    )
+    HistoryLength: Optional[int] = None  # Size of the message cache used for gossip
+    HistoryGossip: Optional[int] = None  # Number of cached message IDs to advertise in IHAVE
+    Dlazy: Optional[int] = None  # Minimum number of peers to emit gossip to at each heartbeat
 
-    Drobust: int | None = (
-        None  # D robust value for WFR gossipsub
-    )
     # Factor affecting how many peers receive gossip
-    GossipFactor: float | None = None
-    GossipRetransmission: int | None = (
-        None  # Limit for IWANT requests before ignoring a peer
-    )
+    GossipFactor: Optional[float] = None
+    GossipRetransmission: Optional[int] = None  # Limit for IWANT requests before ignoring a peer
 
     # Heartbeat parameters
-    HeartbeatInitialDelay: float | None = (
-        None  # Initial delay in seconds before heartbeat timer begins
-    )
-    HeartbeatInterval: int | None = None  # Time between heartbeats in seconds
-    SlowHeartbeatWarning: float | None = (
-        None  # Threshold for heartbeat processing warnings
-    )
+    HeartbeatInitialDelay: Optional[float] = None  # Initial delay in seconds before heartbeat timer begins
+    HeartbeatInterval: Optional[int] = None  # Time between heartbeats in seconds
+    SlowHeartbeatWarning: Optional[float] = None  # Threshold for heartbeat processing warnings
 
     # Fanout and pruning
-    FanoutTTL: int | None = None  # Time in seconds to track fanout state
-    PrunePeers: int | None = None  # Number of peers to include in prune Peer eXchange
-    PruneBackoff: int | None = None  # Backoff time in seconds for pruned peers
+    FanoutTTL: Optional[int] = None  # Time in seconds to track fanout state
+    PrunePeers: Optional[int] = None  # Number of peers to include in prune Peer eXchange
+    PruneBackoff: Optional[int] = None  # Backoff time in seconds for pruned peers
     # Backoff time in seconds after unsubscribing
-    UnsubscribeBackoff: int | None = None
+    UnsubscribeBackoff: Optional[int] = None
 
     # Connection management
-    Connectors: int | None = None  # Number of active connection attempts for PX peers
-    # Maximum number of pending connections
-    MaxPendingConnections: int | None = None
-    # Timeout in seconds for connection attempts
-    ConnectionTimeout: int | None = None
-    DirectConnectTicks: int | None = (
-        None  # Heartbeat ticks for reconnecting direct peers
-    )
-    DirectConnectInitialDelay: int | None = (
-        None  # Initial delay before connecting to direct peers
-    )
+    Connectors: Optional[int] = None  # Number of active connection attempts for PX peers
+    MaxPendingConnections: Optional[int] = None # Maximum number of pending connections
+    ConnectionTimeout: Optional[int] = None # Timeout in seconds for connection attempts
+    DirectConnectTicks: Optional[int] = None  # Heartbeat ticks for reconnecting direct peers
+    DirectConnectInitialDelay: Optional[int] = None  # Initial delay before connecting to direct peers
 
     # Opportunistic grafting
-    OpportunisticGraftTicks: int | None = (
-        None  # Ticks between opportunistic grafting attempts
-    )
-    OpportunisticGraftPeers: int | None = (
-        None  # Number of peers to opportunistically graft
-    )
-    GraftFloodThreshold: int | None = (
-        None  # Time threshold in seconds for GRAFT flood detection
-    )
+    OpportunisticGraftTicks: Optional[int] = None  # Ticks between opportunistic grafting attempts
+    OpportunisticGraftPeers: Optional[int] = None  # Number of peers to opportunistically graft
+    GraftFloodThreshold: Optional[int] = None  # Time threshold in seconds for GRAFT flood detection
 
     # Message control
-    MaxIHaveLength: int | None = None  # Maximum messages in an IHAVE message
-    MaxIHaveMessages: int | None = (
-        None  # Maximum IHAVE messages to accept per heartbeat
-    )
-    # Maximum messages in an IDONTWANT message
-    MaxIDontWantLength: int | None = None
-    MaxIDontWantMessages: int | None = (
-        None  # Maximum IDONTWANT messages to accept per heartbeat
-    )
-    # Time in seconds to wait for IWANT followup
-    IWantFollowupTime: int | None = None
-    IDontWantMessageThreshold: int | None = (
-        None  # Size threshold for IDONTWANT messages
-    )
-    IDontWantMessageTTL: int | None = None  # TTL in seconds for IDONTWANT messages
+    MaxIHaveLength: Optional[int] = None  # Maximum messages in an IHAVE message
+    MaxIHaveMessages: Optional[int] = None  # Maximum IHAVE messages to accept per heartbeat
+    MaxIDontWantLength: Optional[int] = None # Maximum messages in an IDONTWANT message
+    MaxIDontWantMessages: Optional[int] = None  # Maximum IDONTWANT messages to accept per heartbeat
+    IWantFollowupTime: Optional[int] = None # Time in seconds to wait for IWANT followup
+    IDontWantMessageThreshold: Optional[int] = None  # Size threshold for IDONTWANT messages
+    IDontWantMessageTTL: Optional[int] = None  # TTL in seconds for IDONTWANT messages
 
 
 ScriptInstruction = Union[
     Connect, IfNodeIDEquals, WaitUntil, Publish, SubscribeToTopic,
     SetTopicValidationDelay, InitGossipSub
 ]
+
+# Rebuild the models to resolve forward references like "ScriptInstruction"
+IfNodeIDEquals.model_rebuild()
+InitGossipSub.model_rebuild()

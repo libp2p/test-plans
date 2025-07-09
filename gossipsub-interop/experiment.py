@@ -113,6 +113,7 @@ def random_network_mesh(node_count: int, number_of_connections: int) -> List[Scr
         )
     return out
 
+    DRobust: Optional[int] = Field(default=None, alias="d-robust")
 
 def random_publish_every_12s(node_count: int, numMessages: int, messageSize: int) -> List[ScriptInstruction]:
     topic = "foobar"
