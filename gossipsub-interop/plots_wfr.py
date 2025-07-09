@@ -96,8 +96,9 @@ for src_type in node_types:
 avg_edge_latency = {seg: sum(lats)/len(lats) for seg, lats in segment_latencies.items()}
 
 
-baseline_protocol_name = "gossipsub" if args.run_type == "gossip" else "wfr_no_gossip"
-dfr_protocol_name = "dfr_with_gossip" if args.run_type == "gossip" else "dfr_no_gossip"
+# Corrected protocol names for clarity
+baseline_protocol_name = "gossipsub"
+wfr_protocol_name = "wfr_with_gossip" if args.run_type == "gossip" else "wfr"
 
 # Find and load the baseline data (the one without a d-value)
 baseline_df = None
@@ -126,7 +127,7 @@ else:
     print(f"[warn] No baseline folder for run_type '{args.run_type}' found.")
 
 
-# ── iterate dfr run folders of the specified type ────────────────────────
+# ── iterate wfr run folders of the specified type ────────────────────────
 big_rows = []
 conn_rows = []
 
@@ -134,7 +135,7 @@ conn_rows = []
 run_folders = sorted([p for p in ROOT.glob(f"*-{args.run_type}.data") if d_from_name(p.name) is not None])
 
 if not run_folders:
-    raise SystemExit(f"[err] no DFR run folders found for run_type '{args.run_type}'.")
+    raise SystemExit(f"[err] no WFR run folders found for run_type '{args.run_type}'.")
 
 for run in run_folders:
     d_val = d_from_name(run.name)
@@ -143,30 +144,30 @@ for run in run_folders:
         continue
 
     csv_path = run / "plots" / "node_summary_metrics.csv"
-    df_dfr = process_run_data(csv_path)
+    df_wfr = process_run_data(csv_path)
 
-    if df_dfr is None:
+    if df_wfr is None:
         continue
 
-    df_dfr["d"] = d_val
-    df_dfr["protocol"] = dfr_protocol_name
+    df_wfr["d"] = d_val
+    df_wfr["protocol"] = wfr_protocol_name
     
-    big_rows.append(df_dfr)
+    big_rows.append(df_wfr)
 
     D_COLOURS.setdefault(d_val, CMAP((d_val - 1) / 7))
 
     # Best/worst connected nodes for this d-value
-    worst = df_dfr.loc[df_dfr["avg_edge_latency"].idxmax()].copy()
-    best = df_dfr.loc[df_dfr["avg_edge_latency"].idxmin()].copy()
-    worst["conn"] = f"{dfr_protocol_name}-worst"
-    best["conn"] = f"{dfr_protocol_name}-best"
+    worst = df_wfr.loc[df_wfr["avg_edge_latency"].idxmax()].copy()
+    best = df_wfr.loc[df_wfr["avg_edge_latency"].idxmin()].copy()
+    worst["conn"] = f"{wfr_protocol_name}-worst"
+    best["conn"] = f"{wfr_protocol_name}-best"
     conn_rows.extend([worst, best])
 
     # Per-D vs Baseline violin plots
     if baseline_df is not None:
-        combined_df = pd.concat([df_dfr, baseline_df], ignore_index=True)
-        segment_order = sorted(df_dfr["segment"].unique())
-        comp_palette = {dfr_protocol_name: D_COLOURS[d_val], baseline_protocol_name: "crimson"}
+        combined_df = pd.concat([df_wfr, baseline_df], ignore_index=True)
+        segment_order = sorted(df_wfr["segment"].unique())
+        comp_palette = {wfr_protocol_name: D_COLOURS[d_val], baseline_protocol_name: "crimson"}
         
         violin(combined_df, "latency", "median latency (s)",
                OUT / f"latency_by_segment_d{d_val}_vs_baseline.png",
@@ -178,24 +179,24 @@ for run in run_folders:
 
 # ── consolidated all-conditions figures ──────────────────────────────────
 if not big_rows:
-    raise SystemExit(f"[err] no DFR data for run_type '{args.run_type}' was loaded.")
+    raise SystemExit(f"[err] no WFR data for run_type '{args.run_type}' was loaded.")
 
-BIG_DFR = pd.concat(big_rows, ignore_index=True)
-ALL_DATA = pd.concat([BIG_DFR, baseline_df], ignore_index=True) if baseline_df is not None else BIG_DFR
+BIG_WFR = pd.concat(big_rows, ignore_index=True)
+ALL_DATA = pd.concat([BIG_WFR, baseline_df], ignore_index=True) if baseline_df is not None else BIG_WFR
 
 # Create a new 'condition' column for a unified hue
 ALL_DATA["condition"] = ALL_DATA.apply(
-    lambda row: f"d={int(row['d'])}" if pd.notna(row.get('d')) else baseline_protocol_name,
+    lambda row: f"wfr d={int(row['d'])}" if pd.notna(row.get('d')) else baseline_protocol_name,
     axis=1
 )
 
 # Create a new palette for all conditions
-all_cond_palette = {f"d={d}": col for d, col in D_COLOURS.items()}
+all_cond_palette = {f"wfr d={d}": col for d, col in D_COLOURS.items()}
 if baseline_df is not None:
     all_cond_palette[baseline_protocol_name] = "crimson"
 
 # Sort conditions to have d-values first, then baseline
-cond_order = sorted([c for c in ALL_DATA['condition'].unique() if c.startswith('d=')], key=lambda x: int(x.split('=')[1]))
+cond_order = sorted([c for c in ALL_DATA['condition'].unique() if c.startswith('wfr d=')], key=lambda x: int(x.split('=')[1]))
 if baseline_df is not None:
     cond_order.append(baseline_protocol_name)
 
@@ -208,7 +209,7 @@ violin(ALL_DATA, "dups", "mean duplicates / msg",
 # ── plot best/worst node trends with baseline ──────────────────
 if conn_rows:
     extremes = pd.DataFrame(conn_rows)
-    extreme_palette = {f"{dfr_protocol_name}-best": "royalblue", f"{dfr_protocol_name}-worst": "darkorange"}
+    extreme_palette = {f"{wfr_protocol_name}-best": "royalblue", f"{wfr_protocol_name}-worst": "darkorange"}
 
     # Latency plot
     plt.figure(figsize=(10, 5.5))
@@ -222,7 +223,7 @@ if conn_rows:
 
     sns.despine()
     plt.grid(axis="y", linestyle="--", alpha=0.6)
-    plt.title(f"Latency of Best vs Worst Node: {dfr_protocol_name} vs {baseline_protocol_name}", fontsize=13)
+    plt.title(f"Latency of Best vs Worst Node: {wfr_protocol_name} vs {baseline_protocol_name}", fontsize=13)
     plt.xlabel("D value")
     plt.ylabel("Median Latency (s)")
     plt.legend(title="Node Type", loc="upper left")
@@ -242,7 +243,7 @@ if conn_rows:
 
     sns.despine()
     plt.grid(axis="y", linestyle="--", alpha=0.6)
-    plt.title(f"Duplicates of Best vs Worst Node: {dfr_protocol_name} vs {baseline_protocol_name}", fontsize=13)
+    plt.title(f"Duplicates of Best vs Worst Node: {wfr_protocol_name} vs {baseline_protocol_name}", fontsize=13)
     plt.xlabel("D value")
     plt.ylabel("Mean Duplicates per Message")
     plt.legend(title="Node Type", loc="upper left")
