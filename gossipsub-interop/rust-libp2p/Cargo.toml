@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-libp2p = { version = "0.55.0", features = [
+libp2p = { version = "0.56.0", features = [
     "gossipsub",
     "dns",
     "tcp",
@@ -14,7 +14,7 @@ libp2p = { version = "0.55.0", features = [
     "websocket",
     "identify",
     "yamux",
-] }
+], git = "https://github.com/marcopolo/rust-libp2p.git", rev = "aa7946f1410da9002ffacd6e6052afd423beff90" }
 tokio = { version = "1.33.0", features = ["full"] }
 futures = "0.3.28"
 tracing = "0.1.37"
