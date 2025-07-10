@@ -22,15 +22,6 @@ import (
 	"github.com/libp2p/go-libp2p/core/peer"
 )
 
-const (
-	topicName = "topic"
-
-	cellSize                  = (2 << 10)
-	subnetCount               = 1
-	columnCount               = 1
-	columnSamplingRequirement = 1
-)
-
 var (
 	paramsFileFlag = flag.String("params", "", "the path to the params file")
 )
