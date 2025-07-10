@@ -92,31 +92,32 @@ class GossipSubParams(BaseModel):
 
     # Heartbeat parameters
     HeartbeatInitialDelay: float | None = (
-        None  # Initial delay in seconds before heartbeat timer begins
+        None  # Initial delay in nanonseconds before heartbeat timer begins
     )
-    HeartbeatInterval: int | None = None  # Time between heartbeats in seconds
+    # Time between heartbeats in nanoseconds
+    HeartbeatInterval: float | None = None
     SlowHeartbeatWarning: float | None = (
         None  # Threshold for heartbeat processing warnings
     )
 
     # Fanout and pruning
-    FanoutTTL: int | None = None  # Time in seconds to track fanout state
+    FanoutTTL: float | None = None  # Time in nanoseconds to track fanout state
     PrunePeers: int | None = None  # Number of peers to include in prune Peer eXchange
-    PruneBackoff: int | None = None  # Backoff time in seconds for pruned peers
-    # Backoff time in seconds after unsubscribing
-    UnsubscribeBackoff: int | None = None
+    PruneBackoff: float | None = None  # Backoff time in nanoseconds for pruned peers
+    # Backoff time in nanoseconds after unsubscribing
+    UnsubscribeBackoff: float | None = None
 
     # Connection management
     Connectors: int | None = None  # Number of active connection attempts for PX peers
     # Maximum number of pending connections
     MaxPendingConnections: int | None = None
-    # Timeout in seconds for connection attempts
-    ConnectionTimeout: int | None = None
+    # Timeout in nanoseconds for connection attempts
+    ConnectionTimeout: float | None = None
     DirectConnectTicks: int | None = (
         None  # Heartbeat ticks for reconnecting direct peers
     )
-    DirectConnectInitialDelay: int | None = (
-        None  # Initial delay before connecting to direct peers
+    DirectConnectInitialDelay: float | None = (
+        None  # Initial delay before connecting to direct peers (nanoseconds)
     )
 
     # Opportunistic grafting
@@ -126,8 +127,8 @@ class GossipSubParams(BaseModel):
     OpportunisticGraftPeers: int | None = (
         None  # Number of peers to opportunistically graft
     )
-    GraftFloodThreshold: int | None = (
-        None  # Time threshold in seconds for GRAFT flood detection
+    GraftFloodThreshold: float | None = (
+        None  # Time threshold in nanoseconds for GRAFT flood detection
     )
 
     # Message control
@@ -140,12 +141,13 @@ class GossipSubParams(BaseModel):
     MaxIDontWantMessages: int | None = (
         None  # Maximum IDONTWANT messages to accept per heartbeat
     )
-    # Time in seconds to wait for IWANT followup
-    IWantFollowupTime: int | None = None
+    # Time in nanoseconds to wait for IWANT followup
+    IWantFollowupTime: float | None = None
     IDontWantMessageThreshold: int | None = (
         None  # Size threshold for IDONTWANT messages
     )
-    IDontWantMessageTTL: int | None = None  # TTL in seconds for IDONTWANT messages
+    # TTL in nanoseconds for IDONTWANT messages
+    IDontWantMessageTTL: int | None = None
 
 
 ScriptInstruction = Union[

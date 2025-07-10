@@ -25,6 +25,7 @@ def spread_heartbeat_delay(node_count: int, template_gs_params: GossipSubParams)
     for i in range(node_count):
         initial_delay += timedelta(milliseconds=0.100)
         gs_params = template_gs_params.model_copy()
+        # The value is in nanoseconds
         gs_params.HeartbeatInitialDelay = initial_delay.microseconds * 1_000
         instructions.append(
             script_instruction.IfNodeIDEquals(
