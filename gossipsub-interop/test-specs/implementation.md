@@ -28,16 +28,17 @@ pub fn node_priv_key(id: NodeID) -> identity::Keypair {
 
 ## Input
 
-Implementations will be provided a path to path to a `params.json` file. This JSON
-file contains the JSON encoded value of a `ExperimentParams` type (see `experiment.py`).
+Implementations will be provided a path to a `params.json` file as CLI
+argument (e.g. `--params <params.json>`). This JSON file contains the JSON
+encoded value of a `ExperimentParams` type (see `experiment.py`).
 
 Implementations MUST parse this file and use the values to run the experiment.
 
 
-### gossipSubParams
+### gossipSubParams field
 
 This is a JSON encoded value of go-libp2p-pubsub's
-[`GossipSubParams`](https://github.com/MarcoPolo/go-libp2p-pubsub/blob/0c5ee7bbfeb051200bc39eb824246cc651f7358a/gossipsub.go#L85)
+[`GossipSubParams`](https://github.com/libp2p/go-libp2p-pubsub/blob/abb8f8a2cd5aee610e16de66d63cd539a353e166/gossipsub.go#L85)
 type.
 
 This may change in the future.
@@ -45,15 +46,17 @@ This may change in the future.
 ### Script Instructions
 
 Script instructions are how each node knows what to do during the experiment.
-Implementations MUST handle each instruction. See `script_instruction.py` for the instructions
-you need to support.
+Implementations MUST handle each instruction. See `script_instruction.py` for
+the instructions you need to support. The instructions are included in the
+ExperimentParams.script passed in via the `params.json` file.
 
 ## Output
 
 Implementations MUST reserve STDOUT as their output channel and use STDERR for
 diagnostics and errors.
 
-Implementations MUST log their STDOUT events using a structured JSON logging format.
+Implementations MUST log their STDOUT events using a structured
+newline-delimited JSON logging format.
 
 All STDOUT logs must include the following fields:
 - time: The RFC3339 timestamp of the log entry.

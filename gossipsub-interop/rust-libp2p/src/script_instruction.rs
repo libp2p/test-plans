@@ -155,7 +155,7 @@ pub struct GossipSubParams {
     pub opportunistic_graft_peers: Option<i32>,
     #[serde(rename = "opportunisticGraftTicks")]
     pub opportunistic_graft_ticks: Option<i32>,
-    #[serde(rename = "opprotunisticGraftTicksBackoff")]
+    #[serde(rename = "opportunisticGraftTicksBackoff")]
     pub opportunistic_graft_ticks_backoff: Option<i32>,
     #[serde(rename = "directConnectTicks")]
     pub direct_connect_ticks: Option<i32>,
