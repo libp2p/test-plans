@@ -166,6 +166,39 @@ pub struct GossipSubParams {
 
 impl From<GossipSubParams> for ConfigBuilder {
     fn from(params: GossipSubParams) -> Self {
+        // Log warnings for unsupported parameters
+        if params.slow_heartbeat_warning.is_some() {
+            eprintln!("Warning: slow_heartbeat_warning parameter is not supported by rust-libp2p gossipsub");
+        }
+        if params.connection_timeout.is_some() {
+            eprintln!(
+                "Warning: connection_timeout parameter is not supported by rust-libp2p gossipsub"
+            );
+        }
+        if params.direct_connect_ticks.is_some() {
+            eprintln!(
+                "Warning: direct_connect_ticks parameter is not supported by rust-libp2p gossipsub"
+            );
+        }
+        if params.direct_connect_initial_delay.is_some() {
+            eprintln!("Warning: direct_connect_initial_delay parameter is not supported by rust-libp2p gossipsub");
+        }
+        if params.connectors.is_some() {
+            eprintln!("Warning: connectors parameter is not supported by rust-libp2p gossipsub");
+        }
+        if params.max_pending_connections.is_some() {
+            eprintln!("Warning: max_pending_connections parameter is not supported by rust-libp2p gossipsub");
+        }
+        if params.max_idont_want_length.is_some() {
+            eprintln!("Warning: max_idont_want_length parameter is not supported by rust-libp2p gossipsub");
+        }
+        if params.max_idont_want_messages.is_some() {
+            eprintln!("Warning: max_idont_want_messages parameter is not supported by rust-libp2p gossipsub");
+        }
+        if params.idont_want_message_ttl.is_some() {
+            eprintln!("Warning: idont_want_message_ttl parameter is not supported by rust-libp2p gossipsub");
+        }
+
         let mut builder = ConfigBuilder::default();
         if let Some(d) = params.d {
             builder.mesh_n(d);
