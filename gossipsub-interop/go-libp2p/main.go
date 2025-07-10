@@ -132,7 +132,10 @@ func main() {
 	slogger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
 	connector := &ShadowConnector{}
-	RunExperiment(ctx, startTime, logger, slogger, h, nodeId, connector, params)
+	err = RunExperiment(ctx, startTime, logger, slogger, h, nodeId, connector, params)
+	if err != nil {
+		panic(err)
+	}
 }
 
 type ShadowConnector struct{}
