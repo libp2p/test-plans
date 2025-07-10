@@ -37,7 +37,7 @@ def main():
         try:
             git_describe = subprocess.check_output(
                 ["git", "describe", "--always", "--dirty"]
-            )
+            ).decode("utf-8").strip()
         except subprocess.CalledProcessError:
             git_describe = "unknown"
 
