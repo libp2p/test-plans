@@ -1,12 +1,3 @@
-"""Run a Shadow simulation with optional sweep over GossipSub *D*.
-
-Folder-naming tweak: if you pass `--wfr_d_robust 5` the auto-generated
-output directory becomes, e.g.::
-
-    subnet-blob-msg-3-all-wfr-d5-1-20250702104500-g123abc.data/
-
-(where *d5* appears right after the composition).
-"""
 from __future__ import annotations
 
 import argparse
@@ -32,10 +23,11 @@ def _auto_output_dir(
     composition: str,
     seed: int,
     d_robust_value: int | None,
+    is_gossip_disabled: bool,
 ) -> str:
-    """Build a deterministic-ish folder name that now embeds the D_robust value."""
+    """Build a deterministic‑ish folder name that embeds the D₍robust₎ value."""
+
     try:
-        # Use text=True to get a string directly, no need for .decode()
         git_describe = subprocess.check_output(
             ["git", "describe", "--always", "--dirty"], text=True
         ).strip()
@@ -43,11 +35,13 @@ def _auto_output_dir(
         git_describe = "unknown"
 
     timestamp = _dt.datetime.now().strftime("%Y%m%d%H%M%S")
-    # Use the new, more descriptive variable name here for clarity
     d_part = f"d{d_robust_value}" if d_robust_value is not None else "d-default"
     gossip_part = "no_gossip" if is_gossip_disabled else "gossip"
-    
-    return f"{scenario}-{node_count}-{composition}-{d_part}-{seed}-{timestamp}-{git_describe}--{gossip_part}.data"
+    return (
+        f"{scenario}-{node_count}-{composition}-{d_part}-{seed}-"
+        f"{timestamp}-{git_describe}--{gossip_part}.data"
+    )
+
 
 # ------------------------- main ----------------------------
 
@@ -60,7 +54,6 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--scenario", default="subnet-blob-msg")
     parser.add_argument("--composition", default="all-go")
     parser.add_argument("--output_dir")
-    # Use the clear and specific flag for the WFR-Gossip parameter
     parser.add_argument("--wfr_d_robust", type=int, required=False)
 
     args = parser.parse_args(argv)
@@ -72,30 +65,29 @@ def main(argv: list[str] | None = None) -> None:
             args.node_count,
             args.composition,
             args.seed,
-            # Pass the correct variable
             args.wfr_d_robust,
+            args.disable_gossip,
         )
 
+    # Make all downstream RNG usage reproducible.
     random.seed(args.seed)
 
     # ---------------- experiment & graph -------------
     binaries = experiment.composition(args.composition)
-    # Ensure the parameter name here matches the one in experiment.py
     experiment_params = experiment.scenario(
         scenario_name=args.scenario,
         node_count=args.node_count,
         disable_gossip=args.disable_gossip,
-        # Pass the correct variable to the correct parameter
         d_robust_value=args.wfr_d_robust,
     )
 
     with open(_PARAMS_FILE, "w") as f:
         data = asdict(experiment_params)
-        # Ensure your ScriptInstruction class has a model_dump method
-        if hasattr(experiment_params.script[0], 'model_dump'):
-             data["script"] = [inst.model_dump(exclude_none=True) for inst in experiment_params.script]
+        if hasattr(experiment_params.script[0], "model_dump"):
+            data["script"] = [
+                inst.model_dump(exclude_none=True) for inst in experiment_params.script
+            ]
         json.dump(data, f, indent=4)
-
 
     binary_paths = random.choices(
         [b.path for b in binaries],
@@ -103,11 +95,13 @@ def main(argv: list[str] | None = None) -> None:
         k=args.node_count,
     )
 
+    # ⇩⇩ NEW deterministic‑quota host placement lives inside generate_graph ⇩⇩
     generate_graph(
         binary_paths,
         "graph.gml",
         "shadow.yaml",
         params_file_location=os.path.join(os.getcwd(), _PARAMS_FILE),
+        seed=args.seed,  # optional but explicit is better than implicit
     )
 
     if args.dry_run:
@@ -116,7 +110,9 @@ def main(argv: list[str] | None = None) -> None:
 
     # ---------------- build + run Shadow -------------
     subprocess.run(["make", "binaries"], check=True)
-    subprocess.run(["shadow", "--progress", "true", "-d", args.output_dir, "shadow.yaml"], check=True)
+    subprocess.run(
+        ["shadow", "--progress", "true", "-d", args.output_dir, "shadow.yaml"], check=True
+    )
 
     # ---------------- collect artefacts --------------
     for fname in ["shadow.yaml", "graph.gml", _PARAMS_FILE]:
