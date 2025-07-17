@@ -50,6 +50,7 @@ func pubsubOptions(slogger *slog.Logger, params pubsub.GossipSubParams) []pubsub
 		pubsub.WithMaxMessageSize(10 * 1 << 20),
 		pubsub.WithGossipSubParams(params),
 		pubsub.WithEventTracer(&tr),
+		pubsub.WithWFR(),
 	}
 
 	return psOpts
