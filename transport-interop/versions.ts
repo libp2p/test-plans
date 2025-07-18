@@ -49,113 +49,12 @@ function browserImageIDLookup(id: string): string {
     return imageID
 }
 
-export const versions: Array<Version> = [
-    {
-        id: "rust-v0.51",
-        transports: ["ws", "tcp", "quic-v1", "webrtc-direct"],
-        secureChannels: ["tls", "noise"],
-        muxers: ["mplex", "yamux"],
-    },
-    {
-        id: "rust-v0.52",
-        transports: ["ws", "tcp", "quic-v1", "webrtc-direct"],
-        secureChannels: ["tls", "noise"],
-        muxers: ["mplex", "yamux"],
-    },
-    {
-        id: "rust-v0.53",
-        transports: ["ws", "tcp", "quic-v1", "webrtc-direct"],
-        secureChannels: ["tls", "noise"],
-        muxers: ["mplex", "yamux"],
-    },
-    // {
-    //     id: "rust-chromium-v0.52",
-    //     transports: [{ name: "webtransport", onlyDial: true }],
-    //     secureChannels: [],
-    //     muxers: [],
-    // },
-    {
-        id: "rust-chromium-v0.53",
-        "transports": [
-            { "name": "webtransport", "onlyDial": true },
-            { "name": "webrtc-direct", "onlyDial": true },
-            { "name": "ws", "onlyDial": true }
-        ],
-        "secureChannels": ["noise"],
-        "muxers": ["mplex", "yamux"]
-    },
-    {
-        id: "js-v0.45",
-        transports: ["tcp", "ws", { name: "wss", onlyDial: true }],
-        secureChannels: ["noise"],
-        muxers: ["mplex", "yamux"],
-    },
-    {
-        id: "js-v0.46",
-        transports: ["tcp", "ws", { name: "wss", onlyDial: true }],
-        secureChannels: ["noise"],
-        muxers: ["mplex", "yamux"],
-    },
-    {
-        id: "chromium-js-v0.46",
-        containerImageID: browserImageIDLookup,
-        transports: [{ name: "webtransport", onlyDial: true }, { name: "wss", onlyDial: true }, { name: "webrtc-direct", onlyDial: true }, "webrtc"],
-        secureChannels: ["noise"],
-        muxers: ["mplex", "yamux"],
-    },
-    {
-        id: "firefox-js-v0.46",
-        containerImageID: browserImageIDLookup,
-        transports: [{ name: "wss", onlyDial: true }, { name: "webrtc-direct", onlyDial: true }, "webrtc"],
-        secureChannels: ["noise"],
-        muxers: ["mplex", "yamux"],
-    },
-    {
-        id: "go-v0.31",
-        transports: ["tcp", "ws", "quic-v1", "webtransport"],
-        secureChannels: ["tls", "noise"],
-        muxers: ["yamux"],
-    },
-    {
-        id: "go-v0.30",
-        transports: ["tcp", "ws", "quic-v1", "webtransport"],
-        secureChannels: ["tls", "noise"],
-        muxers: ["yamux"],
-    },
-    {
-        id: "go-v0.29",
-        transports: ["tcp", "ws", "quic", "quic-v1", "webtransport"],
-        secureChannels: ["tls", "noise"],
-        muxers: ["mplex", "yamux"],
-    },
-    {
-        id: "nim-v1.0",
-        transports: ["tcp", "ws"],
-        secureChannels: ["noise"],
-        muxers: ["mplex", "yamux"],
-    },
-    {
-        id: "zig-v0.0.1",
-        transports: ["quic-v1"],
-        secureChannels: [],
-        muxers: [],
-    },
-    {
-        id: "java-v0.0.1",
-        transports: ["tcp"],
-        secureChannels: ["tls", "noise"],
-        muxers: ["mplex", "yamux"],
-    },
-    {
-        id: "java-v0.6",
-        transports: ["tcp"],
-        secureChannels: ["tls", "noise"],
-        muxers: ["mplex", "yamux"],
-    },
-    {
-        id: "dotnet-v1.0",
-        transports: ["tcp"],
-        secureChannels: ["noise"],
-        muxers: ["yamux"],
-    },
-].map((v: Version) => (typeof v.containerImageID === "undefined" ? ({ ...v, containerImageID: canonicalImageIDLookup }) : v))
+export const versions: Array<Version> = JSON.parse(fs.readFileSync(path.join(__dirname, 'versionsInput.json') , 'utf8')).map((v: Version) => {
+    switch(v.containerImageID) {
+        case "browser":
+            return { ...v, containerImageID: browserImageIDLookup }
+        case "canonical":
+        default:
+            return { ...v, containerImageID: canonicalImageIDLookup }
+    }
+});

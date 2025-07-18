@@ -3,13 +3,22 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { exec as execStd } from 'child_process';
 import util from 'util';
-import { env } from 'process';
 import { ComposeSpecification, PropertiesServices } from "../compose-spec/compose-spec";
 import { stringify } from 'yaml';
 import { dialerStdout, dialerTimings } from './compose-stdout-helper';
 
 const exec = util.promisify(execStd);
-const timeoutSecs = 3 * 60
+const timeoutSecs = getTimeout();
+
+function getTimeout (): number {
+    const timeout = parseInt(process.env.TIMEOUT, 10)
+
+    if (isNaN(timeout)) {
+        return 10 * 60
+    }
+
+    return timeout
+}
 
 export type RunOpts = {
     up: {
@@ -47,11 +56,10 @@ export async function run(namespace: string, compose: ComposeSpecification, opts
     }
 
     try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 1000 * timeoutSecs)
-        const { signal } = controller;
-        const { stdout, stderr } = await exec(`docker compose -f ${path.join(dir, "compose.yaml")} up ${upFlags.join(" ")}`, { signal })
-        clearTimeout(timeoutId)
+        const { stdout, stderr } = await exec(`docker compose -f ${path.join(dir, "compose.yaml")} up ${upFlags.join(" ")}`, {
+            signal: AbortSignal.timeout(1000 * timeoutSecs)
+        })
+
         try {
             const testResultsParsed = dialerTimings(dialerStdout(stdout))
             console.log("Finished:", namespace, testResultsParsed)
