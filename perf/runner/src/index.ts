@@ -208,8 +208,12 @@ function runClient(args: ArgsRunBenchmark): ResultValue[] {
     const combined: ResultValue[] = [];
 
     for (const line of lines) {
-        const result = JSON.parse(line) as ResultValue;
-        combined.push(result);
+        try {
+            const result = JSON.parse(line) as ResultValue;
+            combined.push(result);
+        } catch (error) {
+            console.error(`Could not parse ResultValue from line: ${line}`)
+        }
     }
 
     return combined;

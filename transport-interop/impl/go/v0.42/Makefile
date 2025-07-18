@@ -1,5 +1,5 @@
-image_name := go-v0.40
-version := 0.40.0
+image_name := go-v0.42
+version := 0.42.0
 
 all: image.json
 
@@ -26,6 +26,7 @@ version.lock: go-libp2p-${version}.zip
 	shasum -a 256 go-libp2p-${version}.zip > $@
 
 verify-checksum: go-libp2p-${version}.zip
+	$(call verify_checksum)
 	shasum -a 256 -c version.lock
 
 .PHONY: clean all verify-checksum

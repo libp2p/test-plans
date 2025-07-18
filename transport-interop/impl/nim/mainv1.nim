@@ -1,20 +1,24 @@
 import
   std/[os, strutils, sequtils],
-  chronos, redis, serialization, json_serialization,
-  libp2p, libp2p/protocols/ping, libp2p/transports/wstransport
+  chronos,
+  redis,
+  serialization,
+  json_serialization,
+  libp2p,
+  libp2p/protocols/ping,
+  libp2p/transports/wstransport
 
-type
-  ResultJson = object
-    handshakePlusOneRTTMillis: float
-    pingRTTMilllis: float
+type ResultJson = object
+  handshakePlusOneRTTMillis: float
+  pingRTTMilllis: float
 
-let
-  testTimeout =
-    try: seconds(parseInt(getEnv("test_timeout_seconds")))
-    except CatchableError: 3.minutes
+let testTimeout =
+  try:
+    seconds(parseInt(getEnv("test_timeout_seconds")))
+  except CatchableError:
+    3.minutes
 
-proc main {.async.} =
-
+proc main() {.async.} =
   let
     transport = getEnv("transport")
     muxer = getEnv("muxer")
@@ -25,7 +29,8 @@ proc main {.async.} =
       # nim-libp2p doesn't do snazzy ip expansion
       if envIp == "0.0.0.0":
         block:
-          let addresses = getInterfaces().filterIt(it.name == "eth0").mapIt(it.addresses)
+          let addresses =
+            getInterfaces().filterIt(it.name == "eth0").mapIt(it.addresses)
           if addresses.len < 1 or addresses[0].len < 1:
             quit "Can't find local ip!"
           ($addresses[0][0].host).split(":")[0]
@@ -39,25 +44,34 @@ proc main {.async.} =
 
     switchBuilder = SwitchBuilder.new()
 
-  case transport:
-    of "tcp":
-      discard switchBuilder.withTcpTransport().withAddress(
+  case transport
+  of "tcp":
+    discard switchBuilder.withTcpTransport().withAddress(
         MultiAddress.init("/ip4/" & ip & "/tcp/0").tryGet()
       )
-    of "ws":
-      discard switchBuilder.withTransport(proc (upgr: Upgrade): Transport = WsTransport.new(upgr)).withAddress(
-        MultiAddress.init("/ip4/" & ip & "/tcp/0/ws").tryGet()
+  of "quic-v1":
+    discard switchBuilder.withQuicTransport().withAddress(
+        MultiAddress.init("/ip4/" & ip & "/udp/0/quic-v1").tryGet()
       )
-    else: doAssert false
+  of "ws":
+    discard switchBuilder
+      .withTransport(
+        proc(upgr: Upgrade, privateKey: PrivateKey): Transport =
+          WsTransport.new(upgr)
+      )
+      .withAddress(MultiAddress.init("/ip4/" & ip & "/tcp/0/ws").tryGet())
+  else:
+    doAssert false
 
-  case secureChannel:
-    of "noise": discard switchBuilder.withNoise()
-    else: doAssert false
+  case secureChannel
+  of "noise":
+    discard switchBuilder.withNoise()
 
-  case muxer:
-    of "yamux": discard switchBuilder.withYamux()
-    of "mplex": discard switchBuilder.withMplex()
-    else: doAssert false
+  case muxer
+  of "yamux":
+    discard switchBuilder.withYamux()
+  of "mplex":
+    discard switchBuilder.withMplex()
 
   let
     rng = libp2p.newRng()
@@ -65,14 +79,20 @@ proc main {.async.} =
     pingProtocol = Ping.new(rng = rng)
   switch.mount(pingProtocol)
   await switch.start()
-  defer: await switch.stop()
+  defer:
+    await switch.stop()
 
   if not isDialer:
     discard redisClient.rPush("listenerAddr", $switch.peerInfo.fullAddrs.tryGet()[0])
     await sleepAsync(100.hours) # will get cancelled
   else:
+    let listenerAddr =
+      try:
+        redisClient.bLPop(@["listenerAddr"], testTimeout.seconds.int)[1]
+      except Exception as e:
+        raise newException(CatchableError, e.msg)
     let
-      remoteAddr = MultiAddress.init(redisClient.bLPop(@["listenerAddr"], testTimeout.seconds.int)[1]).tryGet()
+      remoteAddr = MultiAddress.init(listenerAddr).tryGet()
       dialingStart = Moment.now()
       remotePeerId = await switch.connect(remoteAddr)
       stream = await switch.dial(remotePeerId, PingCodec)
@@ -83,10 +103,21 @@ proc main {.async.} =
     echo Json.encode(
       ResultJson(
         handshakePlusOneRTTMillis: float(totalDelay.milliseconds),
-        pingRTTMilllis: float(pingDelay.milliseconds)
+        pingRTTMilllis: float(pingDelay.milliseconds),
       )
     )
-    quit(0)
 
-discard waitFor(main().withTimeout(testTimeout))
-quit(1)
+try:
+  proc mainAsync(): Future[string] {.async.} =
+    # mainAsync wraps main and returns some value, as otherwise
+    # 'waitFor(fut)' has no type (or is ambiguous)
+    await main()
+    return "done"
+
+  discard waitFor(mainAsync().wait(testTimeout))
+except AsyncTimeoutError:
+  error "Program execution timed out."
+  quit(1)
+except CatchableError as e:
+  error "Unexpected error", description = e.msg
+  quit(1)

@@ -8,10 +8,8 @@ use slog::{error, info, Logger};
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 use tokio::time::sleep;
-
 use crate::connector;
 use crate::script_instruction::{ExperimentParams, NodeID, ScriptInstruction};
-
 // Calculate message ID based on content (equivalent to Go's CalcID)
 pub fn format_message_id(data: &[u8]) -> String {
     if data.len() >= 8 {
@@ -73,7 +71,6 @@ impl ScriptedNode {
             topic
         }
     }
-
     pub async fn run_instruction(
         &mut self,
         instruction: ScriptInstruction,
@@ -110,17 +107,14 @@ impl ScriptedNode {
             ScriptInstruction::WaitUntil { elapsed_seconds } => {
                 let target_time = self.start_time + Duration::from_secs(elapsed_seconds);
                 let now = Instant::now();
-
                 if now < target_time {
                     let wait_time = target_time.duration_since(now);
                     info!(
                         self.stderr_logger,
                         "Waiting {:?} (until elapsed: {}s)", wait_time, elapsed_seconds
                     );
-
                     // Create a timeout future
                     let mut timeout = Box::pin(sleep(wait_time));
-
                     // Process events while waiting for the timeout
                     loop {
                         tokio::select! {
@@ -188,12 +182,9 @@ impl ScriptedNode {
                 topic_id,
             } => {
                 let topic = self.get_topic(&topic_id);
-
                 info!(self.stderr_logger, "Publishing message {}", message_id);
-
                 let mut msg = vec![0u8; message_size_bytes];
                 BigEndian::write_u64(&mut msg, message_id);
-
                 match self
                     .swarm
                     .behaviour_mut()
@@ -214,7 +205,6 @@ impl ScriptedNode {
             }
             ScriptInstruction::SubscribeToTopic { topic_id } => {
                 let topic = self.get_topic(&topic_id);
-
                 match self.swarm.behaviour_mut().gossipsub.subscribe(&topic) {
                     Ok(_) => {
                         info!(self.stderr_logger, "Subscribed to topic {}", topic_id);
@@ -249,13 +239,11 @@ impl ScriptedNode {
         Ok(())
     }
 }
-
 #[derive(NetworkBehaviour)]
 pub struct MyBehavior {
     pub gossipsub: gossipsub::Behaviour,
     pub identify: identify::Behaviour,
 }
-
 pub async fn run_experiment(
     start_time: Instant,
     stderr_logger: Logger,
@@ -276,7 +264,6 @@ pub async fn run_experiment(
     }
     Ok(())
 }
-
 // Extract InitGossipSub parameters from script instructions
 pub fn extract_gossipsub_params(
     script: &[ScriptInstruction],
