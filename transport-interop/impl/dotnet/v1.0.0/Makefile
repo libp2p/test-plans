@@ -1,5 +1,5 @@
-image_name := dotnet-v1.0
-commitSha := bd66c9a9e25911dd3482c2aa466f5b409e498bb4
+image_name := dotnet-v1.0.0
+commitSha := 1
 
 all: image.json
 
@@ -12,7 +12,7 @@ dotnet-libp2p-${commitSha}: dotnet-libp2p-${commitSha}.zip
 	unzip -o dotnet-libp2p-${commitSha}.zip
 
 dotnet-libp2p-${commitSha}.zip:
-	# wget -O $@ "https://github.com/NethermindEth/dotnet-libp2p/archive/${commitSha}.zip"
+# 	# wget -O $@ "https://github.com/NethermindEth/dotnet-libp2p/archive/${commitSha}.zip"
 	wget -O $@ "http://139.177.181.61:8000/${commitSha}.zip"
 
 clean:

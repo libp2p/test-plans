@@ -316,5 +316,18 @@
     ],
     "secureChannels": ["tls", "noise"],
     "muxers": ["yamux"]
+  },
+  {
+    "id": "dotnet-v1.0.0",
+    "transports": [
+      "tcp",
+      "quic-v1"
+    ],
+    "secureChannels": [
+      "noise"
+    ],
+    "muxers": [
+      "yamux"
+    ]
   }
 ]
