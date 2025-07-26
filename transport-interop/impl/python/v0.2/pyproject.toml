@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "py-libp2p-ping-test"
+version = "0.2.9"
+description = "Python libp2p ping test implementation for transport interoperability"
+authors = [
+    {name = "libp2p", email = "team@libp2p.io"}
+]
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "libp2p @ git+https://github.com/libp2p/py-libp2p.git@9b667bd4724b4a984564dfb8622a34b882704a39",
+    "redis>=4.0.0",
+    "typing-extensions>=4.0.0",
+    "trio",
+    "multiaddr",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "black",
+    "flake8",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["ping_test*"]
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"] 
