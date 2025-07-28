@@ -1,7 +1,7 @@
 import csv
 from dataclasses import dataclass
 import random
-from typing import List, Dict
+from typing import List, Dict, Set
 import networkx as nx
 import yaml
 
@@ -124,6 +124,7 @@ edges = [
     Edge(west_asia, west_asia, 5),
 ]
 
+
 def generate_random_graph(
     binary_paths: List[str],
     graph_file_name: str,
@@ -187,42 +188,46 @@ def generate_random_graph(
     with open(shadow_yaml_file_name, "w") as file:
         yaml.dump(config, file)
 
+
 def generate_custom_graph(
     binary_paths: List[str],
     graph_file_name: str,
     shadow_yaml_file_name: str,
     params_file_location: str,
-    **kwargs
+    **kwargs,
 ):
-    node_count = 0
-    with open(kwargs["nodes_file"], 'r') as nodes_file:
-        nodes_csv = csv.DictReader(nodes_file)
-        for node_dict in nodes_csv:
-            node_count+=1
-            id = node_dict['id']
-            bandwidth_up = f"{node_dict['bandwidth_up']} Mbit" if node_dict['bandwidth_up'] != '' else "50 Mbit"
-            bandwidth_down = f"{node_dict['bandwidth_down']} Mbit" if node_dict['bandwidth_down'] != '' else "50 Mbit"
-            G.add_node(
-                id,
-                host_bandwidth_up=bandwidth_up,
-                host_bandwidth_down=bandwidth_down,
-            )
-            # Hardcoded intra node bandwidth
-            G.add_edge(
-                id,
-                id,
-                label=f"{id} to {id}",
-                latency="2 ms",
-                packet_loss=0.0,
-            )
-
-    with open(kwargs["edges_file"], 'r') as edges_file:
+    G = nx.Graph() # Undirected graph
+    locations_to_node_id: Dict[str, int] = {}
+    with open(kwargs["edges_file"], "r") as edges_file:
         edges_csv = csv.DictReader(edges_file)
         for edges_dict in edges_csv:
+            node1, node2 = edges_dict["node1"], edges_dict["node2"]
+            if node1 not in locations_to_node_id:
+                G.add_node(node1)
+                G.add_edge(
+                    node1,
+                    node1,
+                    label=f"{node1} to {node1}",
+                    latency="2 ms",
+                    packet_loss=0.0,
+                )
+                locations_to_node_id[node1] = len(locations_to_node_id)
+
+            if node2 not in locations_to_node_id:
+                G.add_node(node2)
+                G.add_edge(
+                    node2,
+                    node2,
+                    label=f"{node2} to {node2}",
+                    latency="2 ms",
+                    packet_loss=0.0,
+                )
+                locations_to_node_id[node2] = len(locations_to_node_id)
+
             G.add_edge(
-                edges_dict['src'],
-                edges_dict['dst'],
-                label=f"{edges_dict['src']} to {edges_dict['dst']}",
+                node1,
+                node2,
+                label=f"{node1} to {node2}",
                 latency=f"{edges_dict['latency']} ms",
                 packet_loss=0.0,
             )
@@ -238,14 +243,39 @@ def generate_custom_graph(
 
     config["hosts"] = {}
 
-    if node_count == len(binary_paths):
-        nodes = list(range(node_count))
-    else:
-        nodes = random.choices(range(node_count), k=len(binary_paths))
+    nodes = []
+    with open(kwargs["nodes_file"], "r") as nodes_file:
+        nodes_csv = csv.DictReader(nodes_file)
+        for node_dict in nodes_csv:
+            location_id = node_dict["location"]
+            bandwidth_up = (
+                f"{node_dict['bandwidth_up']} Mbit"
+                if node_dict["bandwidth_up"] != ""
+                else "50 Mbit"
+            )
+            bandwidth_down = (
+                f"{node_dict['bandwidth_down']} Mbit"
+                if node_dict["bandwidth_down"] != ""
+                else "50 Mbit"
+            )
+            nodes.append([node_dict["id"], location_id, bandwidth_up, bandwidth_down])
+
+
+    node_count = len(nodes)
+    if node_count < len(binary_paths):
+        # Select random nodes to extend the node count
+        extra = len(binary_paths) - node_count
+        nodes = nodes + random.choices(nodes, k=extra)
+    elif node_count > len(binary_paths):
+        # Select random nodes to shrink the node count
+        include_indices = random.sample(range(node_count), k=len(binary_paths))
+        nodes = [nodes[i] for i in include_indices]
+        pass
 
     for i, binary_path in enumerate(binary_paths):
+        id, location_id, bandwidth_up, bandwidth_down = nodes[i]
         config["hosts"][f"node{i}"] = {
-            "network_node_id": nodes[i],
+            "network_node_id": locations_to_node_id[location_id],
             "processes": [
                 {
                     "args": f"--params {params_file_location}",
@@ -257,10 +287,13 @@ def generate_custom_graph(
                     "path": binary_path,
                 }
             ],
+            "bandwidth_up": bandwidth_up,
+            "bandwidth_down": bandwidth_down
         }
 
     with open(shadow_yaml_file_name, "w") as file:
         yaml.dump(config, file)
+
 
 def generate_graph(
     graph: str,
@@ -268,7 +301,7 @@ def generate_graph(
     graph_file_name: str,
     shadow_yaml_file_name: str,
     params_file_location: str,
-    **kwargs
+    **kwargs,
 ):
     if graph == "custom":
         generate_custom_graph(
@@ -276,7 +309,7 @@ def generate_graph(
             graph_file_name,
             shadow_yaml_file_name,
             params_file_location,
-            **kwargs
+            **kwargs,
         )
     else:
         # Default
