@@ -6,6 +6,7 @@ all: perf
 
 perf:
 	$(DOCKER_RUN_LIBP2P) npm ci
+	$(DOCKER_RUN_LIBP2P) npm run build
 	$(DOCKER_RUN) npm ci
 
 clean:
