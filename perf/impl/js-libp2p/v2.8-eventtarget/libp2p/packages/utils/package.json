@@ -1,0 +1,82 @@
+{
+  "name": "@libp2p/utils",
+  "version": "6.7.1",
+  "description": "Package to aggregate shared logic and dependencies for the libp2p ecosystem",
+  "license": "Apache-2.0 OR MIT",
+  "homepage": "https://github.com/libp2p/js-libp2p/tree/main/packages/utils#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/libp2p/js-libp2p.git"
+  },
+  "bugs": {
+    "url": "https://github.com/libp2p/js-libp2p/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "type": "module",
+  "types": "./dist/src/index.d.ts",
+  "files": [
+    "src",
+    "dist",
+    "!dist/test",
+    "!**/*.tsbuildinfo"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/src/index.js"
+    }
+  },
+  "scripts": {
+    "clean": "aegir clean",
+    "lint": "aegir lint",
+    "dep-check": "aegir dep-check",
+    "doc-check": "aegir doc-check",
+    "build": "aegir build",
+    "test": "aegir test",
+    "test:chrome": "aegir test -t browser --cov",
+    "test:chrome-webworker": "aegir test -t webworker",
+    "test:firefox": "aegir test -t browser -- --browser firefox",
+    "test:firefox-webworker": "aegir test -t webworker -- --browser firefox",
+    "test:node": "aegir test -t node --cov",
+    "test:electron-main": "aegir test -t electron-main"
+  },
+  "dependencies": {
+    "@types/netmask": "^2.0.5",
+    "@chainsafe/is-ip": "^2.1.0",
+    "@chainsafe/netmask": "^2.0.0",
+    "@libp2p/crypto": "^5.1.7",
+    "@libp2p/interface": "^2.10.5",
+    "@libp2p/logger": "^5.1.21",
+    "@multiformats/multiaddr": "^12.4.4",
+    "@sindresorhus/fnv1a": "^3.1.0",
+    "any-signal": "^4.1.1",
+    "delay": "^6.0.0",
+    "is-loopback-addr": "^2.0.2",
+    "is-plain-obj": "^4.1.0",
+    "it-length-prefixed": "^10.0.1",
+    "it-pipe": "^3.0.1",
+    "it-pushable": "^3.2.3",
+    "it-stream-types": "^2.0.2",
+    "main-event": "^1.0.1",
+    "netmask": "^2.0.2",
+    "p-defer": "^4.0.1",
+    "p-event": "^6.0.1",
+    "race-event": "^1.6.0",
+    "race-signal": "^1.1.3",
+    "uint8-varint": "^2.0.4",
+    "uint8arraylist": "^2.4.8",
+    "uint8arrays": "^5.1.0"
+  },
+  "browser": {
+    "./dist/src/get-thin-waist-addresses.js": "./dist/src/get-thin-waist-addresses.browser.js",
+    "./dist/src/socket-writer.js": "./dist/src/socket-writer.browser.js"
+  },
+  "react-native": {
+    "./dist/src/get-thin-waist-addresses.js": "./dist/src/get-thin-waist-addresses.js",
+    "./dist/src/socket-writer.js": "./dist/src/socket-writer.js"
+  },
+  "sideEffects": false
+}
