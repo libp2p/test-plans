@@ -4,8 +4,7 @@ DOCKER_RUN := docker run --rm -v "$(shell pwd)":/usr/src/myapp -w /usr/src/myapp
 all: perf
 
 perf:
-  $(DOCKER_RUN) cd libp2p/packages && npm ci
-	$(DOCKER_RUN) npm ci
+  $(DOCKER_RUN) cd libp2p/packages && npm ci && cd .. && npm ci
 
 clean:
 	rm -rf node_modules
