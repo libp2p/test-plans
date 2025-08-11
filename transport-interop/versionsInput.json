@@ -318,10 +318,9 @@
     "muxers": ["yamux"]
   },
   {
-    "id": "dotnet-v1.0.0",
+    "id": "dotnet-v1.0",
     "transports": [
-      "tcp",
-      "quic-v1"
+      "tcp"
     ],
     "secureChannels": [
       "noise"
