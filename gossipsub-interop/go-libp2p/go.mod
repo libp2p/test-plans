@@ -110,4 +110,4 @@ require (
 	lukechampine.com/blake3 v1.4.0 // indirect
 )
 
-replace github.com/libp2p/go-libp2p-pubsub => github.com/libp2p/go-libp2p-pubsub v0.14.3-0.20250812213046-996ce03c32a1
+replace github.com/libp2p/go-libp2p-pubsub => github.com/libp2p/go-libp2p-pubsub v0.14.3-0.20250812213611-97ebfb90350a
