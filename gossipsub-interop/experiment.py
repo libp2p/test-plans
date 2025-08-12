@@ -129,7 +129,7 @@ def scenario(scenario_name: str, node_count: int, disable_gossip: bool) -> Exper
             num_messages = 1
             instructions.extend(
                 random_publish_every_12s(
-                    node_count, num_messages, message_size, topic)
+                    node_count, num_messages, message_size, [topic])
             )
         case _:
             raise ValueError(f"Unknown scenario name: {scenario_name}")
