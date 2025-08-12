@@ -43,9 +43,7 @@ func pubsubOptions(slogger *slog.Logger, params pubsub.GossipSubParams) []pubsub
 		pubsub.WithGossipSubParams(params),
 		pubsub.WithEventTracer(&tr),
 		pubsub.WithRawTracer(&rawTr),
-		pubsub.WithPeerExtensions(pubsub.PeerExtensions{
-			TestExtension: true,
-		}),
+		pubsub.WithTestExtension(),
 	}
 
 	return psOpts

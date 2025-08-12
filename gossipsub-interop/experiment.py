@@ -110,6 +110,27 @@ def scenario(scenario_name: str, node_count: int, disable_gossip: bool) -> Exper
                 random_publish_every_12s(
                     node_count, num_messages, message_size, [topic_a, topic_b]))
 
+        case "one-msg":
+            gs_params = GossipSubParams()
+            if disable_gossip:
+                gs_params.Dlazy = 0
+                gs_params.GossipFactor = 0
+            instructions.extend(spread_heartbeat_delay(
+                node_count, gs_params))
+
+            topic = "some-topic"
+            number_of_conns_per_node = 20
+            if number_of_conns_per_node >= node_count:
+                number_of_conns_per_node = node_count - 1
+            instructions.extend(
+                random_network_mesh(node_count, number_of_conns_per_node)
+            )
+            message_size = 1024
+            num_messages = 1
+            instructions.extend(
+                random_publish_every_12s(
+                    node_count, num_messages, message_size, topic)
+            )
         case _:
             raise ValueError(f"Unknown scenario name: {scenario_name}")
 

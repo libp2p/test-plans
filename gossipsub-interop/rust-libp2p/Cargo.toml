@@ -14,7 +14,10 @@ libp2p = { version = "0.56.0", features = [
     "websocket",
     "identify",
     "yamux",
-], git = "https://github.com/marcopolo/rust-libp2p.git", rev = "aa7946f1410da9002ffacd6e6052afd423beff90" }
+], git = "https://github.com/jxs/rust-libp2p.git", rev = "9cb66d80ee4bcfb93be53decf510a64bd93d1e91" }
+libp2p-gossipsub = { version = "0.50.0", features = [
+"test-extension"
+], git = "https://github.com/jxs/rust-libp2p.git", rev = "9cb66d80ee4bcfb93be53decf510a64bd93d1e91" }
 tokio = { version = "1.33.0", features = ["full"] }
 futures = "0.3.28"
 tracing = "0.1.37"

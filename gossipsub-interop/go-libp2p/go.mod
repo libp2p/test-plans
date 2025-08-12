@@ -4,7 +4,7 @@ go 1.24.1
 
 require (
 	github.com/libp2p/go-libp2p v0.41.1
-	github.com/libp2p/go-libp2p-pubsub v0.13.1
+	github.com/libp2p/go-libp2p-pubsub v0.14.2
 )
 
 require (
@@ -110,4 +110,4 @@ require (
 	lukechampine.com/blake3 v1.4.0 // indirect
 )
 
-replace github.com/libp2p/go-libp2p-pubsub => github.com/marcopolo/go-libp2p-pubsub v0.13.2-0.20250709215224-5a311b10ba1d
+replace github.com/libp2p/go-libp2p-pubsub => github.com/libp2p/go-libp2p-pubsub v0.14.3-0.20250804221917-6a50510169e7

@@ -76,6 +76,14 @@ After implementing it, make sure to add build commands in the Makefile's `binari
 
 Finally, add it to the `composition` function in `experiment.py`.
 
+## Testing Gossipsub Extensions
+
+
+```
+uv run run.py --nodes go-libp2p/gossipsub-bin rust-libp2p/target/debug/rust-libp2p-gossip --scenario "one-msg"
+```
+
+
 ## Future work (contributions welcome)
 
 - Add more scenarios.

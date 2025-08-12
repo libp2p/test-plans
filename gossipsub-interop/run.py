@@ -22,7 +22,7 @@ def main():
         help="If set, will generate files but not run Shadow",
         default=False,
     )
-    parser.add_argument("--node_count", type=int, required=True)
+    parser.add_argument("--node_count", type=int, required=False, default=10)
     parser.add_argument("--disable_gossip", type=bool, required=False)
     parser.add_argument("--seed", type=int, required=False, default=1)
     parser.add_argument(
@@ -30,8 +30,23 @@ def main():
     )
     parser.add_argument("--composition", type=str,
                         required=False, default="all-go")
+    parser.add_argument("--nodes", type=str, nargs='+', help="Direct list of binaries for each node. Sets the node count to the length of the list.")
     parser.add_argument("--output_dir", type=str, required=False)
     args = parser.parse_args()
+
+    if args.nodes is not None:
+        binary_paths = args.nodes
+        args.node_count = len(args.nodes)
+        composition_name = "custom"
+    else:
+        binaries = experiment.composition(args.composition)
+        # Define the binaries we are running
+        binary_paths = random.choices(
+            [b.path for b in binaries],
+            weights=[b.percent_of_nodes for b in binaries],
+            k=args.node_count,
+        )
+        composition_name = args.composition
 
     if args.output_dir is None:
         try:
@@ -45,11 +60,10 @@ def main():
 
         timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
         args.output_dir = f"{args.scenario}-{args.node_count}-{
-            args.composition}-{args.seed}-{timestamp}-{git_describe}.data"
+            composition_name}-{args.seed}-{timestamp}-{git_describe}.data"
 
     random.seed(args.seed)
 
-    binaries = experiment.composition(args.composition)
     experiment_params = experiment.scenario(
         args.scenario, args.node_count, args.disable_gossip)
 
@@ -61,12 +75,6 @@ def main():
         ]
         json.dump(d, f)
 
-    # Define the binaries we are running
-    binary_paths = random.choices(
-        [b.path for b in binaries],
-        weights=[b.percent_of_nodes for b in binaries],
-        k=args.node_count,
-    )
 
     # Generate the network graph and the Shadow config for the binaries
     generate_graph(
@@ -93,6 +101,10 @@ def main():
     # Analyse message deliveries. Skip the first 4 as warmup messages
     analyse_message_deliveries(args.output_dir, f"{args.output_dir}/plots", 4)
 
+    link_path = os.path.join(os.getcwd(), "latest-sim")
+    if os.path.exists(link_path) or os.path.islink(link_path):
+        os.remove(link_path)
+    os.symlink(args.output_dir, link_path)
 
 if __name__ == "__main__":
     main()
