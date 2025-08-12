@@ -80,7 +80,7 @@ Finally, add it to the `composition` function in `experiment.py`.
 
 
 ```
-uv run run.py --nodes go-libp2p/gossipsub-bin rust-libp2p/target/debug/rust-libp2p-gossip --scenario "one-msg"
+make go-rust-extensions-interop
 ```
 
 
