@@ -82,14 +82,11 @@ export class Noise implements INoiseConnection {
    */
   async secureOutbound <Stream extends MessageStream = MultiaddrConnection> (connection: Stream, options?: SecureConnectionOptions): Promise<SecuredConnection<INoiseExtensions>> {
     const log = connection.log?.newScope('noise') ?? this.log
-    const wrappedConnection = lpStream(
-      connection,
-      {
-        lengthEncoder: uint16BEEncode,
-        lengthDecoder: uint16BEDecode,
-        maxDataLength: NOISE_MSG_MAX_LENGTH_BYTES
-      }
-    )
+    const wrappedConnection = lpStream(connection, {
+      lengthEncoder: uint16BEEncode,
+      lengthDecoder: uint16BEDecode,
+      maxDataLength: NOISE_MSG_MAX_LENGTH_BYTES
+    })
 
     const handshake = await this.performHandshakeInitiator(
       wrappedConnection,
@@ -101,7 +98,7 @@ export class Noise implements INoiseConnection {
     const publicKey = publicKeyFromProtobuf(handshake.payload.identityKey)
 
     return {
-      conn: toMessageStream(wrappedConnection.unwrap(), handshake, this.metrics),
+      connection: toMessageStream(wrappedConnection.unwrap(), handshake, this.metrics),
       remoteExtensions: handshake.payload.extensions,
       remotePeer: peerIdFromPublicKey(publicKey),
       streamMuxer: options?.skipStreamMuxerNegotiation === true ? undefined : this.getStreamMuxer(handshake.payload.extensions?.streamMuxers)
@@ -140,14 +137,11 @@ export class Noise implements INoiseConnection {
    */
   async secureInbound <Stream extends MessageStream = MultiaddrConnection> (connection: Stream, options?: SecureConnectionOptions): Promise<SecuredConnection<INoiseExtensions>> {
     const log = connection.log?.newScope('noise') ?? this.log
-    const wrappedConnection = lpStream(
-      connection,
-      {
-        lengthEncoder: uint16BEEncode,
-        lengthDecoder: uint16BEDecode,
-        maxDataLength: NOISE_MSG_MAX_LENGTH_BYTES
-      }
-    )
+    const wrappedConnection = lpStream(connection, {
+      lengthEncoder: uint16BEEncode,
+      lengthDecoder: uint16BEDecode,
+      maxDataLength: NOISE_MSG_MAX_LENGTH_BYTES
+    })
 
     const handshake = await this.performHandshakeResponder(
       wrappedConnection,
@@ -159,7 +153,7 @@ export class Noise implements INoiseConnection {
     const publicKey = publicKeyFromProtobuf(handshake.payload.identityKey)
 
     return {
-      conn: toMessageStream(wrappedConnection.unwrap(), handshake, this.metrics),
+      connection: toMessageStream(wrappedConnection.unwrap(), handshake, this.metrics),
       remoteExtensions: handshake.payload.extensions,
       remotePeer: peerIdFromPublicKey(publicKey),
       streamMuxer: options?.skipStreamMuxerNegotiation === true ? undefined : this.getStreamMuxer(handshake.payload.extensions?.streamMuxers)

@@ -68,19 +68,20 @@ export function getSignaturePayload (publicKey: Uint8Array | Uint8ArrayList): Ui
 }
 
 class EncryptedMessageStream extends AbstractMessageStream {
-  private connection: MessageStream
+  private stream: MessageStream
   private handshake: HandshakeResult
   private metrics?: MetricsRegistry
   private decoder: LengthPrefixedDecoder
 
-  constructor (connection: MessageStream, handshake: HandshakeResult, metrics?: MetricsRegistry) {
+  constructor (stream: MessageStream, handshake: HandshakeResult, metrics?: MetricsRegistry) {
     super({
-      log: connection.log,
-      inactivityTimeout: connection.inactivityTimeout,
-      maxPauseBufferLength: connection.maxPauseBufferLength
+      log: stream.log,
+      inactivityTimeout: stream.inactivityTimeout,
+      maxPauseBufferLength: stream.maxPauseBufferLength,
+      direction: stream.direction
     })
 
-    this.connection = connection
+    this.stream = stream
     this.handshake = handshake
     this.metrics = metrics
     this.decoder = new LengthPrefixedDecoder({
@@ -88,7 +89,7 @@ class EncryptedMessageStream extends AbstractMessageStream {
       encodingLength: () => 2
     })
 
-    this.connection.addEventListener('message', (evt) => {
+    this.stream.addEventListener('message', (evt) => {
       try {
         for (const buf of this.decoder.decode(evt.data)) {
           const decrypted = this.decrypt(buf)
@@ -99,34 +100,38 @@ class EncryptedMessageStream extends AbstractMessageStream {
       }
     })
 
-    this.connection.addEventListener('close', (evt) => {
+    this.stream.addEventListener('close', (evt) => {
       if (evt.error != null) {
-        this.abort(evt.error)
+        if (evt.local === true) {
+          this.abort(evt.error)
+        } else {
+          this.onRemoteReset()
+        }
       } else {
-        this.onRemoteClose()
+        this.onClosed()
       }
     })
 
-    this.connection.addEventListener('drain', () => {
+    this.stream.addEventListener('drain', () => {
       this.safeDispatchEvent('drain')
     })
 
-    this.connection.addEventListener('remoteClosedRead', () => {
-      this.onRemoteClosedRead()
+    this.stream.addEventListener('remoteCloseWrite', () => {
+      this.onRemoteCloseWrite()
     })
 
-    this.connection.addEventListener('remoteClosedWrite', () => {
-      this.onRemoteClosedWrite()
+    this.stream.addEventListener('remoteCloseRead', () => {
+      this.onRemoteCloseRead()
     })
   }
 
   encrypt (chunk: Uint8Array | Uint8ArrayList): Uint8ArrayList {
     const output = new Uint8ArrayList()
 
-    for (let i = 0; i < chunk.length; i += NOISE_MSG_MAX_LENGTH_BYTES_WITHOUT_TAG) {
+    for (let i = 0; i < chunk.byteLength; i += NOISE_MSG_MAX_LENGTH_BYTES_WITHOUT_TAG) {
       let end = i + NOISE_MSG_MAX_LENGTH_BYTES_WITHOUT_TAG
-      if (end > chunk.length) {
-        end = chunk.length
+      if (end > chunk.byteLength) {
+        end = chunk.byteLength
       }
 
       let data: Uint8Array | Uint8ArrayList
@@ -149,10 +154,10 @@ class EncryptedMessageStream extends AbstractMessageStream {
   decrypt (chunk: Uint8Array | Uint8ArrayList): Uint8ArrayList {
     const output = new Uint8ArrayList()
 
-    for (let i = 0; i < chunk.length; i += NOISE_MSG_MAX_LENGTH_BYTES) {
+    for (let i = 0; i < chunk.byteLength; i += NOISE_MSG_MAX_LENGTH_BYTES) {
       let end = i + NOISE_MSG_MAX_LENGTH_BYTES
-      if (end > chunk.length) {
-        end = chunk.length
+      if (end > chunk.byteLength) {
+        end = chunk.byteLength
       }
 
       if (end - CHACHA_TAG_LENGTH < i) {
@@ -187,29 +192,29 @@ class EncryptedMessageStream extends AbstractMessageStream {
   }
 
   sendPause (): void {
-    this.connection.pause()
+    this.stream.pause()
   }
 
   sendResume (): void {
-    this.connection.resume()
+    this.stream.resume()
   }
 
   async sendCloseWrite (options?: AbortOptions): Promise<void> {
-    return this.connection.closeWrite(options)
+    return this.stream.closeWrite(options)
   }
 
   async sendCloseRead (options?: AbortOptions): Promise<void> {
-    return this.connection.closeRead(options)
+    return this.stream.closeRead(options)
   }
 
   sendReset (err: Error): void {
-    this.connection.abort(err)
+    this.stream.abort(err)
   }
 
-  sendData (data: Uint8Array | Uint8ArrayList): SendResult {
+  sendData (data: Uint8ArrayList): SendResult {
     return {
       sentBytes: data.byteLength,
-      canSendMore: this.connection.send(this.encrypt(data))
+      canSendMore: this.stream.send(this.encrypt(data))
     }
   }
 }

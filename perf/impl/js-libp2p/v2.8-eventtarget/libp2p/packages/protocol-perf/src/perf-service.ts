@@ -181,7 +181,7 @@ export class Perf implements Startable, PerfInterface {
 
       log('upload complete after %d ms', Date.now() - uploadStart)
 
-      await stream.closeWrite()
+      await stream.closeWrite(options)
 
       // Read the received bytes
       let lastAmountOfBytesReceived = 0

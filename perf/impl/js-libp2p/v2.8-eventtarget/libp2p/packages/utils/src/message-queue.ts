@@ -87,4 +87,8 @@ export class MessageQueue<Messages> extends TypedEventEmitter<Messages & Message
   onIdle (): Promise<void> {
     return this.queue.onIdle()
   }
+
+  size (): number {
+    return this.queue.size
+  }
 }

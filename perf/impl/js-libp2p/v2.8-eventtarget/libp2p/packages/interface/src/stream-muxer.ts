@@ -1,4 +1,5 @@
-import type { Stream, MultiaddrConnection, TypedEventTarget } from './index.js'
+import type { Uint8ArrayList } from 'uint8arraylist'
+import type { Stream, MultiaddrConnection, TypedEventTarget, MessageStream } from './index.js'
 import type { AbortOptions } from '@multiformats/multiaddr'
 
 export interface StreamMuxerFactory<Muxer extends StreamMuxer = StreamMuxer> {
@@ -10,7 +11,7 @@ export interface StreamMuxerFactory<Muxer extends StreamMuxer = StreamMuxer> {
   /**
    * Creates a new stream muxer to be used with a new connection
    */
-  createStreamMuxer(maConn: MultiaddrConnection): Muxer
+  createStreamMuxer(maConn: MessageStream): Muxer
 }
 
 export interface StreamMuxerEvents<MuxedStream extends Stream = Stream> {

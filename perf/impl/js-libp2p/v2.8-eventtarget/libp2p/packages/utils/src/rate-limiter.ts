@@ -214,9 +214,7 @@ export class MemoryStorage {
         this.storage.delete(key)
       }, durationMs)
 
-      // @ts-expect-error node api
       if (record.timeoutId.unref != null) {
-        // @ts-expect-error node api
         record.timeoutId.unref()
       }
     }

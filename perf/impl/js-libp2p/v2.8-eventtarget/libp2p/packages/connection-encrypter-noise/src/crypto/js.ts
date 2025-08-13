@@ -1,7 +1,7 @@
 import { chacha20poly1305 } from '@noble/ciphers/chacha'
 import { x25519 } from '@noble/curves/ed25519'
 import { extract, expand } from '@noble/hashes/hkdf'
-import { sha256 } from '@noble/hashes/sha256'
+import { sha256 } from '@noble/hashes/sha2'
 import type { ICryptoInterface } from '../crypto.js'
 import type { KeyPair } from '../types.js'
 import type { Uint8ArrayList } from 'uint8arraylist'
@@ -24,7 +24,7 @@ export const pureJsCrypto: ICryptoInterface = {
   },
 
   generateX25519KeyPair (): KeyPair {
-    const secretKey = x25519.utils.randomPrivateKey()
+    const secretKey = x25519.utils.randomSecretKey()
     const publicKey = x25519.getPublicKey(secretKey)
 
     return {

@@ -6,7 +6,7 @@ import { AbstractMultiaddrConnection } from './abstract-multiaddr-connection.ts'
 import { MessageQueue } from './message-queue.ts'
 import type { SendResult } from './abstract-message-stream.ts'
 import type { MessageQueueInit } from './message-queue.ts'
-import type { AbortOptions, Logger, MultiaddrConnection, StreamDirection, TypedEventTarget } from '@libp2p/interface'
+import type { AbortOptions, Logger, MultiaddrConnection, MessageStreamDirection, TypedEventTarget } from '@libp2p/interface'
 import type { Multiaddr } from '@multiformats/multiaddr'
 import type { Uint8ArrayList } from 'uint8arraylist'
 
@@ -21,7 +21,7 @@ interface MockMulitaddrConnectionMessages {
 interface MockMulitaddrConnectionInit {
   id: string,
   log: Logger,
-  direction: StreamDirection
+  direction: MessageStreamDirection
   local: MessageQueue<MockMulitaddrConnectionMessages>
   remote: TypedEventTarget<MockMulitaddrConnectionMessages>
   remoteAddr?: Multiaddr
@@ -61,7 +61,7 @@ class MockMultiaddrConnection extends AbstractMultiaddrConnection {
       this.onRemoteReset()
     })
     this.remote.addEventListener('close', (evt) => {
-      this.onRemoteClose()
+      this.onRemoteCloseWrite()
     })
     this.remote.addEventListener('pause', (evt) => {
       this.local.pause()
@@ -71,7 +71,7 @@ class MockMultiaddrConnection extends AbstractMultiaddrConnection {
     })
   }
 
-  sendData (data: Uint8Array | Uint8ArrayList): SendResult {
+  sendData (data: Uint8ArrayList): SendResult {
     const canSendMore = this.local.send(new StreamMessageEvent(data))
 
     return {

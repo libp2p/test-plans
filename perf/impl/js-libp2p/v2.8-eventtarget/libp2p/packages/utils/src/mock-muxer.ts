@@ -8,7 +8,7 @@ import { AbstractStream } from './abstract-stream.ts'
 import { Queue } from './queue/index.js'
 import type { SendResult } from './abstract-message-stream.ts'
 import type { AbstractStreamInit } from './abstract-stream.ts'
-import type { AbortOptions, StreamDirection, CreateStreamOptions, StreamMuxerFactory, StreamMuxer, MultiaddrConnection } from '@libp2p/interface'
+import type { AbortOptions, MessageStreamDirection, CreateStreamOptions, StreamMuxerFactory, StreamMuxer, MultiaddrConnection } from '@libp2p/interface'
 import type { Pushable } from 'it-pushable'
 import type { SupportedEncodings } from 'uint8arrays/from-string'
 
@@ -81,7 +81,7 @@ class MockMuxedStream extends AbstractStream {
     }
   }
 
-  sendData (data: Uint8Array): SendResult {
+  sendData (data: Uint8ArrayList): SendResult {
     const canSendMore = this.sendMessage({
       id: this.id,
       type: 'data',
@@ -232,9 +232,9 @@ class MockMuxer extends AbstractStreamMuxer<MockMuxedStream> {
     } else if (message.type === 'reset') {
       stream.onRemoteReset()
     } else if (message.type === 'closeWrite') {
-      stream.onRemoteClosedWrite()
+      stream.onRemoteCloseWrite()
     } else if (message.type === 'closeRead') {
-      stream.onRemoteClosedRead()
+      stream.onRemoteCloseRead()
     } else if (message.type === 'pause') {
       stream.onRemotePaused()
     } else if (message.type === 'resume') {
@@ -246,7 +246,7 @@ class MockMuxer extends AbstractStreamMuxer<MockMuxedStream> {
     return this._createStream(`${streams++}`, 'outbound', options)
   }
 
-  _createStream (id: string, direction: StreamDirection, options: CreateStreamOptions): MockMuxedStream {
+  _createStream (id: string, direction: MessageStreamDirection, options: CreateStreamOptions): MockMuxedStream {
     this.log('createStream %s %s', direction, id)
 
     return new MockMuxedStream({
