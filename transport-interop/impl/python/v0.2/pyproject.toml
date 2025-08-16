@@ -12,29 +12,13 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [
-    "libp2p @ git+https://github.com/libp2p/py-libp2p.git@9b667bd4724b4a984564dfb8622a34b882704a39",
+    "libp2p @ git+https://github.com/libp2p/py-libp2p.git@90f143cd8837ab41181d860e979054813185bc06",
     "redis>=4.0.0",
     "typing-extensions>=4.0.0",
-    "trio",
-    "multiaddr",
-]
-
-[project.optional-dependencies]
-dev = [
-    "pytest",
-    "pytest-asyncio",
-    "black",
-    "flake8",
 ]
 
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["ping_test*"]
 
-[tool.black]
-line-length = 88
-target-version = ['py38']
-
-[tool.pytest.ini_options]
-asyncio_mode = "auto"
-testpaths = ["tests"] 
+ 
