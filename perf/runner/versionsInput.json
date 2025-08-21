@@ -50,5 +50,12 @@
     "transportStacks": [
       "tcp"
     ]
+  },
+  {
+    "id": "v2.10",
+    "implementation": "js-libp2p",
+    "transportStacks": [
+      "tcp"
+    ]
   }
 ]
