@@ -192,14 +192,6 @@
     ]
   },
   {
-    "id": "zig-v0.0.1",
-    "transports": [
-      "quic-v1"
-    ],
-    "secureChannels": [],
-    "muxers": []
-  },
-  {
     "id": "java-v0.0.1",
     "transports": [
       "tcp"
