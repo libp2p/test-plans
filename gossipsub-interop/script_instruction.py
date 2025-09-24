@@ -31,6 +31,19 @@ class WaitUntil(BaseModel):
     elapsedSeconds: int  # Seconds elapsed since test start
 
 
+class AddPartialMessage(BaseModel):
+    type: Literal["addPartialMessage"] = "addPartialMessage"
+    parts: int  # uint8 representing bitmap
+    topicID: str
+    groupID: int  # uint64 representing groupID
+
+
+class PublishPartial(BaseModel):
+    type: Literal["publishPartial"] = "publishPartial"
+    topicID: str
+    groupID: int  # uint64 representing groupID
+
+
 class Publish(BaseModel):
     type: Literal["publish"] = "publish"
     messageID: int
@@ -41,6 +54,7 @@ class Publish(BaseModel):
 class SubscribeToTopic(BaseModel):
     type: Literal["subscribeToTopic"] = "subscribeToTopic"
     topicID: str
+    partial: bool
 
 
 class SetTopicValidationDelay(BaseModel):
@@ -159,4 +173,6 @@ ScriptInstruction = Union[
     SubscribeToTopic,
     SetTopicValidationDelay,
     InitGossipSub,
+    AddPartialMessage,
+    PublishPartial,
 ]
