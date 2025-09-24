@@ -47,3 +47,6 @@ dist
 
 # ignore system files
 .DS_Store
+
+# ignore downloads directory
+downloads/
