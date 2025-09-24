@@ -76,6 +76,14 @@ After implementing it, make sure to add build commands in the Makefile's `binari
 
 Finally, add it to the `composition` function in `experiment.py`.
 
+## Examples
+
+Minimal test of partial messages
+
+```bash
+uv run run.py --node_count 2 --composition "all-go" --scenario "partial-messages"
+```
+
 ## Future work (contributions welcome)
 
 - Add more scenarios.

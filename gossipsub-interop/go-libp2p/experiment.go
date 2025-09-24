@@ -9,6 +9,8 @@ import (
 	"time"
 
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
+	"github.com/libp2p/go-libp2p-pubsub/partialmessages"
+	pubsub_pb "github.com/libp2p/go-libp2p-pubsub/pb"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
 )
@@ -22,6 +24,123 @@ type HostConnector interface {
 	ConnectTo(ctx context.Context, h host.Host, targetNodeId int) error
 }
 
+type incomingPartialRPC struct {
+	from                peer.ID
+	topic               string
+	groupID             []byte
+	iwant               []byte
+	ihave               []byte
+	partialMessageBytes []byte
+}
+
+type partialMsgWithTopic struct {
+	topic string
+	msg   *PartialMessage
+}
+type publishReq struct {
+	topic   string
+	groupID []byte
+}
+
+type partialMsgManager struct {
+	*slog.Logger
+	// Close this channel to terminate the manager
+	done        chan struct{}
+	incomingRPC chan incomingPartialRPC
+	publish     chan publishReq
+	add         chan partialMsgWithTopic
+	// map -> topic -> groupID -> *PartialMessage
+	partialMessages map[string]map[string]*PartialMessage
+
+	pubsub *pubsub.PubSub
+}
+
+func (m *partialMsgManager) start(logger *slog.Logger, pubsub *pubsub.PubSub) {
+	m.Logger = logger
+	m.done = make(chan struct{})
+	m.incomingRPC = make(chan incomingPartialRPC, 1)
+	m.publish = make(chan publishReq)
+	m.add = make(chan partialMsgWithTopic)
+	m.partialMessages = make(map[string]map[string]*PartialMessage)
+	m.pubsub = pubsub
+	go m.run()
+}
+func (m *partialMsgManager) close() {
+	if m.done != nil {
+		close(m.done)
+	}
+}
+
+func (m *partialMsgManager) run() {
+	for {
+		select {
+		case rpc := <-m.incomingRPC:
+			m.Info("Received partial RPC")
+			m.handleRPC(rpc)
+		case req := <-m.add:
+			m.Info("Adding partial message")
+			m.addMsg(req)
+		case req := <-m.publish:
+			m.Info("publishing partial message")
+			pm := m.partialMessages[req.topic][string(req.groupID)]
+			m.pubsub.PublishPartialMessage(req.topic, pm, partialmessages.PublishOptions{})
+		case <-m.done:
+			return
+		}
+	}
+}
+
+func (m *partialMsgManager) addMsg(req partialMsgWithTopic) {
+	_, ok := m.partialMessages[req.topic]
+	if !ok {
+		m.partialMessages[req.topic] = make(map[string]*PartialMessage)
+	}
+	_, ok = m.partialMessages[req.topic][string(req.msg.GroupID())]
+	if !ok {
+		m.partialMessages[req.topic][string(req.msg.GroupID())] = req.msg
+	}
+}
+
+func (m *partialMsgManager) handleRPC(rpc incomingPartialRPC) {
+	_, ok := m.partialMessages[rpc.topic]
+	if !ok {
+		m.partialMessages[rpc.topic] = make(map[string]*PartialMessage)
+	}
+	pm, ok := m.partialMessages[rpc.topic][string(rpc.groupID)]
+	if !ok {
+		pm = &PartialMessage{}
+		copy(pm.groupID[:], rpc.groupID)
+		m.partialMessages[rpc.topic][string(rpc.groupID)] = pm
+	}
+
+	// Extend first, so we don't request something we just got.
+	if len(rpc.partialMessageBytes) != 0 {
+		pm.Extend(rpc.partialMessageBytes)
+	}
+
+	missing, _ := pm.MissingParts()
+	if len(missing) == 0 {
+		m.Info("All parts received")
+	}
+
+	var shouldRepublish bool
+	pmHas, _ := pm.AvailableParts()
+	if len(rpc.iwant) != 0 {
+		if rpc.iwant[0]&pmHas[0] != 0 {
+			shouldRepublish = true
+		}
+	}
+	if len(rpc.ihave) != 0 {
+		if (rpc.ihave[0] & (^pmHas[0])) != 0 {
+			shouldRepublish = true
+		}
+	}
+
+	if shouldRepublish {
+		m.pubsub.PublishPartialMessage(rpc.topic, pm, partialmessages.PublishOptions{})
+	}
+}
+
 type scriptedNode struct {
 	nodeID    int
 	h         host.Host
@@ -32,6 +151,8 @@ type scriptedNode struct {
 	topics    map[string]*pubsub.Topic
 	startTime time.Time
 	subCtx    context.Context
+
+	partialMsgMgr partialMsgManager
 }
 
 func newScriptedNode(
@@ -57,16 +178,40 @@ func newScriptedNode(
 	return n, nil
 }
 
+func (n *scriptedNode) close() error {
+	n.partialMsgMgr.close()
+	return nil
+}
+
 func (n *scriptedNode) runInstruction(ctx context.Context, instruction ScriptInstruction) error {
 	// Process each script instruction
 	switch a := instruction.(type) {
 	case InitGossipSubInstruction:
-		psOpts := pubsubOptions(n.slogger, a.GossipSubParams)
+		pme := &partialmessages.PartialMessageExtension{
+			Logger: slog.Default(),
+			ValidateRPC: func(from peer.ID, rpc *pubsub_pb.PartialMessagesExtension) error {
+				// Not doing any validation for now
+				return nil
+			},
+			OnIncomingRPC: func(from peer.ID, topic string, groupID, iwant, ihave, partialMessageBytes []byte) {
+				n.partialMsgMgr.incomingRPC <- incomingPartialRPC{
+					from:                from,
+					topic:               topic,
+					groupID:             groupID,
+					iwant:               iwant,
+					ihave:               ihave,
+					partialMessageBytes: partialMessageBytes,
+				}
+			},
+		}
+
+		psOpts := pubsubOptions(n.slogger, a.GossipSubParams, pme)
 		ps, err := pubsub.NewGossipSub(ctx, n.h, psOpts...)
 		if err != nil {
 			return err
 		}
 		n.pubsub = ps
+		n.partialMsgMgr.start(n.slogger, ps)
 	case ConnectInstruction:
 		for _, targetNodeId := range a.ConnectTo {
 			err := n.connector.ConnectTo(ctx, n.h, targetNodeId)
@@ -87,7 +232,7 @@ func (n *scriptedNode) runInstruction(ctx context.Context, instruction ScriptIns
 			time.Sleep(waitTime)
 		}
 	case PublishInstruction:
-		topic, err := n.getTopic(a.TopicID)
+		topic, err := n.getTopic(a.TopicID, false)
 		if err != nil {
 			return fmt.Errorf("failed to get topic %s: %w", a.TopicID, err)
 		}
@@ -101,7 +246,7 @@ func (n *scriptedNode) runInstruction(ctx context.Context, instruction ScriptIns
 		}
 		n.logger.Printf("Published message %d\n", a.MessageID)
 	case SubscribeToTopicInstruction:
-		topic, err := n.getTopic(a.TopicID)
+		topic, err := n.getTopic(a.TopicID, a.Partial)
 		if err != nil {
 			return fmt.Errorf("failed to get topic %s: %w", a.TopicID, err)
 		}
@@ -132,6 +277,23 @@ func (n *scriptedNode) runInstruction(ctx context.Context, instruction ScriptIns
 			return pubsub.ValidationAccept
 		})
 
+	case AddPartialMessage:
+		pm := &PartialMessage{}
+		binary.BigEndian.AppendUint64(pm.groupID[:], uint64(a.GroupID))
+		pm.FillParts(uint8(a.Parts))
+		n.partialMsgMgr.add <- partialMsgWithTopic{
+			topic: a.TopicID,
+			msg:   pm,
+		}
+
+	case PublishPartialInstruction:
+		var groupID [8]byte
+		binary.BigEndian.AppendUint64(groupID[:], uint64(a.GroupID))
+		n.partialMsgMgr.publish <- publishReq{
+			topic:   a.TopicID,
+			groupID: groupID[:],
+		}
+
 	default:
 		return fmt.Errorf("unknown instruction type: %T", instruction)
 	}
@@ -139,14 +301,18 @@ func (n *scriptedNode) runInstruction(ctx context.Context, instruction ScriptIns
 	return nil
 }
 
-func (n *scriptedNode) getTopic(topicStr string) (*pubsub.Topic, error) {
+func (n *scriptedNode) getTopic(topicStr string, partial bool) (*pubsub.Topic, error) {
 	if n.topics == nil {
 		n.topics = make(map[string]*pubsub.Topic)
 	}
 	t, ok := n.topics[topicStr]
 	if !ok {
 		var err error
-		t, err = n.pubsub.Join(topicStr)
+		var opts []pubsub.TopicOpt
+		if partial {
+			opts = append(opts, pubsub.RequestPartialMessages())
+		}
+		t, err = n.pubsub.Join(topicStr, opts...)
 		if err != nil {
 			return nil, err
 		}
@@ -160,6 +326,7 @@ func RunExperiment(ctx context.Context, startTime time.Time, logger *log.Logger,
 	if err != nil {
 		return err
 	}
+	defer n.close()
 
 	for _, instruction := range params.Script {
 		if err := n.runInstruction(ctx, instruction); err != nil {
