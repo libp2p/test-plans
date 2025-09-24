@@ -16,6 +16,7 @@ import (
 
 	"github.com/libp2p/go-libp2p"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
+	"github.com/libp2p/go-libp2p-pubsub/partialmessages"
 	pubsubpb "github.com/libp2p/go-libp2p-pubsub/pb"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/host"
@@ -27,7 +28,7 @@ var (
 )
 
 // pubsubOptions creates a list of options to configure our router with.
-func pubsubOptions(slogger *slog.Logger, params pubsub.GossipSubParams) []pubsub.Option {
+func pubsubOptions(slogger *slog.Logger, params pubsub.GossipSubParams, pme *partialmessages.PartialMessageExtension) []pubsub.Option {
 	tr := gossipTracer{logger: slogger.With("service", "gossipsub")}
 	psOpts := []pubsub.Option{
 		pubsub.WithMessageSignaturePolicy(pubsub.StrictNoSign),
@@ -41,6 +42,10 @@ func pubsubOptions(slogger *slog.Logger, params pubsub.GossipSubParams) []pubsub
 		pubsub.WithMaxMessageSize(10 * 1 << 20),
 		pubsub.WithGossipSubParams(params),
 		pubsub.WithEventTracer(&tr),
+	}
+
+	if pme != nil {
+		psOpts = append(psOpts, pubsub.WithPartialMessagesExtension(pme))
 	}
 
 	return psOpts
