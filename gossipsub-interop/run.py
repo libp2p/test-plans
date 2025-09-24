@@ -28,30 +28,33 @@ def main():
     parser.add_argument(
         "--scenario", type=str, required=False, default="subnet-blob-msg"
     )
-    parser.add_argument("--composition", type=str,
-                        required=False, default="all-go")
+    parser.add_argument("--composition", type=str, required=False, default="all-go")
     parser.add_argument("--output_dir", type=str, required=False)
     args = parser.parse_args()
 
     if args.output_dir is None:
         try:
-            git_describe = subprocess.check_output(
-                ["git", "describe", "--always", "--dirty"]
-            ).decode("utf-8").strip()
+            git_describe = (
+                subprocess.check_output(["git", "describe", "--always", "--dirty"])
+                .decode("utf-8")
+                .strip()
+            )
         except subprocess.CalledProcessError:
             git_describe = "unknown"
 
         import datetime
 
         timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-        args.output_dir = f"{args.scenario}-{args.node_count}-{
-            args.composition}-{args.seed}-{timestamp}-{git_describe}.data"
+        args.output_dir = f"{args.scenario}-{args.node_count}-{args.composition}-{
+            args.seed
+        }-{timestamp}-{git_describe}.data"
 
     random.seed(args.seed)
 
     binaries = experiment.composition(args.composition)
     experiment_params = experiment.scenario(
-        args.scenario, args.node_count, args.disable_gossip)
+        args.scenario, args.node_count, args.disable_gossip
+    )
 
     with open(params_file_name, "w") as f:
         d = asdict(experiment_params)

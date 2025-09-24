@@ -40,7 +40,9 @@ def nodeIDFromFilename(filename):
     return filename.split(".")[0]
 
 
-def parse_node_id_to_network_id(shadow_yaml_path: str) -> Tuple[Dict[NodeId, int], Dict[int, List[NodeId]]]:
+def parse_node_id_to_network_id(
+    shadow_yaml_path: str,
+) -> Tuple[Dict[NodeId, int], Dict[int, List[NodeId]]]:
     """
     Parse shadow.yaml file and return mappings between node_id and network_node_id.
 
@@ -69,8 +71,7 @@ def parse_node_id_to_network_id(shadow_yaml_path: str) -> Tuple[Dict[NodeId, int
                         network_node_id = host_config.get("network_node_id")
                         if network_node_id is not None:
                             node_to_network_mapping[node_id] = network_node_id
-                            network_to_nodes_mapping[network_node_id].append(
-                                node_id)
+                            network_to_nodes_mapping[network_node_id].append(node_id)
                     except ValueError:
                         # Skip hosts that don't follow the "nodeX" pattern
                         continue
@@ -94,16 +95,16 @@ def parse_gml_node_labels(gml_file_path: str) -> Dict[int, str]:
     node_id_to_label = {}
 
     try:
-        with open(gml_file_path, 'r') as f:
+        with open(gml_file_path, "r") as f:
             content = f.read()
 
         # Find all node blocks using regex
-        node_pattern = r'node\s*\[([^\]]*)\]'
+        node_pattern = r"node\s*\[([^\]]*)\]"
         node_matches = re.findall(node_pattern, content, re.DOTALL)
 
         for node_content in node_matches:
             # Extract id and label from node content
-            id_match = re.search(r'id\s+(\d+)', node_content)
+            id_match = re.search(r"id\s+(\d+)", node_content)
             label_match = re.search(r'label\s+"([^"]*)"', node_content)
 
             if id_match and label_match:
@@ -156,8 +157,7 @@ def plot_msg_delivery_cdf(plt, deliveries, label=None):
         cumulative_count.append(i + 1)
 
     # Plot the CDF with label
-    plt.plot(times, cumulative_count, marker="o",
-             markersize=2, alpha=0.7, label=label)
+    plt.plot(times, cumulative_count, marker="o", markersize=2, alpha=0.7, label=label)
 
 
 def parse_log_file(lines) -> FileParseResult:
@@ -210,8 +210,7 @@ def parse_log_file(lines) -> FileParseResult:
     # Sort message_deliveries by first delivery time
     sorted_message_deliveries = OrderedDict()
     message_items = list(message_deliveries.items())
-    message_items.sort(key=lambda x: x[1]
-                       [0].timestamp if x[1] else datetime.max)
+    message_items.sort(key=lambda x: x[1][0].timestamp if x[1] else datetime.max)
 
     for msg_id, deliveries in message_items:
         sorted_message_deliveries[msg_id] = deliveries
@@ -224,7 +223,7 @@ def parse_log_file(lines) -> FileParseResult:
 
 
 def create_node_delivery_times_mapping(
-    ordered_messages: OrderedDict[MessageId, List[MessageDelivery]]
+    ordered_messages: OrderedDict[MessageId, List[MessageDelivery]],
 ) -> Dict[NodeId, Dict[MessageId, float]]:
     """
     Create a mapping from NodeID to Dict[MessageID, TimeToDeliver(as seconds)].
@@ -236,8 +235,7 @@ def create_node_delivery_times_mapping(
         Dictionary mapping NodeId to Dict[MessageId, delivery_time_in_seconds]
         where delivery_time_in_seconds is the time from first delivery to this node's delivery
     """
-    node_delivery_times: Dict[NodeId,
-                              Dict[MessageId, float]] = defaultdict(dict)
+    node_delivery_times: Dict[NodeId, Dict[MessageId, float]] = defaultdict(dict)
 
     for msg_id, deliveries in ordered_messages.items():
         if not deliveries:
@@ -248,14 +246,18 @@ def create_node_delivery_times_mapping(
 
         # Calculate delivery time for each node
         for delivery in deliveries:
-            time_to_deliver = (delivery.timestamp -
-                               first_delivery_time).total_seconds()
+            time_to_deliver = (delivery.timestamp - first_delivery_time).total_seconds()
             node_delivery_times[delivery.node_id][msg_id] = time_to_deliver
 
     return dict(node_delivery_times)
 
 
-def plot_delivery_times_per_network_id(plt, network_to_nodes_mapping: Dict[int, List[NodeId]], node_delivery_times: Dict[NodeId, Dict[MessageId, float]], network_to_label: Dict[int, str]):
+def plot_delivery_times_per_network_id(
+    plt,
+    network_to_nodes_mapping: Dict[int, List[NodeId]],
+    node_delivery_times: Dict[NodeId, Dict[MessageId, float]],
+    network_to_label: Dict[int, str],
+):
     """
     Create box plots showing delivery time distributions for each network ID.
 
@@ -283,7 +285,9 @@ def plot_delivery_times_per_network_id(plt, network_to_nodes_mapping: Dict[int, 
                 for msg_id, delivery_time in node_delivery_times[node_id].items():
                     all_delivery_times_for_network.append(delivery_time)
 
-        if all_delivery_times_for_network:  # Only include networks that have delivery data
+        if (
+            all_delivery_times_for_network
+        ):  # Only include networks that have delivery data
             network_delivery_times[network_id] = all_delivery_times_for_network
 
     if not network_delivery_times:
@@ -296,12 +300,17 @@ def plot_delivery_times_per_network_id(plt, network_to_nodes_mapping: Dict[int, 
 
     # Create the box plot
     plt.figure(figsize=(12, 8))
-    box_plot = plt.boxplot(delivery_data, tick_labels=[f"{network_to_label[nid]}" for nid in sorted(
-        network_delivery_times.keys())], patch_artist=True)
+    box_plot = plt.boxplot(
+        delivery_data,
+        tick_labels=[
+            f"{network_to_label[nid]}" for nid in sorted(network_delivery_times.keys())
+        ],
+        patch_artist=True,
+    )
 
     # Color the boxes
     colors = plt.cm.Set3(range(len(delivery_data)))
-    for patch, color in zip(box_plot['boxes'], colors):
+    for patch, color in zip(box_plot["boxes"], colors):
         patch.set_facecolor(color)
         patch.set_alpha(0.7)
 
@@ -309,7 +318,7 @@ def plot_delivery_times_per_network_id(plt, network_to_nodes_mapping: Dict[int, 
     plt.ylabel("Delivery Time (seconds)")
     plt.title("Message Delivery Time Distribution by Network ID")
     plt.ylim(0, 1)
-    plt.xticks(rotation=45, ha='right')
+    plt.xticks(rotation=45, ha="right")
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
 
@@ -333,11 +342,9 @@ def analyse_message_deliveries(folder, output_folder="plots", skip_messages=0):
                 duplicate_count[msg_id] += count
 
     # Sort messages by first delivery time
-    ordered_messages: OrderedDict[MessageId,
-                                  List[MessageDelivery]] = OrderedDict()
+    ordered_messages: OrderedDict[MessageId, List[MessageDelivery]] = OrderedDict()
     message_items = list(messages.items())
-    message_items.sort(key=lambda x: x[1]
-                       [0].timestamp if x[1] else datetime.max)
+    message_items.sort(key=lambda x: x[1][0].timestamp if x[1] else datetime.max)
 
     for msg_id, deliveries in message_items:
         deliveries.sort(key=lambda x: x.timestamp)
@@ -347,8 +354,7 @@ def analyse_message_deliveries(folder, output_folder="plots", skip_messages=0):
     if skip_messages > 0:
         ordered_messages_list = list(ordered_messages.items())
         if skip_messages < len(ordered_messages_list):
-            ordered_messages = OrderedDict(
-                ordered_messages_list[skip_messages:])
+            ordered_messages = OrderedDict(ordered_messages_list[skip_messages:])
         else:
             ordered_messages = OrderedDict()
 
@@ -360,11 +366,9 @@ def analyse_message_deliveries(folder, output_folder="plots", skip_messages=0):
     total_nodes = len(node_id_to_peer_id)
 
     for msgID, deliveries in ordered_messages.items():
-        time_diff = (deliveries[-1].timestamp -
-                     deliveries[0].timestamp).total_seconds()
+        time_diff = (deliveries[-1].timestamp - deliveries[0].timestamp).total_seconds()
         p50Idx = len(deliveries) // 2
-        p50 = (deliveries[p50Idx].timestamp -
-               deliveries[0].timestamp).total_seconds()
+        p50 = (deliveries[p50Idx].timestamp - deliveries[0].timestamp).total_seconds()
 
         msg_ids.append(msgID)
         time_diffs.append(time_diff)
@@ -375,14 +379,12 @@ def analyse_message_deliveries(folder, output_folder="plots", skip_messages=0):
         if reached > 1.0:
             if len(deliveries) > total_nodes:
                 raise ValueError(
-                    f"Message {
-                        msgID.id} was delivered to more nodes than exist"
+                    f"Message {msgID.id} was delivered to more nodes than exist"
                 )
             # We overshot because the original publisher received a duplicate message
             reached = 1.0
         analysis_txt.append(
-            f"{msgID.id}, {time_diff}s, {p50}s, {
-                avg_duplicate_count}, {reached}"
+            f"{msgID.id}, {time_diff}s, {p50}s, {avg_duplicate_count}, {reached}"
         )
 
     # Create the plots
@@ -414,12 +416,12 @@ def analyse_message_deliveries(folder, output_folder="plots", skip_messages=0):
     plt.savefig(f"{output_folder}/avg_msg_duplicate_count.png")
     plt.close()
 
-    _, network_to_nodes_mapping = parse_node_id_to_network_id(
-        f"{folder}/shadow.yaml")
+    _, network_to_nodes_mapping = parse_node_id_to_network_id(f"{folder}/shadow.yaml")
     node_delivery_times = create_node_delivery_times_mapping(ordered_messages)
     network_to_label = parse_gml_node_labels(f"{folder}/graph.gml")
     plot_delivery_times_per_network_id(
-        plt, network_to_nodes_mapping, node_delivery_times, network_to_label)
+        plt, network_to_nodes_mapping, node_delivery_times, network_to_label
+    )
     plt.savefig(f"{output_folder}/delivery_times_per_network.png")
     plt.close()
 
