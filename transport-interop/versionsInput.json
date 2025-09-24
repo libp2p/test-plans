@@ -206,14 +206,6 @@
     ]
   },
   {
-    "id": "zig-v0.0.1",
-    "transports": [
-      "quic-v1"
-    ],
-    "secureChannels": [],
-    "muxers": []
-  },
-  {
     "id": "java-v0.0.1",
     "transports": [
       "tcp"
@@ -330,5 +322,20 @@
     ],
     "secureChannels": ["tls", "noise"],
     "muxers": ["yamux"]
+  },
+  {
+    "id": "jvm-v1.2",
+    "transports": [
+      "tcp",
+      "quic-v1"
+    ],
+    "secureChannels": [
+      "tls",
+      "noise"
+    ],
+    "muxers": [
+      "mplex",
+      "yamux"
+    ]
   }
 ]
