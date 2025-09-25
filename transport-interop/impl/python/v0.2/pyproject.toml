@@ -10,9 +10,9 @@ authors = [
     {name = "libp2p", email = "team@libp2p.io"}
 ]
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.11"
 dependencies = [
-    "libp2p @ git+https://github.com/libp2p/py-libp2p.git@90f143cd8837ab41181d860e979054813185bc06",
+    "libp2p @ git+https://github.com/libp2p/py-libp2p.git@f13876a64f5daeaec45c0e4e1ac0ca7741df60e4",
     "redis>=4.0.0",
     "typing-extensions>=4.0.0",
 ]
