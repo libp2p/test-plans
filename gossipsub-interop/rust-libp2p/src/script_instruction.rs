@@ -92,8 +92,6 @@ pub enum ScriptInstruction {
     },
     #[serde(rename = "addPartialMessage", rename_all = "camelCase")]
     AddPartialMessage {
-        #[serde(rename = "r#type")]
-        message_type: String,
         parts: u8,
         #[serde(rename = "topicID")]
         topic_id: String,
@@ -102,8 +100,6 @@ pub enum ScriptInstruction {
     },
     #[serde(rename = "publishPartial", rename_all = "camelCase")]
     PublishPartial {
-        #[serde(rename = "r#type")]
-        message_type: String,
         topic_id: String,
         #[serde(rename = "groupID")]
         group_id: u64,
