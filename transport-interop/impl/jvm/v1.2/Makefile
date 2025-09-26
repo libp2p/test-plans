@@ -1,5 +1,5 @@
 image_name := jvm-libp2p-v1.2
-commitSha := bd921bafd9dedcf9ea5f7978da4bac39fddb3bd3
+commitSha := 09b67d7fab3c7de8e875b973ad70aaa2dae523d5
 
 all: image.json
 
