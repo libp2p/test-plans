@@ -38,11 +38,62 @@ def spread_heartbeat_delay(
     return instructions
 
 
+def partial_message_scenario(
+    disable_gossip: bool, node_count: int
+) -> List[ScriptInstruction]:
+    instructions: List[ScriptInstruction] = []
+    gs_params = GossipSubParams()
+    if disable_gossip:
+        gs_params.Dlazy = 0
+        gs_params.GossipFactor = 0
+    instructions.extend(spread_heartbeat_delay(node_count, gs_params))
+
+    number_of_conns_per_node = 20
+    if number_of_conns_per_node >= node_count:
+        number_of_conns_per_node = node_count - 1
+    instructions.extend(random_network_mesh(node_count, number_of_conns_per_node))
+
+    topic = "a-subnet"
+    instructions.append(
+        script_instruction.SubscribeToTopic(topicID=topic, partial=True)
+    )
+
+    groupID = random.randint(0, (2**8) - 1)
+
+    # Wait for some setup time
+    elapsed_seconds = 30
+    instructions.append(script_instruction.WaitUntil(elapsedSeconds=elapsed_seconds))
+
+    # Assign random parts to each node
+    for i in range(node_count):
+        parts = random.randint(0, 255)
+        instructions.append(
+            script_instruction.IfNodeIDEquals(
+                nodeID=i,
+                instruction=script_instruction.AddPartialMessage(
+                    topicID=topic, groupID=groupID, parts=parts
+                ),
+            )
+        )
+
+    instructions.append(
+        script_instruction.PublishPartial(topicID=topic, groupID=groupID)
+    )
+
+    # Wait for everything to flush
+    elapsed_seconds += 10
+    instructions.append(script_instruction.WaitUntil(elapsedSeconds=elapsed_seconds))
+
+    return instructions
+
+
 def scenario(
     scenario_name: str, node_count: int, disable_gossip: bool
 ) -> ExperimentParams:
     instructions: List[ScriptInstruction] = []
     match scenario_name:
+        case "partial-messages":
+            instructions = partial_message_scenario(disable_gossip, node_count)
         case "subnet-blob-msg":
             gs_params = GossipSubParams()
             if disable_gossip:
