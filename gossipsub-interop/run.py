@@ -82,7 +82,7 @@ def main():
     if args.dry_run:
         return
 
-    subprocess.run(["make", "binaries"])
+    subprocess.run(["make", "binaries"], check=True)
 
     subprocess.run(
         ["shadow", "--progress", "true", "-d", args.output_dir, "shadow.yaml"],
@@ -92,6 +92,11 @@ def main():
     os.rename("shadow.yaml", os.path.join(args.output_dir, "shadow.yaml"))
     os.rename("graph.gml", os.path.join(args.output_dir, "graph.gml"))
     os.rename("params.json", os.path.join(args.output_dir, "params.json"))
+
+    link_name = "latest"
+    if os.path.islink(link_name) or os.path.exists(link_name):
+        os.remove(link_name)
+    os.symlink(os.path.join(os.getcwd(), args.output_dir), link_name)
 
     # Analyse message deliveries. Skip the first 4 as warmup messages
     analyse_message_deliveries(args.output_dir, f"{args.output_dir}/plots", 4)
