@@ -1,14 +1,15 @@
 use byteorder::{BigEndian, ByteOrder};
 use futures::channel::mpsc;
 use futures::{SinkExt, StreamExt};
-use libp2p::gossipsub::{self, IdentTopic};
 use libp2p::swarm::{NetworkBehaviour, SwarmEvent};
 use libp2p::{identify, Swarm};
+use libp2p_gossipsub::{self as gossipsub, IdentTopic};
 use slog::{error, info, Logger};
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 use tokio::time::sleep;
 
+use crate::bitmap::Bitmap;
 use crate::connector;
 use crate::script_instruction::{ExperimentParams, NodeID, ScriptInstruction};
 
@@ -39,6 +40,7 @@ pub struct ScriptedNode {
     topics: HashMap<String, IdentTopic>,
     topic_validation_delays: HashMap<String, Duration>,
     start_time: Instant,
+    partials: HashMap<String, HashMap<[u8; 8], Bitmap>>,
 }
 
 impl ScriptedNode {
@@ -61,6 +63,7 @@ impl ScriptedNode {
             start_time,
             gossipsub_validation_rx,
             gossipsub_validation_tx,
+            partials: HashMap::new(),
         }
     }
 
@@ -243,6 +246,36 @@ impl ScriptedNode {
                     self.stderr_logger,
                     "InitGossipSub instruction already processed"
                 );
+            }
+            ScriptInstruction::AddPartialMessage {
+                parts,
+                topic_id,
+                group_id,
+                ..
+            } => {
+                let topic_partials = self.partials.entry(topic_id).or_default();
+                let group_id = group_id.to_be_bytes();
+                let mut partial = Bitmap::new(group_id);
+                partial.fill_parts(parts);
+                topic_partials.insert(group_id, partial);
+            }
+            ScriptInstruction::PublishPartial {
+                topic_id, group_id, ..
+            } => {
+                let group_id = group_id.to_be_bytes();
+                let topic_partials = self
+                    .partials
+                    .get(&topic_id)
+                    .ok_or(format!("Topic {topic_id} doesn't exist"))?;
+
+                let partial = topic_partials
+                    .get(&group_id)
+                    .ok_or(format!("GroupId {group_id:?} doesn't exist"))?;
+                let topic = IdentTopic::new(topic_id);
+                self.swarm
+                    .behaviour_mut()
+                    .gossipsub
+                    .publish_partial(topic, partial.clone())?;
             }
         }
 
