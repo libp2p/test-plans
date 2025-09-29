@@ -215,6 +215,8 @@ impl ScriptedNode {
                                             info!(self.stderr_logger, "I have something the peer doesn't or vice versa. {ihave:?} {after_extension:?}");
                                             should_republish = true;
                                         }
+                                        info!(self.stderr_logger, "I have {:?}", after_extension);
+                                        info!(self.stderr_logger, "Peer has {:?}", ihave);
 
                                         if should_republish {
                                             self.swarm
@@ -303,7 +305,15 @@ impl ScriptedNode {
                 let topic_partials = self.partials.entry(topic_id).or_default();
                 let group_id = group_id.to_be_bytes();
                 let mut partial = Bitmap::new(group_id);
+                info!(
+                    self.stderr_logger,
+                    "partial message for group {group_id:?} parts {parts:?}"
+                );
                 partial.fill_parts(parts);
+                let avail = partial
+                    .available_parts()
+                    .map(|parts| parts.as_ref().to_vec());
+                info!(self.stderr_logger, "available parts: {avail:?}");
                 topic_partials.insert(group_id, partial);
             }
             ScriptInstruction::PublishPartial {
@@ -319,6 +329,10 @@ impl ScriptedNode {
                     .get(&group_id)
                     .ok_or(format!("GroupId {group_id:?} doesn't exist"))?;
                 let topic = IdentTopic::new(topic_id);
+                info!(self.stdout_logger, "Publish Partial called";
+                    "group_id" => format!("{group_id:?}"),
+                    "topic_id" => format!("{topic:?}"),
+                );
                 self.swarm
                     .behaviour_mut()
                     .gossipsub
