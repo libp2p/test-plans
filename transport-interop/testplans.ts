@@ -124,7 +124,9 @@ import path from "path";
     await Promise.all(workers)
 
     console.log(`${failures.length} failures`, failures)
-    await fs.writeFile("results.csv", stringify(statuses))
+    await fs.writeFile("results.csv", stringify(statuses, { 
+        quoted_match: /[(),\s]/
+    }))
 
     console.log("Run complete")
 })()
