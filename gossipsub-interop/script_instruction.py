@@ -54,7 +54,7 @@ class Publish(BaseModel):
 class SubscribeToTopic(BaseModel):
     type: Literal["subscribeToTopic"] = "subscribeToTopic"
     topicID: str
-    partial: bool
+    partial: bool = False
 
 
 class SetTopicValidationDelay(BaseModel):
