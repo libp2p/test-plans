@@ -49,12 +49,8 @@ impl Partial for Bitmap {
         &self.group_id
     }
 
-    fn missing_parts(&self) -> Option<impl AsRef<[u8]>> {
-        Some([0xff ^ self.set; 1])
-    }
-
-    fn available_parts(&self) -> Option<impl AsRef<[u8]>> {
-        Some([self.set; 1])
+    fn parts_metadata(&self) -> impl AsRef<[u8]> {
+        [self.set; 1]
     }
 
     fn partial_message_bytes_from_metadata(

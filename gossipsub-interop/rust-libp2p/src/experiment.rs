@@ -181,7 +181,7 @@ impl ScriptedNode {
                                             }).await.unwrap();
                                         }
                                     }
-                                    SwarmEvent::Behaviour(MyBehaviorEvent::Gossipsub(gossipsub::Event::Partial {group_id, topic_id, propagation_source, message, iwant: _, ihave })) => {
+                                    SwarmEvent::Behaviour(MyBehaviorEvent::Gossipsub(gossipsub::Event::Partial {group_id, topic_id, propagation_source, message, metadata })) => {
                                         let topic_partials = self
                                             .partials
                                             .get_mut(topic_id.as_str())
@@ -190,19 +190,19 @@ impl ScriptedNode {
                                             .get_mut(group_id.as_slice())
                                             .ok_or(format!("GroupId {group_id:?} doesn't exist"))?;
 
-                                        let before_extension = partial.available_parts().map(|x| x.as_ref().to_vec());
+                                        let before_extension = partial.parts_metadata().as_ref().to_vec();
                                         if let Some(message) = message {
                                             if !message.is_empty() {
                                                 info!(self.stderr_logger, "new data len is {}", message.len());
                                                 partial.extend_from_encoded_partial_message(&message)?;
                                             }
                                         }
-                                        let after_extension = partial.available_parts().map(|x| x.as_ref().to_vec());
+                                        let after_extension = partial.parts_metadata().as_ref().to_vec();
 
                                         let mut should_republish = false;
                                         if before_extension != after_extension {
                                             info!(self.stderr_logger, "Got new data. Will republish. {before_extension:?} {after_extension:?}");
-                                            if after_extension == Some(Vec::<u8>::from([255])) {
+                                            if after_extension == vec![255] {
                                                 info!(self.stdout_logger, "Received Full Partial Message";
                                                     // "topic" => topic_id,
                                                     // "group_id" => group_id,
@@ -211,12 +211,12 @@ impl ScriptedNode {
 
                                             should_republish = true;
                                         }
-                                        if !should_republish && ihave != after_extension {
-                                            info!(self.stderr_logger, "I have something the peer doesn't or vice versa. {ihave:?} {after_extension:?}");
+                                        if !should_republish && metadata.as_ref() != Some(&after_extension) {
+                                            info!(self.stderr_logger, "I have something the peer doesn't or vice versa. {metadata:?} {after_extension:?}");
                                             should_republish = true;
                                         }
                                         info!(self.stderr_logger, "I have {:?}", after_extension);
-                                        info!(self.stderr_logger, "Peer has {:?}", ihave);
+                                        info!(self.stderr_logger, "Peer has {:?}", metadata);
 
                                         if should_republish {
                                             self.swarm
@@ -310,9 +310,7 @@ impl ScriptedNode {
                     "partial message for group {group_id:?} parts {parts:?}"
                 );
                 partial.fill_parts(parts);
-                let avail = partial
-                    .available_parts()
-                    .map(|parts| parts.as_ref().to_vec());
+                let avail = partial.parts_metadata().as_ref().to_vec();
                 info!(self.stderr_logger, "available parts: {avail:?}");
                 topic_partials.insert(group_id, partial);
             }
