@@ -279,7 +279,7 @@ func (n *scriptedNode) runInstruction(ctx context.Context, instruction ScriptIns
 
 	case AddPartialMessage:
 		pm := &PartialMessage{}
-		binary.BigEndian.AppendUint64(pm.groupID[:], uint64(a.GroupID))
+		binary.BigEndian.AppendUint64(pm.groupID[:0], uint64(a.GroupID))
 		pm.FillParts(uint8(a.Parts))
 		n.partialMsgMgr.add <- partialMsgWithTopic{
 			topic: a.TopicID,
@@ -288,7 +288,7 @@ func (n *scriptedNode) runInstruction(ctx context.Context, instruction ScriptIns
 
 	case PublishPartialInstruction:
 		var groupID [8]byte
-		binary.BigEndian.AppendUint64(groupID[:], uint64(a.GroupID))
+		binary.BigEndian.AppendUint64(groupID[:0], uint64(a.GroupID))
 		n.partialMsgMgr.publish <- publishReq{
 			topic:   a.TopicID,
 			groupID: groupID[:],
