@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/binary"
+	"encoding/hex"
 	"fmt"
 	"log"
 	"log/slog"
@@ -81,8 +82,8 @@ func (m *partialMsgManager) run() {
 			m.Info("Adding partial message")
 			m.addMsg(req)
 		case req := <-m.publish:
-			m.Info("publishing partial message")
 			pm := m.partialMessages[req.topic][string(req.groupID)]
+			m.Info("publishing partial message", "groupID", hex.EncodeToString(pm.GroupID()), "topic", req.topic)
 			m.pubsub.PublishPartialMessage(req.topic, pm, partialmessages.PublishOptions{})
 		case <-m.done:
 			return
@@ -187,6 +188,7 @@ func (n *scriptedNode) runInstruction(ctx context.Context, instruction ScriptIns
 	// Process each script instruction
 	switch a := instruction.(type) {
 	case InitGossipSubInstruction:
+		slog.SetLogLoggerLevel(slog.LevelDebug)
 		pme := &partialmessages.PartialMessageExtension{
 			Logger: slog.Default(),
 			ValidateRPC: func(from peer.ID, rpc *pubsub_pb.PartialMessagesExtension) error {

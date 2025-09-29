@@ -42,6 +42,7 @@ func pubsubOptions(slogger *slog.Logger, params pubsub.GossipSubParams, pme *par
 		pubsub.WithMaxMessageSize(10 * 1 << 20),
 		pubsub.WithGossipSubParams(params),
 		pubsub.WithEventTracer(&tr),
+		pubsub.WithRPCLogger(slogger),
 	}
 
 	if pme != nil {
@@ -125,7 +126,9 @@ func main() {
 	}
 
 	logger := log.New(os.Stderr, "", log.LstdFlags|log.Lmicroseconds)
-	slogger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	slogger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelDebug,
+	}))
 
 	connector := &ShadowConnector{}
 	err = RunExperiment(ctx, startTime, logger, slogger, h, nodeId, connector, params)
