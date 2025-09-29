@@ -178,7 +178,7 @@ def generate_random_graph(
                     # For Debugging:
                     "environment": {
                         # "GOLOG_LOG_LEVEL": "debug",
-                        # "RUST_LOG": "debug",
+                        "RUST_LOG": "debug",
                     },
                     "path": binary_path,
                 }
