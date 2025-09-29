@@ -65,16 +65,36 @@ def partial_message_scenario(
     instructions.append(script_instruction.WaitUntil(elapsedSeconds=elapsed_seconds))
 
     # Assign random parts to each node
-    for i in range(node_count):
-        parts = random.randint(0, 255)
+    if node_count == 2:
+        # If just two nodes, make sure we can always generate a full message
+        part = random.randint(0, 255)
         instructions.append(
             script_instruction.IfNodeIDEquals(
-                nodeID=i,
+                nodeID=0,
                 instruction=script_instruction.AddPartialMessage(
-                    topicID=topic, groupID=groupID, parts=parts
+                    topicID=topic, groupID=groupID, parts=part
                 ),
             )
         )
+        instructions.append(
+            script_instruction.IfNodeIDEquals(
+                nodeID=1,
+                instruction=script_instruction.AddPartialMessage(
+                    topicID=topic, groupID=groupID, parts=(0xFF ^ part)
+                ),
+            )
+        )
+    else:
+        for i in range(node_count):
+            parts = random.randint(0, 255)
+            instructions.append(
+                script_instruction.IfNodeIDEquals(
+                    nodeID=i,
+                    instruction=script_instruction.AddPartialMessage(
+                        topicID=topic, groupID=groupID, parts=parts
+                    ),
+                )
+            )
 
     instructions.append(
         script_instruction.PublishPartial(topicID=topic, groupID=groupID)
