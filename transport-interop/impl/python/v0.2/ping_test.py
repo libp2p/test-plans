@@ -64,7 +64,7 @@ class PingTest:
         self.is_dialer = os.getenv("is_dialer", "false").lower() == "true"
         self.ip = os.getenv("ip", "0.0.0.0")
         self.redis_addr = os.getenv("redis_addr", "redis:6379")
-        self.test_timeout_seconds = int(os.getenv("test_timeout_seconds", "180"))
+        self.test_timeout_seconds = int(os.getenv("test_timeout_seconds", "30"))
         
         # Parse Redis address
         if ":" in self.redis_addr:
