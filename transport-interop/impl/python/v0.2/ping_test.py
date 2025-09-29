@@ -38,9 +38,9 @@ RESP_TIMEOUT = 60
 # when LIBP2P_DEBUG is set, otherwise will be disabled
 logger = logging.getLogger("libp2p.ping_test")
 
-# Configure logging for WebSocket tests
+# Configure logging for TCP tests
 def configure_logging():
-    """Configure logging for WebSocket interop tests."""
+    """Configure logging for TCP interop tests."""
     # Set root logger to INFO level to see important messages
     logging.getLogger().setLevel(logging.INFO)
     
@@ -92,9 +92,9 @@ class PingTest:
 
     def validate_configuration(self) -> None:
         """Validate the configuration parameters."""
-        # Validate transport
-        if self.transport not in ["tcp", "ws"]:
-            raise ValueError(f"Unsupported transport: {self.transport}. Supported transports: ['tcp', 'ws']")
+        # Validate transport - TCP only
+        if self.transport not in ["tcp"]:
+            raise ValueError(f"Unsupported transport: {self.transport}. Supported transports: ['tcp']")
         
         # Validate security
         if self.security not in ["noise", "plaintext"]:
@@ -139,38 +139,6 @@ class PingTest:
         else:
             raise ValueError(f"Unsupported muxer: {self.muxer}")
 
-    async def create_websocket_host(self, key_pair, security_options, muxer_options, listen_addrs):
-        """Create a WebSocket host with proper transport upgrader."""
-        from libp2p.host.basic_host import BasicHost
-        from libp2p.network.swarm import Swarm
-        from libp2p.peer.id import ID
-        from libp2p.peer.peerstore import PeerStore
-        from libp2p.transport.upgrader import TransportUpgrader
-        from libp2p.transport.websocket.transport import WebsocketTransport
-        
-        # Create peer ID and peer store
-        peer_id = ID.from_pubkey(key_pair.public_key)
-        peer_store = PeerStore()
-        peer_store.add_key_pair(peer_id, key_pair)
-        
-        # Create transport upgrader with security and muxer protocols
-        upgrader = TransportUpgrader(
-            secure_transports_by_protocol=security_options,
-            muxer_transports_by_protocol=muxer_options,
-        )
-        
-        # Create WebSocket transport with proper upgrader
-        transport = WebsocketTransport(upgrader)
-        
-        # Create swarm with the transport
-        swarm = Swarm(peer_id, peer_store, upgrader, transport)
-        
-        # Start listening if listen_addrs are provided
-        if listen_addrs:
-            for addr in listen_addrs:
-                await swarm.listen(addr)
-        
-        return BasicHost(swarm)
 
     async def handle_ping(self, stream: INetStream) -> None:
         """Handle incoming ping requests."""
@@ -227,8 +195,6 @@ class PingTest:
         """Create listen address based on transport type."""
         if self.transport == "tcp":
             return multiaddr.Multiaddr(f"/ip4/{ip}/tcp/{port}")
-        elif self.transport == "ws":
-            return multiaddr.Multiaddr(f"/ip4/{ip}/tcp/{port}/ws")
         else:
             raise ValueError(f"Unsupported transport for address creation: {self.transport}")
 
@@ -248,16 +214,12 @@ class PingTest:
         # Create host with proper configuration
         logger.debug("Creating host")
         
-        # For WebSocket transport, use custom setup
-        if self.transport == "ws":
-            self.host = await self.create_websocket_host(key_pair, security_options, muxer_options, [listen_addr])
-        else:
-            self.host = new_host(
-                key_pair=key_pair,
-                sec_opt=security_options,
-                muxer_opt=muxer_options,
-                listen_addrs=[listen_addr]
-            )
+        self.host = new_host(
+            key_pair=key_pair,
+            sec_opt=security_options,
+            muxer_opt=muxer_options,
+            listen_addrs=[listen_addr]
+        )
         # Set up ping handler
         logger.debug("Setting stream handler")
         self.host.set_stream_handler(PING_PROTOCOL_ID, self.handle_ping)
@@ -348,15 +310,11 @@ class PingTest:
             muxer_options = self.create_muxer_options()
             
             # Create host with proper configuration
-            # For WebSocket transport, use custom setup
-            if self.transport == "ws":
-                self.host = await self.create_websocket_host(key_pair, security_options, muxer_options, [])
-            else:
-                self.host = new_host(
-                    key_pair=key_pair,
-                    sec_opt=security_options,
-                    muxer_opt=muxer_options
-                )
+            self.host = new_host(
+                key_pair=key_pair,
+                sec_opt=security_options,
+                muxer_opt=muxer_options
+            )
             
             # Start the host
             async with self.host.run(listen_addrs=[]):
