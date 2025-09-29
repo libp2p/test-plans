@@ -5,6 +5,7 @@ use libp2p_gossipsub::{Partial, PartialMessageError};
 #[derive(Debug, Clone)]
 pub(crate) struct Bitmap {
     fields: [[u8; 1024]; 8],
+    set: u8,
     group_id: [u8; 8],
 }
 
@@ -12,6 +13,7 @@ impl Bitmap {
     pub(crate) fn new(group_id: [u8; 8]) -> Self {
         Self {
             fields: [[0; 1024]; 8],
+            set: 0,
             group_id,
         }
     }
@@ -20,6 +22,7 @@ impl Bitmap {
 
         // Convert group_id to u64 using big-endian
         let start = u64::from_be_bytes(self.group_id);
+        self.set |= metadata;
 
         for (i, p) in parts.iter_mut().enumerate() {
             if (metadata & (1 << i)) == 0 {
@@ -47,28 +50,11 @@ impl Partial for Bitmap {
     }
 
     fn missing_parts(&self) -> Option<impl AsRef<[u8]>> {
-        let Some(available) = self.available_parts() else {
-            return Some([255; 1]);
-        };
-        let missing = !available.as_ref()[0];
-        if missing == 0 {
-            None
-        } else {
-            Some([missing; 1])
-        }
+        Some([0xff ^ self.set; 1])
     }
 
     fn available_parts(&self) -> Option<impl AsRef<[u8]>> {
-        let mut available = [0; 8];
-        let mut filled = false;
-
-        for (i, field) in self.fields.iter().enumerate() {
-            if !field.is_empty() {
-                filled = true;
-                available[0] |= 1 << i;
-            }
-        }
-        filled.then_some(available)
+        Some([self.set; 1])
     }
 
     fn partial_message_bytes_from_metadata(
@@ -98,8 +84,7 @@ impl Partial for Bitmap {
             if (bitmap >> i) & 1 == 0 {
                 continue;
             }
-
-            if field.iter().all(|&b| b == 0) {
+            if (self.set >> i) & 1 == 0 {
                 continue; // Not available
             }
 
@@ -153,14 +138,15 @@ impl Partial for Bitmap {
                 continue;
             }
 
-            if field.iter().any(|&b| b != 0) {
-                continue;
+            if (self.set >> i) & 1 == 1 {
+                continue; // we already ahve this
             }
 
             if offset + 1024 > data.len() {
                 return Err(PartialMessageError::InvalidFormat);
             }
 
+            self.set |= 1 << i;
             field.copy_from_slice(&data[offset..offset + 1024]);
             offset += 1024;
         }
