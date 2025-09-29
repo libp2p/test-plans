@@ -3,7 +3,7 @@ use futures::channel::mpsc;
 use futures::{SinkExt, StreamExt};
 use libp2p::swarm::{NetworkBehaviour, SwarmEvent};
 use libp2p::{identify, Swarm};
-use libp2p_gossipsub::{self as gossipsub, IdentTopic};
+use libp2p_gossipsub::{self as gossipsub, IdentTopic, Partial};
 use slog::{error, info, Logger};
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
@@ -144,40 +144,87 @@ impl ScriptedNode {
                             }
                             event = self.swarm.select_next_some() => {
                                 // Process any messages that arrive during sleep
-                                if let SwarmEvent::Behaviour(MyBehaviorEvent::Gossipsub(gossipsub::Event::Message {
-                                    propagation_source: peer_id,
-                                    message_id,
-                                    message,
-                                })) = event {
-                                    let topic = message.topic.into_string();
-                                    if message.data.len() >= 8 {
-                                        info!(self.stdout_logger, "Received Message";
-                                            "topic" => &topic,
-                                            "id" => format_message_id(&message.data),
-                                            "from" => peer_id.to_string());
-                                    }
-                                    // Shadow doesn’t model CPU execution time,
-                                    // instructions execute instantly in the simulations.
-                                    // Usually in lighthouse blob verification takes ~5ms,
-                                    // so calling `thread::sleep` aims at replicating the same behaviour.
-                                    // See https://github.com/shadow/shadow/issues/2060 for more info.
+                                match event {
+                                    SwarmEvent::Behaviour(MyBehaviorEvent::Gossipsub(gossipsub::Event::Message {
+                                        propagation_source: peer_id,
+                                        message_id,
+                                        message,
+                                    })) => {
+                                        let topic = message.topic.into_string();
+                                        if message.data.len() >= 8 {
+                                            info!(self.stdout_logger, "Received Message";
+                                                "topic" => &topic,
+                                                "id" => format_message_id(&message.data),
+                                                "from" => peer_id.to_string());
+                                        }
+                                        // Shadow doesn’t model CPU execution time,
+                                        // instructions execute instantly in the simulations.
+                                        // Usually in lighthouse blob verification takes ~5ms,
+                                        // so calling `thread::sleep` aims at replicating the same behaviour.
+                                        // See https://github.com/shadow/shadow/issues/2060 for more info.
 
-                                    let mut tx = self.gossipsub_validation_tx.clone();
-                                    if let Some(&delay) = self.topic_validation_delays.get(&topic) {
-                                        tokio::spawn(async move {
-                                            sleep(delay).await;
+                                        let mut tx = self.gossipsub_validation_tx.clone();
+                                        if let Some(&delay) = self.topic_validation_delays.get(&topic) {
+                                            tokio::spawn(async move {
+                                                sleep(delay).await;
+                                                tx.send(ValidationResult {
+                                                    peer_id,
+                                                    msg_id: message_id,
+                                                    result: gossipsub::MessageAcceptance::Accept,
+                                                }).await.unwrap();
+                                            });
+                                        } else {
                                             tx.send(ValidationResult {
                                                 peer_id,
                                                 msg_id: message_id,
                                                 result: gossipsub::MessageAcceptance::Accept,
                                             }).await.unwrap();
-                                        });
-                                    } else {
-                                        tx.send(ValidationResult {
-                                            peer_id,
-                                            msg_id: message_id,
-                                            result: gossipsub::MessageAcceptance::Accept,
-                                        }).await.unwrap();
+                                        }
+                                    }
+                                    SwarmEvent::Behaviour(MyBehaviorEvent::Gossipsub(gossipsub::Event::Partial {group_id, topic_id, propagation_source, message, iwant: _, ihave })) => {
+                                        let topic_partials = self
+                                            .partials
+                                            .get_mut(topic_id.as_str())
+                                            .ok_or(format!("Topic {topic_id} doesn't exist"))?;
+                                        let partial = topic_partials
+                                            .get_mut(group_id.as_slice())
+                                            .ok_or(format!("GroupId {group_id:?} doesn't exist"))?;
+
+                                        let before_extension = partial.available_parts().map(|x| x.as_ref().to_vec());
+                                        if let Some(message) = message {
+                                            if !message.is_empty() {
+                                                info!(self.stderr_logger, "new data len is {}", message.len());
+                                                partial.extend_from_encoded_partial_message(&message)?;
+                                            }
+                                        }
+                                        let after_extension = partial.available_parts().map(|x| x.as_ref().to_vec());
+
+                                        let mut should_republish = false;
+                                        if before_extension != after_extension {
+                                            info!(self.stderr_logger, "Got new data. Will republish. {before_extension:?} {after_extension:?}");
+                                            if after_extension == Some(Vec::<u8>::from([255])) {
+                                                info!(self.stdout_logger, "Received Full Partial Message";
+                                                    // "topic" => topic_id,
+                                                    // "group_id" => group_id,
+                                                    "from" => propagation_source.to_string());
+                                            }
+
+                                            should_republish = true;
+                                        }
+                                        if !should_republish && ihave != after_extension {
+                                            info!(self.stderr_logger, "I have something the peer doesn't or vice versa. {ihave:?} {after_extension:?}");
+                                            should_republish = true;
+                                        }
+
+                                        if should_republish {
+                                            self.swarm
+                                                .behaviour_mut()
+                                                .gossipsub
+                                                .publish_partial(topic_id, partial.clone())?;
+                                        }
+                                    }
+                                    ev => {
+                                        info!(self.stderr_logger, "Some other event, {:?}", ev)
                                     }
                                 }
                             }
