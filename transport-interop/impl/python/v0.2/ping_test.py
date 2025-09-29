@@ -76,7 +76,7 @@ class PingTest:
 
     def validate_configuration(self) -> None:
         """Validate the configuration parameters."""
-        # Validate transport
+        # Validate transport - TCP only
         if self.transport not in ["tcp"]:
             raise ValueError(f"Unsupported transport: {self.transport}. Supported transports: ['tcp']")
         
@@ -125,24 +125,24 @@ class PingTest:
 
     async def handle_ping(self, stream: INetStream) -> None:
         """Handle incoming ping requests."""
-        while True:
-            try:
-                payload = await stream.read(PING_LENGTH)
-                # Get peer ID safely, suppressing warnings
-                import warnings
-                with warnings.catch_warnings():
-                    warnings.simplefilter("ignore")
-                    try:
-                        peer_id = stream.muxed_conn.peer_id
-                    except (AttributeError, Exception):
-                        peer_id = "unknown"
-                if payload is not None:
-                    print(f"received ping from {peer_id}", file=sys.stderr)
-                    await stream.write(payload)
-                    print(f"responded with pong to {peer_id}", file=sys.stderr)
-            except Exception:
-                await stream.reset()
-                break
+        try:
+            # Only process one ping request to avoid excessive pong responses
+            payload = await stream.read(PING_LENGTH)
+            # Get peer ID safely, suppressing warnings
+            import warnings
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                try:
+                    peer_id = stream.muxed_conn.peer_id
+                except (AttributeError, Exception):
+                    peer_id = "unknown"
+            if payload is not None:
+                print(f"received ping from {peer_id}", file=sys.stderr)
+                await stream.write(payload)
+                print(f"responded with pong to {peer_id}", file=sys.stderr)
+        except Exception as e:
+            print(f"Error in ping handler: {e}", file=sys.stderr)
+            await stream.reset()
 
     async def send_ping(self, stream: INetStream) -> float:
         """Send ping and measure RTT."""
@@ -174,6 +174,13 @@ class PingTest:
             print(f"error occurred: {e}", file=sys.stderr)
             raise
 
+    def create_listen_address(self, ip: str, port: int = 0) -> multiaddr.Multiaddr:
+        """Create listen address based on transport type."""
+        if self.transport == "tcp":
+            return multiaddr.Multiaddr(f"/ip4/{ip}/tcp/{port}")
+        else:
+            raise ValueError(f"Unsupported transport for address creation: {self.transport}")
+
     async def run_listener(self) -> None:
         """Run the listener role."""
         logger.debug("Entering run_listener")
@@ -182,13 +189,14 @@ class PingTest:
         self.validate_configuration()
         # Create listen address
         logger.debug("Creating listen address")
-        listen_addr = multiaddr.Multiaddr(f"/ip4/{self.ip}/tcp/0")
+        listen_addr = self.create_listen_address(self.ip)
         # Create security and muxer options
         logger.debug("Creating security and muxer options")
         security_options, key_pair = self.create_security_options()
         muxer_options = self.create_muxer_options()
         # Create host with proper configuration
         logger.debug("Creating host")
+        
         self.host = new_host(
             key_pair=key_pair,
             sec_opt=security_options,
@@ -207,17 +215,32 @@ class PingTest:
             if not listen_addrs:
                 raise RuntimeError("No listen addresses available")
             
-            # Replace 0.0.0.0 with the actual container IP
+            # Replace local IPs with the actual container IP for Docker networking
             actual_addr = None
+            logger.debug(f"Processing {len(listen_addrs)} listen addresses")
             for addr in listen_addrs:
-                if "/ip4/0.0.0.0/" in str(addr):
-                    # Replace 0.0.0.0 with the container's actual IP
+                addr_str = str(addr)
+                logger.debug(f"Checking address: {addr_str}")
+                
+                # Check for both 0.0.0.0 and 127.0.0.1 addresses that need replacement
+                if "/ip4/0.0.0.0/" in addr_str or "/ip4/127.0.0.1/" in addr_str:
+                    logger.debug(f"Found local address, replacing with container IP")
+                    # Get the container's actual IP
                     actual_ip = self.get_container_ip()
-                    actual_addr = str(addr).replace("/ip4/0.0.0.0/", f"/ip4/{actual_ip}/")
+                    logger.debug(f"Container IP: {actual_ip}")
+                    
+                    # Replace the IP in the address
+                    if "/ip4/0.0.0.0/" in addr_str:
+                        actual_addr = addr_str.replace("/ip4/0.0.0.0/", f"/ip4/{actual_ip}/")
+                    elif "/ip4/127.0.0.1/" in addr_str:
+                        actual_addr = addr_str.replace("/ip4/127.0.0.1/", f"/ip4/{actual_ip}/")
+                    
+                    logger.debug(f"Replaced address: {actual_addr}")
                     break
             
             if not actual_addr:
                 actual_addr = str(listen_addrs[0])
+                logger.debug(f"Using original address: {actual_addr}")
             
             logger.debug(f"Publishing address to Redis: {actual_addr}")
             self.redis_client.rpush("listenerAddr", actual_addr)
@@ -358,12 +381,25 @@ class PingTest:
     def get_container_ip(self) -> str:
         """Get the container's actual IP address."""
         import socket
+        import subprocess
         try:
-            # Get the container's hostname and resolve it to IP
-            hostname = socket.gethostname()
-            ip = socket.gethostbyname(hostname)
-            logger.debug(f"Container IP: {ip} (hostname: {hostname})")
-            return ip
+            # Try multiple methods to get the container IP
+            # Method 1: Use hostname -I (works in most Docker containers)
+            try:
+                result = subprocess.run(['hostname', '-I'], capture_output=True, text=True, timeout=5)
+                if result.returncode == 0 and result.stdout.strip():
+                    ip = result.stdout.strip().split()[0]
+                    logger.debug(f"Container IP from hostname -I: {ip}")
+                    return ip
+            except Exception as e:
+                logger.debug(f"hostname -I failed: {e}")
+            
+            # Method 2: Connect to a remote address to determine our local IP
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+                s.connect(("8.8.8.8", 80))
+                local_ip = s.getsockname()[0]
+                logger.debug(f"Container IP from socket: {local_ip}")
+                return local_ip
         except Exception as e:
             logger.debug(f"Failed to get container IP: {e}")
             # Fallback to a reasonable default
@@ -377,4 +413,4 @@ async def main():
 
 
 if __name__ == "__main__":
-    trio.run(main) 
+    trio.run(main)
