@@ -53,9 +53,6 @@ def partial_message_scenario(
         number_of_conns_per_node = node_count - 1
     instructions.extend(random_network_mesh(node_count, number_of_conns_per_node))
 
-    # Deal with rust not sending extensions before subscriptions (BUG!)
-    elapsed_seconds = 10
-    instructions.append(script_instruction.WaitUntil(elapsedSeconds=elapsed_seconds))
     topic = "a-subnet"
     instructions.append(
         script_instruction.SubscribeToTopic(topicID=topic, partial=True)
