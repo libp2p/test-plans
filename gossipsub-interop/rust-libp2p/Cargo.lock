@@ -1657,7 +1657,7 @@ dependencies = [
 [[package]]
 name = "libp2p-gossipsub"
 version = "0.50.0"
-source = "git+https://github.com/jxs/rust-libp2p/?branch=gossipsub-partial-messages#5e98f1a1689eb74d119fe816b7ed0b4a3ee2d655"
+source = "git+https://github.com/jxs/rust-libp2p/?branch=gossipsub-partial-messages#f77490cc0a580f133bc9fbeb94c83faefd57369a"
 dependencies = [
  "async-channel",
  "asynchronous-codec",
