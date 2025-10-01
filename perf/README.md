@@ -75,8 +75,8 @@ Given you have provisioned your infrastructure, you can now build and run the li
           - Input via command line
             - `--server-address`
             - `--transport` (see [`runner/versions.ts`](./runner/src/versions.ts#L7-L43) for possible variants)
-            - `--upload-bytes` number of bytes to upload per stream.
-            - `--download-bytes` number of bytes to download per stream.
+            - `--upload-bytes` number of bytes to upload per stream in 64KiB chunks.
+            - `--download-bytes` number of bytes to download per stream in 64KiB chunks.
           - Output
             - Logging MUST go to `stderr`.
             - Measurement output is printed to `stdout` as JSON.
