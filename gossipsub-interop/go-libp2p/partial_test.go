@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	partialmessages "github.com/libp2p/go-libp2p-pubsub/partialmessages"
+	"github.com/libp2p/go-libp2p/core/peer"
 )
 
 func TestFillParts(t *testing.T) {
@@ -90,6 +91,12 @@ func (p *partialInvariantChecker) SplitIntoParts(in *PartialMessage) ([]*Partial
 		out = append(out, p)
 	}
 	return out, nil
+}
+
+// ShouldRequest implements partialmessages.InvariantChecker.
+func (p *partialInvariantChecker) ShouldRequest(a *PartialMessage, from peer.ID, partsMetadata []byte) bool {
+	aHas := a.PartsMetadata()[0]
+	return len(partsMetadata) == 1 && aHas != partsMetadata[0]
 }
 
 var _ partialmessages.InvariantChecker[*PartialMessage] = (*partialInvariantChecker)(nil)
