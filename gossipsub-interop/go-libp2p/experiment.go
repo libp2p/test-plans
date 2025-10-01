@@ -26,12 +26,8 @@ type HostConnector interface {
 }
 
 type incomingPartialRPC struct {
-	from                peer.ID
-	topic               string
-	groupID             []byte
-	iwant               []byte
-	ihave               []byte
-	partialMessageBytes []byte
+	pubsub_pb.PartialMessagesExtension
+	from peer.ID
 }
 
 type partialMsgWithTopic struct {
@@ -103,42 +99,49 @@ func (m *partialMsgManager) addMsg(req partialMsgWithTopic) {
 }
 
 func (m *partialMsgManager) handleRPC(rpc incomingPartialRPC) {
-	_, ok := m.partialMessages[rpc.topic]
+	_, ok := m.partialMessages[rpc.GetTopicID()]
 	if !ok {
-		m.partialMessages[rpc.topic] = make(map[string]*PartialMessage)
+		m.partialMessages[rpc.GetTopicID()] = make(map[string]*PartialMessage)
 	}
-	pm, ok := m.partialMessages[rpc.topic][string(rpc.groupID)]
+	pm, ok := m.partialMessages[rpc.GetTopicID()][string(rpc.GroupID)]
 	if !ok {
 		pm = &PartialMessage{}
-		copy(pm.groupID[:], rpc.groupID)
-		m.partialMessages[rpc.topic][string(rpc.groupID)] = pm
+		copy(pm.groupID[:], rpc.GroupID)
+		m.partialMessages[rpc.GetTopicID()][string(rpc.GroupID)] = pm
 	}
 
 	// Extend first, so we don't request something we just got.
-	if len(rpc.partialMessageBytes) != 0 {
-		pm.Extend(rpc.partialMessageBytes)
+	beforeExtend := pm.PartsMetadata()[0]
+	if len(rpc.PartialMessage) != 0 {
+		err := pm.Extend(rpc.PartialMessage)
+		if err != nil {
+			m.Error("Failed to extend partial message", "err", err)
+			return
+		}
+	}
+	afterExtend := pm.PartsMetadata()[0]
+	var shouldRepublish bool
+	if beforeExtend != afterExtend {
+		m.Info("Extended partial message")
+		shouldRepublish = true
+
 	}
 
-	missing, _ := pm.MissingParts()
-	if len(missing) == 0 {
+	has := pm.PartsMetadata()
+	if has[0] == 0xff {
 		m.Info("All parts received")
 	}
 
-	var shouldRepublish bool
-	pmHas, _ := pm.AvailableParts()
-	if len(rpc.iwant) != 0 {
-		if rpc.iwant[0]&pmHas[0] != 0 {
-			shouldRepublish = true
-		}
-	}
-	if len(rpc.ihave) != 0 {
-		if (rpc.ihave[0] & (^pmHas[0])) != 0 {
-			shouldRepublish = true
+	pmHas := pm.PartsMetadata()
+	if !shouldRepublish && len(rpc.PartsMetadata) == 1 {
+		shouldRepublish = pmHas[0] != rpc.PartsMetadata[0]
+		if shouldRepublish {
+			m.Info("Republishing partial message because a peer has something I want")
 		}
 	}
 
 	if shouldRepublish {
-		m.pubsub.PublishPartialMessage(rpc.topic, pm, partialmessages.PublishOptions{})
+		m.pubsub.PublishPartialMessage(rpc.GetTopicID(), pm, partialmessages.PublishOptions{})
 	}
 }
 
@@ -195,15 +198,12 @@ func (n *scriptedNode) runInstruction(ctx context.Context, instruction ScriptIns
 				// Not doing any validation for now
 				return nil
 			},
-			OnIncomingRPC: func(from peer.ID, topic string, groupID, iwant, ihave, partialMessageBytes []byte) {
+			OnIncomingRPC: func(from peer.ID, rpc *pubsub_pb.PartialMessagesExtension) error {
 				n.partialMsgMgr.incomingRPC <- incomingPartialRPC{
-					from:                from,
-					topic:               topic,
-					groupID:             groupID,
-					iwant:               iwant,
-					ihave:               ihave,
-					partialMessageBytes: partialMessageBytes,
+					from:                     from,
+					PartialMessagesExtension: *rpc,
 				}
+				return nil
 			},
 		}
 
