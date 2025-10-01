@@ -267,7 +267,7 @@ impl ScriptedNode {
             ScriptInstruction::SubscribeToTopic { topic_id } => {
                 let topic = self.get_topic(&topic_id);
 
-                match self.swarm.behaviour_mut().gossipsub.subscribe(&topic) {
+                match self.swarm.behaviour_mut().gossipsub.subscribe(&topic, true) {
                     Ok(_) => {
                         info!(self.stderr_logger, "Subscribed to topic {}", topic_id);
                     }
