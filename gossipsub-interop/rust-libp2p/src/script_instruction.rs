@@ -77,6 +77,7 @@ pub enum ScriptInstruction {
     SubscribeToTopic {
         #[serde(rename = "topicID")]
         topic_id: String,
+        partial: bool,
     },
 
     #[serde(rename = "setTopicValidationDelay", rename_all = "camelCase")]
