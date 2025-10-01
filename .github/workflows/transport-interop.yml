@@ -15,8 +15,12 @@ name: libp2p transport interop test
 
 jobs:
   run-transport-interop:
-    runs-on: ["self-hosted", "linux", "x64", "4xlarge"] # https://github.com/pl-strflt/tf-aws-gh-runner/blob/main/runners.tf
+    runs-on: ubuntu-latest
     steps:
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be # v1.3.1
+        with:
+          tool-cache: true
       - uses: actions/checkout@v3
       - uses: ./.github/actions/run-transport-interop-test
         with:
@@ -26,8 +30,12 @@ jobs:
           worker-count: 16
           test-ignore: "jvm-v1.2 x zig-v0.0.1 (quic-v1)|zig-v0.0.1 x jvm-v1.2 (quic-v1)|rust-chromium-v0.53 x jvm-v1.2 (ws)|js-v1.x x jvm-v1.2 (ws, noise, yamux)|js-v1.x x jvm-v1.2 (ws, noise, mplex)|rust-chromium-v0.53 x jvm-v1.2 (ws, noise, mplex)"
   build-without-secrets:
-    runs-on: ["self-hosted", "linux", "x64", "4xlarge"] # https://github.com/pl-strflt/tf-aws-gh-runner/blob/main/runners.tf
+    runs-on: ubuntu-latest
     steps:
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be # v1.3.1
+        with:
+          tool-cache: true
       - uses: actions/checkout@v3
       # Purposely not using secrets to replicate how forks will behave.
       - uses: ./.github/actions/run-transport-interop-test
