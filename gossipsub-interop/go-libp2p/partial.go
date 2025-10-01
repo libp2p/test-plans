@@ -7,7 +7,6 @@ import (
 	"math/bits"
 
 	partialmessages "github.com/libp2p/go-libp2p-pubsub/partialmessages"
-	"github.com/libp2p/go-libp2p/core/peer"
 )
 
 const partLen = 1024
@@ -15,6 +14,17 @@ const partLen = 1024
 type PartialMessage struct {
 	groupID [8]byte
 	parts   [8][]byte // each part is partLen sized or nil if empty
+}
+
+// PartsMetadata implements partialmessages.PartialMessage.
+func (p *PartialMessage) PartsMetadata() []byte {
+	out := []byte{0}
+	for i := range p.parts {
+		if len(p.parts[i]) > 0 {
+			out[0] |= 1 << i
+		}
+	}
+	return out
 }
 
 // FillParts is used to initialize this PartialMessage for testing by filling in
@@ -38,30 +48,9 @@ func (p *PartialMessage) FillParts(bitmap byte) error {
 	return nil
 }
 
-// AvailableParts implements partialmessages.PartialMessage.
-func (p *PartialMessage) AvailableParts() ([]byte, error) {
-	out := []byte{0}
-	for i := range p.parts {
-		if len(p.parts[i]) > 0 {
-			out[0] |= 1 << i
-		}
-	}
-	return out, nil
-}
-
 // GroupID implements partialmessages.PartialMessage.
 func (p *PartialMessage) GroupID() []byte {
 	return p.groupID[:]
-}
-
-// MissingParts implements partialmessages.PartialMessage.
-func (p *PartialMessage) MissingParts() ([]byte, error) {
-	b, _ := p.AvailableParts()
-	b[0] = ^b[0]
-	if b[0] == 0 {
-		return nil, nil
-	}
-	return b, nil
 }
 
 func (p *PartialMessage) Extend(data []byte) error {
@@ -98,12 +87,8 @@ func (p *PartialMessage) Extend(data []byte) error {
 	return nil
 }
 
-// PartialMessageBytesFromMetadata implements partialmessages.PartialMessage.
-func (p *PartialMessage) PartialMessageBytesFromMetadata(metadata []byte) ([]byte, []byte, error) {
-	if len(metadata) == 0 {
-		// Treat this as the same as a request for all parts
-		metadata = []byte{0xff}
-	}
+// PartialMessageBytes implements partialmessages.PartialMessage.
+func (p *PartialMessage) PartialMessageBytes(metadata []byte) ([]byte, []byte, error) {
 	if len(metadata) != 1 {
 		return nil, nil, errors.New("invalid metadata length")
 	}
@@ -112,7 +97,8 @@ func (p *PartialMessage) PartialMessageBytesFromMetadata(metadata []byte) ([]byt
 	out = append(out, 0) // This byte will contain the parts we are including in the message
 	remaining := []byte{metadata[0]}
 	for i := range p.parts {
-		if metadata[0]&(1<<i) == 0 {
+		if metadata[0]&(1<<i) != 0 {
+			// They already have this part
 			continue
 		}
 		if len(p.parts[i]) == 0 {
@@ -131,15 +117,6 @@ func (p *PartialMessage) PartialMessageBytesFromMetadata(metadata []byte) ([]byt
 	}
 
 	return out, remaining, nil
-}
-
-// ShouldRequest implements partialmessages.PartialMessage.
-func (p *PartialMessage) ShouldRequest(_ peer.ID, peerHasMetadata []byte) bool {
-	wants, _ := p.MissingParts()
-	if len(wants) == 0 || len(peerHasMetadata) == 0 {
-		return false
-	}
-	return wants[0]&peerHasMetadata[0] != 0
 }
 
 var _ partialmessages.PartialMessage = (*PartialMessage)(nil)
