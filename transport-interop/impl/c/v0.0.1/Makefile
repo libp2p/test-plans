@@ -1,12 +1,15 @@
 image_name := c-v0.0.1
-commitSha := 9ee22b6a2272ffa5cecbce2af61d4bda8b7a1b21
-zip_name := c-libp2p-$(commitSha).zip
+commitSha := 2d6ccc96b39a5129ebdaf5b2577eba5880f3dc0a
+repo_url := https://github.com/Pier-Two/c-libp2p.git
 dir_name := c-libp2p-$(commitSha)
 
 all: image.json
 
 image.json:
-	wget -O $(zip_name) https://github.com/Pier-Two/c-libp2p/archive/$(commitSha).zip && unzip -o $(zip_name)
+	rm -rf $(dir_name)
+	git clone $(repo_url) $(dir_name)
+	cd $(dir_name) && git checkout $(commitSha)
+	cd $(dir_name) && git submodule update --init --recursive lib/picoquic
 	cd $(dir_name) && \
 	mkdir -p lib/secp256k1 && wget -O secp256k1.zip https://github.com/bitcoin-core/secp256k1/archive/master.zip && unzip -o secp256k1.zip && mv secp256k1-master/* lib/secp256k1/ && rm -rf secp256k1.zip secp256k1-master && \
 	mkdir -p lib/libtomcrypt && wget -O libtomcrypt.zip https://github.com/libtom/libtomcrypt/archive/develop.zip && unzip -o libtomcrypt.zip && mv libtomcrypt-develop/* lib/libtomcrypt/ && rm -rf libtomcrypt.zip libtomcrypt-develop && \
@@ -21,6 +24,6 @@ image.json:
 		xargs -I {} echo '{"imageID": "{}"}' > $@
 
 clean:
-	rm -rf image.json $(dir_name) $(zip_name)
+	rm -rf image.json $(dir_name)
 
 .PHONY: all clean

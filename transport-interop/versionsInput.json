@@ -353,7 +353,8 @@
   {
     "id": "c-v0.0.1",
     "transports": [
-      "tcp"
+      "tcp",
+      "quic-v1"
     ],
     "secureChannels": [
       "noise"
