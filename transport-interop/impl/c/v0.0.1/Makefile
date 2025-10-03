@@ -1,5 +1,5 @@
 image_name := c-v0.0.1
-commitSha := 2d6ccc96b39a5129ebdaf5b2577eba5880f3dc0a
+commitSha := 2e8a4615dd12f51c6192a260acea751d8950d24d
 repo_url := https://github.com/Pier-Two/c-libp2p.git
 dir_name := c-libp2p-$(commitSha)
 
