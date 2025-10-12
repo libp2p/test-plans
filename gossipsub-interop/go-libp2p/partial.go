@@ -6,7 +6,7 @@ import (
 	"errors"
 	"math/bits"
 
-	partialmessages "github.com/libp2p/go-libp2p-pubsub/partialmessages"
+	"github.com/libp2p/go-libp2p-pubsub/partialmessages"
 )
 
 const partLen = 1024
@@ -17,8 +17,8 @@ type PartialMessage struct {
 }
 
 // PartsMetadata implements partialmessages.PartialMessage.
-func (p *PartialMessage) PartsMetadata() []byte {
-	out := []byte{0}
+func (p *PartialMessage) PartsMetadata() partialmessages.PartsMetadata {
+	out := partialmessages.PartsMetadata{0}
 	for i := range p.parts {
 		if len(p.parts[i]) > 0 {
 			out[0] |= 1 << i
@@ -88,35 +88,29 @@ func (p *PartialMessage) Extend(data []byte) error {
 }
 
 // PartialMessageBytes implements partialmessages.PartialMessage.
-func (p *PartialMessage) PartialMessageBytes(metadata []byte) ([]byte, []byte, error) {
+func (p *PartialMessage) PartialMessageBytes(metadata partialmessages.PartsMetadata) ([]byte, error) {
 	if len(metadata) != 1 {
-		return nil, nil, errors.New("invalid metadata length")
+		return nil, errors.New("invalid metadata length")
 	}
 
 	out := make([]byte, 0, 1+1024*(bits.OnesCount8(metadata[0]))+len(p.groupID))
 	out = append(out, 0) // This byte will contain the parts we are including in the message
-	remaining := []byte{metadata[0]}
-	for i := range p.parts {
+	for i, a := range p.parts {
 		if metadata[0]&(1<<i) != 0 {
 			// They already have this part
 			continue
 		}
-		if len(p.parts[i]) == 0 {
+		if len(a) == 0 {
 			continue
 		}
-		remaining[0] ^= (1 << i)
 		out[0] |= 1 << i
-		out = append(out, p.parts[i]...)
+		out = append(out, a...)
 	}
 	if out[0] == 0 {
-		return nil, metadata, nil
+		return nil, nil
 	}
 	out = append(out, p.groupID[:]...)
-	if remaining[0] == 0 {
-		remaining = nil
-	}
-
-	return out, remaining, nil
+	return out, nil
 }
 
-var _ partialmessages.PartialMessage = (*PartialMessage)(nil)
+var _ partialmessages.Message = (*PartialMessage)(nil)

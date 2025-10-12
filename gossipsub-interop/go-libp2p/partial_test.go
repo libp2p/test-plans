@@ -94,9 +94,20 @@ func (p *partialInvariantChecker) SplitIntoParts(in *PartialMessage) ([]*Partial
 }
 
 // ShouldRequest implements partialmessages.InvariantChecker.
-func (p *partialInvariantChecker) ShouldRequest(a *PartialMessage, from peer.ID, partsMetadata []byte) bool {
+func (*partialInvariantChecker) ShouldRequest(a *PartialMessage, _ peer.ID, partsMetadata []byte) bool {
 	aHas := a.PartsMetadata()[0]
 	return len(partsMetadata) == 1 && aHas != partsMetadata[0]
+}
+
+func (*partialInvariantChecker) MergePartsMetadata(left, right partialmessages.PartsMetadata) partialmessages.PartsMetadata {
+	res := slices.Clone(left)
+	if len(res) == 0 {
+		return slices.Clone(right)
+	}
+	if len(right) > 0 {
+		res[0] |= right[0]
+	}
+	return res
 }
 
 var _ partialmessages.InvariantChecker[*PartialMessage] = (*partialInvariantChecker)(nil)
