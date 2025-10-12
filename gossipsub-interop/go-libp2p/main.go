@@ -18,6 +18,7 @@ import (
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	"github.com/libp2p/go-libp2p-pubsub/partialmessages"
 	pubsubpb "github.com/libp2p/go-libp2p-pubsub/pb"
+	"github.com/libp2p/go-libp2p/core/connmgr"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
@@ -120,6 +121,7 @@ func main() {
 		libp2p.ListenAddrStrings("/ip4/0.0.0.0/tcp/9000"),
 		// libp2p.ListenAddrStrings("/ip4/0.0.0.0/udp/9000/quic-v1"),
 		libp2p.Identity(nodePrivKey(nodeId)),
+		libp2p.ConnectionManager(connmgr.NullConnMgr{}),
 	)
 	if err != nil {
 		panic(err)
