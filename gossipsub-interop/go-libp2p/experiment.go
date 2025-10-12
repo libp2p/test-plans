@@ -128,8 +128,9 @@ func (m *partialMsgManager) handleRPC(rpc incomingPartialRPC) {
 	}
 
 	has := pm.PartsMetadata()
+	gid := binary.BigEndian.Uint64(rpc.GroupID)
 	if has[0] == 0xff {
-		m.Info("All parts received")
+		m.Info("All parts received", "group id", gid)
 	}
 
 	pmHas := pm.PartsMetadata()

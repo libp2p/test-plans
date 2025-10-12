@@ -1,11 +1,11 @@
+import random
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import timedelta
-import random
-from typing import List, Dict, Set
+from typing import Dict, List, Set
 
-from script_instruction import GossipSubParams, ScriptInstruction, NodeID
 import script_instruction
+from script_instruction import GossipSubParams, NodeID, ScriptInstruction
 
 
 @dataclass
@@ -48,9 +48,7 @@ def partial_message_scenario(
         gs_params.GossipFactor = 0
     instructions.extend(spread_heartbeat_delay(node_count, gs_params))
 
-    number_of_conns_per_node = 20
-    if number_of_conns_per_node >= node_count:
-        number_of_conns_per_node = node_count - 1
+    number_of_conns_per_node = min(20, node_count - 1)
     instructions.extend(random_network_mesh(node_count, number_of_conns_per_node))
 
     topic = "a-subnet"
@@ -96,6 +94,8 @@ def partial_message_scenario(
                 )
             )
 
+    # Everyone publishes their partial message. This is how nodes learn about
+    # each others parts and can request them.
     instructions.append(
         script_instruction.PublishPartial(topicID=topic, groupID=groupID)
     )
@@ -107,6 +107,84 @@ def partial_message_scenario(
     return instructions
 
 
+def partial_message_chain_scenario(
+    disable_gossip: bool, node_count: int
+) -> List[ScriptInstruction]:
+    instructions: List[ScriptInstruction] = []
+    gs_params = GossipSubParams()
+    if disable_gossip:
+        gs_params.Dlazy = 0
+        gs_params.GossipFactor = 0
+    instructions.extend(spread_heartbeat_delay(node_count, gs_params))
+
+    # Create a bidirectional chain topology: 0<->1<->2....<->n-1
+    # Each node connects to both previous and next (except first and last)
+    for i in range(node_count):
+        connections = []
+        if i > 0:
+            connections.append(i - 1)  # Connect to previous
+        if i < node_count - 1:
+            connections.append(i + 1)  # Connect to next
+
+        if connections:
+            instructions.append(
+                script_instruction.IfNodeIDEquals(
+                    nodeID=i,
+                    instruction=script_instruction.Connect(connectTo=connections),
+                )
+            )
+
+    topic = "partial-msg-chain"
+    instructions.append(
+        script_instruction.SubscribeToTopic(topicID=topic, partial=True)
+    )
+
+    # Wait for setup time and mesh stabilization
+    elapsed_seconds = 30
+    instructions.append(script_instruction.WaitUntil(elapsedSeconds=elapsed_seconds))
+
+    # 16 messages with 8 parts each
+    num_messages = 16
+    num_parts = 8
+
+    # Assign parts to nodes in round-robin fashion
+    # Each message-part combination goes to exactly one node
+    for msg_idx in range(num_messages):
+        groupID = msg_idx  # Unique group ID for each message
+
+        # Assign each of the 8 parts to nodes in round-robin
+        for part_idx in range(num_parts):
+            node_idx = (msg_idx * num_parts + part_idx) % node_count
+            part_bitmap = 1 << part_idx  # Single bit for this part
+
+            instructions.append(
+                script_instruction.IfNodeIDEquals(
+                    nodeID=node_idx,
+                    instruction=script_instruction.AddPartialMessage(
+                        topicID=topic, groupID=groupID, parts=part_bitmap
+                    ),
+                )
+            )
+
+    # Have multiple nodes with parts for each message try to publish
+    # This creates redundancy and ensures the exchange process starts
+    for msg_idx in range(num_messages):
+        groupID = msg_idx
+
+        elapsed_seconds += 2  # Delay between message groups
+        instructions.append(
+            script_instruction.WaitUntil(elapsedSeconds=elapsed_seconds)
+        )
+        instructions.append(
+            script_instruction.PublishPartial(topicID=topic, groupID=groupID)
+        )
+
+    # Wait for propagation and assembly
+    elapsed_seconds += 30
+    instructions.append(script_instruction.WaitUntil(elapsedSeconds=elapsed_seconds))
+    return instructions
+
+
 def scenario(
     scenario_name: str, node_count: int, disable_gossip: bool
 ) -> ExperimentParams:
@@ -114,6 +192,8 @@ def scenario(
     match scenario_name:
         case "partial-messages":
             instructions = partial_message_scenario(disable_gossip, node_count)
+        case "partial-messages-chain":
+            instructions = partial_message_chain_scenario(disable_gossip, node_count)
         case "subnet-blob-msg":
             gs_params = GossipSubParams()
             if disable_gossip:
