@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"log/slog"
+	"slices"
 	"time"
 
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
@@ -110,6 +111,8 @@ func (m *partialMsgManager) handleRPC(rpc incomingPartialRPC) {
 		m.partialMessages[rpc.GetTopicID()][string(rpc.GroupID)] = pm
 	}
 
+	prevParts := pm.PartsMetadata()
+
 	// Extend first, so we don't request something we just got.
 	beforeExtend := pm.PartsMetadata()[0]
 	if len(rpc.PartialMessage) != 0 {
@@ -126,10 +129,12 @@ func (m *partialMsgManager) handleRPC(rpc incomingPartialRPC) {
 		shouldRepublish = true
 
 	}
+	newParts := pm.PartsMetadata()
 
 	has := pm.PartsMetadata()
+	gid := binary.BigEndian.Uint64(rpc.GroupID)
 	if has[0] == 0xff {
-		m.Info("All parts received")
+		m.Info("All parts received", "group id", gid)
 	}
 
 	pmHas := pm.PartsMetadata()
@@ -192,6 +197,7 @@ func (n *scriptedNode) runInstruction(ctx context.Context, instruction ScriptIns
 	switch a := instruction.(type) {
 	case InitGossipSubInstruction:
 		slog.SetLogLoggerLevel(slog.LevelDebug)
+		slog.Error("gossip sub init", "node-id", n.nodeID)
 		pme := &partialmessages.PartialMessageExtension{
 			Logger: slog.Default(),
 			ValidateRPC: func(from peer.ID, rpc *pubsub_pb.PartialMessagesExtension) error {
@@ -205,8 +211,17 @@ func (n *scriptedNode) runInstruction(ctx context.Context, instruction ScriptIns
 				}
 				return nil
 			},
+			MergePartsMetadata: func(_ string, left, right partialmessages.PartsMetadata) partialmessages.PartsMetadata {
+				a := slices.Clone(left)
+				if len(a) == 0 {
+					a = append(a, 0)
+				}
+				if len(right) > 0 {
+					a[0] |= right[0]
+				}
+				return a
+			},
 		}
-
 		psOpts := pubsubOptions(n.slogger, a.GossipSubParams, pme)
 		ps, err := pubsub.NewGossipSub(ctx, n.h, psOpts...)
 		if err != nil {
@@ -291,6 +306,7 @@ func (n *scriptedNode) runInstruction(ctx context.Context, instruction ScriptIns
 	case PublishPartialInstruction:
 		var groupID [8]byte
 		binary.BigEndian.AppendUint64(groupID[:0], uint64(a.GroupID))
+		n.slogger.Error("HELLO WORLD", "publish partial", a.GroupID)
 		n.partialMsgMgr.publish <- publishReq{
 			topic:   a.TopicID,
 			groupID: groupID[:],
