@@ -19,7 +19,9 @@ class ExperimentParams:
     script: List[ScriptInstruction] = field(default_factory=list)
 
 
-def spread_heartbeat_delay(node_count: int, template_gs_params: GossipSubParams) -> List[ScriptInstruction]:
+def spread_heartbeat_delay(
+    node_count: int, template_gs_params: GossipSubParams
+) -> List[ScriptInstruction]:
     instructions = []
     initial_delay = timedelta(seconds=0.1)
     for i in range(node_count):
@@ -30,14 +32,15 @@ def spread_heartbeat_delay(node_count: int, template_gs_params: GossipSubParams)
         instructions.append(
             script_instruction.IfNodeIDEquals(
                 nodeID=i,
-                instruction=script_instruction.InitGossipSub(
-                    gossipSubParams=gs_params)
+                instruction=script_instruction.InitGossipSub(gossipSubParams=gs_params),
             )
         )
     return instructions
 
 
-def scenario(scenario_name: str, node_count: int, disable_gossip: bool) -> ExperimentParams:
+def scenario(
+    scenario_name: str, node_count: int, disable_gossip: bool
+) -> ExperimentParams:
     instructions: List[ScriptInstruction] = []
     match scenario_name:
         case "subnet-blob-msg":
@@ -45,8 +48,7 @@ def scenario(scenario_name: str, node_count: int, disable_gossip: bool) -> Exper
             if disable_gossip:
                 gs_params.Dlazy = 0
                 gs_params.GossipFactor = 0
-            instructions.extend(spread_heartbeat_delay(
-                node_count, gs_params))
+            instructions.extend(spread_heartbeat_delay(node_count, gs_params))
 
             topic = "a-subnet"
             blob_count = 48
@@ -54,7 +56,8 @@ def scenario(scenario_name: str, node_count: int, disable_gossip: bool) -> Exper
             # 5ms.
             instructions.append(
                 script_instruction.SetTopicValidationDelay(
-                    topicID=topic, delaySeconds=0.005)
+                    topicID=topic, delaySeconds=0.005
+                )
             )
             number_of_conns_per_node = 20
             if number_of_conns_per_node >= node_count:
@@ -64,19 +67,18 @@ def scenario(scenario_name: str, node_count: int, disable_gossip: bool) -> Exper
             )
             message_size = 2 * 1024 * blob_count
             num_messages = 16
-            instructions.append(
-                script_instruction.SubscribeToTopic(topicID=topic))
+            instructions.append(script_instruction.SubscribeToTopic(topicID=topic))
             instructions.extend(
                 random_publish_every_12s(
-                    node_count, num_messages, message_size, [topic])
+                    node_count, num_messages, message_size, [topic]
+                )
             )
         case "simple-fanout":
             gs_params = GossipSubParams()
             if disable_gossip:
                 gs_params.Dlazy = 0
                 gs_params.GossipFactor = 0
-            instructions.extend(spread_heartbeat_delay(
-                node_count, gs_params))
+            instructions.extend(spread_heartbeat_delay(node_count, gs_params))
             topic_a = "topic-a"
             topic_b = "topic-b"
             number_of_conns_per_node = 20
@@ -93,13 +95,19 @@ def scenario(scenario_name: str, node_count: int, disable_gossip: bool) -> Exper
                     instructions.append(
                         script_instruction.IfNodeIDEquals(
                             nodeID=i,
-                            instruction=script_instruction.SubscribeToTopic(topicID=topic_a)),
+                            instruction=script_instruction.SubscribeToTopic(
+                                topicID=topic_a
+                            ),
+                        ),
                     )
                 else:
                     instructions.append(
                         script_instruction.IfNodeIDEquals(
                             nodeID=i,
-                            instruction=script_instruction.SubscribeToTopic(topicID=topic_b)),
+                            instruction=script_instruction.SubscribeToTopic(
+                                topicID=topic_b
+                            ),
+                        ),
                     )
 
             num_messages = 16
@@ -108,7 +116,9 @@ def scenario(scenario_name: str, node_count: int, disable_gossip: bool) -> Exper
             # Every 12s a random node will publish to a random topic
             instructions.extend(
                 random_publish_every_12s(
-                    node_count, num_messages, message_size, [topic_a, topic_b]))
+                    node_count, num_messages, message_size, [topic_a, topic_b]
+                )
+            )
 
         case _:
             raise ValueError(f"Unknown scenario name: {scenario_name}")
@@ -172,8 +182,7 @@ def random_publish_every_12s(
 
     # Start at 120 seconds (2 minutes) to allow for setup time
     elapsed_seconds = 120
-    instructions.append(script_instruction.WaitUntil(
-        elapsedSeconds=elapsed_seconds))
+    instructions.append(script_instruction.WaitUntil(elapsedSeconds=elapsed_seconds))
 
     for i in range(num_messages):
         random_node = random.randint(0, node_count - 1)
@@ -194,7 +203,6 @@ def random_publish_every_12s(
         )
 
     elapsed_seconds += 30  # wait a bit more to allow all messages to flush
-    instructions.append(script_instruction.WaitUntil(
-        elapsedSeconds=elapsed_seconds))
+    instructions.append(script_instruction.WaitUntil(elapsedSeconds=elapsed_seconds))
 
     return instructions

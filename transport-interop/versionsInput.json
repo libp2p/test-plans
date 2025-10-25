@@ -192,57 +192,6 @@
     ]
   },
   {
-    "id": "zig-v0.0.1",
-    "transports": [
-      "quic-v1"
-    ],
-    "secureChannels": [],
-    "muxers": []
-  },
-  {
-    "id": "java-v0.0.1",
-    "transports": [
-      "tcp"
-    ],
-    "secureChannels": [
-      "tls",
-      "noise"
-    ],
-    "muxers": [
-      "mplex",
-      "yamux"
-    ]
-  },
-  {
-    "id": "java-v0.6",
-    "transports": [
-      "tcp"
-    ],
-    "secureChannels": [
-      "tls",
-      "noise"
-    ],
-    "muxers": [
-      "mplex",
-      "yamux"
-    ]
-  },
-  {
-    "id": "java-v0.9",
-    "transports": [
-      "tcp",
-      "quic-v1"
-    ],
-    "secureChannels": [
-      "tls",
-      "noise"
-    ],
-    "muxers": [
-      "mplex",
-      "yamux"
-    ]
-  },
-  {
     "id": "js-v1.x",
     "transports": [
       "tcp",
@@ -316,6 +265,22 @@
     ],
     "secureChannels": ["tls", "noise"],
     "muxers": ["yamux"]
+  },
+  {
+    "id": "jvm-v1.2",
+    "transports": [
+      "tcp",
+      "ws",
+      "quic-v1"
+    ],
+    "secureChannels": [
+      "tls",
+      "noise"
+    ],
+    "muxers": [
+      "mplex",
+      "yamux"
+    ]
   },
   {
     "id": "dotnet-v1.0",
