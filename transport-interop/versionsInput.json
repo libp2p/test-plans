@@ -281,5 +281,17 @@
       "mplex",
       "yamux"
     ]
+  },
+  {
+    "id": "dotnet-v1.0",
+    "transports": [
+      "tcp"
+    ],
+    "secureChannels": [
+      "noise"
+    ],
+    "muxers": [
+      "yamux"
+    ]
   }
 ]
