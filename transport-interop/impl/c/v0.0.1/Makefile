@@ -19,7 +19,7 @@ image.json:
 	mkdir -p lib/wjcryptlib && wget -O wjcryptlib.zip https://github.com/WaterJuice/WjCryptLib/archive/master.zip && unzip -o wjcryptlib.zip && mv WjCryptLib-master/* lib/wjcryptlib/ && rm -rf wjcryptlib.zip WjCryptLib-master && \
 	mkdir -p lib/sha3 && wget -O sha3.zip https://github.com/pablotron/sha3/archive/main.zip && unzip -o sha3.zip && mv sha3-main/* lib/sha3/ && rm -rf sha3.zip sha3-main && \
 	mkdir -p lib/c20p1305 && wget -O c20p1305.zip https://github.com/wg/c20p1305/archive/master.zip && unzip -o c20p1305.zip && mv c20p1305-master/* lib/c20p1305/ && rm -rf c20p1305.zip c20p1305-master
-	cd $(dir_name) && IMAGE_NAME=$(image_name) ../../../../dockerBuildWrapper.sh -f interop-tests/Dockerfile .
+	cd $(dir_name) && IMAGE_NAME=$(image_name) ../../../../dockerBuildWrapper.sh -f tests/interop-tests/Dockerfile .
 	docker image inspect $(image_name) -f '{{.Id}}' | \
 		xargs -I {} echo '{"imageID": "{}"}' > $@
 
