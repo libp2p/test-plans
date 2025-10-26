@@ -49,6 +49,7 @@ class SetTopicValidationDelay(BaseModel):
     validation process by delaying the validation results by some number of
     seconds.
     """
+
     type: Literal["setTopicValidationDelay"] = "setTopicValidationDelay"
     topicID: str
     delaySeconds: float
@@ -151,6 +152,11 @@ class GossipSubParams(BaseModel):
 
 
 ScriptInstruction = Union[
-    Connect, IfNodeIDEquals, WaitUntil, Publish, SubscribeToTopic,
-    SetTopicValidationDelay, InitGossipSub
+    Connect,
+    IfNodeIDEquals,
+    WaitUntil,
+    Publish,
+    SubscribeToTopic,
+    SetTopicValidationDelay,
+    InitGossipSub,
 ]
