@@ -1,4 +1,4 @@
-FROM nimlang/nim:1.6.16 AS builder
+FROM nimlang/nim:2.2.4-ubuntu-regular AS builder
 
 WORKDIR /app
 
@@ -12,10 +12,10 @@ RUN \
 
 RUN \
   cd nim-libp2p && \
-  nimble install "redis@#b341fe240dbf11c544011dd0e033d3c3acca56af"
+  nimble install redis@0.5.0
 
 COPY main.nim main.nim
 RUN \
-  nim c --NimblePath:nim-libp2p/nimbledeps/pkgs -p:nim-libp2p -d:libp2p_quic_support -d:chronicles_log_level=WARN --threads:off main.nim
+  nim c --NimblePath:nim-libp2p/nimbledeps/pkgs2 -p:nim-libp2p -d:libp2p_quic_support -d:chronicles_log_level=WARN --threads:off main.nim
 
 ENTRYPOINT ["/app/main"]
