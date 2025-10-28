@@ -12,6 +12,7 @@ import (
 	"net"
 	"os"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/libp2p/go-libp2p"
@@ -20,6 +21,9 @@ import (
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/libp2p/go-libp2p/p2p/transport/quicreuse"
+	"github.com/quic-go/quic-go"
+	"go.uber.org/fx"
 )
 
 var (
@@ -41,6 +45,9 @@ func pubsubOptions(slogger *slog.Logger, params pubsub.GossipSubParams) []pubsub
 		pubsub.WithMaxMessageSize(10 * 1 << 20),
 		pubsub.WithGossipSubParams(params),
 		pubsub.WithEventTracer(&tr),
+		// TODO: Allow adjusting/disabling this value with a script instruction
+		// or through the gossipsub params
+		pubsub.WithNFastestPeers(4),
 	}
 
 	return psOpts
@@ -111,9 +118,10 @@ func main() {
 
 	// listen for incoming connections
 	h, err := libp2p.New(
-		libp2p.ListenAddrStrings("/ip4/0.0.0.0/tcp/9000"),
-		// libp2p.ListenAddrStrings("/ip4/0.0.0.0/udp/9000/quic-v1"),
+		// libp2p.ListenAddrStrings("/ip4/0.0.0.0/tcp/9000"),
+		libp2p.ListenAddrStrings("/ip4/0.0.0.0/udp/9000/quic-v1"),
 		libp2p.Identity(nodePrivKey(nodeId)),
+		QUICOnShadow(),
 	)
 	if err != nil {
 		panic(err)
@@ -143,9 +151,8 @@ func (c *ShadowConnector) ConnectTo(ctx context.Context, h host.Host, id int) er
 	if err != nil {
 		panic(err)
 	}
-	addr := fmt.Sprintf("/ip4/%s/tcp/9000/p2p/%s", addrs[0], peerId)
-	// TODO support QUIC in Shadow
-	// addr := fmt.Sprintf("/ip4/%s/udp/9000/quic-v1/p2p/%s", addrs[0], peerId)
+	// addr := fmt.Sprintf("/ip4/%s/tcp/9000/p2p/%s", addrs[0], peerId)
+	addr := fmt.Sprintf("/ip4/%s/udp/9000/quic-v1/p2p/%s", addrs[0], peerId)
 	info, err := peer.AddrInfoFromString(addr)
 	if err != nil {
 		panic(err)
@@ -156,4 +163,48 @@ func (c *ShadowConnector) ConnectTo(ctx context.Context, h host.Host, id int) er
 		return fmt.Errorf("failed connecting to node%d: %v", id, err)
 	}
 	return nil
+}
+
+type MockSourceIPSelector struct {
+	ip atomic.Pointer[net.IP]
+}
+
+func (m *MockSourceIPSelector) PreferredSourceIPForDestination(_ *net.UDPAddr) (net.IP, error) {
+	return *m.ip.Load(), nil
+}
+
+func QUICOnShadow() libp2p.Option {
+	m := &MockSourceIPSelector{}
+	quicReuseOpts := []quicreuse.Option{
+		quicreuse.OverrideSourceIPSelector(func() (quicreuse.SourceIPSelector, error) {
+			return m, nil
+		}),
+		quicreuse.OverrideListenUDP(func(l string, address *net.UDPAddr) (net.PacketConn, error) {
+			m.ip.Store(&address.IP)
+			pc, err := net.ListenUDP(l, address)
+			if err != nil {
+				return nil, err
+			}
+
+			return shadowUDPPacketConn{pc}, nil
+		}),
+	}
+	return libp2p.QUICReuse(
+		func(l fx.Lifecycle, statelessResetKey quic.StatelessResetKey, tokenKey quic.TokenGeneratorKey, opts ...quicreuse.Option) (*quicreuse.ConnManager, error) {
+			cm, err := quicreuse.NewConnManager(statelessResetKey, tokenKey, opts...)
+			if err != nil {
+				return nil, err
+			}
+			l.Append(fx.StopHook(func() error {
+				// When we pass in our own conn manager, we need to close it manually (??)
+				// TODO: this seems like a bug
+				return cm.Close()
+			}))
+			return cm, nil
+		}, quicReuseOpts...)
+
+}
+
+type shadowUDPPacketConn struct {
+	net.PacketConn
 }
