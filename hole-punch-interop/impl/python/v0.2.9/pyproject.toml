@@ -1,0 +1,10 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hole-punch-python"
+version = "0.2.9"
+dependencies = [
+    "libp2p @ git+https://github.com/libp2p/py-libp2p.git@main"
+]
