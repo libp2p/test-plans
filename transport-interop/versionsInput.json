@@ -281,5 +281,13 @@
       "mplex",
       "yamux"
     ]
+  },
+    {
+    "id": "eth-p2p-z-v0.0.1",
+    "transports": [
+      "quic-v1"
+    ],
+    "secureChannels": [],
+    "muxers": []
   }
 ]
