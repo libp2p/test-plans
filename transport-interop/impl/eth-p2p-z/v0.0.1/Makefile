@@ -1,5 +1,5 @@
-image_name := eth-p2p-z-v0.1.0
-commitSha := 6af992bace67944c9e0219c8a55443fa13932d9d
+image_name := eth-p2p-z-v0.0.1
+commitSha := 7e16c6d1598726e8f5ea9385b2c1d5cc1027255e
 
 all: image.json
 
