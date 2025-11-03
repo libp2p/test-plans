@@ -1,4 +1,5 @@
 const AWS_BUCKET = process.env.AWS_BUCKET;
+const CACHE_DIR = process.env.CACHE_DIR;
 const scriptDir = __dirname;
 
 import * as crypto from 'crypto';
@@ -66,18 +67,33 @@ switch (modeStr) {
             if (mode == Mode.PushCache) {
                 console.log("Pushing cache")
                 try {
-                    if (!AWS_BUCKET) {
-                        throw new Error("AWS_BUCKET not set")
-                    }
-                    try {
-                        child_process.execSync(`aws s3 ls s3://${AWS_BUCKET}/imageCache/${cacheKey}-${arch}.tar.gz`)
-                        console.log("Cache already exists")
-                    } catch (e) {
-                        console.log("Cache doesn't exist", e)
-                        // Read image id from image.json
-                        const imageID = JSON.parse(fs.readFileSync(path.join(implFolder, 'image.json')).toString()).imageID;
-                        console.log(`Pushing cache for ${impl}: ${imageID}`)
-                        child_process.execSync(`docker image save ${imageID} | gzip | aws s3 cp - s3://${AWS_BUCKET}/imageCache/${cacheKey}-${arch}.tar.gz`);
+                    // Use local cache if CACHE_DIR is set, otherwise fall back to AWS S3
+                    if (CACHE_DIR) {
+                        const cacheFile = path.join(CACHE_DIR, 'imageCache', `${cacheKey}-${arch}.tar.gz`)
+                        if (fs.existsSync(cacheFile)) {
+                            console.log("Cache already exists")
+                        } else {
+                            console.log("Cache doesn't exist, creating it")
+                            // Ensure the imageCache directory exists
+                            fs.mkdirSync(path.join(CACHE_DIR, 'imageCache'), { recursive: true })
+                            // Read image id from image.json
+                            const imageID = JSON.parse(fs.readFileSync(path.join(implFolder, 'image.json')).toString()).imageID;
+                            console.log(`Pushing cache for ${impl}: ${imageID}`)
+                            child_process.execSync(`docker image save ${imageID} | gzip > ${cacheFile}`);
+                        }
+                    } else if (AWS_BUCKET) {
+                        try {
+                            child_process.execSync(`aws s3 ls s3://${AWS_BUCKET}/imageCache/${cacheKey}-${arch}.tar.gz`)
+                            console.log("Cache already exists")
+                        } catch (e) {
+                            console.log("Cache doesn't exist", e)
+                            // Read image id from image.json
+                            const imageID = JSON.parse(fs.readFileSync(path.join(implFolder, 'image.json')).toString()).imageID;
+                            console.log(`Pushing cache for ${impl}: ${imageID}`)
+                            child_process.execSync(`docker image save ${imageID} | gzip | aws s3 cp - s3://${AWS_BUCKET}/imageCache/${cacheKey}-${arch}.tar.gz`);
+                        }
+                    } else {
+                        throw new Error("Neither CACHE_DIR nor AWS_BUCKET is set")
                     }
                 } catch (e) {
                     console.log("Failed to push image cache:", e)
@@ -90,17 +106,33 @@ switch (modeStr) {
                 console.log("Loading cache")
                 let cacheHit = false
                 try {
-                    if (!AWS_BUCKET) {
-                        throw new Error("AWS_BUCKET not set")
-                    }
-                    const cachePath = fs.mkdtempSync(path.join(os.tmpdir(), 'cache'))
-                    const archivePath = path.join(cachePath, 'archive.tar.gz')
-                    const dockerLoadedMsg = child_process.execSync(`aws s3 cp s3://${AWS_BUCKET}/imageCache/${cacheKey}-${arch}.tar.gz ${archivePath} && docker image load -i ${archivePath}`).toString();
+                    // Use local cache if CACHE_DIR is set, otherwise fall back to AWS S3
+                    if (CACHE_DIR) {
+                        const cacheFile = path.join(CACHE_DIR, 'imageCache', `${cacheKey}-${arch}.tar.gz`)
+                        if (fs.existsSync(cacheFile)) {
+                            console.log(`Loading cache from ${cacheFile}`)
+                            const dockerLoadedMsg = child_process.execSync(`docker image load -i ${cacheFile}`).toString();
                             const loadedImageId = dockerLoadedMsg.match(/Loaded image( ID)?: (.*)/)[2];
-                    if (loadedImageId) {
-                        console.log(`Cache hit for ${loadedImageId}`);
-                        fs.writeFileSync(path.join(implFolder, 'image.json'), JSON.stringify({ imageID: loadedImageId }) + "\n");
-                        cacheHit = true
+                            if (loadedImageId) {
+                                console.log(`Cache hit for ${loadedImageId}`);
+                                fs.writeFileSync(path.join(implFolder, 'image.json'), JSON.stringify({ imageID: loadedImageId }) + "\n");
+                                cacheHit = true
+                            }
+                        } else {
+                            console.log("Cache not found in local cache directory")
+                        }
+                    } else if (AWS_BUCKET) {
+                        const cachePath = fs.mkdtempSync(path.join(os.tmpdir(), 'cache'))
+                        const archivePath = path.join(cachePath, 'archive.tar.gz')
+                        const dockerLoadedMsg = child_process.execSync(`aws s3 cp s3://${AWS_BUCKET}/imageCache/${cacheKey}-${arch}.tar.gz ${archivePath} && docker image load -i ${archivePath}`).toString();
+                        const loadedImageId = dockerLoadedMsg.match(/Loaded image( ID)?: (.*)/)[2];
+                        if (loadedImageId) {
+                            console.log(`Cache hit for ${loadedImageId}`);
+                            fs.writeFileSync(path.join(implFolder, 'image.json'), JSON.stringify({ imageID: loadedImageId }) + "\n");
+                            cacheHit = true
+                        }
+                    } else {
+                        throw new Error("Neither CACHE_DIR nor AWS_BUCKET is set")
                     }
                 } catch (e) {
                     console.log("Cache not found:", e)
