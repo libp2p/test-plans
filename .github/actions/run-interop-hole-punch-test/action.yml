@@ -157,9 +157,8 @@ runs:
       shell: bash
 
     - name: Upload test results
-      if: ${{ inputs.upload-results == 'true' }}
+      if: ${{ always() && inputs.upload-results == 'true' }}
       uses: actions/upload-artifact@v4
-      if: ${{ always() }}
       with:
         name: test-plans-output
         path: |
