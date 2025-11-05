@@ -246,7 +246,7 @@
     ]
   },
   {
-    "id": "go-v0.42",
+    "id": "go-v0.40",
     "transports": [
       "tcp",
       "ws",
@@ -272,7 +272,7 @@
     "muxers": ["yamux"]
   },
   {
-    "id": "go-v0.40",
+    "id": "go-v0.42",
     "transports": [
       "tcp",
       "ws",
@@ -283,112 +283,6 @@
     ],
     "secureChannels": ["tls", "noise"],
     "muxers": ["yamux"]
-  },
-  {
-    "id": "jvm-v1.2",
-    "transports": [
-      "tcp",
-      "ws",
-      "quic-v1"
-    ],
-    "secureChannels": [
-      "tls",
-      "noise"
-    ],
-    "muxers": [
-      "mplex",
-      "yamux"
-    ]
-  },
-  {
-    "id": "go-v0.38",
-    "transports": [
-      "tcp",
-      "ws",
-      "wss",
-      "quic-v1",
-      "webtransport",
-      "webrtc-direct"
-    ],
-    "secureChannels": [
-      "tls",
-      "noise"
-    ],
-    "muxers": [
-      "yamux"
-    ]
-  },
-  {
-    "id": "go-v0.39",
-    "transports": [
-      "tcp",
-      "ws",
-      "wss",
-      "quic-v1",
-      "webtransport",
-      "webrtc-direct"
-    ],
-    "secureChannels": [
-      "tls",
-      "noise"
-    ],
-    "muxers": [
-      "yamux"
-    ]
-  },
-  {
-    "id": "go-v0.40",
-    "transports": [
-      "tcp",
-      "ws",
-      "wss",
-      "quic-v1",
-      "webtransport",
-      "webrtc-direct"
-    ],
-    "secureChannels": [
-      "tls",
-      "noise"
-    ],
-    "muxers": [
-      "yamux"
-    ]
-  },
-  {
-    "id": "go-v0.41",
-    "transports": [
-      "tcp",
-      "ws",
-      "wss",
-      "quic-v1",
-      "webtransport",
-      "webrtc-direct"
-    ],
-    "secureChannels": [
-      "tls",
-      "noise"
-    ],
-    "muxers": [
-      "yamux"
-    ]
-  },
-  {
-    "id": "go-v0.42",
-    "transports": [
-      "tcp",
-      "ws",
-      "wss",
-      "quic-v1",
-      "webtransport",
-      "webrtc-direct"
-    ],
-    "secureChannels": [
-      "tls",
-      "noise"
-    ],
-    "muxers": [
-      "yamux"
-    ]
   },
   {
     "id": "go-v0.43",
@@ -420,6 +314,34 @@
     ],
     "secureChannels": [
       "tls",
+      "noise"
+    ],
+    "muxers": [
+      "yamux"
+    ]
+  },
+  {
+    "id": "jvm-v1.2",
+    "transports": [
+      "tcp",
+      "ws",
+      "quic-v1"
+    ],
+    "secureChannels": [
+      "tls",
+      "noise"
+    ],
+    "muxers": [
+      "mplex",
+      "yamux"
+    ]
+  },
+  {
+    "id": "dotnet-v1.0",
+    "transports": [
+      "tcp"
+    ],
+    "secureChannels": [
       "noise"
     ],
     "muxers": [
