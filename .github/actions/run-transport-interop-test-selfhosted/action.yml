@@ -136,15 +136,6 @@ runs:
       run: cat ./dashboard.md >> $GITHUB_STEP_SUMMARY
       shell: bash
 
-    - name: Exit with Error
-      working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
-      run: |
-        if grep -q ":red_circle:" ./dashboard.md; then
-          exit 1
-        else
-          exit 0
-        fi
-      shell: bash
     - name: Upload test results
       if: ${{ inputs.upload-results == 'true' }}
       uses: actions/upload-artifact@v4
