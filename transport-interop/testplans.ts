@@ -7,7 +7,7 @@ import { stringify as YAMLStringify } from "yaml"
 import yargs from "yargs/yargs"
 import path from "path";
 import { parseFilterArgs } from "./src/testFilter";
-import { displaySelectedTestsBanner, displayTestBanner } from "./src/bannerUtils";
+import { displaySelectedTestsBanner } from "./src/bannerUtils";
 
 (async () => {
     const WorkerCount = parseInt(process.env.WORKER_COUNT || "1")
