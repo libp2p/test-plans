@@ -246,7 +246,7 @@
     ]
   },
   {
-    "id": "go-v0.42",
+    "id": "go-v0.40",
     "transports": [
       "tcp",
       "ws",
@@ -272,7 +272,7 @@
     "muxers": ["yamux"]
   },
   {
-    "id": "go-v0.40",
+    "id": "go-v0.42",
     "transports": [
       "tcp",
       "ws",
@@ -283,6 +283,42 @@
     ],
     "secureChannels": ["tls", "noise"],
     "muxers": ["yamux"]
+  },
+  {
+    "id": "go-v0.43",
+    "transports": [
+      "tcp",
+      "ws",
+      "wss",
+      "quic-v1",
+      "webtransport",
+      "webrtc-direct"
+    ],
+    "secureChannels": [
+      "tls",
+      "noise"
+    ],
+    "muxers": [
+      "yamux"
+    ]
+  },
+  {
+    "id": "go-v0.44",
+    "transports": [
+      "tcp",
+      "ws",
+      "wss",
+      "quic-v1",
+      "webtransport",
+      "webrtc-direct"
+    ],
+    "secureChannels": [
+      "tls",
+      "noise"
+    ],
+    "muxers": [
+      "yamux"
+    ]
   },
   {
     "id": "jvm-v1.2",
