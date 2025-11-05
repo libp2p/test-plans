@@ -83,7 +83,10 @@ runs:
       working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
       env:
         CACHE_DIR: ${{ inputs.cache-dir }}
-      run: npm run cache -- load
+        NAME_FILTER: ${{ inputs.test-filter }}
+        NAME_IGNORE: ${{ inputs.test-ignore }}
+        VERBOSE: ${{ inputs.verbose }}
+      run: npm run cache -- load --name-filter="$NAME_FILTER" --name-ignore="$NAME_IGNORE" --verbose="$VERBOSE"
       shell: bash
 
     - name: Assert Git tree is clean.
@@ -100,7 +103,10 @@ runs:
       working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
       env:
         CACHE_DIR: ${{ inputs.cache-dir }}
-      run: npm run cache -- push
+        NAME_FILTER: ${{ inputs.test-filter }}
+        NAME_IGNORE: ${{ inputs.test-ignore }}
+        VERBOSE: ${{ inputs.verbose }}
+      run: npm run cache -- push --name-filter="$NAME_FILTER" --name-ignore="$NAME_IGNORE" --verbose="$VERBOSE"
       shell: bash
 
     - name: Run the test

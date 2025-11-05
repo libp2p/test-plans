@@ -6,6 +6,7 @@ import { stringify } from "csv-stringify/sync"
 import { stringify as YAMLStringify } from "yaml"
 import yargs from "yargs/yargs"
 import path from "path";
+import { parseFilterArgs } from "./src/testFilter";
 
 (async () => {
     const WorkerCount = parseInt(process.env.WORKER_COUNT || "1")
@@ -66,25 +67,15 @@ import path from "path";
 
     const verbose: boolean = argv.verbose
 
-    let nameFilter: string[] | null = null
-    const rawNameFilter: string | undefined = argv["name-filter"]
-    if (rawNameFilter) {
-        if (verbose) {
-            console.log("rawNameFilter: " + rawNameFilter)
-        }
-        nameFilter = rawNameFilter.split('|').map(item => item.trim());
-    }
+    const { nameFilter, nameIgnore } = parseFilterArgs(
+        argv["name-filter"] || "",
+        argv["name-ignore"] || "",
+        verbose
+    );
+
     if (nameFilter) {
         console.log("Name Filters:")
         nameFilter.map(n => console.log("\t" + n))
-    }
-    let nameIgnore: string[] | null = null
-    const rawNameIgnore: string | undefined = argv["name-ignore"]
-    if (rawNameIgnore) {
-        if (verbose) {
-            console.log("rawNameIgnore: " + rawNameIgnore)
-        }
-        nameIgnore = rawNameIgnore.split('|').map(item => item.trim());
     }
     if (nameIgnore) {
         console.log("Name Ignores:")
