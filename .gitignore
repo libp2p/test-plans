@@ -47,3 +47,24 @@ dist
 
 # ignore system files
 .DS_Store
+perf/impl/dotnet-libp2p/v1.0/bin/Debug/net9.0/PerfBenchmarks.deps.json
+perf/impl/dotnet-libp2p/v1.0/bin/Debug/net9.0/PerfBenchmarks.pdb
+perf/impl/dotnet-libp2p/v1.0/bin/Debug/net9.0/PerfBenchmarks.runtimeconfig.json
+perf/impl/dotnet-libp2p/v1.0/obj/PerfBenchmarks.csproj.nuget.dgspec.json
+perf/impl/dotnet-libp2p/v1.0/obj/PerfBenchmarks.csproj.nuget.g.props
+perf/impl/dotnet-libp2p/v1.0/obj/Debug/net9.0/PerfBenchmarks.sourcelink.json
+perf/impl/dotnet-libp2p/v1.0/obj/Debug/net9.0/PerfBenchmarks.pdb
+perf/impl/dotnet-libp2p/v1.0/obj/project.assets.json
+perf/impl/dotnet-libp2p/v1.0/obj/project.nuget.cache
+perf/impl/dotnet-libp2p/v1.0/obj/Debug/net9.0/.NETCoreApp,Version=v9.0.AssemblyAttributes.cs
+perf/impl/dotnet-libp2p/v1.0/obj/Debug/net9.0/PerfBenc.BDEA4B0F.Up2Date
+perf/impl/dotnet-libp2p/v1.0/obj/Debug/net9.0/PerfBenchmarks.AssemblyInfo.cs
+perf/impl/dotnet-libp2p/v1.0/obj/Debug/net9.0/PerfBenchmarks.AssemblyInfoInputs.cache
+perf/impl/dotnet-libp2p/v1.0/obj/Debug/net9.0/PerfBenchmarks.assets.cache
+perf/impl/dotnet-libp2p/v1.0/obj/Debug/net9.0/PerfBenchmarks.csproj.AssemblyReference.cache
+perf/impl/dotnet-libp2p/v1.0/obj/Debug/net9.0/PerfBenchmarks.csproj.CoreCompileInputs.cache
+perf/impl/dotnet-libp2p/v1.0/obj/Debug/net9.0/PerfBenchmarks.csproj.FileListAbsolute.txt
+perf/impl/dotnet-libp2p/v1.0/obj/Debug/net9.0/PerfBenchmarks.GeneratedMSBuildEditorConfig.editorconfig
+perf/impl/dotnet-libp2p/v1.0/obj/Debug/net9.0/PerfBenchmarks.genruntimeconfig.cache
+perf/impl/dotnet-libp2p/v1.0/obj/Debug/net9.0/PerfBenchmarks.GlobalUsings.g.cs
+perf/impl/dotnet-libp2p/v1.0/obj/PerfBenchmarks.csproj.nuget.g.targets
