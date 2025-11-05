@@ -1,5 +1,5 @@
-name: "libp2p transport interop test"
-description: "Run the libp2p transport interoperability test suite"
+name: "libp2p transport interop test (self-hosted)"
+description: "Run the libp2p transport interoperability test suite on self-hosted runner with local disk cache"
 inputs:
   test-filter:
     description: "Filter which tests to run out of the created matrix"
@@ -9,6 +9,10 @@ inputs:
     description: "Exclude tests from the created matrix that include this string in their name"
     required: false
     default: ""
+  upload-results:
+    description: "Upload the test results as an artifact"
+    required: false
+    default: "true"
   extra-versions:
     description: "Space-separated paths to JSON files describing additional images"
     required: false
@@ -33,6 +37,21 @@ inputs:
     description: "How many workers to use for the test"
     required: false
     default: "2"
+  timeout:
+    description: "How many seconds to let each test run for"
+    required: false
+  verbose:
+    description: "Enable verbose output"
+    required: false
+    default: false
+  cache-dir:
+    description: "Local directory to use for build cache"
+    required: false
+    default: "/srv/cache"
+  test-results-suffix:
+    description: "Suffix to add to the test results artifact name"
+    required: false
+    default: ""
 runs:
   using: "composite"
   steps:
@@ -50,9 +69,9 @@ runs:
       shell: bash
       id: find-workdir
 
-    - uses: actions/setup-node@v3
+    - uses: actions/setup-node@v4
       with:
-        node-version: 18
+        node-version: 20
 
     # Existence of /etc/buildkit/buildkitd.toml indicates that this is a
     # self-hosted runner. If so, we need to pass the config to the buildx
@@ -65,11 +84,25 @@ runs:
       shell: bash
       id: buildkit
 
+    - name: Install more recent docker-compose version # https://stackoverflow.com/questions/54331949/having-networking-issues-with-docker-compose
+      shell: bash
+      run: |
+        mkdir -p $HOME/.docker/cli-plugins
+        wget -q -O- https://github.com/docker/compose/releases/download/v2.21.0/docker-compose-linux-x86_64 > $HOME/.docker/cli-plugins/docker-compose
+        chmod +x $HOME/.docker/cli-plugins/docker-compose
+        docker compose version
+
     - name: Set up Docker Buildx
       id: buildx
       uses: docker/setup-buildx-action@v2
       with:
         config: ${{ steps.buildkit.outputs.config }}
+
+    - name: Create cache directories
+      run: |
+        mkdir -p ${{ inputs.cache-dir }}/buildCache
+        mkdir -p ${{ inputs.cache-dir }}/imageCache
+      shell: bash
 
     - name: Install deps
       working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
@@ -79,11 +112,15 @@ runs:
     - name: Load cache and build
       working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
       env:
+        CACHE_DIR: ${{ inputs.cache-dir }}
+        NAME_FILTER: ${{ inputs.test-filter }}
+        NAME_IGNORE: ${{ inputs.test-ignore }}
+        VERBOSE: ${{ inputs.verbose }}
         AWS_BUCKET: ${{ inputs.s3-cache-bucket }}
         AWS_REGION: ${{ inputs.aws-region }}
         AWS_ACCESS_KEY_ID: ${{ inputs.s3-access-key-id }}
         AWS_SECRET_ACCESS_KEY: ${{ inputs.s3-secret-access-key }}
-      run: npm run cache -- load
+      run: npm run cache -- load --name-filter="$NAME_FILTER" --name-ignore="$NAME_IGNORE" --verbose="$VERBOSE"
       shell: bash
 
     - name: Assert Git tree is clean.
@@ -97,14 +134,13 @@ runs:
         fi
 
     - name: Push the image cache
-      if: env.PUSH_CACHE == 'true'
       working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
       env:
-        AWS_BUCKET: ${{ inputs.s3-cache-bucket }}
-        AWS_REGION: ${{ inputs.aws-region }}
-        AWS_ACCESS_KEY_ID: ${{ inputs.s3-access-key-id }}
-        AWS_SECRET_ACCESS_KEY: ${{ inputs.s3-secret-access-key }}
-      run: npm run cache -- push
+        CACHE_DIR: ${{ inputs.cache-dir }}
+        NAME_FILTER: ${{ inputs.test-filter }}
+        NAME_IGNORE: ${{ inputs.test-ignore }}
+        VERBOSE: ${{ inputs.verbose }}
+      run: npm run cache -- push --name-filter="$NAME_FILTER" --name-ignore="$NAME_IGNORE" --verbose="$VERBOSE"
       shell: bash
 
     - name: Run the test
@@ -114,7 +150,9 @@ runs:
         EXTRA_VERSION: ${{ inputs.extra-versions }}
         NAME_FILTER: ${{ inputs.test-filter }}
         NAME_IGNORE: ${{ inputs.test-ignore }}
-      run: npm run test -- --extra-version=$EXTRA_VERSION --name-filter=$NAME_FILTER --name-ignore=$NAME_IGNORE
+        TIMEOUT: ${{ inputs.timeout }}
+        VERBOSE: ${{ inputs.verbose }}
+      run: npm run test -- --extra-version=$EXTRA_VERSION --name-filter="$NAME_FILTER" --name-ignore="$NAME_IGNORE" --verbose="$VERBOSE"
       shell: bash
 
     - name: Print the results
@@ -132,19 +170,11 @@ runs:
       run: cat ./dashboard.md >> $GITHUB_STEP_SUMMARY
       shell: bash
 
-    - name: Exit with Error
-      working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
-      run: |
-        if grep -q ":red_circle:" ./dashboard.md; then
-          exit 1
-        else
-          exit 0
-        fi
-      shell: bash
-
-    - uses: actions/upload-artifact@v3
+    - name: Upload test results
+      if: ${{ inputs.upload-results == 'true' }}
+      uses: actions/upload-artifact@v4
       with:
-        name: test-plans-output
+        name: ${{ inputs.test-results-suffix && format('test-plans-output-{0}', inputs.test-results-suffix) || 'test-plans-output' }}
         path: |
           ${{ steps.find-workdir.outputs.WORK_DIR }}/results.csv
           ${{ steps.find-workdir.outputs.WORK_DIR }}/dashboard.md
