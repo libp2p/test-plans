@@ -34,7 +34,7 @@
     ]
   },
   {
-    "id": "rust-chromium-v0.53",
+    "id": "chromium-rust-v0.53",
     "transports": [
       {
         "name": "webtransport",
@@ -58,7 +58,7 @@
     ]
   },
   {
-    "id": "rust-chromium-v0.54",
+    "id": "chromium-rust-v0.54",
     "transports": [
       {
         "name": "webtransport",

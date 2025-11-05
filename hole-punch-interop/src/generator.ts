@@ -4,8 +4,9 @@ import {Version} from "../versions";
 import {ComposeSpecification} from "../compose-spec/compose-spec";
 import {sanitizeComposeName} from "./lib";
 import path from "path";
+import { matchesFilter, parseFilterArgs } from "./testFilter";
 
-export async function buildTestSpecs(versions: Array<Version>, nameFilter: string | null, nameIgnore: string | null, routerImageId: string, relayImageId: string, routerDelay: number, relayDelay: number, assetDir: string): Promise<Array<ComposeSpecification>> {
+export async function buildTestSpecs(versions: Array<Version>, nameFilter: string | null, nameIgnore: string | null, routerImageId: string, relayImageId: string, routerDelay: number, relayDelay: number, assetDir: string, verbose: boolean = false): Promise<Array<ComposeSpecification>> {
     sqlite3.verbose();
 
     const db = await open({
@@ -17,9 +18,14 @@ export async function buildTestSpecs(versions: Array<Version>, nameFilter: strin
     await db.exec('CREATE TABLE IF NOT EXISTS transports (id string not null, imageID string not null, transport string not null);');
 
     await Promise.all(
-        versions.flatMap(version => ([
-            db.exec(`INSERT INTO transports (id, imageID, transport) VALUES ${version.transports.map(transport => `("${version.id}", "${version.containerImageID}", "${transport}")`).join(", ")};`)
-        ]))
+        versions.flatMap(version => {
+            const imageID = typeof version.containerImageID === "function"
+                ? version.containerImageID(version.id)
+                : version.containerImageID;
+            return [
+                db.exec(`INSERT INTO transports (id, imageID, transport) VALUES ${version.transports.map(transport => `("${version.id}", "${imageID}", "${transport}")`).join(", ")};`)
+            ];
+        })
     )
 
     // Generate the testing combinations by SELECT'ing from transports tables the distinct combinations where the transports of the different libp2p implementations match.
@@ -31,15 +37,18 @@ export async function buildTestSpecs(versions: Array<Version>, nameFilter: strin
         );
     await db.close();
 
+    // Convert simple string filters to array format for matchesFilter
+    const nameFilterArray = nameFilter ? [nameFilter] : null;
+    const nameIgnoreArray = nameIgnore ? [nameIgnore] : null;
+    const filterOptions = { nameFilter: nameFilterArray, nameIgnore: nameIgnoreArray, verbose };
+
     return queryResults
         .map(testCase => {
             let name = `${testCase.dialer} x ${testCase.listener} (${testCase.transport})`;
 
-            if (nameFilter && !name.includes(nameFilter)) {
-                return null
-            }
-            if (nameIgnore && name.includes(nameIgnore)) {
-                return null
+            // Use matchesFilter with collectMode=true to suppress console output during test generation
+            if (!matchesFilter(name, filterOptions, true)) {
+                return null;
             }
 
             return buildSpec(name, testCase.dialerImage, testCase.listenerImage, routerImageId, relayImageId, testCase.transport, routerDelay, relayDelay, assetDir, {})
