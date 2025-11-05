@@ -104,7 +104,8 @@ export async function buildTestSpecs(versions: Array<Version>, nameFilter: strin
 
 function buildSpec(containerImages: { [key: string]: () => string }, { name, dialerID, listenerID, transport, muxer, security, extraEnv }: { name: string, dialerID: string, listenerID: string, transport: string, muxer?: string, security?: string, extraEnv?: { [key: string]: string } }, filterOptions: TestFilterOptions): ComposeSpecification | null {
 
-    if (!matchesFilter(name, filterOptions)) {
+    // Use matchesFilter with collectMode=true to suppress console output during test generation
+    if (!matchesFilter(name, filterOptions, true)) {
         return null
     }
 

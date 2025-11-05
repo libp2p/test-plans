@@ -7,6 +7,7 @@ import { stringify as YAMLStringify } from "yaml"
 import yargs from "yargs/yargs"
 import path from "path";
 import { parseFilterArgs } from "./src/testFilter";
+import { displaySelectedTestsBanner, displayTestBanner } from "./src/bannerUtils";
 
 (async () => {
     const WorkerCount = parseInt(process.env.WORKER_COUNT || "1")
@@ -93,6 +94,12 @@ import { parseFilterArgs } from "./src/testFilter";
         return
     }
 
+    // Display selected tests banner (if not verbose and we have tests)
+    if (!verbose && testSpecs.length > 0) {
+        const testNames = testSpecs.map(spec => spec.name).filter((n): n is string => n !== undefined);
+        displaySelectedTestsBanner(testNames);
+    }
+
     console.log(`Running ${testSpecs.length} tests`)
     const failures: Array<RunFailure> = []
     const statuses: Array<string[]> = [["name", "outcome"]]
@@ -102,8 +109,16 @@ import { parseFilterArgs } from "./src/testFilter";
             if (testSpec == null) {
                 return
             }
-            console.log("Running test spec: " + testSpec.name)
-            const failure = await run(testSpec.name || "unknown test", testSpec, { up: { exitCodeFrom: "dialer", renewAnonVolumes: true }, })
+
+            // Display test banner based on verbose mode
+            const testName = testSpec.name || "unknown test";
+            if (!verbose) {
+                displayTestBanner(testName);
+            } else {
+                console.log("Running test spec: " + testName);
+            }
+
+            const failure = await run(testName, testSpec, { up: { exitCodeFrom: "dialer", renewAnonVolumes: true }, })
             if (failure != null) {
                 failures.push(failure)
                 statuses.push([testSpec.name || "unknown test", "failure"])

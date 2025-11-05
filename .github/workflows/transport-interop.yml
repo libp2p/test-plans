@@ -21,8 +21,8 @@ jobs:
         with:
           worker-count: 8
           cache-dir: /srv/cache
-          verbose: true
-          test-filter: "rust-v0.54 x rust-v0.54 (quic-v1)"
+          #verbose: true
+          test-filter: "rust-v0.54"
           #test-ignore: "jvm-v1.2 x zig-v0.0.1 (quic-v1)|zig-v0.0.1 x jvm-v1.2 (quic-v1)|rust-chromium-v0.53 x jvm-v1.2 (ws)|js-v1.x x jvm-v1.2 (ws, noise, yamux)|js-v1.x x jvm-v1.2 (ws, noise, mplex)|rust-chromium-v0.53 x jvm-v1.2 (ws, noise, mplex)|nim"
   build-without-secrets:
     runs-on: [self-hosted, linux, x64, ephemeral]
@@ -32,6 +32,6 @@ jobs:
       - uses: ./.github/actions/run-transport-interop-test
         with:
           # It's okay to not run the tests, we only care to check if the tests build without cache.
-          verbose: true
+          #verbose: true
           upload-results: false
           test-filter: '"no test matches this, skip all"'
