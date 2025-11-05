@@ -110,6 +110,8 @@ import { displaySelectedTestsBanner } from "./src/bannerUtils";
                 return
             }
 
+            // Display test banner based on verbose mode
+            const testName = testSpec.name || "unknown test";
             const failure = await run(testName, testSpec, { up: { exitCodeFrom: "dialer", renewAnonVolumes: true }, })
             if (failure != null) {
                 failures.push(failure)
