@@ -6,6 +6,8 @@ import { stringify } from "csv-stringify/sync"
 import { stringify as YAMLStringify } from "yaml"
 import yargs from "yargs/yargs"
 import path from "path";
+import { parseFilterArgs } from "./src/testFilter";
+import { displaySelectedTestsBanner, displayTestBanner } from "./src/bannerUtils";
 
 (async () => {
     const WorkerCount = parseInt(process.env.WORKER_COUNT || "1")
@@ -66,25 +68,15 @@ import path from "path";
 
     const verbose: boolean = argv.verbose
 
-    let nameFilter: string[] | null = null
-    const rawNameFilter: string | undefined = argv["name-filter"]
-    if (rawNameFilter) {
-        if (verbose) {
-            console.log("rawNameFilter: " + rawNameFilter)
-        }
-        nameFilter = rawNameFilter.split('|').map(item => item.trim());
-    }
+    const { nameFilter, nameIgnore } = parseFilterArgs(
+        argv["name-filter"] || "",
+        argv["name-ignore"] || "",
+        verbose
+    );
+
     if (nameFilter) {
         console.log("Name Filters:")
         nameFilter.map(n => console.log("\t" + n))
-    }
-    let nameIgnore: string[] | null = null
-    const rawNameIgnore: string | undefined = argv["name-ignore"]
-    if (rawNameIgnore) {
-        if (verbose) {
-            console.log("rawNameIgnore: " + rawNameIgnore)
-        }
-        nameIgnore = rawNameIgnore.split('|').map(item => item.trim());
     }
     if (nameIgnore) {
         console.log("Name Ignores:")
@@ -102,6 +94,12 @@ import path from "path";
         return
     }
 
+    // Display selected tests banner (if not verbose and we have tests)
+    if (!verbose && testSpecs.length > 0) {
+        const testNames = testSpecs.map(spec => spec.name).filter((n): n is string => n !== undefined);
+        displaySelectedTestsBanner(testNames);
+    }
+
     console.log(`Running ${testSpecs.length} tests`)
     const failures: Array<RunFailure> = []
     const statuses: Array<string[]> = [["name", "outcome"]]
@@ -111,8 +109,16 @@ import path from "path";
             if (testSpec == null) {
                 return
             }
-            console.log("Running test spec: " + testSpec.name)
-            const failure = await run(testSpec.name || "unknown test", testSpec, { up: { exitCodeFrom: "dialer", renewAnonVolumes: true }, })
+
+            // Display test banner based on verbose mode
+            const testName = testSpec.name || "unknown test";
+            if (!verbose) {
+                displayTestBanner(testName);
+            } else {
+                console.log("Running test spec: " + testName);
+            }
+
+            const failure = await run(testName, testSpec, { up: { exitCodeFrom: "dialer", renewAnonVolumes: true }, })
             if (failure != null) {
                 failures.push(failure)
                 statuses.push([testSpec.name || "unknown test", "failure"])
