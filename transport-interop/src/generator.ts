@@ -2,13 +2,15 @@ import sqlite3 from "sqlite3";
 import { open } from "sqlite";
 import { Version } from "../versions";
 import { ComposeSpecification } from "../compose-spec/compose-spec";
+import { matchesFilter, TestFilterOptions } from "./testFilter";
 
 function buildExtraEnv(timeoutOverride: { [key: string]: number }, test1ID: string, test2ID: string): { [key: string]: string } {
     const maxTimeout = Math.max(timeoutOverride[test1ID] || 0, timeoutOverride[test2ID] || 0)
     return maxTimeout > 0 ? { "test_timeout_seconds": maxTimeout.toString(10) } : {}
 }
 
-export async function buildTestSpecs(versions: Array<Version>, nameFilter: string | null, nameIgnore: string | null): Promise<Array<ComposeSpecification>> {
+export async function buildTestSpecs(versions: Array<Version>, nameFilter: string[] | null, nameIgnore: string[] | null, verbose: boolean): Promise<Array<ComposeSpecification>> {
+    const filterOptions: TestFilterOptions = { nameFilter, nameIgnore, verbose };
     const containerImages: { [key: string]: () => string } = {}
     const timeoutOverride: { [key: string]: number } = {}
     versions.forEach(v => containerImages[v.id] = () => {
@@ -85,8 +87,8 @@ export async function buildTestSpecs(versions: Array<Version>, nameFilter: strin
             transport: test.transport,
             muxer: test.muxer,
             security: test.sec,
-            extraEnv: buildExtraEnv(timeoutOverride, test.id1, test.id2)
-        }, nameFilter, nameIgnore)
+            extraEnv: buildExtraEnv(timeoutOverride, test.id1, test.id2),
+        }, filterOptions)
     )).concat(
         standaloneTransportsQueryResults
             .map((test): ComposeSpecification => buildSpec(containerImages, {
@@ -94,19 +96,19 @@ export async function buildTestSpecs(versions: Array<Version>, nameFilter: strin
                 dialerID: test.id1,
                 listenerID: test.id2,
                 transport: test.transport,
-                extraEnv: buildExtraEnv(timeoutOverride, test.id1, test.id2)
-            }, nameFilter, nameIgnore))).filter((spec): spec is ComposeSpecification => spec !== null)
+                extraEnv: buildExtraEnv(timeoutOverride, test.id1, test.id2),
+            }, filterOptions))).filter((spec): spec is ComposeSpecification => spec !== null)
 
     return testSpecs
 }
 
-function buildSpec(containerImages: { [key: string]: () => string }, { name, dialerID, listenerID, transport, muxer, security, extraEnv }: { name: string, dialerID: string, listenerID: string, transport: string, muxer?: string, security?: string, extraEnv?: { [key: string]: string } }, nameFilter: string | null, nameIgnore: string | null): ComposeSpecification | null {
-    if (nameFilter && !name.includes(nameFilter)) {
+function buildSpec(containerImages: { [key: string]: () => string }, { name, dialerID, listenerID, transport, muxer, security, extraEnv }: { name: string, dialerID: string, listenerID: string, transport: string, muxer?: string, security?: string, extraEnv?: { [key: string]: string } }, filterOptions: TestFilterOptions): ComposeSpecification | null {
+
+    // Use matchesFilter with collectMode=true to suppress console output during test generation
+    if (!matchesFilter(name, filterOptions, true)) {
         return null
     }
-    if (nameIgnore && name.includes(nameIgnore)) {
-        return null
-    }
+
     return {
         name,
         services: {
