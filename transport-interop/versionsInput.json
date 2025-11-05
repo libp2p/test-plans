@@ -34,7 +34,7 @@
     ]
   },
   {
-    "id": "rust-chromium-v0.53",
+    "id": "chromium-rust-v0.53",
     "transports": [
       {
         "name": "webtransport",
@@ -58,7 +58,7 @@
     ]
   },
   {
-    "id": "rust-chromium-v0.54",
+    "id": "chromium-rust-v0.54",
     "transports": [
       {
         "name": "webtransport",
@@ -192,49 +192,6 @@
     ]
   },
   {
-    "id": "java-v0.0.1",
-    "transports": [
-      "tcp"
-    ],
-    "secureChannels": [
-      "tls",
-      "noise"
-    ],
-    "muxers": [
-      "mplex",
-      "yamux"
-    ]
-  },
-  {
-    "id": "java-v0.6",
-    "transports": [
-      "tcp"
-    ],
-    "secureChannels": [
-      "tls",
-      "noise"
-    ],
-    "muxers": [
-      "mplex",
-      "yamux"
-    ]
-  },
-  {
-    "id": "java-v0.9",
-    "transports": [
-      "tcp",
-      "quic-v1"
-    ],
-    "secureChannels": [
-      "tls",
-      "noise"
-    ],
-    "muxers": [
-      "mplex",
-      "yamux"
-    ]
-  },
-  {
     "id": "js-v1.x",
     "transports": [
       "tcp",
@@ -331,6 +288,7 @@
     "id": "jvm-v1.2",
     "transports": [
       "tcp",
+      "ws",
       "quic-v1"
     ],
     "secureChannels": [
