@@ -47,18 +47,3 @@ export function displaySelectedTestsBanner(testNames: string[], width: number = 
     testNames.forEach(name => console.log(`  • ${name}`));
     console.log(createBanner("", width, "=") + "\n");
 }
-
-/**
- * Display individual test execution banner
- *
- * @param testName - The name of the test being executed
- * @param width - Total width of the banner (default: 80)
- *
- * @example
- * displayTestBanner("rust-v0.53 x rust-v0.53 (tcp)")
- * // Outputs:
- * // =================== rust-v0.53 x rust-v0.53 (tcp) ===================
- */
-export function displayTestBanner(testName: string, width: number = 80): void {
-    console.log("\n" + createBanner(testName, width, "="));
-}
