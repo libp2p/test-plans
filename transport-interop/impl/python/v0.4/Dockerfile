@@ -9,8 +9,10 @@ RUN apt-get update && apt-get install -y \
     cmake \
     pkg-config \
     libgmp-dev \
-    git \
     && rm -rf /var/lib/apt/lists/*
+
+# Copy the py-libp2p-${commitSha} folder so we can use it as a local dependency
+COPY py-libp2p-* /app/py-libp2p
 
 # Copy pyproject.toml and install Python dependencies
 COPY pyproject.toml .
@@ -25,6 +27,3 @@ ENV CI=true
 
 # Set the entrypoint to run the ping test
 ENTRYPOINT ["python", "ping_test.py"]
-
-# The entrypoint will be set by the dockerBuildWrapper.sh script
-# but it should run: python ping_test.py 

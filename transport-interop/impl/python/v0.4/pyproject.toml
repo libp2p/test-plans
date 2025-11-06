@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "py-libp2p-ping-test"
-version = "0.2.9"
+version = "0.4.0"
 description = "Python libp2p ping test implementation for transport interoperability"
 authors = [
     {name = "libp2p", email = "team@libp2p.io"}
@@ -12,7 +12,7 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "libp2p @ git+https://github.com/libp2p/py-libp2p.git@f13876a64f5daeaec45c0e4e1ac0ca7741df60e4",
+    "libp2p @ file:///app/py-libp2p", # local libp2p dependency is a snapshot based on ${commitSha} in Makefile
     "redis>=4.0.0",
     "typing-extensions>=4.0.0",
 ]
