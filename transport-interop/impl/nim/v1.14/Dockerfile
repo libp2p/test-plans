@@ -2,7 +2,7 @@ FROM nimlang/nim:2.2.4-ubuntu-regular AS builder
 
 WORKDIR /app
 
-COPY nim-libp2p nim-libp2p
+COPY nim-libp2p-* nim-libp2p
 
 RUN --mount=type=cache,target=/var/cache/apt apt-get update && apt-get install -y libssl-dev
 
