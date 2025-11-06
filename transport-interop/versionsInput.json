@@ -226,7 +226,7 @@
     ]
   },
   {
-    "id": "nim-v1.10.x",
+    "id": "nim-v1.14",
     "transports": [
       "tcp",
       "ws"
