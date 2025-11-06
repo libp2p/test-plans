@@ -385,6 +385,20 @@
     ]
   },
   {
+    "id": "c-v0.0.1",
+    "transports": [
+      "tcp",
+      "quic-v1"
+    ],
+    "secureChannels": [
+      "noise"
+    ],
+    "muxers": [
+      "mplex", 
+      "yamux"
+    ]
+  },
+  {
     "id": "dotnet-v1.0",
     "transports": [
       "tcp"
