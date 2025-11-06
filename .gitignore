@@ -50,3 +50,5 @@ dist
 
 # ignore downloads directory
 downloads/
+
+.nvim

@@ -48,7 +48,41 @@
     ]
   },
   {
-    "id": "rust-chromium-v0.53",
+    "id": "rust-v0.55",
+    "transports": [
+      "ws",
+      "tcp",
+      "quic-v1",
+      "webrtc-direct"
+    ],
+    "secureChannels": [
+      "tls",
+      "noise"
+    ],
+    "muxers": [
+      "mplex",
+      "yamux"
+    ]
+  },
+  {
+    "id": "rust-v0.56",
+    "transports": [
+      "ws",
+      "tcp",
+      "quic-v1",
+      "webrtc-direct"
+    ],
+    "secureChannels": [
+      "tls",
+      "noise"
+    ],
+    "muxers": [
+      "mplex",
+      "yamux"
+    ]
+  },
+  {
+    "id": "chromium-rust-v0.53",
     "transports": [
       {
         "name": "webtransport",
@@ -72,7 +106,7 @@
     ]
   },
   {
-    "id": "rust-chromium-v0.54",
+    "id": "chromium-rust-v0.54",
     "transports": [
       {
         "name": "webtransport",
@@ -242,7 +276,25 @@
     ]
   },
   {
-    "id": "go-v0.42",
+    "id": "js-v3.x",
+    "transports": [
+      "tcp",
+      "ws",
+      {
+        "name": "wss",
+        "onlyDial": true
+      }
+    ],
+    "secureChannels": [
+      "noise"
+    ],
+    "muxers": [
+      "mplex",
+      "yamux"
+    ]
+  },
+  {
+    "id": "go-v0.40",
     "transports": [
       "tcp",
       "ws",
@@ -268,7 +320,7 @@
     "muxers": ["yamux"]
   },
   {
-    "id": "go-v0.40",
+    "id": "go-v0.42",
     "transports": [
       "tcp",
       "ws",
@@ -279,6 +331,42 @@
     ],
     "secureChannels": ["tls", "noise"],
     "muxers": ["yamux"]
+  },
+  {
+    "id": "go-v0.43",
+    "transports": [
+      "tcp",
+      "ws",
+      "wss",
+      "quic-v1",
+      "webtransport",
+      "webrtc-direct"
+    ],
+    "secureChannels": [
+      "tls",
+      "noise"
+    ],
+    "muxers": [
+      "yamux"
+    ]
+  },
+  {
+    "id": "go-v0.44",
+    "transports": [
+      "tcp",
+      "ws",
+      "wss",
+      "quic-v1",
+      "webtransport",
+      "webrtc-direct"
+    ],
+    "secureChannels": [
+      "tls",
+      "noise"
+    ],
+    "muxers": [
+      "yamux"
+    ]
   },
   {
     "id": "jvm-v1.2",
@@ -293,6 +381,18 @@
     ],
     "muxers": [
       "mplex",
+      "yamux"
+    ]
+  },
+  {
+    "id": "dotnet-v1.0",
+    "transports": [
+      "tcp"
+    ],
+    "secureChannels": [
+      "noise"
+    ],
+    "muxers": [
       "yamux"
     ]
   }
