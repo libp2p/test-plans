@@ -73,6 +73,7 @@ func (SetTopicValidationDelayInstruction) isInstruction() {}
 // InitGossipSubInstruction represents an instruction to initialize GossipSub with specific parameters
 type InitGossipSubInstruction struct {
 	Type            string                 `json:"type"`
+	TopicBundles    [][]string             `json:"topicBundles"`
 	GossipSubParams pubsub.GossipSubParams `json:"gossipSubParams"`
 }
 

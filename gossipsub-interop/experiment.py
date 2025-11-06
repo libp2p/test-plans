@@ -20,7 +20,7 @@ class ExperimentParams:
 
 
 def spread_heartbeat_delay(
-    node_count: int, template_gs_params: GossipSubParams
+    node_count: int, topics: List[str], template_gs_params: GossipSubParams
 ) -> List[ScriptInstruction]:
     instructions = []
     initial_delay = timedelta(seconds=0.1)
@@ -32,7 +32,8 @@ def spread_heartbeat_delay(
         instructions.append(
             script_instruction.IfNodeIDEquals(
                 nodeID=i,
-                instruction=script_instruction.InitGossipSub(gossipSubParams=gs_params),
+                # group all the topics in a single bundle
+                instruction=script_instruction.InitGossipSub(topicBundles=[topics], gossipSubParams=gs_params),
             )
         )
     return instructions
@@ -48,9 +49,10 @@ def scenario(
             if disable_gossip:
                 gs_params.Dlazy = 0
                 gs_params.GossipFactor = 0
-            instructions.extend(spread_heartbeat_delay(node_count, gs_params))
 
             topic = "a-subnet"
+            instructions.extend(spread_heartbeat_delay(node_count, [topic], gs_params))
+
             blob_count = 48
             # According to data gathered by lighthouse, a column takes around
             # 5ms.
@@ -78,9 +80,9 @@ def scenario(
             if disable_gossip:
                 gs_params.Dlazy = 0
                 gs_params.GossipFactor = 0
-            instructions.extend(spread_heartbeat_delay(node_count, gs_params))
             topic_a = "topic-a"
             topic_b = "topic-b"
+            instructions.extend(spread_heartbeat_delay(node_count, [topic_a, topic_b], gs_params))
             number_of_conns_per_node = 20
             if number_of_conns_per_node >= node_count:
                 number_of_conns_per_node = node_count - 1
