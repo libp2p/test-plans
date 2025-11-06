@@ -1,5 +1,19 @@
 [
   {
+    "id": "python-v0.4",
+    "transports": [
+      "tcp"
+    ],
+    "secureChannels": [
+      "noise",
+      "plaintext"
+    ],
+    "muxers": [
+      "mplex",
+      "yamux"
+    ]
+  },
+  {
     "id": "rust-v0.53",
     "transports": [
       "ws",
