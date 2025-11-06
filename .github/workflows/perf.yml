@@ -22,7 +22,7 @@ jobs:
   perf:
     name: Perf
     runs-on: ubuntu-latest
-    timeout-minutes: 240
+    timeout-minutes: 360 # 6 hours is the maximum job execution time
     defaults:
       run:
         shell: bash
