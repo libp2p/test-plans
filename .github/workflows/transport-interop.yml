@@ -22,7 +22,7 @@ jobs:
           worker-count: 8
           cache-dir: /srv/cache
           #verbose: true
-          test-ignore: "jvm-v1.2 x zig-v0.0.1 (quic-v1)|zig-v0.0.1 x jvm-v1.2 (quic-v1)|rust-chromium-v0.53 x jvm-v1.2 (ws)|js-v1.x x jvm-v1.2 (ws, noise, yamux)|js-v1.x x jvm-v1.2 (ws, noise, mplex)|rust-chromium-v0.53 x jvm-v1.2 (ws, noise, mplex)|nim-v1.10.x"
+          test-ignore: "jvm-v1.2 x zig-v0.0.1 (quic-v1)|zig-v0.0.1 x jvm-v1.2 (quic-v1)|rust-chromium-v0.53 x jvm-v1.2 (ws)|js-v1.x x jvm-v1.2 (ws, noise, yamux)|js-v1.x x jvm-v1.2 (ws, noise, mplex)|rust-chromium-v0.53 x jvm-v1.2 (ws, noise, mplex)"
   build-without-secrets:
     runs-on: [self-hosted, linux, x64, ephemeral]
     steps:
