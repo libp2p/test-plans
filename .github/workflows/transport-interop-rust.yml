@@ -1,0 +1,86 @@
+name: rust-libp2p Transport Interop Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      versions:
+        description: 'Comma-separated list of rust-libp2p versions (e.g. v0.53,v0.54)'
+        required: false
+        default: ''
+        type: string
+
+  pull_request:
+    paths:
+      - "transport-interop/impl/rust/**"
+
+jobs:
+  run-rust-transport-interop:
+    runs-on: [self-hosted, linux, x64, ephemeral]
+    steps:
+
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.WRITE_README_AND_DASHBOARD }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      # Build test-filter by scanning the transport-interop/impl/rust/ subdirs
+      - name: Determine test-filter from manual input
+        id: build-test-filter
+        shell: bash
+        run: |
+          INPUT_VERSIONS="${{ inputs.versions }}"
+          RUST_IMPL_DIR="$GITHUB_WORKSPACE/transport-interop/impl/rust"
+          
+          if [ -n "$INPUT_VERSIONS" ]; then
+            # Use provided versions: v0.53,v0.54 → rust-v0.53|rust-v0.54
+            TEST_FILTER=$(echo "$INPUT_VERSIONS" | tr ',' '\n' | sed 's/^/rust-/g' | paste -sd '|' -)
+          else
+            if [ -d "$RUST_IMPL_DIR" ]; then
+              # No input: scan all subdirs in transport-interop/impl/rust/
+              VERSIONS=$(ls -1 "$RUST_IMPL_DIR" | grep '^v[0-9]' | sort | uniq)
+              if [ -n "$VERSIONS" ]; then
+                TEST_FILTER=$(echo "$VERSIONS" | sed 's/^/rust-/g' | paste -sd '|' -)
+              else
+                TEST_FILTER=""
+              fi
+            else
+              echo "Directory $RUST_IMPL_DIR does not exist. Skipping auto-detection"
+              TEST_FILTER=""
+            fi
+          fi
+
+          echo "Setting: test-filter=$TEST_FILTER"
+          echo "test-filter=$TEST_FILTER" >> $GITHUB_OUTPUT
+
+      # Build test-ignore from transport-interop/impl/rust/test-ignore.txt if it exists
+      - name: Read test-ignore file
+        id: test-ignore
+        run: |
+          RUST_IMPL_DIR="$GITHUB_WORKSPACE/transport-interop/impl/rust"
+          if [ -f "$RUST_IMPL_DIR/test-ignore.txt" ]; then
+            TEST_IGNORE=$(cat "$RUST_IMPL_DIR/test-ignore.txt")
+            echo "Setting: test-ignore=$TEST_IGNORE"
+            echo "test-ignore=$TEST_IGNORE" >> $GITHUB_OUTPUT
+          else
+            echo "Setting: test-ignore=''"
+            echo "test-ignore=" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build test-root
+        id: build-test-root
+        run: |
+          RUST_IMPL_DIR="$GITHUB_WORKSPACE/transport-interop/impl/rust"
+          echo "Setting: test-root=$RUST_IMPL_DIR"
+          echo "test-root=$RUST_IMPL_DIR" >> $GITHUB_OUTPUT
+
+      # Run the transport interop tests
+      - uses: ./.github/actions/run-transport-interop-test
+        with:
+          worker-count: 8
+          cache-dir: /srv/cache
+          test-filter: ${{ steps.build-test-filter.outputs.test-filter }}
+          test-ignore: ${{ steps.test-ignore.outputs.test-ignore }}
+          test-root: ${{ steps.build-test-root.outputs.test-root }}
+          gh-token: ${{ secrets.WRITE_README_AND_DASHBOARD }}
