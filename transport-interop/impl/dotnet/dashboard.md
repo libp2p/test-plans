@@ -1,8 +1,7 @@
-# .Net Transport Interopability Tests
 
-## Current Status
+> @libp2p/transport-interop@0.0.1 renderResults
+> ts-node renderResults.ts
 
-<!--INTEROP_DASHBOARD_START-->
 ## Using: tcp, noise, yamux
 | ⬇️ dialer 📞 \  ➡️ listener 🎧 | c-v0.0.1 | dotnet-v1.0 | go-v0.40 | go-v0.41 | go-v0.42 | go-v0.43 | go-v0.44 | go-v0.45 | jvm-v1.2 | nim-v1.14 | python-v0.4 | rust-v0.53 | rust-v0.54 | rust-v0.55 | rust-v0.56 |
 | ------------------------------ | -------- | ----------- | -------- | -------- | -------- | -------- | -------- | -------- | -------- | --------- | ----------- | ---------- | ---------- | ---------- | ---------- |
@@ -22,6 +21,4 @@
 | rust-v0.55 | :white_circle: | :green_circle: | :white_circle: | :white_circle: | :white_circle: | :white_circle: | :white_circle: | :white_circle: | :white_circle: | :white_circle: | :white_circle: | :white_circle: | :white_circle: | :white_circle: | :white_circle: |
 | rust-v0.56 | :white_circle: | :green_circle: | :white_circle: | :white_circle: | :white_circle: | :white_circle: | :white_circle: | :white_circle: | :white_circle: | :white_circle: | :white_circle: | :white_circle: | :white_circle: | :white_circle: | :white_circle: |
 
-
-<!--INTEROP_DASHBOARD_END-->
 
