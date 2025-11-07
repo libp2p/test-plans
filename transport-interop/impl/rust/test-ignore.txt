@@ -1,1 +1,1 @@
-rust-v0.53|rust-v0.54
+rust-v0.53|rust-v0.54|firefox-js-v1.x
