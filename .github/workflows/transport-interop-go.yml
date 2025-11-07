@@ -21,6 +21,7 @@ jobs:
       - name: Determine test-filter from PR changes
         if: github.event_name == 'pull_request'
         id: changed-versions
+        shell: bash
         run: |
           CHANGED_FILES=$(curl -s -X GET \
             -H "Accept: application/vnd.github.v3+json" \
@@ -38,12 +39,14 @@ jobs:
             TEST_FILTER=""
           fi
           
+          echo "Setting: test-filter=$TEST_FILTER"
           echo "test-filter=$TEST_FILTER" >> $GITHUB_OUTPUT
 
       # Step 2: Only run on workflow_dispatch — use input or scan all versions
       - name: Determine test-filter from manual input
         if: github.event_name == 'workflow_dispatch'
         id: manual-versions
+        shell: bash
         run: |
           INPUT_VERSIONS="${{ inputs.versions }}"
           
@@ -60,6 +63,7 @@ jobs:
             fi
           fi
           
+          echo "Setting: test-filter=$TEST_FILTER"
           echo "test-filter=$TEST_FILTER" >> $GITHUB_OUTPUT
 
       - uses: actions/checkout@v4
@@ -69,8 +73,10 @@ jobs:
         run: |
           if [ -f "transport-interop/impls/go/test-ignore.txt" ]; then
             TEST_IGNORE=$(cat transport-interop/impls/go/test-ignore.txt)
+            echo "Setting: test-ignore=$TEST_IGNORE"
             echo "test-ignore=$TEST_IGNORE" >> $GITHUB_OUTPUT
           else
+            echo "Setting: test-ignore=''"
             echo "test-ignore=" >> $GITHUB_OUTPUT
           fi
 
