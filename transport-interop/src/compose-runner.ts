@@ -8,7 +8,17 @@ import { stringify } from 'yaml';
 import { dialerStdout, dialerTimings } from './compose-stdout-helper';
 
 const exec = util.promisify(execStd);
-const timeoutSecs = 3 * 60
+const timeoutSecs = getTimeout();
+
+function getTimeout (): number {
+    const timeout = parseInt(process.env.TIMEOUT, 10)
+
+    if (isNaN(timeout)) {
+        return 10 * 60
+    }
+
+    return timeout
+}
 
 export type RunOpts = {
     up: {

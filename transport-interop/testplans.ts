@@ -6,17 +6,19 @@ import { stringify } from "csv-stringify/sync"
 import { stringify as YAMLStringify } from "yaml"
 import yargs from "yargs/yargs"
 import path from "path";
+import { parseFilterArgs } from "./src/testFilter";
+import { displaySelectedTestsBanner } from "./src/bannerUtils";
 
 (async () => {
     const WorkerCount = parseInt(process.env.WORKER_COUNT || "1")
     const argv = await yargs(process.argv.slice(2))
         .options({
             'name-filter': {
-                description: 'Only run tests including this name',
+                description: 'Only run tests including any of these names (pipe separated)',
                 default: "",
             },
             'name-ignore': {
-                description: 'Do not run any tests including this name ',
+                description: 'Do not run any tests including any of these names (pipe separated)',
                 default: "",
             },
             'emit-only': {
@@ -35,6 +37,11 @@ import path from "path";
                 default: [],
                 type: 'array'
             },
+            'verbose': {
+                description: 'Enable verbose logging',
+                default: false,
+                type: 'boolean'
+            }
         })
         .help()
         .version(false)
@@ -59,17 +66,24 @@ import path from "path";
         extraVersions.push(JSON.parse(contents.toString()))
     }
 
+    const verbose: boolean = argv.verbose
 
-    let nameFilter: string | null = argv["name-filter"]
-    if (nameFilter === "") {
-        nameFilter = null
-    }
-    let nameIgnore: string | null = argv["name-ignore"]
-    if (nameIgnore === "") {
-        nameIgnore = null
-    }
-    let testSpecs = await buildTestSpecs(versions.concat(extraVersions), nameFilter, nameIgnore)
+    const { nameFilter, nameIgnore } = parseFilterArgs(
+        argv["name-filter"] || "",
+        argv["name-ignore"] || "",
+        verbose
+    );
 
+    if (nameFilter) {
+        console.log("Name Filters:")
+        nameFilter.map(n => console.log("\t" + n))
+    }
+    if (nameIgnore) {
+        console.log("Name Ignores:")
+        nameIgnore.map(n => console.log("\t" + n))
+    }
+
+    let testSpecs = await buildTestSpecs(versions.concat(extraVersions), nameFilter, nameIgnore, verbose)
 
     if (argv["emit-only"]) {
         for (const testSpec of testSpecs) {
@@ -78,6 +92,12 @@ import path from "path";
             console.log("\n\n")
         }
         return
+    }
+
+    // Display selected tests banner (if not verbose and we have tests)
+    if (!verbose && testSpecs.length > 0) {
+        const testNames = testSpecs.map(spec => spec.name).filter((n): n is string => n !== undefined);
+        displaySelectedTestsBanner(testNames);
     }
 
     console.log(`Running ${testSpecs.length} tests`)
@@ -89,8 +109,10 @@ import path from "path";
             if (testSpec == null) {
                 return
             }
-            console.log("Running test spec: " + testSpec.name)
-            const failure = await run(testSpec.name || "unknown test", testSpec, { up: { exitCodeFrom: "dialer", renewAnonVolumes: true }, })
+
+            // Display test banner based on verbose mode
+            const testName = testSpec.name || "unknown test";
+            const failure = await run(testName, testSpec, { up: { exitCodeFrom: "dialer", renewAnonVolumes: true }, })
             if (failure != null) {
                 failures.push(failure)
                 statuses.push([testSpec.name || "unknown test", "failure"])
@@ -102,7 +124,9 @@ import path from "path";
     await Promise.all(workers)
 
     console.log(`${failures.length} failures`, failures)
-    await fs.writeFile("results.csv", stringify(statuses))
+    await fs.writeFile("results.csv", stringify(statuses, { 
+        quoted_match: /[(),\s]/
+    }))
 
     console.log("Run complete")
 })()
