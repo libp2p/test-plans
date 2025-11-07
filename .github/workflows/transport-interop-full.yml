@@ -1,4 +1,4 @@
-name: _Full libp2p Transport Interop Tests
+name: '00 Full libp2p Transport Interop'
 
 on:
   # Manual trigger
