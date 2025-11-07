@@ -1,5 +1,19 @@
 [
   {
+    "id": "python-v0.4",
+    "transports": [
+      "tcp"
+    ],
+    "secureChannels": [
+      "noise",
+      "plaintext"
+    ],
+    "muxers": [
+      "mplex",
+      "yamux"
+    ]
+  },
+  {
     "id": "rust-v0.53",
     "transports": [
       "ws",
@@ -256,7 +270,7 @@
     ]
   },
   {
-    "id": "nim-v1.10.x",
+    "id": "nim-v1.14",
     "transports": [
       "tcp",
       "ws"
@@ -333,8 +347,13 @@
       "webtransport",
       "webrtc-direct"
     ],
-    "secureChannels": ["tls", "noise"],
-    "muxers": ["yamux"]
+    "secureChannels": [
+      "tls",
+      "noise"
+    ],
+    "muxers": [
+      "yamux"
+    ]
   },
   {
     "id": "go-v0.41",
@@ -346,8 +365,13 @@
       "webtransport",
       "webrtc-direct"
     ],
-    "secureChannels": ["tls", "noise"],
-    "muxers": ["yamux"]
+    "secureChannels": [
+      "tls",
+      "noise"
+    ],
+    "muxers": [
+      "yamux"
+    ]
   },
   {
     "id": "go-v0.42",
@@ -359,8 +383,13 @@
       "webtransport",
       "webrtc-direct"
     ],
-    "secureChannels": ["tls", "noise"],
-    "muxers": ["yamux"]
+    "secureChannels": [
+      "tls",
+      "noise"
+    ],
+    "muxers": [
+      "yamux"
+    ]
   },
   {
     "id": "go-v0.43",
@@ -399,6 +428,24 @@
     ]
   },
   {
+    "id": "go-v0.45",
+    "transports": [
+      "tcp",
+      "ws",
+      "wss",
+      "quic-v1",
+      "webtransport",
+      "webrtc-direct"
+    ],
+    "secureChannels": [
+      "tls",
+      "noise"
+    ],
+    "muxers": [
+      "yamux"
+    ]
+  },
+  {
     "id": "jvm-v1.2",
     "transports": [
       "tcp",
@@ -407,6 +454,20 @@
     ],
     "secureChannels": [
       "tls",
+      "noise"
+    ],
+    "muxers": [
+      "mplex",
+      "yamux"
+    ]
+  },
+  {
+    "id": "c-v0.0.1",
+    "transports": [
+      "tcp",
+      "quic-v1"
+    ],
+    "secureChannels": [
       "noise"
     ],
     "muxers": [
