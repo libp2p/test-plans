@@ -17,6 +17,8 @@ jobs:
   run-go-transport-interop:
     runs-on: [self-hosted, linux, x64, ephemeral]
     steps:
+      - uses: actions/checkout@v4
+
       # Build test-filter by scanning the transport-interop/impls/go/ subdirs
       - name: Determine test-filter from manual input
         id: build-test-filter
@@ -39,8 +41,6 @@ jobs:
           
           echo "Setting: test-filter=$TEST_FILTER"
           echo "test-filter=$TEST_FILTER" >> $GITHUB_OUTPUT
-
-      - uses: actions/checkout@v4
 
       # Build test-ignore from transport-interop/impls/go/test-ignore.txt if it exists
       - name: Read test-ignore file
