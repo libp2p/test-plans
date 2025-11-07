@@ -57,19 +57,20 @@ inputs:
     default: ""
 runs:
   using: "composite"
+  defaults:
+    run:
+      shell: bash
   steps:
     - name: Configure AWS credentials for S3 build cache
       if: inputs.s3-access-key-id != '' && inputs.s3-secret-access-key != ''
       run: |
         echo "PUSH_CACHE=true" >> $GITHUB_ENV
-      shell: bash
 
     # This depends on where this file is within this repository. This walks up
     # from here to the transport-interop folder
     - run: |
         WORK_DIR=$(realpath "$GITHUB_ACTION_PATH/../../../transport-interop")
         echo "WORK_DIR=$WORK_DIR" >> $GITHUB_OUTPUT
-      shell: bash
       id: find-workdir
 
     - uses: actions/setup-node@v4
@@ -84,11 +85,9 @@ runs:
         if test -f /etc/buildkit/buildkitd.toml; then
           echo "config=/etc/buildkit/buildkitd.toml" >> $GITHUB_OUTPUT
         fi
-      shell: bash
       id: buildkit
 
     - name: Install more recent docker-compose version # https://stackoverflow.com/questions/54331949/having-networking-issues-with-docker-compose
-      shell: bash
       run: |
         mkdir -p $HOME/.docker/cli-plugins
         wget -q -O- https://github.com/docker/compose/releases/download/v2.21.0/docker-compose-linux-x86_64 > $HOME/.docker/cli-plugins/docker-compose
@@ -107,12 +106,10 @@ runs:
       run: |
         mkdir -p ${{ inputs.cache-dir }}/buildCache
         mkdir -p ${{ inputs.cache-dir }}/imageCache
-      shell: bash
 
     - name: Install deps
       working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
       run: npm ci
-      shell: bash
 
     - name: Load cache and build
       working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
@@ -126,11 +123,9 @@ runs:
         AWS_ACCESS_KEY_ID: ${{ inputs.s3-access-key-id }}
         AWS_SECRET_ACCESS_KEY: ${{ inputs.s3-secret-access-key }}
       run: npm run cache -- load --name-filter="$NAME_FILTER" --name-ignore="$NAME_IGNORE" --verbose="$VERBOSE"
-      shell: bash
 
     - name: Assert Git tree is clean.
       working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
-      shell: bash
       run: |
         if [[ -n "$(git status --porcelain)" ]]; then
           echo "Git tree is dirty. This means that building an impl generated something that should probably be .gitignore'd"
@@ -146,7 +141,6 @@ runs:
         NAME_IGNORE: ${{ inputs.test-ignore }}
         VERBOSE: ${{ inputs.verbose }}
       run: npm run cache -- push --name-filter="$NAME_FILTER" --name-ignore="$NAME_IGNORE" --verbose="$VERBOSE"
-      shell: bash
 
     - name: Run the test
       working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
@@ -158,18 +152,15 @@ runs:
         TIMEOUT: ${{ inputs.timeout }}
         VERBOSE: ${{ inputs.verbose }}
       run: npm run test -- --extra-version=$EXTRA_VERSION --name-filter="$NAME_FILTER" --name-ignore="$NAME_IGNORE" --verbose="$VERBOSE"
-      shell: bash
 
     - name: Print the results
       working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
       run: cat results.csv
-      shell: bash
 
     - name: Render results
       working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
       run: |
         npm run renderResults > "${{ inputs.test-root }}/dashboard.md"
-      shell: bash
 
     - name: Update README.md with dashboard.md
       run: |
