@@ -7,7 +7,7 @@ load-image-json: image.json
 	docker image tag $$(jq -r .imageID image.json) node-${image_name}
 
 image.json:
-	docker builder prune -af
+	#docker builder prune -af
 	docker build -t node-${image_name} -f ./Dockerfile .
 	docker image inspect node-${image_name} -f "{{.Id}}" | \
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
