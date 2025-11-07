@@ -1,4 +1,11 @@
-# Transport Interoperability tests
+# Transport Interoperability Tests
+
+## Current Status
+
+<!--INTEROP_DASHBOARD_START-->
+<!--INTEROP_DASHBOARD_END-->
+
+## About
 
 This tests that different libp2p implementations can communicate with each other
 on each of their supported (transport) capabilities.
@@ -11,7 +18,7 @@ This repo and tests adhere to these constraints:
 2. Caching is an optimization. Things should be fine without it.
 3. If we have a cache hit, be fast.
 
-# Test spec
+## Test spec
 
 The implementation is run in a container and is passed parameters via
 environment variables. The current parameters are:
@@ -61,7 +68,7 @@ DEBUG=*:yamux:trace transport=tcp muxer=yamux security=noise is_dialer=true   np
 
 For more details on how to run a dialer vs a listener, see the sections below.
 
-## Dialer
+### Dialer
 
 The dialer should emit all diagnostic logs to `stderr`. Only the final JSON
 string result should be emitted to `stdout`.
@@ -80,7 +87,7 @@ string result should be emitted to `stdout`.
 
 On error, the dialer should return a non-zero exit code.
 
-## Listener
+### Listener
 
 The listener should emit all diagnostic logs to `stderr`.
 
@@ -94,7 +101,7 @@ The listener should emit all diagnostic logs to `stderr`.
 
 On error, the listener should return a non-zero exit code.
 
-# Caching
+## Caching
 
 The caching strategy is opinionated in an attempt to make things simpler and
 faster. Here's how it works:

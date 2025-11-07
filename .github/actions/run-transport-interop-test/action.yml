@@ -1,6 +1,9 @@
 name: "libp2p transport interop test (self-hosted)"
 description: "Run the libp2p transport interoperability test suite on self-hosted runner with local disk cache"
 inputs:
+  gh-token:
+    description: "GitHub token to use for pushing README updates"
+    required: true
   test-filter:
     description: "Filter which tests to run out of the created matrix"
     required: false
@@ -9,6 +12,9 @@ inputs:
     description: "Exclude tests from the created matrix that include this string in their name"
     required: false
     default: ""
+  test-root:
+    description: "Path to the transport-interop folder"
+    required: true
   upload-results:
     description: "Upload the test results as an artifact"
     required: false
@@ -57,16 +63,17 @@ runs:
   steps:
     - name: Configure AWS credentials for S3 build cache
       if: inputs.s3-access-key-id != '' && inputs.s3-secret-access-key != ''
+      shell: bash
       run: |
         echo "PUSH_CACHE=true" >> $GITHUB_ENV
-      shell: bash
 
     # This depends on where this file is within this repository. This walks up
     # from here to the transport-interop folder
-    - run: |
+    - name: Find working directory
+      shell: bash
+      run: |
         WORK_DIR=$(realpath "$GITHUB_ACTION_PATH/../../../transport-interop")
         echo "WORK_DIR=$WORK_DIR" >> $GITHUB_OUTPUT
-      shell: bash
       id: find-workdir
 
     - uses: actions/setup-node@v4
@@ -77,11 +84,12 @@ runs:
     # self-hosted runner. If so, we need to pass the config to the buildx
     # action. The config enables docker.io proxy which is required to
     # work around docker hub rate limiting.
-    - run: |
+    - name: Check for buildkit config
+      shell: bash
+      run: |
         if test -f /etc/buildkit/buildkitd.toml; then
           echo "config=/etc/buildkit/buildkitd.toml" >> $GITHUB_OUTPUT
         fi
-      shell: bash
       id: buildkit
 
     - name: Install more recent docker-compose version # https://stackoverflow.com/questions/54331949/having-networking-issues-with-docker-compose
@@ -101,15 +109,15 @@ runs:
         driver-opts: image=moby/buildkit:v0.25.2
 
     - name: Create cache directories
+      shell: bash
       run: |
         mkdir -p ${{ inputs.cache-dir }}/buildCache
         mkdir -p ${{ inputs.cache-dir }}/imageCache
-      shell: bash
 
     - name: Install deps
       working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
-      run: npm ci
       shell: bash
+      run: npm ci
 
     - name: Load cache and build
       working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
@@ -122,8 +130,8 @@ runs:
         AWS_REGION: ${{ inputs.aws-region }}
         AWS_ACCESS_KEY_ID: ${{ inputs.s3-access-key-id }}
         AWS_SECRET_ACCESS_KEY: ${{ inputs.s3-secret-access-key }}
-      run: npm run cache -- load --name-filter="$NAME_FILTER" --name-ignore="$NAME_IGNORE" --verbose="$VERBOSE"
       shell: bash
+      run: npm run cache -- load --name-filter="$NAME_FILTER" --name-ignore="$NAME_IGNORE" --verbose="$VERBOSE"
 
     - name: Assert Git tree is clean.
       working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
@@ -142,8 +150,8 @@ runs:
         NAME_FILTER: ${{ inputs.test-filter }}
         NAME_IGNORE: ${{ inputs.test-ignore }}
         VERBOSE: ${{ inputs.verbose }}
-      run: npm run cache -- push --name-filter="$NAME_FILTER" --name-ignore="$NAME_IGNORE" --verbose="$VERBOSE"
       shell: bash
+      run: npm run cache -- push --name-filter="$NAME_FILTER" --name-ignore="$NAME_IGNORE" --verbose="$VERBOSE"
 
     - name: Run the test
       working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
@@ -154,23 +162,57 @@ runs:
         NAME_IGNORE: ${{ inputs.test-ignore }}
         TIMEOUT: ${{ inputs.timeout }}
         VERBOSE: ${{ inputs.verbose }}
-      run: npm run test -- --extra-version=$EXTRA_VERSION --name-filter="$NAME_FILTER" --name-ignore="$NAME_IGNORE" --verbose="$VERBOSE"
       shell: bash
+      run: npm run test -- --extra-version=$EXTRA_VERSION --name-filter="$NAME_FILTER" --name-ignore="$NAME_IGNORE" --verbose="$VERBOSE"
 
     - name: Print the results
       working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
-      run: cat results.csv
       shell: bash
+      run: cat results.csv
 
     - name: Render results
       working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
-      run: npm run renderResults > ./dashboard.md
       shell: bash
+      run: |
+        npm run renderResults > "${{ inputs.test-root }}/dashboard.md"
+
+    - name: Update README.md with dashboard.md
+      if: ${{ github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
+      shell: bash
+      run: |
+        DASHBOARD="${{ inputs.test-root }}/dashboard.md"
+        README="${{ inputs.test-root }}/README.md"
+
+        # Ensure both files exist
+        [ -f "$DASHBOARD" ] || { echo "Error: $DASHBOARD not found"; exit 1; }
+        [ -f "$README" ] || { echo "Error: $README not found"; exit 1; }
+
+        # Escape forward slashes and newlines in dashboard content
+        ESCAPED_CONTENT=$(cat "$DASHBOARD" | sed 's/[\/&]/\\&/g' | sed ':a;N;$!ba;s/\n/\\n/g')
+
+        # Replace content between markers
+        sed -i '/<!--INTEROP_DASHBOARD_START-->/,/<!--INTEROP_DASHBOARD_END-->/c\<!--INTEROP_DASHBOARD_START-->\n'"$ESCAPED_CONTENT"'\n<!--INTEROP_DASHBOARD_END-->' "$README"
+
+        # Set up git
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+
+        # Stage both files
+        git add "$DASHBOARD" "$README"
+
+        # Commit only if there are changes
+        git commit -m "chore: update dashboard and README [skip ci]" || echo "No changes to commit"
+
+        # Figure out which branch to push to
+        BRANCH="${{ github.head_ref || github.ref_name }}"
+
+        # Push
+        git remote set-url origin "https://x-access-token:${{ inputs.gh-token }}@github.com/${{ github.repository }}.git"
+        git push origin HEAD:"$BRANCH"
 
     - name: Show Dashboard Output
-      working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
-      run: cat ./dashboard.md >> $GITHUB_STEP_SUMMARY
       shell: bash
+      run: cat "${{ inputs.test-root }}/dashboard.md" >> $GITHUB_STEP_SUMMARY
 
     - name: Upload test results
       if: ${{ inputs.upload-results == 'true' }}
@@ -179,4 +221,4 @@ runs:
         name: ${{ inputs.test-results-suffix && format('test-plans-output-{0}', inputs.test-results-suffix) || 'test-plans-output' }}
         path: |
           ${{ steps.find-workdir.outputs.WORK_DIR }}/results.csv
-          ${{ steps.find-workdir.outputs.WORK_DIR }}/dashboard.md
+          ${{ inputs.test-root }}/dashboard.md
