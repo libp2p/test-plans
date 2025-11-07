@@ -1,0 +1,88 @@
+name: go-libp2p Transport Interop Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      versions:
+        description: 'Comma-separated list of go-libp2p versions (e.g. v0.42,v0.44)'
+        required: false
+        default: ''
+        type: string
+
+  pull_request:
+    paths:
+      - "transport-interop/impl/go/**"
+
+jobs:
+  run-go-transport-interop:
+    runs-on: [self-hosted, linux, x64, ephemeral]
+    steps:
+      # Step 1: Only run on pull_request - get changed versions from PR
+      - name: Determine test-filter from PR changes
+        if: github.event_name == 'pull_request'
+        id: changed-versions
+        run: |
+          CHANGED_FILES=$(curl -s -X GET \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: token ${{ github.token }}" \
+            https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files \
+            | grep '"filename"' | cut -d '"' -f4)
+          
+          # Extract unique versions from paths like tranport-interop/impls/go/v0.44/...
+          VERSIONS=$(echo "$CHANGED_FILES" | grep '^transport-interop/impls/go/' | awk -F/ '{print $3}' | sort | uniq)
+          
+          # Transform to "go-v0.42|go-v0.43|go-v0.44" format
+          if [ -n "$VERSIONS" ]; then
+            TEST_FILTER=$(echo "$VERSIONS" | sed 's/^/go-/g' | paste -sd '|' -)
+          else
+            TEST_FILTER=""
+          fi
+          
+          echo "test-filter=$TEST_FILTER" >> $GITHUB_OUTPUT
+
+      # Step 2: Only run on workflow_dispatch — use input or scan all versions
+      - name: Determine test-filter from manual input
+        if: github.event_name == 'workflow_dispatch'
+        id: manual-versions
+        run: |
+          INPUT_VERSIONS="${{ inputs.versions }}"
+          
+          if [ -n "$INPUT_VERSIONS" ]; then
+            # Use provided versions: v0.42,v0.44 → go-v0.42|go-v0.44
+            TEST_FILTER=$(echo "$INPUT_VERSIONS" | tr ',' '\n' | sed 's/^/go-/g' | paste -sd '|' -)
+          else
+            # No input: scan all subdirs in transport-interop/impls/go/
+            VERSIONS=$(ls -1 transport-interop/impls/go/ | grep '^v[0-9]' | sort | uniq)
+            if [ -n "$VERSIONS" ]; then
+              TEST_FILTER=$(echo "$VERSIONS" | sed 's/^/go-/g' | paste -sd '|' -)
+            else
+              TEST_FILTER=""
+            fi
+          fi
+          
+          echo "test-filter=$TEST_FILTER" >> $GITHUB_OUTPUT
+
+      - uses: actions/checkout@v4
+
+      - name: Read test-ignore file
+        id: test-ignore
+        run: |
+          if [ -f "transport-interop/impls/go/test-ignore.txt" ]; then
+            TEST_IGNORE=$(cat transport-interop/impls/go/test-ignore.txt)
+            echo "test-ignore=$TEST_IGNORE" >> $GITHUB_OUTPUT
+          else
+            echo "test-ignore=" >> $GITHUB_OUTPUT
+          fi
+
+      - uses: ./.github/actions/run-transport-interop-test
+        with:
+          worker-count: 8
+          cache-dir: /srv/cache
+          test-filter: >
+            ${{
+              github.event_name == 'pull_request' &&
+              steps.changed-versions.outputs.test-filter ||
+              steps.manual-versions.outputs.test-filter
+            }}
+          test-ignore: ${{ steps.test-ignore.outputs.test-ignore }}
+          test-root: "transport-interop/impls/go"
