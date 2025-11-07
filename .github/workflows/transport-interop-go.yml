@@ -17,7 +17,13 @@ jobs:
   run-go-transport-interop:
     runs-on: [self-hosted, linux, x64, ephemeral]
     steps:
-      - uses: actions/checkout@v4
+
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.WRITE_README_AND_DASHBOARD }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
 
       # Build test-filter by scanning the transport-interop/impl/go/ subdirs
       - name: Determine test-filter from manual input
@@ -77,3 +83,4 @@ jobs:
           test-filter: ${{ steps.build-test-filter.outputs.test-filter }}
           test-ignore: ${{ steps.test-ignore.outputs.test-ignore }}
           test-root: ${{ steps.build-test-root.outputs.test-root }}
+          gh-token: ${{ secrets.WRITE_README_AND_DASHBOARD }}

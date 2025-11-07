@@ -1,6 +1,9 @@
 name: "libp2p transport interop test (self-hosted)"
 description: "Run the libp2p transport interoperability test suite on self-hosted runner with local disk cache"
 inputs:
+  gh-token:
+    description: "GitHub token to use for pushing README updates"
+    required: true
   test-filter:
     description: "Filter which tests to run out of the created matrix"
     required: false
@@ -174,6 +177,7 @@ runs:
         npm run renderResults > "${{ inputs.test-root }}/dashboard.md"
 
     - name: Update README.md with dashboard.md
+      if: ${{ github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
       shell: bash
       run: |
         DASHBOARD="${{ inputs.test-root }}/dashboard.md"
@@ -199,8 +203,12 @@ runs:
         # Commit only if there are changes
         git commit -m "chore: update dashboard and README [skip ci]" || echo "No changes to commit"
 
+        # Figure out which branch to push to
+        BRANCH="${{ github.head_ref || github.ref_name }}"
+
         # Push
-        git push origin HEAD:${{ github.head_ref || github.ref_name }}
+        git remote set-url origin "https://x-access-token:${{ inputs.gh-token }}@github.com/${{ github.repository }}.git"
+        git push origin HEAD:"$BRANCH"
 
     - name: Show Dashboard Output
       shell: bash
