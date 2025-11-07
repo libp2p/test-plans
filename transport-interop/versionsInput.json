@@ -1,5 +1,19 @@
 [
   {
+    "id": "python-v0.4",
+    "transports": [
+      "tcp"
+    ],
+    "secureChannels": [
+      "noise",
+      "plaintext"
+    ],
+    "muxers": [
+      "mplex",
+      "yamux"
+    ]
+  },
+  {
     "id": "rust-v0.53",
     "transports": [
       "ws",
@@ -172,6 +186,10 @@
     "containerImageID": "browser",
     "transports": [
       {
+        "name": "webtransport",
+        "onlyDial": true
+      },
+      {
         "name": "wss",
         "onlyDial": true
       },
@@ -194,6 +212,10 @@
     "containerImageID": "browser",
     "transports": [
       {
+        "name": "webtransport",
+        "onlyDial": true
+      },
+      {
         "name": "wss",
         "onlyDial": true
       },
@@ -212,7 +234,51 @@
     ]
   },
   {
-    "id": "nim-v1.10.x",
+    "id": "webkit-js-v1.x",
+    "containerImageID": "browser",
+    "transports": [
+      {
+        "name": "wss",
+        "onlyDial": true
+      },
+      {
+        "name": "webrtc-direct",
+        "onlyDial": true
+      },
+      "webrtc"
+    ],
+    "secureChannels": [
+      "noise"
+    ],
+    "muxers": [
+      "mplex",
+      "yamux"
+    ]
+  },
+  {
+    "id": "webkit-js-v2.x",
+    "containerImageID": "browser",
+    "transports": [
+      {
+        "name": "wss",
+        "onlyDial": true
+      },
+      {
+        "name": "webrtc-direct",
+        "onlyDial": true
+      },
+      "webrtc"
+    ],
+    "secureChannels": [
+      "noise"
+    ],
+    "muxers": [
+      "mplex",
+      "yamux"
+    ]
+  },
+  {
+    "id": "nim-v1.14",
     "transports": [
       "tcp",
       "ws"
@@ -370,6 +436,24 @@
     ]
   },
   {
+    "id": "go-v0.45",
+    "transports": [
+      "tcp",
+      "ws",
+      "wss",
+      "quic-v1",
+      "webtransport",
+      "webrtc-direct"
+    ],
+    "secureChannels": [
+      "tls",
+      "noise"
+    ],
+    "muxers": [
+      "yamux"
+    ]
+  },
+  {
     "id": "jvm-v1.2",
     "transports": [
       "tcp",
@@ -378,6 +462,20 @@
     ],
     "secureChannels": [
       "tls",
+      "noise"
+    ],
+    "muxers": [
+      "mplex",
+      "yamux"
+    ]
+  },
+  {
+    "id": "c-v0.0.1",
+    "transports": [
+      "tcp",
+      "quic-v1"
+    ],
+    "secureChannels": [
       "noise"
     ],
     "muxers": [
