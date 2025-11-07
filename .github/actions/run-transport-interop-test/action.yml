@@ -176,8 +176,8 @@ runs:
     - name: Update README.md with dashboard.md
       shell: bash
       run: |
-        DASHBOARD="${{ inputs.test-root }}dashboard.md"
-        README="${{ inputs.test-root }}README.md"
+        DASHBOARD="${{ inputs.test-root }}/dashboard.md"
+        README="${{ inputs.test-root }}/README.md"
 
         # Ensure both files exist
         [ -f "$DASHBOARD" ] || { echo "Error: $DASHBOARD not found"; exit 1; }
