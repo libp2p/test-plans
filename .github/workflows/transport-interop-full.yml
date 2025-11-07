@@ -17,9 +17,12 @@ jobs:
       result: ${{ steps.check.outputs.changed }}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0                     # need full history
+          token: ${{ secrets.WRITE_README_AND_DASHBOARD }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
 
       - id: check
         run: |
@@ -47,9 +50,38 @@ jobs:
     runs-on: [self-hosted, linux, x64, ephemeral]
     
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.WRITE_README_AND_DASHBOARD }}
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      # Build test-ignore from transport-interop/test-ignore.txt if it exists
+      - name: Read test-ignore file
+        id: test-ignore
+        run: |
+          TI_DIR="$GITHUB_WORKSPACE/transport-interop"
+          if [ -f "$TI_DIR/test-ignore.txt" ]; then
+            TEST_IGNORE=$(cat "$TI_DIR/test-ignore.txt")
+            echo "Setting: test-ignore=$TEST_IGNORE"
+            echo "test-ignore=$TEST_IGNORE" >> $GITHUB_OUTPUT
+          else
+            echo "Setting: test-ignore=''"
+            echo "test-ignore=" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build test-root
+        id: build-test-root
+        run: |
+          TI_DIR="$GITHUB_WORKSPACE/transport-interop"
+          echo "Setting: test-root=$TI_DIR"
+          echo "test-root=$TI_DIR" >> $GITHUB_OUTPUT
+
       - uses: ./.github/actions/run-transport-interop-test
         with:
           worker-count: 8
           cache-dir: /srv/cache
-          test-root: "transport-interop"
+          test-ignore: ${{ steps.test-ignore.outputs.test-ignore }}
+          test-root: ${{ steps.build-test-root.outputs.test-root }}
+          gh-token: ${{ secrets.WRITE_README_AND_DASHBOARD }}
