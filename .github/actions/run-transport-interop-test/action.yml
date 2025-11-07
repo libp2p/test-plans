@@ -171,39 +171,29 @@ runs:
         npm run renderResults > "${{ inputs.test-root }}/dashboard.md"
       shell: bash
 
-    - name: Commit dashboard.md
-      if: github.ref == 'refs/heads/master'
+    - name: Update README.md with dashboard.md
       run: |
-        git config user.name "github-actions[bot]"
-        git config user.email "github-actions[bot]@users.noreply.github.com"
-        git add "${{ inputs.test-root }}/dashboard.md"
-        git commit -m "Update dashboard.md [skip ci]" || echo "No changes to commit"
+        DASHBOARD="${{ inputs.test-root }}dashboard.md"
+        README="${{ inputs.test-root }}README.md"
+
+        # Ensure both files exist
+        [ -f "$DASHBOARD" ] || { echo "Error: $DASHBOARD not found"; exit 1; }
+        [ -f "$README" ] || { echo "Error: $README not found"; exit 1; }
+
+        # Escape forward slashes and newlines in dashboard content
+        ESCAPED_CONTENT=$(cat "$DASHBOARD" | sed 's/[\/&]/\\&/g' | sed ':a;N;$!ba;s/\n/\\n/g')
+
+        # Replace content between markers
+        sed -i '/<!--INTEROP_DASHBOARD_START-->/,/<!--INTEROP_DASHBOARD_END-->/c\<!--INTEROP_DASHBOARD_START-->\n'"$ESCAPED_CONTENT"'\n<!--INTEROP_DASHBOARD_END-->' "$README"
+
+        # Stage both files
+        git add "$DASHBOARD" "$README"
+
+        # Commit only if there are changes
+        git commit -m "chore: update dashboard and README [ci skip]" || echo "No changes to commit"
+
+        # Push
         git push origin HEAD:${{ github.ref_name }}
-
-      - name: Update README.md with dashboard.md
-        if: github.ref == 'refs/heads/main'
-        run: |
-          DASHBOARD="${{ inputs.test-root }}dashboard.md"
-          README="${{ inputs.test-root }}README.md"
-
-          # Ensure both files exist
-          [ -f "$DASHBOARD" ] || { echo "Error: $DASHBOARD not found"; exit 1; }
-          [ -f "$README" ] || { echo "Error: $README not found"; exit 1; }
-
-          # Escape forward slashes and newlines in dashboard content
-          ESCAPED_CONTENT=$(cat "$DASHBOARD" | sed 's/[\/&]/\\&/g' | sed ':a;N;$!ba;s/\n/\\n/g')
-
-          # Replace content between markers
-          sed -i '/<!--INTEROP_DASHBOARD_START-->/,/<!--INTEROP_DASHBOARD_END-->/c\<!--INTEROP_DASHBOARD_START-->\n'"$ESCAPED_CONTENT"'\n<!--INTEROP_DASHBOARD_END-->' "$README"
-
-          # Stage both files
-          git add "$DASHBOARD" "$README"
-
-          # Commit only if there are changes
-          git commit -m "chore: update dashboard and README [ci skip]" || echo "No changes to commit"
-
-          # Push
-          git push origin HEAD:${{ github.ref_name }}
 
     - name: Show Dashboard Output
       run: cat "${{ inputs.test-root }}/dashboard.md" >> $GITHUB_STEP_SUMMARY
