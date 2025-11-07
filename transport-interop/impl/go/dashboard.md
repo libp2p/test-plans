@@ -1,8 +1,3 @@
-# Go Transport Interopability Tests
-
-## Current Status
-
-<!--INTEROP_DASHBOARD_START-->
 
 > @libp2p/transport-interop@0.0.1 renderResults
 > ts-node renderResults.ts
@@ -112,6 +107,4 @@
 | rust-v0.55 | :green_circle: | :white_circle: | :white_circle: | :white_circle: | :white_circle: | :white_circle: |
 | rust-v0.56 | :green_circle: | :white_circle: | :white_circle: | :white_circle: | :white_circle: | :white_circle: |
 
-
-<!--INTEROP_DASHBOARD_END-->
 
