@@ -200,7 +200,7 @@ runs:
         git commit -m "chore: update dashboard and README [skip ci]" || echo "No changes to commit"
 
         # Push
-        git push origin HEAD:${{ github.ref_name }}
+        git push origin HEAD:${{ github.head_ref || github.ref_name }}
 
     - name: Show Dashboard Output
       shell: bash
