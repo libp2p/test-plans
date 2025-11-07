@@ -384,6 +384,24 @@
     ]
   },
   {
+    "id": "go-v0.45",
+    "transports": [
+      "tcp",
+      "ws",
+      "wss",
+      "quic-v1",
+      "webtransport",
+      "webrtc-direct"
+    ],
+    "secureChannels": [
+      "tls",
+      "noise"
+    ],
+    "muxers": [
+      "yamux"
+    ]
+  },
+  {
     "id": "jvm-v1.2",
     "transports": [
       "tcp",
@@ -419,24 +437,6 @@
       "tcp"
     ],
     "secureChannels": [
-      "noise"
-    ],
-    "muxers": [
-      "yamux"
-    ]
-  },
-  {
-    "id": "go-v0.45",
-    "transports": [
-      "tcp",
-      "ws",
-      "wss",
-      "quic-v1",
-      "webtransport",
-      "webrtc-direct"
-    ],
-    "secureChannels": [
-      "tls",
       "noise"
     ],
     "muxers": [
