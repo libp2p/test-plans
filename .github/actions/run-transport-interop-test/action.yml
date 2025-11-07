@@ -177,7 +177,7 @@ runs:
         npm run renderResults > "${{ inputs.test-root }}/dashboard.md"
 
     - name: Update README.md with dashboard.md
-      if: ${{ github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork }}
+      if: ${{ !github.event.pull_request.head.repo.fork }}
       shell: bash
       run: |
         DASHBOARD="${{ inputs.test-root }}/dashboard.md"
