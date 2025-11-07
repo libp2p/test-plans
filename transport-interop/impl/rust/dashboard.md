@@ -1,8 +1,7 @@
-# Rust Transport Interopability Tests
 
-## Current Status
+> @libp2p/transport-interop@0.0.1 renderResults
+> ts-node renderResults.ts
 
-<!--INTEROP_DASHBOARD_START-->
 ## Using: quic-v1
 | ⬇️ dialer 📞 \  ➡️ listener 🎧 | c-v0.0.1 | eth-p2p-z-v0.0.1 | go-v0.40 | go-v0.41 | go-v0.42 | go-v0.43 | go-v0.44 | go-v0.45 | jvm-v1.2 | rust-v0.55 | rust-v0.56 |
 | ------------------------------ | -------- | ---------------- | -------- | -------- | -------- | -------- | -------- | -------- | -------- | ---------- | ---------- |
@@ -119,6 +118,4 @@
 | rust-v0.55 | :green_circle: | :green_circle: | :green_circle: |
 | rust-v0.56 | :green_circle: | :green_circle: | :green_circle: |
 
-
-<!--INTEROP_DASHBOARD_END-->
 
