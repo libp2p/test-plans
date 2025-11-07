@@ -1,4 +1,4 @@
-name: nim-libp2p Transport Interop Tests
+name: _ transport nim-libp2p
 
 on:
   workflow_dispatch:
@@ -8,6 +8,11 @@ on:
         required: false
         default: ''
         type: string
+      update-readme:
+        description: 'Update impl/nim/README.md with results?'
+        required: false
+        default: 'true'
+        type: boolean
 
   pull_request:
     paths:
@@ -83,4 +88,5 @@ jobs:
           test-filter: ${{ steps.build-test-filter.outputs.test-filter }}
           test-ignore: ${{ steps.test-ignore.outputs.test-ignore }}
           test-root: ${{ steps.build-test-root.outputs.test-root }}
+          update-readme: ${{ inputs.update-readme }}
           gh-token: ${{ secrets.WRITE_README_AND_DASHBOARD }}
