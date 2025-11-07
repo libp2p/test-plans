@@ -187,8 +187,12 @@ runs:
         [ -f "$DASHBOARD" ] || { echo "Error: $DASHBOARD not found"; exit 1; }
         [ -f "$README" ] || { echo "Error: $README not found"; exit 1; }
 
+        # Remove the first 4 lines
+        TMP_DASHBOARD=$(mktemp)
+        tail -n +5 "$DASHBOARD" > "$TMP_DASHBOARD"
+
         # Escape forward slashes and newlines in dashboard content
-        ESCAPED_CONTENT=$(cat "$DASHBOARD" | sed 's/[\/&]/\\&/g' | sed ':a;N;$!ba;s/\n/\\n/g')
+        ESCAPED_CONTENT=$(cat "$TMP_DASHBOARD" | sed 's/[\/&]/\\&/g' | sed ':a;N;$!ba;s/\n/\\n/g')
 
         # Replace content between markers
         sed -i '/<!--INTEROP_DASHBOARD_START-->/,/<!--INTEROP_DASHBOARD_END-->/c\<!--INTEROP_DASHBOARD_START-->\n'"$ESCAPED_CONTENT"'\n<!--INTEROP_DASHBOARD_END-->' "$README"
