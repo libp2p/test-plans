@@ -57,18 +57,18 @@ inputs:
     default: ""
 runs:
   using: "composite"
-  defaults:
-    run:
-      shell: bash
   steps:
     - name: Configure AWS credentials for S3 build cache
       if: inputs.s3-access-key-id != '' && inputs.s3-secret-access-key != ''
+      shell: bash
       run: |
         echo "PUSH_CACHE=true" >> $GITHUB_ENV
 
     # This depends on where this file is within this repository. This walks up
     # from here to the transport-interop folder
-    - run: |
+    - name: Find working directory
+      shell: bash
+      run: |
         WORK_DIR=$(realpath "$GITHUB_ACTION_PATH/../../../transport-interop")
         echo "WORK_DIR=$WORK_DIR" >> $GITHUB_OUTPUT
       id: find-workdir
@@ -81,13 +81,16 @@ runs:
     # self-hosted runner. If so, we need to pass the config to the buildx
     # action. The config enables docker.io proxy which is required to
     # work around docker hub rate limiting.
-    - run: |
+    - name: Check for buildkit config
+      shell: bash
+      run: |
         if test -f /etc/buildkit/buildkitd.toml; then
           echo "config=/etc/buildkit/buildkitd.toml" >> $GITHUB_OUTPUT
         fi
       id: buildkit
 
     - name: Install more recent docker-compose version # https://stackoverflow.com/questions/54331949/having-networking-issues-with-docker-compose
+      shell: bash
       run: |
         mkdir -p $HOME/.docker/cli-plugins
         wget -q -O- https://github.com/docker/compose/releases/download/v2.21.0/docker-compose-linux-x86_64 > $HOME/.docker/cli-plugins/docker-compose
@@ -103,12 +106,14 @@ runs:
         driver-opts: image=moby/buildkit:v0.25.2
 
     - name: Create cache directories
+      shell: bash
       run: |
         mkdir -p ${{ inputs.cache-dir }}/buildCache
         mkdir -p ${{ inputs.cache-dir }}/imageCache
 
     - name: Install deps
       working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
+      shell: bash
       run: npm ci
 
     - name: Load cache and build
@@ -122,10 +127,12 @@ runs:
         AWS_REGION: ${{ inputs.aws-region }}
         AWS_ACCESS_KEY_ID: ${{ inputs.s3-access-key-id }}
         AWS_SECRET_ACCESS_KEY: ${{ inputs.s3-secret-access-key }}
+      shell: bash
       run: npm run cache -- load --name-filter="$NAME_FILTER" --name-ignore="$NAME_IGNORE" --verbose="$VERBOSE"
 
     - name: Assert Git tree is clean.
       working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
+      shell: bash
       run: |
         if [[ -n "$(git status --porcelain)" ]]; then
           echo "Git tree is dirty. This means that building an impl generated something that should probably be .gitignore'd"
@@ -140,6 +147,7 @@ runs:
         NAME_FILTER: ${{ inputs.test-filter }}
         NAME_IGNORE: ${{ inputs.test-ignore }}
         VERBOSE: ${{ inputs.verbose }}
+      shell: bash
       run: npm run cache -- push --name-filter="$NAME_FILTER" --name-ignore="$NAME_IGNORE" --verbose="$VERBOSE"
 
     - name: Run the test
@@ -151,18 +159,22 @@ runs:
         NAME_IGNORE: ${{ inputs.test-ignore }}
         TIMEOUT: ${{ inputs.timeout }}
         VERBOSE: ${{ inputs.verbose }}
+      shell: bash
       run: npm run test -- --extra-version=$EXTRA_VERSION --name-filter="$NAME_FILTER" --name-ignore="$NAME_IGNORE" --verbose="$VERBOSE"
 
     - name: Print the results
       working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
+      shell: bash
       run: cat results.csv
 
     - name: Render results
       working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
+      shell: bash
       run: |
         npm run renderResults > "${{ inputs.test-root }}/dashboard.md"
 
     - name: Update README.md with dashboard.md
+      shell: bash
       run: |
         DASHBOARD="${{ inputs.test-root }}dashboard.md"
         README="${{ inputs.test-root }}README.md"
@@ -187,6 +199,7 @@ runs:
         git push origin HEAD:${{ github.ref_name }}
 
     - name: Show Dashboard Output
+      shell: bash
       run: cat "${{ inputs.test-root }}/dashboard.md" >> $GITHUB_STEP_SUMMARY
 
     - name: Upload test results
