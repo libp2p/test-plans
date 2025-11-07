@@ -189,11 +189,15 @@ runs:
         # Replace content between markers
         sed -i '/<!--INTEROP_DASHBOARD_START-->/,/<!--INTEROP_DASHBOARD_END-->/c\<!--INTEROP_DASHBOARD_START-->\n'"$ESCAPED_CONTENT"'\n<!--INTEROP_DASHBOARD_END-->' "$README"
 
+        # Set up git
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+
         # Stage both files
         git add "$DASHBOARD" "$README"
 
         # Commit only if there are changes
-        git commit -m "chore: update dashboard and README [ci skip]" || echo "No changes to commit"
+        git commit -m "chore: update dashboard and README [skip ci]" || echo "No changes to commit"
 
         # Push
         git push origin HEAD:${{ github.ref_name }}
