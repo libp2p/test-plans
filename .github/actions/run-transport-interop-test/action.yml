@@ -15,6 +15,10 @@ inputs:
   test-root:
     description: "Path to the transport-interop folder"
     required: true
+  update-readme:
+    description: "Whether to update the README.md file with the new dashboard"
+    required: false
+    default: "true"
   upload-results:
     description: "Upload the test results as an artifact"
     required: false
@@ -177,7 +181,7 @@ runs:
         npm run renderResults > "${{ inputs.test-root }}/dashboard.md"
 
     - name: Update README.md with dashboard.md
-      if: ${{ !github.event.pull_request.head.repo.fork }}
+      if: ${{ !github.event.pull_request.head.repo.fork  && inputs.update-readme == 'true' }}
       shell: bash
       run: |
         DASHBOARD="${{ inputs.test-root }}/dashboard.md"

@@ -1,8 +1,19 @@
-name: Full libp2p Transport Interop Tests
+name: _Full libp2p Transport Interop Tests
 
 on:
   # Manual trigger
   workflow_dispatch:
+    inputs:
+      tests-filter:
+        description: 'Pipe separated list of tests to run (e.g. go-v0.42|js-v3.x)'
+        required: false
+        default: ''
+        type: string
+      update-readme:
+        description: 'Update README.md with results?'
+        required: false
+        default: 'true'
+        type: boolean
 
   # Run it weekly on Mondays at 2 AM UTC
   schedule:
@@ -82,6 +93,8 @@ jobs:
         with:
           worker-count: 8
           cache-dir: /srv/cache
+          test-filter: ${{ inputs.test-filter }}
           test-ignore: ${{ steps.test-ignore.outputs.test-ignore }}
           test-root: ${{ steps.build-test-root.outputs.test-root }}
+          update-readme: ${{ inputs.update-readme }}
           gh-token: ${{ secrets.WRITE_README_AND_DASHBOARD }}
