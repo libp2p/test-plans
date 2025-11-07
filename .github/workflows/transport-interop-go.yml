@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Build test-filter by scanning the transport-interop/impls/go/ subdirs
+      # Build test-filter by scanning the transport-interop/impl/go/ subdirs
       - name: Determine test-filter from manual input
         id: build-test-filter
         shell: bash
@@ -30,8 +30,8 @@ jobs:
             # Use provided versions: v0.42,v0.44 → go-v0.42|go-v0.44
             TEST_FILTER=$(echo "$INPUT_VERSIONS" | tr ',' '\n' | sed 's/^/go-/g' | paste -sd '|' -)
           else
-            # No input: scan all subdirs in transport-interop/impls/go/
-            VERSIONS=$(ls -1 transport-interop/impls/go/ | grep '^v[0-9]' | sort | uniq)
+            # No input: scan all subdirs in transport-interop/impl/go/
+            VERSIONS=$(ls -1 transport-interop/impl/go/ | grep '^v[0-9]' | sort | uniq)
             if [ -n "$VERSIONS" ]; then
               TEST_FILTER=$(echo "$VERSIONS" | sed 's/^/go-/g' | paste -sd '|' -)
             else
@@ -42,12 +42,12 @@ jobs:
           echo "Setting: test-filter=$TEST_FILTER"
           echo "test-filter=$TEST_FILTER" >> $GITHUB_OUTPUT
 
-      # Build test-ignore from transport-interop/impls/go/test-ignore.txt if it exists
+      # Build test-ignore from transport-interop/impl/go/test-ignore.txt if it exists
       - name: Read test-ignore file
         id: test-ignore
         run: |
-          if [ -f "transport-interop/impls/go/test-ignore.txt" ]; then
-            TEST_IGNORE=$(cat transport-interop/impls/go/test-ignore.txt)
+          if [ -f "transport-interop/impl/go/test-ignore.txt" ]; then
+            TEST_IGNORE=$(cat transport-interop/impl/go/test-ignore.txt)
             echo "Setting: test-ignore=$TEST_IGNORE"
             echo "test-ignore=$TEST_IGNORE" >> $GITHUB_OUTPUT
           else
@@ -62,4 +62,4 @@ jobs:
           cache-dir: /srv/cache
           test-filter: ${{ steps.build-test-filter.outputs.test-filter }}
           test-ignore: ${{ steps.test-ignore.outputs.test-ignore }}
-          test-root: "transport-interop/impls/go"
+          test-root: "transport-interop/impl/go"
