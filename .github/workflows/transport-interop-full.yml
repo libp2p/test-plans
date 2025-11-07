@@ -4,13 +4,13 @@ on:
   # Manual trigger
   workflow_dispatch:
     inputs:
-      tests:
-        description: 'Pipe separated list of test names for the tests to run (e.g. go-v0.42|js-v3.x)'
+      tests-filter:
+        description: 'Pipe separated list of tests to run (e.g. go-v0.42|js-v3.x)'
         required: false
         default: ''
         type: string
       update-readme:
-        description: 'Whether to update README.md and dashboard.md with the latest test results'
+        description: 'Update README.md with results?'
         required: false
         default: 'true'
         type: boolean
