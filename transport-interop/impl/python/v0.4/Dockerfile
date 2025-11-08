@@ -9,14 +9,16 @@ RUN apt-get update && apt-get install -y \
     cmake \
     pkg-config \
     libgmp-dev \
+    git \
     && rm -rf /var/lib/apt/lists/*
-
-# Copy the py-libp2p-${commitSha} folder so we can use it as a local dependency
-COPY py-libp2p-* /app/py-libp2p
 
 # Copy pyproject.toml and install Python dependencies
 COPY pyproject.toml .
-RUN pip install --no-cache-dir -e .
+RUN pip install --no-cache-dir -e . && \
+    # Fix multihash conflict: multiaddr depends on py-multihash, but py-libp2p needs pymultihash
+    # Uninstall py-multihash and reinstall pymultihash to ensure pymultihash's module is used
+    pip uninstall -y py-multihash && \
+    pip install --no-cache-dir --force-reinstall pymultihash>=0.8.2
 
 # Copy the ping test implementation
 COPY ping_test.py .
