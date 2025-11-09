@@ -6,6 +6,7 @@ import { stringify } from "csv-stringify/sync"
 import { stringify as YAMLStringify } from "yaml"
 import yargs from "yargs/yargs"
 import path from "path";
+import { displaySelectedTestsBanner, displayTestBanner } from "./src/bannerUtils";
 
 (async () => {
     const WorkerCount = parseInt(process.env.WORKER_COUNT || "1")
@@ -34,6 +35,11 @@ import path from "path";
                 default: [],
                 type: 'array'
             },
+            'verbose': {
+                description: 'Enable verbose logging',
+                default: false,
+                type: 'boolean'
+            }
         })
         .help()
         .version(false)
@@ -67,6 +73,8 @@ import path from "path";
         nameIgnore = null
     }
 
+    const verbose: boolean = argv.verbose as boolean;
+
     let routerImageId = JSON.parse(await fs.readFile(path.join(".", "router", "image.json"), "utf-8")).imageID;
     let relayImageId = JSON.parse(await fs.readFile(path.join(".", "rust-relay", "image.json"), "utf-8")).imageID;
 
@@ -78,7 +86,13 @@ import path from "path";
 
     const assetDir = path.join(__dirname, "runs");
 
-    let testSpecs = await buildTestSpecs(versions.concat(extraVersions), nameFilter, nameIgnore, routerImageId, relayImageId, routerDelay, relayDelay, assetDir)
+    let testSpecs = await buildTestSpecs(versions.concat(extraVersions), nameFilter, nameIgnore, routerImageId, relayImageId, routerDelay, relayDelay, assetDir, verbose)
+
+    // Display selected tests banner (if not verbose and we have tests)
+    if (!verbose && testSpecs.length > 0) {
+        const testNames = testSpecs.map(spec => spec.name).filter((n): n is string => n !== undefined);
+        displaySelectedTestsBanner(testNames);
+    }
 
     console.log(`Running ${testSpecs.length} tests`)
     const failures: Array<{ name: String, e: ExecException }> = []
@@ -95,7 +109,12 @@ import path from "path";
                 continue;
             }
 
-            console.log("Running test spec: " + name)
+            // Display test banner based on verbose mode
+            if (!verbose) {
+                displayTestBanner(name);
+            } else {
+                console.log("Running test spec: " + name);
+            }
 
             try {
                 const report = await run(testSpec, assetDir, argv['dry-run'] as boolean);

@@ -3,13 +3,14 @@ on:
   pull_request:
     paths:
       - 'hole-punch-interop/**'
+      - ".github/actions/run-interop-hole-punch-test/action.yml"
   push:
     branches:
       - "master"
     paths:
       - 'hole-punch-interop/**'
 
-name: libp2p holepunching interop test
+name: libp2p hole punching interop test
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -17,7 +18,7 @@ concurrency:
 
 jobs:
   run-hole-punch-interop:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, ephemeral]
 # Uncomment to test for flakiness.
 #    strategy:
 #      matrix:
@@ -28,7 +29,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/run-interop-hole-punch-test
         with:
-          s3-cache-bucket: ${{ vars.S3_LIBP2P_BUILD_CACHE_BUCKET_NAME }}
-          s3-access-key-id: ${{ vars.S3_LIBP2P_BUILD_CACHE_AWS_ACCESS_KEY_ID }}
-          s3-secret-access-key: ${{ secrets.S3_LIBP2P_BUILD_CACHE_AWS_SECRET_ACCESS_KEY }}
-          worker-count: 16
+          worker-count: 8
+          cache-dir: /srv/cache
+          verbose: true
+          #test-ignore: ""

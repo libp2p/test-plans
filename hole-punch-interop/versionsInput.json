@@ -1,0 +1,8 @@
+[
+  {
+    "id": "rust-v0.53",
+    "transports": ["tcp", "quic"],
+    "secureChannels": [],
+    "muxers": []
+  }
+]
