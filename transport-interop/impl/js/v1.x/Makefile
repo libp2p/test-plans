@@ -23,7 +23,7 @@ firefox-image.json: load-image-json
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
 
 webkit-image.json: load-image-json BrowserDockerfile
-	docker build -f BrowserDockerfile --build-arg=BASE_IMAGE=${image_name} --build-arg=BROWSER=webkit -t webkit-${image_name} .
+	docker build -f BrowserDockerfile --build-arg=BASE_IMAGE=node-${image_name} --build-arg=BROWSER=webkit -t webkit-${image_name} .
 	docker image inspect webkit-${image_name} -f "{{.Id}}" | \
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
 

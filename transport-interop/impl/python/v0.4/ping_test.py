@@ -26,7 +26,7 @@ from libp2p.network.stream.net_stream import INetStream
 from libp2p.peer.peerinfo import info_from_p2p_addr
 from libp2p.security.noise.transport import PROTOCOL_ID as NOISE_PROTOCOL_ID, Transport as NoiseTransport
 from libp2p.security.insecure.transport import PLAINTEXT_PROTOCOL_ID, InsecureTransport
-
+from libp2p.utils.address_validation import get_available_interfaces
 from libp2p.crypto.secp256k1 import create_new_key_pair
 from libp2p.crypto.x25519 import create_new_key_pair as create_new_x25519_key_pair
 
@@ -77,9 +77,6 @@ class PingTest:
         self.host = None
         self.redis_client: Optional[redis.Redis] = None
 
-        logger.debug(f"ENV is_dialer={os.getenv('is_dialer')} (type: {type(os.getenv('is_dialer'))})")
-        logger.debug(f"All environment variables: {os.environ}")
-
     def setup_redis(self) -> None:
         """Set up Redis connection."""
         self.redis_client = redis.Redis(
@@ -116,7 +113,6 @@ class PingTest:
                 libp2p_keypair=key_pair,
                 noise_privkey=noise_key_pair.private_key,
                 early_data=None,
-                with_noise_pipes=False,
             )
             return {NOISE_PROTOCOL_ID: noise_transport}, key_pair
         elif self.security == "plaintext":
@@ -191,81 +187,63 @@ class PingTest:
             print(f"error occurred: {e}", file=sys.stderr)
             raise
 
-    def create_listen_address(self, ip: str, port: int = 0) -> multiaddr.Multiaddr:
-        """Create listen address based on transport type."""
-        if self.transport == "tcp":
-            return multiaddr.Multiaddr(f"/ip4/{ip}/tcp/{port}")
-        else:
-            raise ValueError(f"Unsupported transport for address creation: {self.transport}")
-
     async def run_listener(self) -> None:
         """Run the listener role."""
-        logger.debug("Entering run_listener")
         # Validate configuration
-        logger.debug("Validating configuration")
         self.validate_configuration()
-        # Create listen address
-        logger.debug("Creating listen address")
-        listen_addr = self.create_listen_address(self.ip)
+        
         # Create security and muxer options
-        logger.debug("Creating security and muxer options")
         security_options, key_pair = self.create_security_options()
         muxer_options = self.create_muxer_options()
-        # Create host with proper configuration
-        logger.debug("Creating host")
         
+        # Use get_available_interfaces() for proper address handling (current best practice)
+        port = 0  # Let OS assign a free port
+        listen_addrs = get_available_interfaces(port, protocol="tcp")
+        
+        # Create host with proper configuration
         self.host = new_host(
             key_pair=key_pair,
             sec_opt=security_options,
             muxer_opt=muxer_options,
-            listen_addrs=[listen_addr]
+            listen_addrs=listen_addrs
         )
         # Set up ping handler
-        logger.debug("Setting stream handler")
         self.host.set_stream_handler(PING_PROTOCOL_ID, self.handle_ping)
+        
         # Start the host
-        logger.debug("Starting host")
-        async with self.host.run(listen_addrs=[listen_addr]):
+        async with self.host.run(listen_addrs=listen_addrs):
             # Get the actual listen addresses and publish to Redis
-            logger.debug("Getting listen addresses")
-            listen_addrs = self.host.get_addrs()
-            if not listen_addrs:
+            all_addrs = self.host.get_addrs()
+            if not all_addrs:
                 raise RuntimeError("No listen addresses available")
             
-            # Replace local IPs with the actual container IP for Docker networking
+            # For Docker networking, prefer non-loopback addresses
+            # get_available_interfaces() already handles this, but we may need to replace loopback
             actual_addr = None
-            logger.debug(f"Processing {len(listen_addrs)} listen addresses")
-            for addr in listen_addrs:
+            for addr in all_addrs:
                 addr_str = str(addr)
-                logger.debug(f"Checking address: {addr_str}")
-                
-                # Check for both 0.0.0.0 and 127.0.0.1 addresses that need replacement
-                if "/ip4/0.0.0.0/" in addr_str or "/ip4/127.0.0.1/" in addr_str:
-                    logger.debug(f"Found local address, replacing with container IP")
-                    # Get the container's actual IP
+                # Prefer non-loopback addresses for Docker
+                if "/ip4/127.0.0.1/" not in addr_str and "/ip4/0.0.0.0/" not in addr_str:
+                    actual_addr = addr_str
+                    break
+            
+            # Fallback to first address, replacing loopback if needed
+            if not actual_addr:
+                addr_str = str(all_addrs[0])
+                if "/ip4/127.0.0.1/" in addr_str or "/ip4/0.0.0.0/" in addr_str:
+                    # Get container IP and replace
                     actual_ip = self.get_container_ip()
-                    logger.debug(f"Container IP: {actual_ip}")
-                    
-                    # Replace the IP in the address
                     if "/ip4/0.0.0.0/" in addr_str:
                         actual_addr = addr_str.replace("/ip4/0.0.0.0/", f"/ip4/{actual_ip}/")
                     elif "/ip4/127.0.0.1/" in addr_str:
                         actual_addr = addr_str.replace("/ip4/127.0.0.1/", f"/ip4/{actual_ip}/")
-                    
-                    logger.debug(f"Replaced address: {actual_addr}")
-                    break
+                else:
+                    actual_addr = addr_str
             
-            if not actual_addr:
-                actual_addr = str(listen_addrs[0])
-                logger.debug(f"Using original address: {actual_addr}")
-            
-            logger.debug(f"Publishing address to Redis: {actual_addr}")
             self.redis_client.rpush("listenerAddr", actual_addr)
-            # Wait for the test timeout - the listener must stay alive
             print(f"Listener ready, waiting for dialer to connect for {self.test_timeout_seconds} seconds...", file=sys.stderr)
             await trio.sleep(self.test_timeout_seconds)
             # If we reach here, the dialer didn't complete within timeout
-            logger.debug("Listener timeout - dialer did not complete within timeout")
             sys.exit(1)
 
     async def run_dialer(self) -> None:
@@ -396,29 +374,23 @@ class PingTest:
                 self.redis_client.close()
 
     def get_container_ip(self) -> str:
-        """Get the container's actual IP address."""
+        """Get the container's actual IP address for Docker networking."""
         import socket
         import subprocess
         try:
-            # Try multiple methods to get the container IP
-            # Method 1: Use hostname -I (works in most Docker containers)
+            # Try hostname -I first (works in most Docker containers)
             try:
                 result = subprocess.run(['hostname', '-I'], capture_output=True, text=True, timeout=5)
                 if result.returncode == 0 and result.stdout.strip():
-                    ip = result.stdout.strip().split()[0]
-                    logger.debug(f"Container IP from hostname -I: {ip}")
-                    return ip
-            except Exception as e:
-                logger.debug(f"hostname -I failed: {e}")
+                    return result.stdout.strip().split()[0]
+            except Exception:
+                pass
             
-            # Method 2: Connect to a remote address to determine our local IP
+            # Fallback: Connect to a remote address to determine local IP
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
                 s.connect(("8.8.8.8", 80))
-                local_ip = s.getsockname()[0]
-                logger.debug(f"Container IP from socket: {local_ip}")
-                return local_ip
-        except Exception as e:
-            logger.debug(f"Failed to get container IP: {e}")
+                return s.getsockname()[0]
+        except Exception:
             # Fallback to a reasonable default
             return "172.17.0.1"
 
