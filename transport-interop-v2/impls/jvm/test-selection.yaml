@@ -1,0 +1,7 @@
+# Test selection configuration for JVM implementations
+
+test-filter:
+  - jvm-v1.2
+
+test-ignore:
+  - jvm-v1.2 x jvm-v1.2  # Skip self-tests

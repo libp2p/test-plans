@@ -1,0 +1,7 @@
+# Test selection configuration for .NET implementations
+
+test-filter:
+  - dotnet-v1.0
+
+test-ignore:
+  - dotnet-v1.0 x dotnet-v1.0  # Skip self-tests

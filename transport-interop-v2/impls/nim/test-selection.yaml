@@ -1,0 +1,7 @@
+# Test selection configuration for Nim implementations
+
+test-filter:
+  - nim-v1.14
+
+test-ignore:
+  - nim-v1.14 x nim-v1.14  # Skip self-tests

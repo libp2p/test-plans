@@ -1,0 +1,7 @@
+# Test selection configuration for Zig implementations
+
+test-filter:
+  - zig-v0.0.1
+
+test-ignore:
+  - zig-v0.0.1 x zig-v0.0.1  # Skip self-tests

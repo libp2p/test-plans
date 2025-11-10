@@ -1,0 +1,13 @@
+# Test selection configuration for Python implementations
+# Used as default when no --test-filter or --test-ignore args provided
+
+# test-filter: List of substring patterns to match test names (OR logic)
+# If empty or omitted, all tests are initially selected
+test-filter:
+  - python-v0.4
+
+# test-ignore: List of substring patterns to exclude from selected tests
+# Applied after test-filter
+test-ignore:
+  - python-v0.4 x python-v0.4  # Skip python self-tests
+  - webrtc  # Python doesn't support webrtc yet
