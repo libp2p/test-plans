@@ -191,7 +191,7 @@ class PingTest:
         """Run the listener role."""
         # Validate configuration
         self.validate_configuration()
-        
+
         # Create security and muxer options
         security_options, key_pair = self.create_security_options()
         muxer_options = self.create_muxer_options()
@@ -205,7 +205,7 @@ class PingTest:
             key_pair=key_pair,
             sec_opt=security_options,
             muxer_opt=muxer_options,
-            listen_addrs=listen_addrs
+            listen_addrs=listen_addr
         )
         # Set up ping handler
         self.host.set_stream_handler(PING_PROTOCOL_ID, self.handle_ping)
