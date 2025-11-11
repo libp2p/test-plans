@@ -351,10 +351,21 @@ EOF
 cat "$TEST_PASS_DIR/results.yaml.tmp" >> "$TEST_PASS_DIR/results.yaml"
 rm "$TEST_PASS_DIR/results.yaml.tmp"
 
+# Collect failed test names
+FAILED_TESTS=()
+if [ "$FAILED" -gt 0 ]; then
+    readarray -t FAILED_TESTS < <(yq eval '.tests[] | select(.status == "fail") | .name' "$TEST_PASS_DIR/results.yaml")
+fi
+
 echo "Results:"
 echo "  Total: $test_count"
 echo "  Passed: $PASSED"
 echo "  Failed: $FAILED"
+if [ "$FAILED" -gt 0 ]; then
+    for test_name in "${FAILED_TESTS[@]}"; do
+        echo "    - $test_name"
+    done
+fi
 echo ""
 
 # Display execution time

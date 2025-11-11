@@ -339,8 +339,10 @@ export -f run_test
 export RERUN_DIR
 
 # Run tests in parallel using xargs
+# Note: Some tests may fail, but we want to continue to collect results
+# So we use || true to ensure xargs exit code doesn't stop the script
 RERUN_START_TIME=$(date +%s)
-seq 0 $((test_count - 1)) | xargs -P "$WORKER_COUNT" -I {} bash -c 'run_test {}'
+seq 0 $((test_count - 1)) | xargs -P "$WORKER_COUNT" -I {} bash -c 'run_test {}' || true
 RERUN_END_TIME=$(date +%s)
 RERUN_DURATION=$((RERUN_END_TIME - RERUN_START_TIME))
 
@@ -378,10 +380,21 @@ RESULTS_EOF
 cat "$RERUN_DIR/results.yaml.tmp" >> "$RERUN_DIR/results.yaml"
 rm "$RERUN_DIR/results.yaml.tmp"
 
+# Collect failed test names
+FAILED_TESTS=()
+if [ "$FAILED" -gt 0 ]; then
+    readarray -t FAILED_TESTS < <(yq eval '.tests[] | select(.status == "fail") | .name' "$RERUN_DIR/results.yaml")
+fi
+
 echo "Results:"
 echo "  Total: $test_count"
 echo "  Passed: $PASSED"
 echo "  Failed: $FAILED"
+if [ "$FAILED" -gt 0 ]; then
+    for test_name in "\${FAILED_TESTS[@]}"; do
+        echo "    - \$test_name"
+    done
+fi
 echo ""
 
 # Display execution time
