@@ -5,77 +5,125 @@ set -euo pipefail
 
 CACHE_DIR="${CACHE_DIR:-/srv/cache}"
 
-if [ ! -f results.yaml ]; then
-    echo "Error: results.yaml not found. Run tests first."
+# Use TEST_PASS_DIR if set, otherwise use current directory
+SNAPSHOT_DIR="${TEST_PASS_DIR:-.}"
+
+if [ ! -f "$SNAPSHOT_DIR/results.yaml" ]; then
+    echo "Error: results.yaml not found in $SNAPSHOT_DIR. Run tests first."
     exit 1
 fi
 
 echo "Creating test pass snapshot..."
 
 # Extract test pass name from results
-test_pass=$(yq eval '.metadata.testPass' results.yaml)
-snapshot_name="${test_pass}"
-snapshot_dir="$CACHE_DIR/test-passes/$snapshot_name"
+test_pass=$(yq eval '.metadata.testPass' "$SNAPSHOT_DIR/results.yaml")
 
-# Create snapshot directory structure
-mkdir -p "$snapshot_dir"/{scripts,snapshots,docker-compose,logs}
-
-echo "Snapshot: $snapshot_name"
-echo "Location: $snapshot_dir"
+echo "Snapshot: $test_pass"
+echo "Location: $SNAPSHOT_DIR"
 echo ""
 
-# Copy essential files
-echo "→ Copying configuration files..."
-cp impls.yaml "$snapshot_dir/"
-cp test-selection.yaml "$snapshot_dir/"
-cp -r impls "$snapshot_dir/" 2>/dev/null || true
+# Create snapshot subdirectories if they don't exist
+mkdir -p "$SNAPSHOT_DIR"/{scripts,snapshots,docker-compose,logs,docker-images}
 
-echo "→ Copying test results..."
-cp results.yaml "$snapshot_dir/"
-cp results.md "$snapshot_dir/" 2>/dev/null || true
-cp test-matrix.yaml "$snapshot_dir/" 2>/dev/null || true
+# Copy essential files (only if they don't already exist in snapshot dir)
+echo "→ Copying configuration files..."
+cp impls.yaml "$SNAPSHOT_DIR/" 2>/dev/null || true
+cp test-selection.yaml "$SNAPSHOT_DIR/" 2>/dev/null || true
+cp -r impls "$SNAPSHOT_DIR/" 2>/dev/null || true
 
 echo "→ Copying scripts..."
-cp scripts/*.sh "$snapshot_dir/scripts/"
+cp scripts/*.sh "$SNAPSHOT_DIR/scripts/" 2>/dev/null || true
 
-echo "→ Copying logs..."
-cp logs/*.log "$snapshot_dir/logs/" 2>/dev/null || true
+# Validate and copy snapshots used in this test run
+echo "→ Validating and copying source snapshots..."
+test_count=$(yq eval '.tests | length' "$SNAPSHOT_DIR/results.yaml")
 
-echo "→ Copying docker-compose files..."
-cp docker-compose-*.yaml "$snapshot_dir/docker-compose/" 2>/dev/null || true
-
-# Copy snapshots used in this test run
-echo "→ Copying source snapshots..."
-test_count=$(yq eval '.tests | length' results.yaml)
+# First pass: collect all unique snapshots and validate they exist
+declare -A unique_snapshots
+missing_count=0
 
 for ((i=0; i<test_count; i++)); do
-    dialer_snapshot=$(yq eval ".tests[$i].dialerSnapshot" test-matrix.yaml 2>/dev/null || echo "")
-    listener_snapshot=$(yq eval ".tests[$i].listenerSnapshot" test-matrix.yaml 2>/dev/null || echo "")
+    dialer_snapshot=$(yq eval ".tests[$i].dialerSnapshot" "$SNAPSHOT_DIR/test-matrix.yaml" 2>/dev/null || echo "")
+    listener_snapshot=$(yq eval ".tests[$i].listenerSnapshot" "$SNAPSHOT_DIR/test-matrix.yaml" 2>/dev/null || echo "")
 
-    if [ -n "$dialer_snapshot" ] && [ -f "$CACHE_DIR/$dialer_snapshot" ]; then
-        snapshot_basename=$(basename "$dialer_snapshot")
-        if [ ! -f "$snapshot_dir/snapshots/$snapshot_basename" ]; then
-            cp "$CACHE_DIR/$dialer_snapshot" "$snapshot_dir/snapshots/"
-            # Copy metadata if exists
-            [ -f "$CACHE_DIR/$dialer_snapshot.metadata" ] && \
-                cp "$CACHE_DIR/$dialer_snapshot.metadata" "$snapshot_dir/snapshots/"
-        fi
+    if [ -n "$dialer_snapshot" ] && [ "$dialer_snapshot" != "null" ]; then
+        unique_snapshots["$dialer_snapshot"]=1
     fi
 
-    if [ -n "$listener_snapshot" ] && [ -f "$CACHE_DIR/$listener_snapshot" ]; then
-        snapshot_basename=$(basename "$listener_snapshot")
-        if [ ! -f "$snapshot_dir/snapshots/$snapshot_basename" ]; then
-            cp "$CACHE_DIR/$listener_snapshot" "$snapshot_dir/snapshots/"
-            # Copy metadata if exists
-            [ -f "$CACHE_DIR/$listener_snapshot.metadata" ] && \
-                cp "$CACHE_DIR/$listener_snapshot.metadata" "$snapshot_dir/snapshots/"
+    if [ -n "$listener_snapshot" ] && [ "$listener_snapshot" != "null" ]; then
+        unique_snapshots["$listener_snapshot"]=1
+    fi
+done
+
+# Check and download missing snapshots
+for snapshot_path in "${!unique_snapshots[@]}"; do
+    if [ ! -f "$CACHE_DIR/$snapshot_path" ]; then
+        snapshot_basename=$(basename "$snapshot_path")
+        commit="${snapshot_basename%.zip}"
+
+        # Find the repo for this commit
+        repo=$(yq eval ".implementations[] | select(.source.commit == \"$commit\") | .source.repo" impls.yaml | head -1)
+
+        if [ -n "$repo" ]; then
+            echo "  → Downloading missing snapshot: $snapshot_basename..."
+            repo_url="https://github.com/$repo/archive/$commit.zip"
+            mkdir -p "$CACHE_DIR/snapshots"
+            wget -q -O "$CACHE_DIR/$snapshot_path" "$repo_url" || {
+                echo "  ✗ Failed to download $snapshot_basename"
+                exit 1
+            }
+            echo "    ✓ Downloaded to cache"
+        else
+            echo "  ✗ Could not find repo for commit $commit"
+            exit 1
         fi
     fi
 done
 
+# Second pass: copy all snapshots to snapshot directory
+for snapshot_path in "${!unique_snapshots[@]}"; do
+    snapshot_basename=$(basename "$snapshot_path")
+    if [ ! -f "$SNAPSHOT_DIR/snapshots/$snapshot_basename" ]; then
+        cp "$CACHE_DIR/$snapshot_path" "$SNAPSHOT_DIR/snapshots/"
+        # Copy metadata if exists
+        [ -f "$CACHE_DIR/$snapshot_path.metadata" ] && \
+            cp "$CACHE_DIR/$snapshot_path.metadata" "$SNAPSHOT_DIR/snapshots/"
+    fi
+done
+
+echo "  ✓ All snapshots validated and copied"
+
+# Save Docker images
+echo "→ Saving Docker images..."
+
+# Get unique implementations from test matrix
+yq eval '.tests[].dialer' "$SNAPSHOT_DIR/test-matrix.yaml" | sort -u > /tmp/snapshot-impls.txt
+yq eval '.tests[].listener' "$SNAPSHOT_DIR/test-matrix.yaml" | sort -u >> /tmp/snapshot-impls.txt
+sort -u /tmp/snapshot-impls.txt -o /tmp/snapshot-impls.txt
+
+# Also add base images for browser implementations
+while IFS= read -r impl_id; do
+    source_type=$(yq eval ".implementations[] | select(.id == \"$impl_id\") | .source.type" impls.yaml)
+    if [ "$source_type" = "browser" ]; then
+        base_image=$(yq eval ".implementations[] | select(.id == \"$impl_id\") | .source.baseImage" impls.yaml)
+        echo "$base_image" >> /tmp/snapshot-impls.txt
+    fi
+done < /tmp/snapshot-impls.txt
+
+sort -u /tmp/snapshot-impls.txt -o /tmp/snapshot-impls.txt
+
+while IFS= read -r impl_id; do
+    if docker image inspect "$impl_id" &> /dev/null; then
+        echo "  Saving: $impl_id"
+        docker save "$impl_id" | gzip > "$SNAPSHOT_DIR/docker-images/${impl_id}.tar.gz"
+    fi
+done < /tmp/snapshot-impls.txt
+
+rm /tmp/snapshot-impls.txt
+
 # Create settings.yaml with test configuration
 echo "→ Creating settings.yaml..."
-cat > "$snapshot_dir/settings.yaml" <<EOF
+cat > "$SNAPSHOT_DIR/settings.yaml" <<EOF
 testPass: $test_pass
 createdAt: $(date -u +%Y-%m-%dT%H:%M:%SZ)
 platform: $(uname -m)
@@ -83,19 +131,19 @@ os: $(uname -s)
 cacheDir: $CACHE_DIR
 
 # Original test configuration
-testFilter: $(yq eval '.metadata.filter' test-matrix.yaml)
-testIgnore: $(yq eval '.metadata.ignore' test-matrix.yaml)
+testFilter: $(yq eval '.metadata.filter' "$SNAPSHOT_DIR/test-matrix.yaml")
+testIgnore: $(yq eval '.metadata.ignore' "$SNAPSHOT_DIR/test-matrix.yaml")
 
 # Test results summary
 summary:
-  total: $(yq eval '.summary.total' results.yaml)
-  passed: $(yq eval '.summary.passed' results.yaml)
-  failed: $(yq eval '.summary.failed' results.yaml)
+  total: $(yq eval '.summary.total' "$SNAPSHOT_DIR/results.yaml")
+  passed: $(yq eval '.summary.passed' "$SNAPSHOT_DIR/results.yaml")
+  failed: $(yq eval '.summary.failed' "$SNAPSHOT_DIR/results.yaml")
 EOF
 
 # Create re-run script
 echo "→ Creating re-run.sh..."
-cat > "$snapshot_dir/re-run.sh" <<'EOF'
+cat > "$SNAPSHOT_DIR/re-run.sh" <<'EOF'
 #!/bin/bash
 # Re-run this test pass snapshot
 # This script recreates the exact test run from the snapshot
@@ -117,74 +165,253 @@ fi
 # Read settings
 if [ -f settings.yaml ]; then
     echo "Snapshot configuration:"
-    cat settings.yaml
+    grep -v "^cacheDir:" settings.yaml
     echo ""
 fi
 
 # Set cache dir to local snapshots directory
 export CACHE_DIR="$(pwd)"
 
+# Create a new directory for this re-run's results
+RERUN_TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+RERUN_DIR="$(pwd)/re-runs/$RERUN_TIMESTAMP"
+mkdir -p "$RERUN_DIR"/{logs,docker-compose}
+
+# Copy test-matrix.yaml to re-run directory so scripts can find it
+cp test-matrix.yaml "$RERUN_DIR/"
+
+export TEST_PASS_DIR="$RERUN_DIR"
+
 echo "This snapshot contains all source code and configurations."
+echo "Re-run results will be saved to: re-runs/$RERUN_TIMESTAMP"
 echo "Re-running will use the cached artifacts in this directory."
 echo ""
-read -p "Continue? (y/n) " -n 1 -r
-echo
-if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+read -p "Continue? (Y/n) " -n 1 response
+response=${response:-Y} # Default to Y if user just presses enter
+if [[ ! "$response" =~ ^[Yy]$ ]]; then
+    echo "Test execution cancelled."
     exit 0
 fi
 
-# Build images from cached snapshots
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "Building images from cached snapshots..."
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-bash scripts/build-images.sh
-
-# Start services
+# Validate GitHub snapshots are present
 echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "Starting global services..."
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-bash scripts/start-global-services.sh
+echo "╲ Validating GitHub snapshots..."
+echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
-# Cleanup on exit
-cleanup() {
-    echo ""
-    echo "Stopping services..."
-    bash scripts/stop-global-services.sh
-}
-trap cleanup EXIT
-
-# Re-run tests
-echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "Re-running tests..."
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
+# Check each snapshot referenced in test-matrix.yaml
 test_count=$(yq eval '.tests | length' test-matrix.yaml)
-echo "Total tests: $test_count"
-echo ""
+missing_snapshots=()
 
 for ((i=0; i<test_count; i++)); do
-    name=$(yq eval ".tests[$i].name" test-matrix.yaml)
-    dialer=$(yq eval ".tests[$i].dialer" test-matrix.yaml)
-    listener=$(yq eval ".tests[$i].listener" test-matrix.yaml)
-    transport=$(yq eval ".tests[$i].transport" test-matrix.yaml)
+    dialer_snapshot=$(yq eval ".tests[$i].dialerSnapshot" test-matrix.yaml 2>/dev/null || echo "")
+    listener_snapshot=$(yq eval ".tests[$i].listenerSnapshot" test-matrix.yaml 2>/dev/null || echo "")
 
-    echo "[$((i + 1))/$test_count] $name"
-    bash scripts/run-single-test.sh "$name" "$dialer" "$listener" "$transport" || true
+    # Check dialer snapshot (should be in local snapshots/ directory)
+    if [ -n "$dialer_snapshot" ] && [ "$dialer_snapshot" != "null" ]; then
+        snapshot_name=$(basename "$dialer_snapshot")
+        if [ ! -f "snapshots/$snapshot_name" ]; then
+            missing_snapshots+=("$snapshot_name")
+        fi
+    fi
+
+    # Check listener snapshot (should be in local snapshots/ directory)
+    if [ -n "$listener_snapshot" ] && [ "$listener_snapshot" != "null" ]; then
+        snapshot_name=$(basename "$listener_snapshot")
+        if [ ! -f "snapshots/$snapshot_name" ]; then
+            missing_snapshots+=("$snapshot_name")
+        fi
+    fi
 done
 
+# Verify all snapshots are present
+if [ ${#missing_snapshots[@]} -gt 0 ]; then
+    echo "  ✗ Missing ${#missing_snapshots[@]} snapshot(s):"
+    for snapshot_file in "${missing_snapshots[@]}"; do
+        echo "    - $snapshot_file"
+    done
+    echo ""
+    echo "  This snapshot appears to be incomplete or corrupted."
+    echo "  Please re-create the snapshot from the original test run."
+    exit 1
+else
+    echo "  ✓ All snapshots present"
+fi
+
+# Load Docker images from snapshot
 echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "✓ Re-run complete"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "╲ Loading Docker images..."
+echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+
+if [ -d docker-images ]; then
+    for image_file in docker-images/*.tar.gz; do
+        if [ -f "$image_file" ]; then
+            image_name=$(basename "$image_file" .tar.gz)
+            echo "  Loading: $image_name"
+            gunzip -c "$image_file" | docker load
+        fi
+    done
+    echo "  ✓ All images loaded"
+else
+    echo "  ! No docker-images directory found, attempting to build..."
+    bash scripts/build-images.sh
+fi
+
+# Re-run tests in parallel
+echo ""
+echo "╲ Re-running tests..."
+echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+
+test_count=$(yq eval '.tests | length' test-matrix.yaml)
+WORKER_COUNT=$(nproc 2>/dev/null || echo 4)
+
+echo "Total tests: $test_count"
+echo "Parallel workers: $WORKER_COUNT"
+echo ""
+
+# Initialize results
+> "$RERUN_DIR/results.yaml.tmp"
+export test_count
+
+# Run test function (similar to main run_tests.sh)
+run_test() {
+    local index=$1
+    local name=$(yq eval ".tests[$index].name" "$RERUN_DIR/test-matrix.yaml")
+    local dialer=$(yq eval ".tests[$index].dialer" "$RERUN_DIR/test-matrix.yaml")
+    local listener=$(yq eval ".tests[$index].listener" "$RERUN_DIR/test-matrix.yaml")
+    local transport=$(yq eval ".tests[$index].transport" "$RERUN_DIR/test-matrix.yaml")
+    local secure=$(yq eval ".tests[$index].secureChannel" "$RERUN_DIR/test-matrix.yaml")
+    local muxer=$(yq eval ".tests[$index].muxer" "$RERUN_DIR/test-matrix.yaml")
+
+    echo "[$((index + 1))/$test_count] $name"
+
+    start=$(date +%s)
+    if bash scripts/run-single-test.sh "$name" "$dialer" "$listener" "$transport" "$secure" "$muxer"; then
+        status="pass"
+        exit_code=0
+    else
+        status="fail"
+        exit_code=1
+    fi
+    end=$(date +%s)
+    duration=$((end - start))
+
+    # Extract metrics from log file if test passed
+    handshake_ms=""
+    ping_ms=""
+    if [ "$status" = "pass" ]; then
+        test_slug=$(echo "$name" | sed 's/[^a-zA-Z0-9-]/_/g')
+        log_file="$RERUN_DIR/logs/${test_slug}.log"
+        if [ -f "$log_file" ]; then
+            metrics=$(grep -o '{"handshakePlusOneRTTMillis":[0-9.]*,"pingRTTMilllis":[0-9.]*}' "$log_file" 2>/dev/null | tail -1)
+            if [ -n "$metrics" ]; then
+                handshake_ms=$(echo "$metrics" | grep -o '"handshakePlusOneRTTMillis":[0-9.]*' | cut -d: -f2)
+                ping_ms=$(echo "$metrics" | grep -o '"pingRTTMilllis":[0-9.]*' | cut -d: -f2)
+            fi
+        fi
+    fi
+
+    # Append to results (with locking to avoid race conditions)
+    (
+        flock -x 200
+        cat >> "$RERUN_DIR/results.yaml.tmp" <<RESULT_EOF
+  - name: $name
+    status: $status
+    exitCode: $exit_code
+    duration: ${duration}s
+    dialer: $dialer
+    listener: $listener
+    transport: $transport
+    secureChannel: $secure
+    muxer: $muxer
+RESULT_EOF
+        if [ -n "$handshake_ms" ]; then
+            echo "    handshakePlusOneRTTMs: $handshake_ms" >> "$RERUN_DIR/results.yaml.tmp"
+        fi
+        if [ -n "$ping_ms" ]; then
+            echo "    pingRTTMs: $ping_ms" >> "$RERUN_DIR/results.yaml.tmp"
+        fi
+    ) 200>/tmp/rerun-results.lock
+
+    return $exit_code
+}
+
+export -f run_test
+export RERUN_DIR
+
+# Run tests in parallel using xargs
+RERUN_START_TIME=$(date +%s)
+seq 0 $((test_count - 1)) | xargs -P "$WORKER_COUNT" -I {} bash -c 'run_test {}'
+RERUN_END_TIME=$(date +%s)
+RERUN_DURATION=$((RERUN_END_TIME - RERUN_START_TIME))
+
+# Collect results
+echo ""
+echo "╲ Collecting results..."
+echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+
+# Count pass/fail
+PASSED=$(grep -c "status: pass" "$RERUN_DIR/results.yaml.tmp" || true)
+FAILED=$(grep -c "status: fail" "$RERUN_DIR/results.yaml.tmp" || true)
+PASSED=${PASSED:-0}
+FAILED=${FAILED:-0}
+
+# Generate final results.yaml
+cat > "$RERUN_DIR/results.yaml" <<RESULTS_EOF
+metadata:
+  testPass: $(yq eval '.metadata.testPass' results.yaml)-rerun-$RERUN_TIMESTAMP
+  originalTestPass: $(yq eval '.metadata.testPass' results.yaml)
+  startedAt: $(date -d @$RERUN_START_TIME -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -r $RERUN_START_TIME -u +%Y-%m-%dT%H:%M:%SZ)
+  completedAt: $(date -u +%Y-%m-%dT%H:%M:%SZ)
+  duration: ${RERUN_DURATION}s
+  platform: $(uname -m)
+  os: $(uname -s)
+  workerCount: $WORKER_COUNT
+
+summary:
+  total: $test_count
+  passed: $PASSED
+  failed: $FAILED
+
+tests:
+RESULTS_EOF
+
+cat "$RERUN_DIR/results.yaml.tmp" >> "$RERUN_DIR/results.yaml"
+rm "$RERUN_DIR/results.yaml.tmp"
+
+echo "Results:"
+echo "  Total: $test_count"
+echo "  Passed: $PASSED"
+echo "  Failed: $FAILED"
+echo ""
+
+# Display execution time
+HOURS=$((RERUN_DURATION / 3600))
+MINUTES=$(((RERUN_DURATION % 3600) / 60))
+SECONDS=$((RERUN_DURATION % 60))
+printf "Total time: %02d:%02d:%02d\n" $HOURS $MINUTES $SECONDS
+
+# Generate dashboard
+echo ""
+echo "╲ Generating results dashboard..."
+echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+bash scripts/generate-dashboard.sh
+
+echo ""
+echo "╲ ✓ Re-run complete"
+echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+echo ""
+echo "Results saved to: re-runs/$RERUN_TIMESTAMP/"
+echo "  - results.yaml"
+echo "  - results.md"
+echo "  - results.html"
+echo "  - logs/"
 EOF
 
-chmod +x "$snapshot_dir/re-run.sh"
+chmod +x "$SNAPSHOT_DIR/re-run.sh"
 
 # Create README
 echo "→ Creating README.md..."
-cat > "$snapshot_dir/README.md" <<EOF
+cat > "$SNAPSHOT_DIR/README.md" <<EOF
 # Test Pass Snapshot: $test_pass
 
 This is a self-contained snapshot of a hole punch interoperability test run.
@@ -218,7 +445,7 @@ This will:
 
 ## Test Summary
 
-$(cat "$snapshot_dir/results.yaml" | grep -A 10 "^summary:" || echo "See results.yaml for details")
+$(cat "$SNAPSHOT_DIR/results.yaml" | grep -A 10 "^summary:" || echo "See results.yaml for details")
 
 ## Original Results
 
@@ -233,20 +460,18 @@ EOF
 echo ""
 echo "→ Creating archive..."
 cd "$CACHE_DIR/test-passes"
-tar -czf "${snapshot_name}.tar.gz" "$snapshot_name"
+tar -czf "${test_pass}.tar.gz" "$test_pass"
 
-snapshot_size=$(du -h "${snapshot_name}.tar.gz" | cut -f1)
+snapshot_size=$(du -h "${test_pass}.tar.gz" | cut -f1)
 
 echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "✓ Snapshot created successfully"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo ""
-echo "Snapshot: $snapshot_name"
-echo "Location: $snapshot_dir"
-echo "Archive: ${snapshot_name}.tar.gz ($snapshot_size)"
+echo "╲ ✓ Snapshot created successfully"
+echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+echo "Snapshot: $test_pass"
+echo "Location: $SNAPSHOT_DIR"
+echo "Archive: ${test_pass}.tar.gz ($snapshot_size)"
 echo ""
 echo "To extract and re-run:"
-echo "  tar -xzf ${snapshot_name}.tar.gz"
-echo "  cd $snapshot_name"
+echo "  tar -xzf ${test_pass}.tar.gz"
+echo "  cd $test_pass"
 echo "  ./re-run.sh"

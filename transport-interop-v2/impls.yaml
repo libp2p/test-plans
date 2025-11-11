@@ -17,7 +17,7 @@ implementations:
     source:
       type: github
       repo: libp2p/rust-libp2p
-      commit: 1cf96b26bea7e44d6f3b1efc43d06ebe5a03c98a
+      commit: d7beb55f672dce54017fa4b30f67ecb8d66b9810
       dockerfile: interop-tests/Dockerfile.native
     transports: [ws, tcp, quic-v1, webrtc-direct]
     secureChannels: [tls, noise]

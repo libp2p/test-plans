@@ -82,6 +82,29 @@ else
     has_error=true
 fi
 
+# Check docker compose (prefer new 'docker compose' over old 'docker-compose')
+DOCKER_COMPOSE_CMD=""
+if docker compose version &> /dev/null; then
+    # New docker compose plugin
+    compose_version=$(docker compose version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+    echo "✓ docker compose $compose_version (using 'docker compose')"
+    DOCKER_COMPOSE_CMD="docker compose"
+elif command -v docker-compose &> /dev/null; then
+    # Old standalone docker-compose
+    compose_version=$(docker-compose --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+    echo "✓ docker-compose $compose_version (using 'docker-compose')"
+    DOCKER_COMPOSE_CMD="docker-compose"
+else
+    echo "✗ docker compose is not installed"
+    echo "  Install: docker compose plugin (recommended) or standalone docker-compose"
+    has_error=true
+fi
+
+# Export the docker compose command for use by other scripts
+if [ -n "$DOCKER_COMPOSE_CMD" ]; then
+    echo "$DOCKER_COMPOSE_CMD" > /tmp/docker-compose-cmd.txt
+fi
+
 # Check yq
 if command -v yq &> /dev/null; then
     yq_version=$(yq --version 2>&1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
@@ -121,12 +144,10 @@ fi
 echo ""
 
 if [ "$has_error" = true ]; then
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "✗ Some dependencies are missing or outdated"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "╲ ✗ Some dependencies are missing or outdated"
+    echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
     exit 1
 else
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "✓ All dependencies are satisfied"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "╲ ✓ All dependencies are satisfied"
+    echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 fi

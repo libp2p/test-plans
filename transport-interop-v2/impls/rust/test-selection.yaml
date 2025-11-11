@@ -6,9 +6,13 @@
 test-filter:
   - rust-v0.53
   - rust-v0.54
+  - rust-v0.55
+  - rust-v0.56
 
 # test-ignore: List of substring patterns to exclude from selected tests
 # Applied after test-filter
 test-ignore:
-  - rust-v0.53 x rust-v0.53  # Skip rust self-tests
-  - flaky
+  - rust-v0.53 x rust-v0.53
+  - rust-v0.54 x rust-v0.54
+  - rust-v0.55 x rust-v0.55
+  - rust-v0.56 x rust-v0.56

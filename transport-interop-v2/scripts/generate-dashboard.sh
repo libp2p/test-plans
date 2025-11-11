@@ -3,26 +3,30 @@
 
 set -euo pipefail
 
-if [ ! -f results.yaml ]; then
-    echo "Error: results.yaml not found"
+# Use TEST_PASS_DIR if set, otherwise use current directory
+RESULTS_FILE="${TEST_PASS_DIR:-.}/results.yaml"
+OUTPUT_FILE="${TEST_PASS_DIR:-.}/results.md"
+
+if [ ! -f "$RESULTS_FILE" ]; then
+    echo "Error: $RESULTS_FILE not found"
     exit 1
 fi
 
 echo "Generating results dashboard..."
 
 # Extract metadata
-test_pass=$(yq eval '.metadata.testPass' results.yaml)
-started_at=$(yq eval '.metadata.startedAt' results.yaml)
-completed_at=$(yq eval '.metadata.completedAt' results.yaml)
-duration=$(yq eval '.metadata.duration' results.yaml)
-platform=$(yq eval '.metadata.platform' results.yaml)
-os_name=$(yq eval '.metadata.os' results.yaml)
-worker_count=$(yq eval '.metadata.workerCount' results.yaml)
+test_pass=$(yq eval '.metadata.testPass' "$RESULTS_FILE")
+started_at=$(yq eval '.metadata.startedAt' "$RESULTS_FILE")
+completed_at=$(yq eval '.metadata.completedAt' "$RESULTS_FILE")
+duration=$(yq eval '.metadata.duration' "$RESULTS_FILE")
+platform=$(yq eval '.metadata.platform' "$RESULTS_FILE")
+os_name=$(yq eval '.metadata.os' "$RESULTS_FILE")
+worker_count=$(yq eval '.metadata.workerCount' "$RESULTS_FILE")
 
 # Extract summary
-total=$(yq eval '.summary.total' results.yaml)
-passed=$(yq eval '.summary.passed' results.yaml)
-failed=$(yq eval '.summary.failed' results.yaml)
+total=$(yq eval '.summary.total' "$RESULTS_FILE")
+passed=$(yq eval '.summary.passed' "$RESULTS_FILE")
+failed=$(yq eval '.summary.failed' "$RESULTS_FILE")
 
 # Calculate pass rate
 if [ "$total" -gt 0 ]; then
@@ -32,7 +36,7 @@ else
 fi
 
 # Generate markdown
-cat > results.md <<EOF
+cat > "$OUTPUT_FILE" <<EOF
 # Transport Interoperability Test Results
 
 ## Test Pass: \`$test_pass\`
@@ -57,22 +61,24 @@ cat > results.md <<EOF
 
 ## Test Results
 
-| Test | Dialer | Listener | Transport | Secure | Muxer | Status | Duration |
-|------|--------|----------|-----------|--------|-------|--------|----------|
+| Test | Dialer | Listener | Transport | Secure | Muxer | Status | Duration | Handshake+RTT (ms) | Ping RTT (ms) |
+|------|--------|----------|-----------|--------|-------|--------|----------|-------------------|---------------|
 EOF
 
 # Read test results
-test_count=$(yq eval '.tests | length' results.yaml)
+test_count=$(yq eval '.tests | length' "$RESULTS_FILE")
 
 for ((i=0; i<test_count; i++)); do
-    name=$(yq eval ".tests[$i].name" results.yaml)
-    status=$(yq eval ".tests[$i].status" results.yaml)
-    dialer=$(yq eval ".tests[$i].dialer" results.yaml)
-    listener=$(yq eval ".tests[$i].listener" results.yaml)
-    transport=$(yq eval ".tests[$i].transport" results.yaml)
-    secure=$(yq eval ".tests[$i].secureChannel" results.yaml)
-    muxer=$(yq eval ".tests[$i].muxer" results.yaml)
-    test_duration=$(yq eval ".tests[$i].duration" results.yaml)
+    name=$(yq eval ".tests[$i].name" "$RESULTS_FILE")
+    status=$(yq eval ".tests[$i].status" "$RESULTS_FILE")
+    dialer=$(yq eval ".tests[$i].dialer" "$RESULTS_FILE")
+    listener=$(yq eval ".tests[$i].listener" "$RESULTS_FILE")
+    transport=$(yq eval ".tests[$i].transport" "$RESULTS_FILE")
+    secure=$(yq eval ".tests[$i].secureChannel" "$RESULTS_FILE")
+    muxer=$(yq eval ".tests[$i].muxer" "$RESULTS_FILE")
+    test_duration=$(yq eval ".tests[$i].duration" "$RESULTS_FILE")
+    handshake_ms=$(yq eval ".tests[$i].handshakePlusOneRTTMs" "$RESULTS_FILE" 2>/dev/null)
+    ping_ms=$(yq eval ".tests[$i].pingRTTMs" "$RESULTS_FILE" 2>/dev/null)
 
     # Status icon
     if [ "$status" = "pass" ]; then
@@ -85,10 +91,14 @@ for ((i=0; i<test_count; i++)); do
     [ "$secure" = "null" ] && secure="-"
     [ "$muxer" = "null" ] && muxer="-"
 
-    echo "| $name | $dialer | $listener | $transport | $secure | $muxer | $status_icon | $test_duration |" >> results.md
+    # Handle null/missing metrics
+    [ "$handshake_ms" = "null" ] || [ -z "$handshake_ms" ] && handshake_ms="-"
+    [ "$ping_ms" = "null" ] || [ -z "$ping_ms" ] && ping_ms="-"
+
+    echo "| $name | $dialer | $listener | $transport | $secure | $muxer | $status_icon | $test_duration | $handshake_ms | $ping_ms |" >> "$OUTPUT_FILE"
 done
 
-cat >> results.md <<EOF
+cat >> "$OUTPUT_FILE" <<EOF
 
 ---
 
@@ -97,45 +107,45 @@ cat >> results.md <<EOF
 EOF
 
 # Generate matrix view grouped by transport
-transports=$(yq eval '.tests[].transport' results.yaml | sort -u)
+transports=$(yq eval '.tests[].transport' "$RESULTS_FILE" | sort -u)
 
 for transport in $transports; do
-    echo "### Transport: $transport" >> results.md
-    echo "" >> results.md
+    echo "### Transport: $transport" >> "$OUTPUT_FILE"
+    echo "" >> "$OUTPUT_FILE"
 
     # Get unique dialers and listeners for this transport
-    dialers=$(yq eval ".tests[] | select(.transport == \"$transport\") | .dialer" results.yaml | sort -u)
-    listeners=$(yq eval ".tests[] | select(.transport == \"$transport\") | .listener" results.yaml | sort -u)
+    dialers=$(yq eval ".tests[] | select(.transport == \"$transport\") | .dialer" "$RESULTS_FILE" | sort -u)
+    listeners=$(yq eval ".tests[] | select(.transport == \"$transport\") | .listener" "$RESULTS_FILE" | sort -u)
 
     # Create header row
-    echo -n "| Dialer \\ Listener |" >> results.md
+    echo -n "| Dialer \\ Listener |" >> "$OUTPUT_FILE"
     for listener in $listeners; do
-        echo -n " $listener |" >> results.md
+        echo -n " $listener |" >> "$OUTPUT_FILE"
     done
-    echo "" >> results.md
+    echo "" >> "$OUTPUT_FILE"
 
     # Create separator row
-    echo -n "|---|" >> results.md
+    echo -n "|---|" >> "$OUTPUT_FILE"
     for listener in $listeners; do
-        echo -n "---|" >> results.md
+        echo -n "---|" >> "$OUTPUT_FILE"
     done
-    echo "" >> results.md
+    echo "" >> "$OUTPUT_FILE"
 
     # Create data rows
     for dialer in $dialers; do
-        echo -n "| **$dialer** |" >> results.md
+        echo -n "| **$dialer** |" >> "$OUTPUT_FILE"
 
         for listener in $listeners; do
             # Find tests for this combination
             result=""
 
             for ((i=0; i<test_count; i++)); do
-                test_dialer=$(yq eval ".tests[$i].dialer" results.yaml)
-                test_listener=$(yq eval ".tests[$i].listener" results.yaml)
-                test_status=$(yq eval ".tests[$i].status" results.yaml)
-                test_transport=$(yq eval ".tests[$i].transport" results.yaml)
-                test_secure=$(yq eval ".tests[$i].secureChannel" results.yaml)
-                test_muxer=$(yq eval ".tests[$i].muxer" results.yaml)
+                test_dialer=$(yq eval ".tests[$i].dialer" "$RESULTS_FILE")
+                test_listener=$(yq eval ".tests[$i].listener" "$RESULTS_FILE")
+                test_status=$(yq eval ".tests[$i].status" "$RESULTS_FILE")
+                test_transport=$(yq eval ".tests[$i].transport" "$RESULTS_FILE")
+                test_secure=$(yq eval ".tests[$i].secureChannel" "$RESULTS_FILE")
+                test_muxer=$(yq eval ".tests[$i].muxer" "$RESULTS_FILE")
 
                 if [ "$test_dialer" = "$dialer" ] && \
                    [ "$test_listener" = "$listener" ] && \
@@ -161,15 +171,15 @@ for transport in $transports; do
                 result="-"
             fi
 
-            echo -n " $result |" >> results.md
+            echo -n " $result |" >> "$OUTPUT_FILE"
         done
-        echo "" >> results.md
+        echo "" >> "$OUTPUT_FILE"
     done
 
-    echo "" >> results.md
+    echo "" >> "$OUTPUT_FILE"
 done
 
-cat >> results.md <<EOF
+cat >> "$OUTPUT_FILE" <<EOF
 
 ---
 
@@ -187,15 +197,16 @@ cat >> results.md <<EOF
 *Generated: $(date -u +%Y-%m-%dT%H:%M:%SZ)*
 EOF
 
-echo "✓ Generated results.md"
+echo "✓ Generated "$OUTPUT_FILE""
 
 # Generate HTML if pandoc is available
 if command -v pandoc &> /dev/null; then
     echo "Generating HTML report..."
-    pandoc -f markdown -t html -s -o results.html results.md \
+    HTML_FILE="${TEST_PASS_DIR:-.}/results.html"
+    pandoc -f markdown -t html -s -o "$HTML_FILE" "$OUTPUT_FILE" \
         --metadata title="Transport Interop Results" \
-        --css style.css 2>/dev/null || pandoc -f markdown -t html -s -o results.html results.md
-    echo "✓ Generated results.html"
+        --css style.css 2>/dev/null || pandoc -f markdown -t html -s -o "$HTML_FILE" "$OUTPUT_FILE"
+    echo "✓ Generated $HTML_FILE"
 else
     echo "→ pandoc not found, skipping HTML generation"
 fi

@@ -6,15 +6,22 @@ set -euo pipefail
 
 # Configuration
 CACHE_DIR="${CACHE_DIR:-/srv/cache}"
-TEST_FILTER="${1:-}"
-TEST_IGNORE="${2:-}"
-IMPL_PATH="${3:-}"  # Optional: impl path for loading defaults
+CLI_TEST_FILTER="${1:-}"
+CLI_TEST_IGNORE="${2:-}"
+IMPL_PATH="${3:-}"  # Optional: impl path for loading defaults (e.g., "impls/rust")
+OUTPUT_DIR="${TEST_PASS_DIR:-.}"  # Use TEST_PASS_DIR if set, otherwise current directory
 
 # Standalone transports (don't require muxer/secureChannel)
 STANDALONE_TRANSPORTS="quic quic-v1 webtransport webrtc webrtc-direct"
 
+# Check if transport is standalone (doesn't need muxer/secureChannel)
+is_standalone_transport() {
+    local transport="$1"
+    echo "$STANDALONE_TRANSPORTS" | grep -qw "$transport"
+}
+
 # Load test selection defaults from YAML files
-load_test_selection() {
+load_test_filter_from_yaml() {
     local impl_path="$1"
     local selection_file
 
@@ -23,75 +30,129 @@ load_test_selection() {
     elif [ -f "test-selection.yaml" ]; then
         selection_file="test-selection.yaml"
     else
-        echo "|"  # Empty filter and ignore
+        echo ""
         return
     fi
 
     # Extract test-filter list (pipe-separated)
-    local filter=$(yq eval '.test-filter | join("|")' "$selection_file")
-    # Extract test-ignore list (pipe-separated)
-    local ignore=$(yq eval '.test-ignore | join("|")' "$selection_file")
-
-    echo "$filter|$ignore"
+    local filter=$(yq eval '.test-filter[]' "$selection_file" 2>/dev/null | paste -sd'|' -)
+    echo "$filter"
 }
 
-# Check if transport is standalone (doesn't need muxer/secureChannel)
-is_standalone_transport() {
-    local transport="$1"
-    echo "$STANDALONE_TRANSPORTS" | grep -qw "$transport"
-}
+load_test_ignore_from_yaml() {
+    local impl_path="$1"
+    local selection_file
 
-# If filter/ignore not provided via CLI, load from test-selection.yaml
-if [ -z "$TEST_FILTER" ] && [ -z "$TEST_IGNORE" ]; then
-    defaults=$(load_test_selection "$IMPL_PATH")
-    TEST_FILTER=$(echo "$defaults" | cut -d'|' -f1)
-    TEST_IGNORE=$(echo "$defaults" | cut -d'|' -f2)
-
-    if [ -n "$IMPL_PATH" ]; then
-        echo "Loaded test selection from $IMPL_PATH/test-selection.yaml"
+    if [ -n "$impl_path" ] && [ -f "$impl_path/test-selection.yaml" ]; then
+        selection_file="$impl_path/test-selection.yaml"
+    elif [ -f "test-selection.yaml" ]; then
+        selection_file="test-selection.yaml"
     else
-        echo "Loaded test selection from test-selection.yaml"
+        echo ""
+        return
     fi
-    echo "  Filter: ${TEST_FILTER:-<all>}"
-    echo "  Ignore: ${TEST_IGNORE:-<none>}"
-    echo ""
+
+    # Extract test-ignore list (pipe-separated)
+    local ignore=$(yq eval '.test-ignore[]' "$selection_file" 2>/dev/null | paste -sd'|' -)
+    echo "$ignore"
+}
+
+# Determine test filter and ignore values
+# Priority: CLI args > YAML files
+TEST_FILTER="$CLI_TEST_FILTER"
+TEST_IGNORE="$CLI_TEST_IGNORE"
+
+echo ""
+echo "╲ Test Matrix Generation"
+echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+
+# Load from YAML if not provided via CLI
+if [ -z "$CLI_TEST_FILTER" ]; then
+    YAML_FILTER=$(load_test_filter_from_yaml "$IMPL_PATH")
+    if [ -n "$YAML_FILTER" ]; then
+        TEST_FILTER="$YAML_FILTER"
+        if [ -n "$IMPL_PATH" ]; then
+            echo "→ Loaded test-filter from $IMPL_PATH/test-selection.yaml"
+        else
+            echo "→ Loaded test-filter from test-selection.yaml"
+        fi
+    else
+        echo "→ No test-filter specified (will include all tests)"
+    fi
+else
+    echo "→ Using CLI test-filter: $TEST_FILTER"
 fi
 
+if [ -z "$CLI_TEST_IGNORE" ]; then
+    YAML_IGNORE=$(load_test_ignore_from_yaml "$IMPL_PATH")
+    if [ -n "$YAML_IGNORE" ]; then
+        TEST_IGNORE="$YAML_IGNORE"
+        if [ -n "$IMPL_PATH" ]; then
+            echo "→ Loaded test-ignore from $IMPL_PATH/test-selection.yaml"
+        else
+            echo "→ Loaded test-ignore from test-selection.yaml"
+        fi
+    else
+        echo "→ No test-ignore specified"
+    fi
+else
+    echo "→ Using CLI test-ignore: $TEST_IGNORE"
+fi
+
+echo ""
+echo "Filter settings:"
+echo "  test-filter: ${TEST_FILTER:-<all>}"
+echo "  test-ignore: ${TEST_IGNORE:-<none>}"
+echo ""
+
 # Compute cache key from impls.yaml + all test-selection.yaml files + filter + ignore
-cache_key=$(cat impls.yaml impls/*/test-selection.yaml test-selection.yaml 2>/dev/null | \
-    echo "$TEST_FILTER|$TEST_IGNORE" | \
-    sha256sum | cut -d' ' -f1)
+echo "→ Computing cache key..."
+cache_key=$({ cat impls.yaml impls/*/test-selection.yaml test-selection.yaml 2>/dev/null; echo "$TEST_FILTER|$TEST_IGNORE"; } | sha256sum | cut -d' ' -f1)
+echo "→ Cache key computed: ${cache_key:0:8}"
 
 cache_file="$CACHE_DIR/test-matrix/${cache_key}.yaml"
 
 # Check cache
 if [ -f "$cache_file" ]; then
-    echo "Using cached test matrix: ${cache_key:0:8}.yaml"
-    cp "$cache_file" test-matrix.yaml
+    echo "→ Using cached test matrix: ${cache_key:0:8}.yaml"
+    cp "$cache_file" "$OUTPUT_DIR/test-matrix.yaml"
+
+    # Show cached test count
+    test_count=$(yq eval '.metadata.totalTests' "$OUTPUT_DIR/test-matrix.yaml")
+    echo ""
+    echo "✓ Loaded $test_count tests from cache"
     exit 0
 fi
 
-echo "Generating new test matrix..."
+echo "→ Generating new test matrix (cache miss)"
 mkdir -p "$CACHE_DIR/test-matrix"
+echo ""
 
 # Read all implementations
 impl_count=$(yq eval '.implementations | length' impls.yaml)
+echo "→ Found $impl_count implementations in impls.yaml"
+echo ""
 
-# Initialize test list
+# Initialize test lists
 tests=()
+ignored_tests=()
+test_num=0
+
+echo "╲ Considering test combinations:"
+echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
 # Generate all combinations (3D matrix)
 for ((i=0; i<impl_count; i++)); do
     dialer_id=$(yq eval ".implementations[$i].id" impls.yaml)
-    dialer_transports=$(yq eval ".implementations[$i].transports[]" impls.yaml)
-    dialer_secure=$(yq eval ".implementations[$i].secureChannels[]" impls.yaml)
-    dialer_muxers=$(yq eval ".implementations[$i].muxers[]" impls.yaml)
+    dialer_transports=$(yq eval ".implementations[$i].transports[]" impls.yaml 2>/dev/null)
+    dialer_secure=$(yq eval ".implementations[$i].secureChannels[]" impls.yaml 2>/dev/null)
+    dialer_muxers=$(yq eval ".implementations[$i].muxers[]" impls.yaml 2>/dev/null)
 
     for ((j=0; j<impl_count; j++)); do
         listener_id=$(yq eval ".implementations[$j].id" impls.yaml)
-        listener_transports=$(yq eval ".implementations[$j].transports[]" impls.yaml)
-        listener_secure=$(yq eval ".implementations[$j].secureChannels[]" impls.yaml)
-        listener_muxers=$(yq eval ".implementations[$j].muxers[]" impls.yaml)
+        listener_transports=$(yq eval ".implementations[$j].transports[]" impls.yaml 2>/dev/null)
+        listener_secure=$(yq eval ".implementations[$j].secureChannels[]" impls.yaml 2>/dev/null)
+        listener_muxers=$(yq eval ".implementations[$j].muxers[]" impls.yaml 2>/dev/null)
 
         # Find common transports
         for transport in $dialer_transports; do
@@ -128,11 +189,15 @@ for ((i=0; i<impl_count; i++)); do
                             fi
                         done
                         if [ "$skip" = true ]; then
+                            # Add to ignored tests list
+                            ignored_tests+=("$test_name|$dialer_id|$listener_id|$transport|null|null")
                             continue
                         fi
                     fi
 
                     # Add test (standalone)
+                    test_num=$((test_num + 1))
+                    echo "  [$test_num] ✓ $test_name"
                     tests+=("$test_name|$dialer_id|$listener_id|$transport|null|null")
 
                 else
@@ -171,11 +236,15 @@ for ((i=0; i<impl_count; i++)); do
                                             fi
                                         done
                                         if [ "$skip" = true ]; then
+                                            # Add to ignored tests list
+                                            ignored_tests+=("$test_name|$dialer_id|$listener_id|$transport|$secure|$muxer")
                                             continue
                                         fi
                                     fi
 
                                     # Add test (3D combination)
+                                    test_num=$((test_num + 1))
+                                    echo "  [$test_num] ✓ $test_name"
                                     tests+=("$test_name|$dialer_id|$listener_id|$transport|$secure|$muxer")
                                 fi
                             done
@@ -187,13 +256,16 @@ for ((i=0; i<impl_count; i++)); do
     done
 done
 
+echo ""
+
 # Generate test-matrix.yaml
-cat > test-matrix.yaml <<EOF
+cat > "$OUTPUT_DIR/test-matrix.yaml" <<EOF
 metadata:
   generatedAt: $(date -u +%Y-%m-%dT%H:%M:%SZ)
   filter: $(echo "$TEST_FILTER" | sed 's/|/, /g')
   ignore: $(echo "$TEST_IGNORE" | sed 's/|/, /g')
   totalTests: ${#tests[@]}
+  ignoredTests: ${#ignored_tests[@]}
 
 tests:
 EOF
@@ -204,7 +276,31 @@ for test in "${tests[@]}"; do
     dialer_commit=$(yq eval ".implementations[] | select(.id == \"$dialer\") | .source.commit" impls.yaml)
     listener_commit=$(yq eval ".implementations[] | select(.id == \"$listener\") | .source.commit" impls.yaml)
 
-    cat >> test-matrix.yaml <<EOF
+    cat >> "$OUTPUT_DIR/test-matrix.yaml" <<EOF
+  - name: $name
+    dialer: $dialer
+    listener: $listener
+    transport: $transport
+    secureChannel: $secure
+    muxer: $muxer
+    dialerSnapshot: snapshots/$dialer_commit.zip
+    listenerSnapshot: snapshots/$listener_commit.zip
+EOF
+done
+
+# Add ignored tests section
+cat >> "$OUTPUT_DIR/test-matrix.yaml" <<EOF
+
+ignoredTests:
+EOF
+
+for test in "${ignored_tests[@]}"; do
+    IFS='|' read -r name dialer listener transport secure muxer <<< "$test"
+
+    dialer_commit=$(yq eval ".implementations[] | select(.id == \"$dialer\") | .source.commit" impls.yaml)
+    listener_commit=$(yq eval ".implementations[] | select(.id == \"$listener\") | .source.commit" impls.yaml)
+
+    cat >> "$OUTPUT_DIR/test-matrix.yaml" <<EOF
   - name: $name
     dialer: $dialer
     listener: $listener
@@ -217,7 +313,8 @@ EOF
 done
 
 # Cache the generated matrix
-cp test-matrix.yaml "$cache_file"
+cp "$OUTPUT_DIR/test-matrix.yaml" "$cache_file"
 
-echo "✓ Generated test matrix with ${#tests[@]} tests"
+echo "╲ ✓ Generated test matrix with ${#tests[@]} tests (${#ignored_tests[@]} ignored)"
+echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 echo "  Cached as: ${cache_key:0:8}.yaml"
