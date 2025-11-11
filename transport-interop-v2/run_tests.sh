@@ -307,7 +307,9 @@ EOF
 export -f run_test
 
 # Run tests in parallel using xargs
-seq 0 $((test_count - 1)) | xargs -P "$WORKER_COUNT" -I {} bash -c 'run_test {}'
+# Note: Some tests may fail, but we want to continue to collect results
+# So we use || true to ensure xargs exit code doesn't stop the script
+seq 0 $((test_count - 1)) | xargs -P "$WORKER_COUNT" -I {} bash -c 'run_test {}' || true
 
 # 5. Collect results
 echo ""

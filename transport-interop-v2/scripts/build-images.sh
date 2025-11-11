@@ -49,51 +49,105 @@ for ((i=0; i<impl_count; i++)); do
             repo=$(yq eval ".implementations[$i].source.repo" impls.yaml)
             commit=$(yq eval ".implementations[$i].source.commit" impls.yaml)
             dockerfile=$(yq eval ".implementations[$i].source.dockerfile" impls.yaml)
+            build_context=$(yq eval ".implementations[$i].source.buildContext" impls.yaml)
 
             echo "  Repo: $repo"
             echo "  Commit: ${commit:0:8}"
 
-            snapshot_file="$CACHE_DIR/snapshots/$commit.zip"
+            # Check if using local build context
+            if [ "$build_context" = "local" ]; then
+                echo "  Build context: local"
+                # Use local Dockerfile in impls directory
+                local_path="impls/${impl_id//-//}"  # Convert python-v0.4 to impls/python/v0.4
 
-            # Download snapshot if not cached
-            if [ ! -f "$snapshot_file" ]; then
-                echo "→ Downloading snapshot..."
-                repo_url="https://github.com/$repo/archive/$commit.zip"
-                wget -O "$snapshot_file" "$repo_url" || {
-                    echo "✗ Failed to download snapshot"
+                if [ ! -d "$local_path" ]; then
+                    echo "✗ Local path not found: $local_path"
                     exit 1
-                }
-                echo "  ✓ Cached: ${commit:0:8}.zip"
+                fi
+
+                # Download snapshot if not cached
+                snapshot_file="$CACHE_DIR/snapshots/$commit.zip"
+                if [ ! -f "$snapshot_file" ]; then
+                    echo "→ Downloading snapshot..."
+                    repo_url="https://github.com/$repo/archive/$commit.zip"
+                    wget -O "$snapshot_file" "$repo_url" || {
+                        echo "✗ Failed to download snapshot"
+                        exit 1
+                    }
+                    echo "  ✓ Cached: ${commit:0:8}.zip"
+                else
+                    echo "→ Using cached snapshot: ${commit:0:8}.zip"
+                fi
+
+                # Extract snapshot to local build context
+                echo "→ Extracting snapshot to build context..."
+                repo_name=$(basename "$repo")
+                extracted_name="$repo_name-$commit"
+
+                # Remove old extracted snapshot if it exists
+                rm -rf "$local_path/$repo_name-"*
+
+                # Extract to local build context
+                unzip -q "$snapshot_file" -d "$local_path"
+
+                if [ ! -d "$local_path/$extracted_name" ]; then
+                    echo "✗ Expected directory not found: $local_path/$extracted_name"
+                    exit 1
+                fi
+
+                echo "→ Building Docker image from local context..."
+                if ! docker build -f "$local_path/$dockerfile" -t "$impl_id" "$local_path"; then
+                    echo "✗ Docker build failed"
+                    exit 1
+                fi
+
+                # Cleanup extracted snapshot
+                echo "→ Cleaning up extracted snapshot..."
+                rm -rf "$local_path/$extracted_name"
             else
-                echo "→ Using cached snapshot: ${commit:0:8}.zip"
+                # Use GitHub snapshot
+                snapshot_file="$CACHE_DIR/snapshots/$commit.zip"
+
+                # Download snapshot if not cached
+                if [ ! -f "$snapshot_file" ]; then
+                    echo "→ Downloading snapshot..."
+                    repo_url="https://github.com/$repo/archive/$commit.zip"
+                    wget -O "$snapshot_file" "$repo_url" || {
+                        echo "✗ Failed to download snapshot"
+                        exit 1
+                    }
+                    echo "  ✓ Cached: ${commit:0:8}.zip"
+                else
+                    echo "→ Using cached snapshot: ${commit:0:8}.zip"
+                fi
+
+                # Extract snapshot to temporary directory
+                work_dir=$(mktemp -d)
+                trap "rm -rf $work_dir" EXIT
+
+                echo "→ Extracting snapshot..."
+                unzip -q "$snapshot_file" -d "$work_dir"
+
+                # Find extracted directory (GitHub archives are named repo-commit)
+                repo_name=$(basename "$repo")
+                extracted_dir="$work_dir/$repo_name-$commit"
+
+                if [ ! -d "$extracted_dir" ]; then
+                    echo "✗ Expected directory not found: $extracted_dir"
+                    exit 1
+                fi
+
+                # Build Docker image
+                echo "→ Building Docker image..."
+                if ! docker build -f "$extracted_dir/$dockerfile" -t "$impl_id" "$extracted_dir"; then
+                    echo "✗ Docker build failed"
+                    exit 1
+                fi
+
+                # Cleanup
+                rm -rf "$work_dir"
+                trap - EXIT
             fi
-
-            # Extract snapshot to temporary directory
-            work_dir=$(mktemp -d)
-            trap "rm -rf $work_dir" EXIT
-
-            echo "→ Extracting snapshot..."
-            unzip -q "$snapshot_file" -d "$work_dir"
-
-            # Find extracted directory (GitHub archives are named repo-commit)
-            repo_name=$(basename "$repo")
-            extracted_dir="$work_dir/$repo_name-$commit"
-
-            if [ ! -d "$extracted_dir" ]; then
-                echo "✗ Expected directory not found: $extracted_dir"
-                exit 1
-            fi
-
-            # Build Docker image
-            echo "→ Building Docker image..."
-            if ! docker build -f "$extracted_dir/$dockerfile" -t "$impl_id" "$extracted_dir"; then
-                echo "✗ Docker build failed"
-                exit 1
-            fi
-
-            # Cleanup
-            rm -rf "$work_dir"
-            trap - EXIT
             ;;
 
         local)
