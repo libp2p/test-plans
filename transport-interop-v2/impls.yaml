@@ -125,7 +125,7 @@ implementations:
     muxers: [yamux]
 
   # Python implementation
-  - id: python-v0.4
+  - id: python-v0.4 # scripts split '-' into impl/python/v0.4
     source:
       type: github
       repo: libp2p/py-libp2p
@@ -133,7 +133,7 @@ implementations:
       dockerfile: Dockerfile  # In impl/python/v0.4/ directory
       buildContext: local  # Uses local Dockerfile, not from repo
     transports: [tcp]
-    secureChannels: [noise, plaintext]
+    secureChannels: [noise]
     muxers: [mplex, yamux]
 
   # JavaScript implementations (Node.js)

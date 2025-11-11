@@ -12,6 +12,7 @@ KIND="full"
 CHECK_DEPS_ONLY=false
 CREATE_SNAPSHOT=false
 AUTO_YES=false
+DEBUG=false
 
 # Show help
 show_help() {
@@ -28,6 +29,7 @@ Options:
   --kind VALUE           Test kind: full, rust, python, go, etc. (default: auto-detect)
   --type VALUE           Alias for --kind
   --snapshot             Create test pass snapshot after completion
+  --debug                Enable debug mode (sets debug=true in test containers)
   -y, --yes              Skip confirmation prompt and run tests immediately
   --check-deps           Only check dependencies and exit
   --help                 Show this help message
@@ -40,7 +42,7 @@ Examples:
   $0 --snapshot --workers 8
 
 Dependencies:
-  bash 4.0+, git 2.0+, docker 20.10+, yq 4.0+, wget, unzip
+  bash 4.0+, docker 20.10+, yq 4.0+, wget, unzip
   Run with --check-deps to verify installation.
 EOF
 }
@@ -54,6 +56,7 @@ while [[ $# -gt 0 ]]; do
         --cache-dir) CACHE_DIR="$2"; shift 2 ;;
         --kind|--type) KIND="$2"; shift 2 ;;  # Accept both --kind and --type
         --snapshot) CREATE_SNAPSHOT=true; shift ;;
+        --debug) DEBUG=true; shift ;;
         -y|--yes) AUTO_YES=true; shift ;;
         --check-deps) CHECK_DEPS_ONLY=true; shift ;;
         --help|-h) show_help; exit 0 ;;
@@ -70,30 +73,24 @@ if [ "$CHECK_DEPS_ONLY" = true ]; then
     exit $?
 fi
 
-# Auto-detect kind from git changes if set to auto or empty
-if [ -z "$KIND" ] || [ "$KIND" = "auto" ]; then
-    if git rev-parse --git-dir > /dev/null 2>&1; then
-        if git diff --name-only HEAD~1 2>/dev/null | grep -q 'impls/rust/'; then
-            KIND="rust"
-        elif git diff --name-only HEAD~1 2>/dev/null | grep -q 'impls/python/'; then
-            KIND="python"
-        elif git diff --name-only HEAD~1 2>/dev/null | grep -q 'impls/go/'; then
-            KIND="go"
-        else
-            KIND="full"
-        fi
-    else
-        KIND="full"
-    fi
+# KIND defaults to "full"
+if [ -z "$KIND" ]; then
+    KIND="full"
 fi
 
 # Determine impl path for test-selection.yaml loading
 IMPL_PATH=""
 if [ "$KIND" != "full" ]; then
+    if [ ! -d "impls/${KIND}" ]; then
+	echo ""
+	show_help
+	exit 1
+    fi
     IMPL_PATH="impls/${KIND}"
 fi
 
 export CACHE_DIR
+export DEBUG
 
 echo "                        ╔╦╦╗  ╔═╗"
 echo "▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁ ║╠╣╚╦═╬╝╠═╗ ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁"
@@ -146,8 +143,8 @@ fi
 echo ""
 echo "╲ Generating test matrix..."
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-echo "→ bash scripts/generate-tests.sh \"$TEST_FILTER\" \"$TEST_IGNORE\" \"$IMPL_PATH\""
-bash scripts/generate-tests.sh "$TEST_FILTER" "$TEST_IGNORE" "$IMPL_PATH"
+echo "→ bash scripts/generate-tests.sh \"$TEST_FILTER\" \"$TEST_IGNORE\" \"$IMPL_PATH\" \"$DEBUG\""
+bash scripts/generate-tests.sh "$TEST_FILTER" "$TEST_IGNORE" "$IMPL_PATH" "$DEBUG"
 
 # 3. Extract unique implementations from test matrix and build only those
 echo ""
@@ -229,7 +226,7 @@ fi
 
 # 4. Run tests in parallel
 echo ""
-echo "╲ Running tests..."
+echo "╲ Running tests... ($WORKER_COUNT workers)"
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
 # Read test matrix and export test_count for use in subshells

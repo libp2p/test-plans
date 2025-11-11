@@ -15,6 +15,9 @@ TRANSPORT="$4"
 SECURE_CHANNEL="${5:-null}"  # Optional for standalone transports
 MUXER="${6:-null}"           # Optional for standalone transports
 
+# Read debug flag from test-matrix.yaml
+DEBUG=$(yq eval '.metadata.debug' "${TEST_PASS_DIR:-.}/test-matrix.yaml" 2>/dev/null || echo "false")
+
 # Sanitize test name for file names
 TEST_SLUG=$(echo "$TEST_NAME" | sed 's/[^a-zA-Z0-9-]/_/g')
 
@@ -35,7 +38,8 @@ DIALER_ENV="      - version=$DIALER_ID
       - transport=$TRANSPORT
       - is_dialer=true
       - ip=0.0.0.0
-      - redis_addr=redis:6379"
+      - redis_addr=redis:6379
+      - debug=$DEBUG"
 
 # Add optional muxer and security for dialer
 if [ "$MUXER" != "null" ]; then
@@ -53,7 +57,8 @@ LISTENER_ENV="      - version=$LISTENER_ID
       - transport=$TRANSPORT
       - is_dialer=false
       - ip=0.0.0.0
-      - redis_addr=redis:6379"
+      - redis_addr=redis:6379
+      - debug=$DEBUG"
 
 # Add optional muxer and security for listener
 if [ "$MUXER" != "null" ]; then

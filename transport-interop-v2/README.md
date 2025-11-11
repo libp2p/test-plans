@@ -16,15 +16,40 @@ This is the v2 implementation following the same simplification approach as hole
 ### Test Matrix Structure
 
 Transport interop tests cover **3 dimensions**:
-1. **Transport**: tcp, ws, quic-v1, webrtc-direct, etc.
-2. **Secure Channel**: noise, tls, plaintext
+1. **Transport**: tcp, ws, wss,
+2. **Secure Channel**: noise, tls
 3. **Muxer**: yamux, mplex
+
+libp2p also supports protocols that provide transport, a secure channel, and muxing all in one:
+
+- quic-v1
+- webrtc-direct
+- webtransport
 
 ### Test Combinations
 
 Tests are generated as: `dialer x listener x transport x secure-channel x muxer`
 
 Example: `rust-v0.53 x go-v0.35 (tcp, noise, yamux)`
+
+Valid combinations of `transport`, `secure-channel`, and `muxer` are:
+
+- tcp, noise, mplex
+- tcp, noise, yamux
+- tcp, tls, mplex
+- tcp, tls, yamux
+- ws, noise, mplex
+- ws, noise, yamux
+- ws, tls, mplex
+- ws, tls, yamux
+- wss, noise, mplex
+- wss, noise, yamux
+- wss, tls, mplex
+- wss, tls, yamux
+- quic-v1
+- webrtc
+- webrtc-direct 
+- webtransport
 
 ### No Global Services
 

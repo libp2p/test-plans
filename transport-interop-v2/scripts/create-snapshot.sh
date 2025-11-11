@@ -172,6 +172,10 @@ fi
 # Set cache dir to local snapshots directory
 export CACHE_DIR="$(pwd)"
 
+# Read debug flag from test-matrix.yaml
+DEBUG=$(yq eval '.metadata.debug' test-matrix.yaml 2>/dev/null || echo "false")
+export DEBUG
+
 # Create a new directory for this re-run's results
 RERUN_TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 RERUN_DIR="$(pwd)/re-runs/$RERUN_TIMESTAMP"

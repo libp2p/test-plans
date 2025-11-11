@@ -46,20 +46,6 @@ else
     has_error=true
 fi
 
-# Check git
-if command -v git &> /dev/null; then
-    git_version=$(git --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-    if [[ $(version_compare "$git_version" "2.0.0") -ge 0 ]]; then
-        echo "✓ git $git_version (minimum: 2.0.0)"
-    else
-        echo "✗ git $git_version is too old (minimum: 2.0.0)"
-        has_error=true
-    fi
-else
-    echo "✗ git is not installed"
-    has_error=true
-fi
-
 # Check docker
 if command -v docker &> /dev/null; then
     docker_version=$(docker --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)

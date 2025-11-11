@@ -9,6 +9,7 @@ CACHE_DIR="${CACHE_DIR:-/srv/cache}"
 CLI_TEST_FILTER="${1:-}"
 CLI_TEST_IGNORE="${2:-}"
 IMPL_PATH="${3:-}"  # Optional: impl path for loading defaults (e.g., "impls/rust")
+DEBUG="${4:-false}"  # Optional: debug mode flag
 OUTPUT_DIR="${TEST_PASS_DIR:-.}"  # Use TEST_PASS_DIR if set, otherwise current directory
 
 # Standalone transports (don't require muxer/secureChannel)
@@ -107,7 +108,7 @@ echo ""
 
 # Compute cache key from impls.yaml + all test-selection.yaml files + filter + ignore
 echo "→ Computing cache key..."
-cache_key=$({ cat impls.yaml impls/*/test-selection.yaml test-selection.yaml 2>/dev/null; echo "$TEST_FILTER|$TEST_IGNORE"; } | sha256sum | cut -d' ' -f1)
+cache_key=$({ cat impls.yaml impls/*/test-selection.yaml test-selection.yaml 2>/dev/null; echo "$TEST_FILTER|$TEST_IGNORE|$DEBUG"; } | sha256sum | cut -d' ' -f1)
 echo "→ Cache key computed: ${cache_key:0:8}"
 
 cache_file="$CACHE_DIR/test-matrix/${cache_key}.yaml"
@@ -266,6 +267,7 @@ metadata:
   ignore: $(echo "$TEST_IGNORE" | sed 's/|/, /g')
   totalTests: ${#tests[@]}
   ignoredTests: ${#ignored_tests[@]}
+  debug: $DEBUG
 
 tests:
 EOF
