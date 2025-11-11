@@ -1,11 +1,19 @@
 #!/usr/bin/env python3
 """
 Render results.csv into a readable markdown report.
+
+This script analyzes test results from results.csv and generates a comprehensive
+markdown report with:
+- TLDR summary with quick stats
+- Detailed test summary by implementation, configuration, and direction
+- All failed tests with log snippets
+- Prioritized TODO list for fixes
 """
 
 import csv
 import sys
 import os
+import argparse
 from collections import defaultdict
 from pathlib import Path
 
@@ -134,18 +142,41 @@ def generate_tldr(data):
     lines.append(f"**Failures**: {data['failures']}")
     lines.append("")
     
-    # Quick stats by implementation
+    # Quick stats by implementation - calculate accurate stats for all implementations
     lines.append("### Quick Stats by Implementation")
     lines.append("")
     
-    # Sort by success rate
+    # Recalculate implementation stats accurately (count each impl in all tests it's involved in)
+    impl_stats = defaultdict(lambda: {"success": 0, "failure": 0})
+    
+    for test in data['by_impl'].values():
+        for test_item in test.get('tests', []):
+            # Parse the test name to get both implementations
+            name = test_item['name']
+            dialer, listener, _ = parse_test_name(name)
+            if dialer and listener:
+                outcome = test_item['outcome']
+                # Count for both dialer and listener
+                for impl in [dialer, listener]:
+                    if outcome == "success":
+                        impl_stats[impl]["success"] += 1
+                    else:
+                        impl_stats[impl]["failure"] += 1
+    
+    # Sort: failures first (by failure count descending, then success rate ascending), then successes (by success rate descending)
     impls = sorted(
-        data['by_impl'].items(),
-        key=lambda x: (x[1]['failure'] == 0, x[1]['success'] / (x[1]['success'] + x[1]['failure']) if (x[1]['success'] + x[1]['failure']) > 0 else 0),
-        reverse=True
+        impl_stats.items(),
+        key=lambda x: (
+            x[1]['failure'] == 0,  # False (failures) come before True (no failures)
+            -x[1]['failure'] if x[1]['failure'] > 0 else 0,  # For failures: sort by failure count descending
+            (x[1]['success'] / (x[1]['success'] + x[1]['failure']) if (x[1]['success'] + x[1]['failure']) > 0 else 0) if x[1]['failure'] > 0 else 0,  # For failures: then by success rate ascending
+            -(x[1]['success'] / (x[1]['success'] + x[1]['failure']) if (x[1]['success'] + x[1]['failure']) > 0 else 0),  # For successes: by success rate descending
+            x[0]  # Then alphabetically
+        )
     )
     
-    for impl, stats in impls[:10]:  # Top 10
+    # Show all implementations (no limit - show everything)
+    for impl, stats in impls:
         total_impl = stats['success'] + stats['failure']
         if total_impl > 0:
             success_rate = (stats['success'] / total_impl) * 100
@@ -771,14 +802,37 @@ def generate_todo(data):
 
 def main():
     """Main function."""
-    results_file = "results.csv"
+    parser = argparse.ArgumentParser(
+        description="Render results.csv into a readable markdown report",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  %(prog)s                           # Generate results_report.md from results.csv
+  %(prog)s -o my_report.md           # Generate custom report file
+  %(prog)s -i custom_results.csv     # Use custom input CSV file
+  %(prog)s -i results.csv -o report.md  # Specify both input and output
+        """
+    )
+    parser.add_argument(
+        "-i", "--input",
+        default="results.csv",
+        help="Input CSV file with test results (default: results.csv)"
+    )
+    parser.add_argument(
+        "-o", "--output",
+        default="results_report.md",
+        help="Output markdown file (default: results_report.md). Use '-' for stdout"
+    )
     
-    if not Path(results_file).exists():
-        print(f"Error: {results_file} not found", file=sys.stderr)
+    args = parser.parse_args()
+    
+    # Check if input file exists
+    if not Path(args.input).exists():
+        print(f"Error: Input file '{args.input}' not found", file=sys.stderr)
         sys.exit(1)
     
     # Analyze results
-    data = analyze_results(results_file)
+    data = analyze_results(args.input)
     
     # Generate sections
     sections = [
@@ -790,7 +844,19 @@ def main():
     
     # Output
     output = "\n".join(sections)
-    print(output)
+    
+    if args.output == "-":
+        # Write to stdout
+        print(output)
+    else:
+        # Write to file
+        try:
+            with open(args.output, "w", encoding="utf-8") as f:
+                f.write(output)
+            print(f"✅ Report generated: {args.output}", file=sys.stderr)
+        except Exception as e:
+            print(f"Error writing to '{args.output}': {e}", file=sys.stderr)
+            sys.exit(1)
 
 
 if __name__ == "__main__":
