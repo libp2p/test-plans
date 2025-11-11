@@ -12,7 +12,7 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "libp2p @ git+https://github.com/libp2p/py-libp2p.git@30c6686026d8f9bbb9d32768b477b9e243eaf4c7",
+    "libp2p @ git+https://github.com/libp2p/py-libp2p.git@e2c37df531cc4f5fdcf1b68ac642edb420531cc3",
     "redis>=4.0.0",
     "typing-extensions>=4.0.0",
 ]

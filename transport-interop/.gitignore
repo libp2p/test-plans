@@ -5,3 +5,7 @@ dashboard.html
 results.csv
 # Logs from testground
 *.tgz
+
+# Logs from compose-runner
+logs/
+*.log
