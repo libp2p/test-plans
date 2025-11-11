@@ -193,8 +193,8 @@ class PingTest:
         self.validate_configuration()
 
         # Create security and muxer options
-        security_options, key_pair = self.create_security_options()
-        muxer_options = self.create_muxer_options()
+        sec_opt, key_pair = self.create_security_options()
+        muxer_opt = self.create_muxer_options()
         
         # Use get_available_interfaces() for proper address handling (current best practice)
         port = 0  # Let OS assign a free port
@@ -203,9 +203,9 @@ class PingTest:
         # Create host with proper configuration
         self.host = new_host(
             key_pair=key_pair,
-            sec_opt=security_options,
-            muxer_opt=muxer_options,
-            listen_addrs=listen_addr
+            sec_opt=sec_opt,
+            muxer_opt=muxer_opt,
+            listen_addrs=listen_addrs
         )
         # Set up ping handler
         self.host.set_stream_handler(PING_PROTOCOL_ID, self.handle_ping)
@@ -284,14 +284,14 @@ class PingTest:
             print(f"Got listener address: {listener_addr}", file=sys.stderr)
             
             # Create security and muxer options
-            security_options, key_pair = self.create_security_options()
-            muxer_options = self.create_muxer_options()
+            sec_opt, key_pair = self.create_security_options()
+            muxer_opt = self.create_muxer_options()
             
             # Create host with proper configuration
             self.host = new_host(
                 key_pair=key_pair,
-                sec_opt=security_options,
-                muxer_opt=muxer_options
+                sec_opt=sec_opt,
+                muxer_opt=muxer_opt
             )
             
             # Start the host
