@@ -248,7 +248,6 @@ class PingTest:
             print(f"error occurred: {e}", file=sys.stderr)
             raise
 
-<<<<<<< HEAD
     def _filter_addresses_by_transport(self, addresses: list) -> list:
         """Filter addresses to match current transport type."""
         filtered = []
@@ -310,31 +309,18 @@ class PingTest:
     async def run_listener(self) -> None:
         """Run the listener role."""
         self.validate_configuration()
+        await self._connect_redis_with_retry()
         
         security_options, key_pair = self.create_security_options()
         muxer_options = self.create_muxer_options()
+        # CRITICAL FIX: Use create_listen_addresses() to properly handle QUIC transport
+        # This converts TCP addresses to QUIC addresses when transport is "quic-v1"
         listen_addrs = self.create_listen_addresses(0)
-=======
-    async def run_listener(self) -> None:
-        """Run the listener role."""
-        # Validate configuration
-        self.validate_configuration()
         
-        # Create security and muxer options
-        security_options, key_pair = self.create_security_options()
-        muxer_options = self.create_muxer_options()
->>>>>>> upstream/master
-        
-        # Use get_available_interfaces() for proper address handling (current best practice)
-        port = 0  # Let OS assign a free port
-        listen_addrs = get_available_interfaces(port, protocol="tcp")
-        
-        # Create host with proper configuration
         self.host = new_host(
             key_pair=key_pair,
             sec_opt=security_options,
             muxer_opt=muxer_options,
-<<<<<<< HEAD
             listen_addrs=listen_addrs,
             enable_quic=(self.transport == "quic-v1")
         )
@@ -342,21 +328,10 @@ class PingTest:
         self.log_protocols()
         
         async with self.host.run(listen_addrs=listen_addrs):
-=======
-            listen_addrs=listen_addrs
-        )
-        # Set up ping handler
-        self.host.set_stream_handler(PING_PROTOCOL_ID, self.handle_ping)
-        
-        # Start the host
-        async with self.host.run(listen_addrs=listen_addrs):
-            # Get the actual listen addresses and publish to Redis
->>>>>>> upstream/master
             all_addrs = self.host.get_addrs()
             if not all_addrs:
                 raise RuntimeError("No listen addresses available")
             
-<<<<<<< HEAD
             actual_addr = self._get_publishable_address(all_addrs)
             print(f"Publishing address for transport {self.transport}: {actual_addr}", file=sys.stderr)
             self.redis_client.rpush("listenerAddr", actual_addr)
@@ -375,35 +350,6 @@ class PingTest:
             
             if not self.ping_received:
                 print(f"Timeout: No ping received within {wait_timeout} seconds", file=sys.stderr)
-=======
-            # For Docker networking, prefer non-loopback addresses
-            # get_available_interfaces() already handles this, but we may need to replace loopback
-            actual_addr = None
-            for addr in all_addrs:
-                addr_str = str(addr)
-                # Prefer non-loopback addresses for Docker
-                if "/ip4/127.0.0.1/" not in addr_str and "/ip4/0.0.0.0/" not in addr_str:
-                    actual_addr = addr_str
-                    break
-            
-            # Fallback to first address, replacing loopback if needed
-            if not actual_addr:
-                addr_str = str(all_addrs[0])
-                if "/ip4/127.0.0.1/" in addr_str or "/ip4/0.0.0.0/" in addr_str:
-                    # Get container IP and replace
-                    actual_ip = self.get_container_ip()
-                    if "/ip4/0.0.0.0/" in addr_str:
-                        actual_addr = addr_str.replace("/ip4/0.0.0.0/", f"/ip4/{actual_ip}/")
-                    elif "/ip4/127.0.0.1/" in addr_str:
-                        actual_addr = addr_str.replace("/ip4/127.0.0.1/", f"/ip4/{actual_ip}/")
-                else:
-                    actual_addr = addr_str
-            
-            self.redis_client.rpush("listenerAddr", actual_addr)
-            print(f"Listener ready, waiting for dialer to connect for {self.test_timeout_seconds} seconds...", file=sys.stderr)
-            await trio.sleep(self.test_timeout_seconds)
-            # If we reach here, the dialer didn't complete within timeout
->>>>>>> upstream/master
             sys.exit(1)
 
     async def _connect_redis_with_retry(self, max_retries: int = 10, retry_delay: float = 1.0) -> None:
@@ -561,19 +507,6 @@ class PingTest:
                 self.redis_client.close()
 
     def get_container_ip(self) -> str:
-<<<<<<< HEAD
-        """Get container IP address for Docker networking."""
-        import socket
-        import subprocess
-        try:
-            result = subprocess.run(['hostname', '-I'], capture_output=True, text=True, timeout=5)
-            if result.returncode == 0 and result.stdout.strip():
-                return result.stdout.strip().split()[0]
-        except Exception:
-            pass
-        
-        try:
-=======
         """Get the container's actual IP address for Docker networking."""
         import socket
         import subprocess
@@ -587,15 +520,11 @@ class PingTest:
                 pass
             
             # Fallback: Connect to a remote address to determine local IP
->>>>>>> upstream/master
             with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
                 s.connect(("8.8.8.8", 80))
                 return s.getsockname()[0]
         except Exception:
-<<<<<<< HEAD
-=======
             # Fallback to a reasonable default
->>>>>>> upstream/master
             return "172.17.0.1"
 
 
