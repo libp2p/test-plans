@@ -37,7 +37,7 @@ implementations:
 
 ### 2. Update test-selection.yaml (Optional)
 
-**For language-wide defaults** (`impls/go/test-selection.yaml`):
+**For global test selection** (`test-selection.yaml` in project root):
 ```yaml
 test-filter:
   - go-v0.35
@@ -62,7 +62,7 @@ bash scripts/build-images.sh go-v0.35
 
 Include in your PR:
 - Updated `impls.yaml`
-- Any test-selection changes
+- Any test-selection changes (if modifying global `test-selection.yaml`)
 - Description of transport/secure/muxer support
 - Link to the commit in the implementation repo
 
@@ -77,6 +77,7 @@ Your implementation must:
    - `SECURE_CHANNEL` - noise, tls, plaintext (or "null" for standalone)
    - `MUXER` - yamux, mplex (or "null" for standalone)
    - `REDIS_ADDR` - Redis address for coordination (e.g., redis:6379)
+   - `DEBUG` - "true" for debug output, "false" otherwise
 3. **Coordination via Redis**:
    - Listener publishes its multiaddr to Redis
    - Dialer retrieves multiaddr from Redis

@@ -270,9 +270,8 @@ test-ignore:
   - flaky
 ```
 
-**Locations:**
-- Global: `test-selection.yaml`
-- Per-language: `impls/rust/test-selection.yaml`
+**Location:**
+- Global: `test-selection.yaml` (root of project)
 
 ### test-matrix.yaml (Generated)
 
@@ -344,11 +343,12 @@ Identical to hole-punch-interop.
 
 ### 2. Test Matrix Caching
 
-**Cache Key:** SHA-256(impls.yaml + test-selection.yaml + filters)
+**Cache Key:** SHA-256(impls.yaml + test-selection.yaml + filter||ignore||debug)
 
 Content-addressed caching ensures:
 - Same config = instant cache hit
 - Config change = automatic regeneration
+- Double-pipe delimiter prevents cache collisions
 
 ### 3. Docker Layer Caching
 
@@ -428,6 +428,9 @@ EOF
 2. **Content-Addressed Caching** - Never re-download same content
 3. **Docker Layer Caching** - Automatic layer reuse
 4. **No Global Services** - Simpler than hole-punch, less overhead
+5. **Pre-loaded Data Structures** - Associative arrays for O(1) lookups
+6. **Bulk YAML Processing** - Single yq calls with TSV output instead of loops
+7. **Native Bash Operations** - String matching instead of external commands
 
 ## Comparison to Previous Design
 
@@ -532,13 +535,17 @@ Example:
 **First run** (cold cache):
 - Download snapshots: ~2-5 minutes
 - Build images: ~10-20 minutes
+- Generate test matrix: ~2-5 seconds
 - Run 250 tests with 8 workers: ~15-30 minutes
+- Generate dashboard: ~0.2 seconds
 - **Total: 30-55 minutes**
 
 **Subsequent runs** (warm cache):
 - Skip downloads (cache hit)
 - Skip builds (Docker layer cache)
+- Test matrix cache hit: ~0.1 seconds
 - Run 250 tests with 8 workers: ~15-30 minutes
+- Generate dashboard: ~0.2 seconds
 - **Total: 15-30 minutes**
 
 **Worker scaling**:
@@ -552,16 +559,23 @@ Example:
 ```
 scripts/build-images.sh:        124 lines
 scripts/check-dependencies.sh:  132 lines
-scripts/generate-tests.sh:      223 lines (3D logic)
+scripts/generate-tests.sh:      325 lines (3D logic, optimized)
 scripts/run-single-test.sh:      86 lines (simplified)
-scripts/generate-dashboard.sh:  201 lines (3D tables)
+scripts/generate-dashboard.sh:  219 lines (3D tables, optimized)
 scripts/create-snapshot.sh:     252 lines
 run_tests.sh:                   274 lines (no services)
 ─────────────────────────────────────────────
-Total:                         1292 lines
+Total:                         1412 lines
 ```
 
-**35% reduction** from original TypeScript implementation (~2000 lines).
+**30% reduction** from original TypeScript implementation (~2000 lines).
+
+### Optimization Impact
+
+Recent optimizations reduced execution time significantly:
+- **Test matrix generation**: 30-60s → 2-5s (10-30x faster)
+- **Dashboard generation**: 6-12s → 0.15s (40-80x faster)
+- **Test list display**: 6-12s → 0.15s (40-80x faster)
 
 ## Test Isolation Details
 

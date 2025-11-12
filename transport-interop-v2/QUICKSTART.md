@@ -44,53 +44,138 @@ cd test-plans/transport-interop-v2
 
 Expected output:
 ```
-╔════════════════════════════════════════════════════════════╗
-║  Transport Interoperability Test Suite                     ║
-╚════════════════════════════════════════════════════════════╝
+                        ╔╦╦╗  ╔═╗
+▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁ ║╠╣╚╦═╬╝╠═╗ ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+═══════════════════════ ║║║║║║║╔╣║║ ════════════════════════
+▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔ ╚╩╩═╣╔╩═╣╔╝ ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+                            ╚╝  ╚╝
 
-Test Pass: transport-interop-full
-Cache Dir: /tmp/cache
-Workers: 4
+╲ Transport Interoperability Test Suite
+ ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+→ Test Pass: transport-interop-223702-11-11-2025
+→ Cache Dir: /srv/cache
+→ Test Pass Dir: /srv/cache/test-passes/transport-interop-223702-11-11-2025
+→ Workers: 4
+→ Create Snapshot: false
+→ Debug: false
+→ Force Rebuild: false
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Checking dependencies...
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✓ bash 5.1.16 (minimum: 4.0)
-✓ git 2.34.1 (minimum: 2.0.0)
-✓ docker 24.0.5 (minimum: 20.10.0)
-✓ yq 4.35.1 (minimum: 4.0.0)
+╲ Checking dependencies...
+ ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+✓ bash 5.2 (minimum: 4.0)
+✓ docker 28.5.2 (minimum: 20.10.0)
+  ✓ Docker daemon is running
+✓ docker compose 2.40.3 (using 'docker compose')
+✓ yq 4.48.1 (minimum: 4.0.0)
+✓ wget is installed
+✓ unzip is installed
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Building Docker images...
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Building: rust-v0.53
-  → Downloading snapshot...
-  ✓ Cached: b7914e40.zip
-  → Building Docker image...
-  ✓ Built image: rust-v0.53
+╲ ✓ All dependencies are satisfied
+ ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+→ Using: docker compose
 
-Building: rust-v0.54
-Building: python-v0.4
+╲ Generating test matrix...
+ ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+→ bash scripts/generate-tests.sh "" "" "false"
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Generating test matrix...
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✓ Generated test matrix with 156 tests
+╲ Test Matrix Generation
+ ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+→ No test-filter specified (will include all tests)
+→ Loaded test-ignore from test-selection.yaml
+→ Computed cache key: fdd31961
+  → [MISS] Generating new test matrix
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Running tests...
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Total tests: 156
+→ Found 30 implementations in impls.yaml
+→ Loading implementation data into memory...
+  ✓ Loaded 30 implementations into memory
+  ✓ Loaded 5 ignore patterns
 
-[1/156] rust-v0.53 x rust-v0.54 (tcp, noise, yamux)
-[2/156] rust-v0.53 x rust-v0.54 (tcp, noise, mplex)
+╲ Generating test combinations...
+ ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+✓ Generated 1745 tests (1001 ignored)
+
+╲ ✓ Generated test matrix with 1745 tests (1001 ignored)
+ ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+✓ Cached as: fdd31961.yaml
+
+╲ Building Docker images...
+ ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+→ Building 20 required implementations (including base images)
+
+→ bash scripts/build-images.sh "dotnet-v1.0|eth-p2p-z-v0.0.1|go-v0.38|go-v0.39|go-v0.40|go-v0.41|go-v0.42|go-v0.43|go-v0.44|go-v0.45|js-v1.x|js-v3.x|jvm-v1.2|nim-v1.14|python-v0.4|rust-v0.53|rust-v0.54|rust-v0.55|rust-v0.56|zig-v0.0.1" "false"
+  → Cache directory: /srv/cache
+  → Filter: dotnet-v1.0|eth-p2p-z-v0.0.1|go-v0.38|go-v0.39|go-v0.40|go-v0.41|go-v0.42|go-v0.43|go-v0.44|go-v0.45|js-v1.x|js-v3.x|jvm-v1.2|nim-v1.14|python-v0.4|rust-v0.53|rust-v0.54|rust-v0.55|rust-v0.56|zig-v0.0.1
+  ✓ rust-v0.53 (already built)
+  ✓ rust-v0.54 (already built)
+  ✓ rust-v0.55 (already built)
+  ✓ rust-v0.56 (already built)
+  ✓ go-v0.38 (already built)
+  ✓ go-v0.39 (already built)
+  ✓ go-v0.40 (already built)
+  ✓ go-v0.41 (already built)
+  ✓ go-v0.42 (already built)
+  ✓ go-v0.43 (already built)
+  ✓ go-v0.44 (already built)
+  ✓ go-v0.45 (already built)
+  ✓ python-v0.4 (already built)
+  ✓ js-v1.x (already built)
+  ✓ js-v3.x (already built)
+  ✓ nim-v1.14 (already built)
+  ✓ jvm-v1.2 (already built)
+  ✓ dotnet-v1.0 (already built)
+  ✓ zig-v0.0.1 (already built)
+  ✓ eth-p2p-z-v0.0.1 (already built)
+
+✓ All required images built successfully
+
+╲ Test selection...
+ ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+→ Selected tests:
+  ✓ rust-v0.53 x rust-v0.53 (ws, tls, mplex)
+  ✓ rust-v0.53 x rust-v0.53 (ws, tls, yamux)
+  ✓ rust-v0.53 x rust-v0.53 (ws, noise, mplex)
+  ✓ rust-v0.53 x rust-v0.53 (ws, noise, yamux)
 ...
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✓ All tests passed!
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+→ Ignored tests:
+  ✗ rust-v0.53 x js-v2.x (ws, noise, mplex) [ignored]
+  ✗ rust-v0.53 x js-v2.x (ws, noise, yamux) [ignored]
+  ✗ rust-v0.53 x js-v2.x (tcp, noise, mplex) [ignored]
+  ✗ rust-v0.53 x js-v2.x (tcp, noise, yamux) [ignored]
+...
 
-Results: results.yaml, results.md
+→ Total: 1745 tests to execute, 1001 ignored
+
+╲ Running tests... (4 workers)
+ ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+[3/1745] rust-v0.53 x rust-v0.53 (ws, noise, mplex)
+[2/1745] rust-v0.53 x rust-v0.53 (ws, tls, yamux)
+[1/1745] rust-v0.53 x rust-v0.53 (ws, tls, mplex)
+[4/1745] rust-v0.53 x rust-v0.53 (ws, noise, yamux)
+...
+
+╲ Collecting results...
+ ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+→ Results:
+  → Total: 1745
+  ✓ Passed: 1624
+  ✗ Failed: 121
+    - rust-v0.53 x python-v0.4 (tcp, noise, mplex)
+    - rust-v0.53 x python-v0.4 (tcp, noise, yamux)
+    - rust-v0.53 x python-v0.4 (quic-v1)
+    - rust-v0.53 x go-v0.38 (webrtc-direct)
+      ...
+
+→ Total time: 00:42:29
+
+╲ Generating results dashboard...
+ ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+→ bash scripts/generate-dashboard.sh
+  ✓ Generated /srv/cache/test-passes/transport-interop-224128-11-11-2025/results.md
+  ✓ Generated /srv/cache/test-passes/transport-interop-224128-11-11-2025/results.html
+
+╲ ✗ 121 test(s) failed
+ ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
 ```
 
 ## View Results
@@ -145,6 +230,16 @@ pandoc -f markdown -t html -s -o results.html results.md
 
 # Skip plaintext (insecure)
 ./run_tests.sh --test-ignore "plaintext" --workers 8
+```
+
+### Debug Mode
+
+```bash
+# Enable debug output in test containers
+./run_tests.sh --debug --workers 4
+
+# Combine with filters
+./run_tests.sh --test-filter "rust-v0.56" --debug --workers 2
 ```
 
 ### Create Debug Snapshot
@@ -278,8 +373,8 @@ cat logs/rust-v0.53_x_rust-v0.54_tcp_noise_yamux.log
 # 3. Add new implementation to impls.yaml
 vim impls.yaml
 
-# 4. Test only new version
-./run_tests.sh --test-filter "rust-v0.55" --cache-dir ~/.cache/libp2p
+# 4. Test only new version (with debug output)
+./run_tests.sh --test-filter "rust-v0.55" --debug --cache-dir ~/.cache/libp2p
 
 # 5. Run full suite
 ./run_tests.sh --cache-dir ~/.cache/libp2p --workers 8

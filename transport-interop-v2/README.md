@@ -73,6 +73,9 @@ Each test runs with just 2 containers: `dialer` and `listener`.
 
 # Skip quic tests
 ./run_tests.sh --test-ignore "quic" --workers 4
+
+# Enable debug output
+./run_tests.sh --debug --workers 4
 ```
 
 ## Architecture
@@ -93,7 +96,7 @@ implementations:
     muxers: [yamux, mplex]
 ```
 
-**test-selection.yaml** (per-language and global):
+**test-selection.yaml** (global, in project root):
 ```yaml
 test-filter: []
 test-ignore:
@@ -211,7 +214,9 @@ tests:
      muxers: [yamux, mplex]
    ```
 
-2. Run tests:
+2. Optionally update `test-selection.yaml` (in project root) to filter tests
+
+3. Run tests:
    ```bash
    ./run_tests.sh --test-filter "go-v0.35"
    ```
