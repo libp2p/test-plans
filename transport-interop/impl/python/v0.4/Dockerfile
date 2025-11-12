@@ -13,6 +13,9 @@ RUN apt-get update && apt-get install -y \
     patch \
     && rm -rf /var/lib/apt/lists/*
 
+# Copy the py-libp2p-${commitSha} folder so we can use it as a local dependency
+COPY py-libp2p-* /app/py-libp2p
+
 # Copy pyproject.toml and install Python dependencies
 COPY pyproject.toml .
 RUN pip install --no-cache-dir -e . && \

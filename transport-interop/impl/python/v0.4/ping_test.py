@@ -311,16 +311,17 @@ class PingTest:
         self.validate_configuration()
         await self._connect_redis_with_retry()
         
-        security_options, key_pair = self.create_security_options()
-        muxer_options = self.create_muxer_options()
+        # Create security and muxer options
+        sec_opt, key_pair = self.create_security_options()
+        muxer_opt = self.create_muxer_options()
         # CRITICAL FIX: Use create_listen_addresses() to properly handle QUIC transport
         # This converts TCP addresses to QUIC addresses when transport is "quic-v1"
         listen_addrs = self.create_listen_addresses(0)
         
         self.host = new_host(
             key_pair=key_pair,
-            sec_opt=security_options,
-            muxer_opt=muxer_options,
+            sec_opt=sec_opt,
+            muxer_opt=muxer_opt,
             listen_addrs=listen_addrs,
             enable_quic=(self.transport == "quic-v1")
         )
@@ -428,8 +429,9 @@ class PingTest:
             listener_addr = result[1]
             print(f"Got listener address: {listener_addr}", file=sys.stderr)
             
-            security_options, key_pair = self.create_security_options()
-            muxer_options = self.create_muxer_options()
+            # Create security and muxer options
+            sec_opt, key_pair = self.create_security_options()
+            muxer_opt = self.create_muxer_options()
             
             # WS dialer workaround: need listen addresses to register transport (py-libp2p limitation)
             dialer_listen_addrs = self.create_listen_addresses(0) if self.transport == "ws" else None
@@ -438,8 +440,8 @@ class PingTest:
             
             host_kwargs = {
                 "key_pair": key_pair,
-                "sec_opt": security_options,
-                "muxer_opt": muxer_options,
+                "sec_opt": sec_opt,
+                "muxer_opt": muxer_opt,
                 "enable_quic": (self.transport == "quic-v1")
             }
             if dialer_listen_addrs:
