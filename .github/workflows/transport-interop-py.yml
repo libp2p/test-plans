@@ -27,7 +27,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          ref: ${{ github.head_ref }}
           fetch-depth: 0
 
       # Build test-filter by scanning the transport-interop/impl/python/ subdirs
