@@ -132,7 +132,7 @@ implementations:
       commit: 09d0064f1d1dbee64a148d72374ed51ecc80ad4d
       dockerfile: Dockerfile  # In impl/python/v0.4/ directory
       buildContext: local  # Uses local Dockerfile, not from repo
-    transports: [tcp]
+    transports: [tcp, quic-v1]
     secureChannels: [noise]
     muxers: [mplex, yamux]
 

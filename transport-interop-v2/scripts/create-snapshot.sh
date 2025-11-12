@@ -9,18 +9,15 @@ CACHE_DIR="${CACHE_DIR:-/srv/cache}"
 SNAPSHOT_DIR="${TEST_PASS_DIR:-.}"
 
 if [ ! -f "$SNAPSHOT_DIR/results.yaml" ]; then
-    echo "Error: results.yaml not found in $SNAPSHOT_DIR. Run tests first."
+    echo "✗ Error: results.yaml not found in $SNAPSHOT_DIR. Run tests first."
     exit 1
 fi
-
-echo "Creating test pass snapshot..."
 
 # Extract test pass name from results
 test_pass=$(yq eval '.metadata.testPass' "$SNAPSHOT_DIR/results.yaml")
 
-echo "Snapshot: $test_pass"
-echo "Location: $SNAPSHOT_DIR"
-echo ""
+echo "→ Snapshot: $test_pass"
+echo "→ Location: $SNAPSHOT_DIR"
 
 # Create snapshot subdirectories if they don't exist
 mkdir -p "$SNAPSHOT_DIR"/{scripts,snapshots,docker-compose,logs,docker-images}
@@ -114,7 +111,7 @@ sort -u /tmp/snapshot-impls.txt -o /tmp/snapshot-impls.txt
 
 while IFS= read -r impl_id; do
     if docker image inspect "$impl_id" &> /dev/null; then
-        echo "  Saving: $impl_id"
+        echo "→ Saving: $impl_id"
         docker save "$impl_id" | gzip > "$SNAPSHOT_DIR/docker-images/${impl_id}.tar.gz"
     fi
 done < /tmp/snapshot-impls.txt
@@ -158,7 +155,7 @@ cd "$(dirname "$0")"
 
 # Check if required files exist
 if [ ! -f impls.yaml ] || [ ! -f test-matrix.yaml ]; then
-    echo "Error: Required files missing. This may not be a valid snapshot."
+    echo "✗ Error: Required files missing. This may not be a valid snapshot."
     exit 1
 fi
 
@@ -474,7 +471,6 @@ See \`results.md\` for the full test dashboard from the original run.
 EOF
 
 # Create archive
-echo ""
 echo "→ Creating archive..."
 cd "$CACHE_DIR/test-passes"
 tar -czf "${test_pass}.tar.gz" "$test_pass"
@@ -484,11 +480,11 @@ snapshot_size=$(du -h "${test_pass}.tar.gz" | cut -f1)
 echo ""
 echo "╲ ✓ Snapshot created successfully"
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-echo "Snapshot: $test_pass"
-echo "Location: $SNAPSHOT_DIR"
-echo "Archive: ${test_pass}.tar.gz ($snapshot_size)"
+echo "→ Snapshot: $test_pass"
+echo "→ Location: $SNAPSHOT_DIR"
+echo "→ Archive: ${test_pass}.tar.gz ($snapshot_size)"
 echo ""
-echo "To extract and re-run:"
-echo "  tar -xzf ${test_pass}.tar.gz"
-echo "  cd $test_pass"
-echo "  ./re-run.sh"
+echo "→ To extract and re-run:"
+echo "    tar -xzf ${test_pass}.tar.gz"
+echo "    cd $test_pass"
+echo "    ./re-run.sh"

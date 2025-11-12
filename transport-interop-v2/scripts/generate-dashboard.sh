@@ -8,11 +8,9 @@ RESULTS_FILE="${TEST_PASS_DIR:-.}/results.yaml"
 OUTPUT_FILE="${TEST_PASS_DIR:-.}/results.md"
 
 if [ ! -f "$RESULTS_FILE" ]; then
-    echo "Error: $RESULTS_FILE not found"
+    echo "✗ Error: $RESULTS_FILE not found"
     exit 1
 fi
-
-echo "Generating results dashboard..."
 
 # Extract metadata
 test_pass=$(yq eval '.metadata.testPass' "$RESULTS_FILE")
@@ -68,17 +66,21 @@ EOF
 # Read test results
 test_count=$(yq eval '.tests | length' "$RESULTS_FILE")
 
-for ((i=0; i<test_count; i++)); do
-    name=$(yq eval ".tests[$i].name" "$RESULTS_FILE")
-    status=$(yq eval ".tests[$i].status" "$RESULTS_FILE")
-    dialer=$(yq eval ".tests[$i].dialer" "$RESULTS_FILE")
-    listener=$(yq eval ".tests[$i].listener" "$RESULTS_FILE")
-    transport=$(yq eval ".tests[$i].transport" "$RESULTS_FILE")
-    secure=$(yq eval ".tests[$i].secureChannel" "$RESULTS_FILE")
-    muxer=$(yq eval ".tests[$i].muxer" "$RESULTS_FILE")
-    test_duration=$(yq eval ".tests[$i].duration" "$RESULTS_FILE")
-    handshake_ms=$(yq eval ".tests[$i].handshakePlusOneRTTMs" "$RESULTS_FILE" 2>/dev/null)
-    ping_ms=$(yq eval ".tests[$i].pingRTTMs" "$RESULTS_FILE" 2>/dev/null)
+# Declare associative arrays for fast lookups in matrix generation
+declare -A test_status_map
+declare -A test_secure_map
+declare -A test_muxer_map
+
+# Export all test data as TSV in one yq call (much faster than individual calls)
+test_data=$(yq eval '.tests[] | [.name, .status, .dialer, .listener, .transport, .secureChannel, .muxer, .duration, .handshakePlusOneRTTMs // "", .pingRTTMs // ""] | @tsv' "$RESULTS_FILE")
+
+# Process each test and build both the table and hash maps
+while IFS=$'\t' read -r name status dialer listener transport secure muxer test_duration handshake_ms ping_ms; do
+
+    # Store in hash maps for later matrix lookup
+    test_status_map["$name"]="$status"
+    test_secure_map["$name"]="$secure"
+    test_muxer_map["$name"]="$muxer"
 
     # Status icon
     if [ "$status" = "pass" ]; then
@@ -96,7 +98,7 @@ for ((i=0; i<test_count; i++)); do
     [ "$ping_ms" = "null" ] || [ -z "$ping_ms" ] && ping_ms="-"
 
     echo "| $name | $dialer | $listener | $transport | $secure | $muxer | $status_icon | $test_duration | $handshake_ms | $ping_ms |" >> "$OUTPUT_FILE"
-done
+done <<< "$test_data"
 
 cat >> "$OUTPUT_FILE" <<EOF
 
@@ -136,35 +138,40 @@ for transport in $transports; do
         echo -n "| **$dialer** |" >> "$OUTPUT_FILE"
 
         for listener in $listeners; do
-            # Find tests for this combination
             result=""
 
-            for ((i=0; i<test_count; i++)); do
-                test_dialer=$(yq eval ".tests[$i].dialer" "$RESULTS_FILE")
-                test_listener=$(yq eval ".tests[$i].listener" "$RESULTS_FILE")
-                test_status=$(yq eval ".tests[$i].status" "$RESULTS_FILE")
-                test_transport=$(yq eval ".tests[$i].transport" "$RESULTS_FILE")
-                test_secure=$(yq eval ".tests[$i].secureChannel" "$RESULTS_FILE")
-                test_muxer=$(yq eval ".tests[$i].muxer" "$RESULTS_FILE")
-
-                if [ "$test_dialer" = "$dialer" ] && \
-                   [ "$test_listener" = "$listener" ] && \
-                   [ "$test_transport" = "$transport" ]; then
-
-                    if [ "$test_status" = "pass" ]; then
-                        icon="✅"
+            # Try all possible secure/muxer combinations using hash map lookups (O(1) instead of O(n))
+            # This is much faster than searching through all tests linearly
+            for secure in "tls" "noise" "plaintext" "null"; do
+                for muxer in "yamux" "mplex" "null"; do
+                    # Construct test name based on whether it's standalone
+                    if [ "$secure" = "null" ] || [ "$muxer" = "null" ]; then
+                        test_name="$dialer x $listener ($transport)"
                     else
-                        icon="❌"
+                        test_name="$dialer x $listener ($transport, $secure, $muxer)"
                     fi
 
-                    # For standalone transports, just show icon
-                    if [ "$test_secure" = "null" ] || [ "$test_muxer" = "null" ]; then
-                        result="${result}${icon} "
-                    else
-                        # Show secure/muxer combo
-                        result="${result}${icon}${test_secure:0:1}/${test_muxer:0:1} "
+                    # O(1) hash map lookup instead of O(n) linear search
+                    if [ -n "${test_status_map[$test_name]:-}" ]; then
+                        test_status="${test_status_map[$test_name]}"
+                        test_secure="${test_secure_map[$test_name]}"
+                        test_muxer="${test_muxer_map[$test_name]}"
+
+                        if [ "$test_status" = "pass" ]; then
+                            icon="✅"
+                        else
+                            icon="❌"
+                        fi
+
+                        # For standalone transports, just show icon
+                        if [ "$test_secure" = "null" ] || [ "$test_muxer" = "null" ]; then
+                            result="${result}${icon} "
+                        else
+                            # Show secure/muxer combo
+                            result="${result}${icon}${test_secure:0:1}/${test_muxer:0:1} "
+                        fi
                     fi
-                fi
+                done
             done
 
             if [ -z "$result" ]; then
@@ -197,16 +204,15 @@ cat >> "$OUTPUT_FILE" <<EOF
 *Generated: $(date -u +%Y-%m-%dT%H:%M:%SZ)*
 EOF
 
-echo "✓ Generated "$OUTPUT_FILE""
+echo "  ✓ Generated "$OUTPUT_FILE""
 
 # Generate HTML if pandoc is available
 if command -v pandoc &> /dev/null; then
-    echo "Generating HTML report..."
     HTML_FILE="${TEST_PASS_DIR:-.}/results.html"
     pandoc -f markdown -t html -s -o "$HTML_FILE" "$OUTPUT_FILE" \
         --metadata title="Transport Interop Results" \
         --css style.css 2>/dev/null || pandoc -f markdown -t html -s -o "$HTML_FILE" "$OUTPUT_FILE"
-    echo "✓ Generated $HTML_FILE"
+    echo "  ✓ Generated $HTML_FILE"
 else
-    echo "→ pandoc not found, skipping HTML generation"
+    echo "  ✗ pandoc not found, skipping HTML generation"
 fi

@@ -35,7 +35,7 @@ PING_LENGTH = 32
 MAX_TEST_TIMEOUT = 300  # Max timeout (default Docker timeout is 600s)
 
 # Get logger for this module - will automatically use py-libp2p's logging system
-# when LIBP2P_DEBUG is set, otherwise will be disabled
+# when "debug" environment variable is set, otherwise will be disabled
 logger = logging.getLogger("libp2p.ping_test")
 
 # Configure logging for TCP tests
@@ -47,7 +47,7 @@ def configure_logging():
     if debug_enabled:
         for logger_name in ["", "libp2p.ping_test", "libp2p", "libp2p.transport", "libp2p.network", "libp2p.protocol_muxer"]:
             logging.getLogger(logger_name).setLevel(logging.DEBUG)
-        print("Debug logging enabled via LIBP2P_DEBUG", file=sys.stderr)
+        print("Debug logging enabled via \"debug\" environment variable", file=sys.stderr)
     else:
         logging.getLogger().setLevel(logging.INFO)
         logging.getLogger("libp2p.ping_test").setLevel(logging.INFO)
@@ -97,11 +97,14 @@ class PingTest:
         valid_muxers = ["mplex", "yamux"]
         
         if self.transport not in valid_transports:
-            raise ValueError(f"Unsupported transport: {self.transport}. Supported: {valid_transports}")
+            msg = f"Unsupported transport: {self.transport}. Supported: {valid_transports}"
+            raise ValueError(msg)
         if self.security not in valid_security:
-            raise ValueError(f"Unsupported security: {self.security}. Supported: {valid_security}")
+            msg = f"Unsupported security: {self.security}. Supported: {valid_security}"
+            raise ValueError(msg)
         if self.muxer not in valid_muxers:
-            raise ValueError(f"Unsupported muxer: {self.muxer}. Supported: {valid_muxers}")
+            msg = f"Unsupported muxer: {self.muxer}. Supported: {valid_muxers}"
+            raise ValueError(msg)
 
     def create_security_options(self):
         """Create security options based on configuration."""
@@ -125,7 +128,8 @@ class PingTest:
             )
             return {PLAINTEXT_PROTOCOL_ID: transport}, key_pair
         else:
-            raise ValueError(f"Unsupported security: {self.security}")
+            msg = f"Unsupported security: {self.security}"
+            raise ValueError(msg)
 
     def create_muxer_options(self):
         """Create muxer options based on configuration."""
@@ -134,7 +138,8 @@ class PingTest:
         elif self.muxer == "mplex":
             return create_mplex_muxer_option()
         else:
-            raise ValueError(f"Unsupported muxer: {self.muxer}")
+            msg = f"Unsupported muxer: {self.muxer}"
+            raise ValueError(msg)
 
     def _get_ip_value(self, addr) -> Optional[str]:
         """Extract IP value from multiaddr (IPv4 or IPv6)."""
@@ -376,7 +381,8 @@ class PingTest:
                 if attempt < max_retries - 1:
                     print(f"Retrying in {retry_delay} seconds...", file=sys.stderr)
                     await trio.sleep(retry_delay)
-        raise RuntimeError(f"Failed to connect to Redis after {max_retries} attempts")
+        msg = f"Failed to connect to Redis after {max_retries} attempts"
+        raise RuntimeError(msg)
     
     def _debug_connection_state(self, network, peer_id) -> None:
         """Debug connection state (only if debug logging enabled)."""
@@ -434,7 +440,8 @@ class PingTest:
             redis_wait_timeout = min(self.test_timeout_seconds, MAX_TEST_TIMEOUT)
             result = self.redis_client.blpop("listenerAddr", timeout=redis_wait_timeout)
             if not result:
-                raise RuntimeError(f"Timeout waiting for listener address after {redis_wait_timeout} seconds")
+                msg = f"Timeout waiting for listener address after {redis_wait_timeout} seconds"
+                raise RuntimeError(msg)
             
             listener_addr = result[1]
             print(f"Got listener address: {listener_addr}", file=sys.stderr)

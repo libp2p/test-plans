@@ -13,6 +13,7 @@ CHECK_DEPS_ONLY=false
 CREATE_SNAPSHOT=false
 AUTO_YES=false
 DEBUG=false
+FORCE_REBUILD=false
 
 # Show help
 show_help() {
@@ -30,6 +31,7 @@ Options:
   --type VALUE           Alias for --kind
   --snapshot             Create test pass snapshot after completion
   --debug                Enable debug mode (sets debug=true in test containers)
+  --force-rebuild        Force the rebuilding of all docker images in the test pass
   -y, --yes              Skip confirmation prompt and run tests immediately
   --check-deps           Only check dependencies and exit
   --help                 Show this help message
@@ -57,6 +59,7 @@ while [[ $# -gt 0 ]]; do
         --kind|--type) KIND="$2"; shift 2 ;;  # Accept both --kind and --type
         --snapshot) CREATE_SNAPSHOT=true; shift ;;
         --debug) DEBUG=true; shift ;;
+        --force-rebuild) FORCE_REBUILD=true; shift ;;
         -y|--yes) AUTO_YES=true; shift ;;
         --check-deps) CHECK_DEPS_ONLY=true; shift ;;
         --help|-h) show_help; exit 0 ;;
@@ -92,6 +95,7 @@ fi
 export CACHE_DIR
 export DEBUG
 
+echo ""
 echo "                        ╔╦╦╗  ╔═╗"
 echo "▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁ ║╠╣╚╦═╬╝╠═╗ ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁"
 echo "═══════════════════════ ║║║║║║║╔╣║║ ════════════════════════"
@@ -106,12 +110,15 @@ echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔�
 TEST_PASS_NAME="transport-interop-${KIND}-$(date +%H%M%S-%d-%m-%Y)"
 TEST_PASS_DIR="$CACHE_DIR/test-passes/$TEST_PASS_NAME"
 
-echo "Test Pass: $TEST_PASS_NAME"
-echo "Cache Dir: $CACHE_DIR"
-echo "Test Pass Dir: $TEST_PASS_DIR"
-echo "Workers: $WORKER_COUNT"
-[ -n "$TEST_FILTER" ] && echo "Filter: $TEST_FILTER"
-[ -n "$TEST_IGNORE" ] && echo "Ignore: $TEST_IGNORE"
+echo "→ Test Pass: $TEST_PASS_NAME"
+echo "→ Cache Dir: $CACHE_DIR"
+echo "→ Test Pass Dir: $TEST_PASS_DIR"
+echo "→ Workers: $WORKER_COUNT"
+[ -n "$TEST_FILTER" ] && echo "→ Filter: $TEST_FILTER"
+[ -n "$TEST_IGNORE" ] && echo "→ Ignore: $TEST_IGNORE"
+echo "→ Create Snapshot: $CREATE_SNAPSHOT"
+echo "→ Debug: $DEBUG"
+echo "→ Force Rebuild: $FORCE_REBUILD"
 echo ""
 
 # Create test pass folder structure
@@ -126,16 +133,16 @@ export TEST_PASS_DIR
 echo "╲ Checking dependencies..."
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 if ! bash scripts/check-dependencies.sh; then
-    echo "Dependency check failed. Please install missing dependencies."
+    echo "✗ Dependency check failed. Please install missing dependencies."
     exit 1
 fi
 
 # Read and export the docker compose command detected by check-dependencies.sh
 if [ -f /tmp/docker-compose-cmd.txt ]; then
     export DOCKER_COMPOSE_CMD=$(cat /tmp/docker-compose-cmd.txt)
-    echo "Using: $DOCKER_COMPOSE_CMD"
+    echo "→ Using: $DOCKER_COMPOSE_CMD"
 else
-    echo "Error: Could not determine docker compose command"
+    echo "✗ Error: Could not determine docker compose command"
     exit 1
 fi
 
@@ -180,38 +187,39 @@ echo ""
 
 # Build each required implementation using pipe-separated list
 IMPL_FILTER=$(cat "$REQUIRED_IMPLS_WITH_DEPS" | paste -sd'|' -)
-echo "→ bash scripts/build-images.sh \"$IMPL_FILTER\""
-bash scripts/build-images.sh "$IMPL_FILTER"
+echo "→ bash scripts/build-images.sh \"$IMPL_FILTER\" \"$FORCE_REBUILD\""
+bash scripts/build-images.sh "$IMPL_FILTER" "$FORCE_REBUILD"
 
 rm -f "$REQUIRED_IMPLS" "$REQUIRED_IMPLS_WITH_DEPS"
 
 # Display test list and prompt for confirmation
 echo ""
-echo "╲ Selected tests:"
+echo "╲ Test selection..."
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+echo "→ Selected tests:"
 
 # Read test matrix
 test_count=$(yq eval '.metadata.totalTests' "$TEST_PASS_DIR/test-matrix.yaml")
 ignored_count=$(yq eval '.metadata.ignoredTests' "$TEST_PASS_DIR/test-matrix.yaml")
 
-# Display active tests
-for ((i=0; i<test_count; i++)); do
-    test_name=$(yq eval ".tests[$i].name" "$TEST_PASS_DIR/test-matrix.yaml")
-    echo "  ✓ $test_name"
-done
+# Display active tests (extract all names in one yq call)
+if [ "$test_count" -gt 0 ]; then
+    yq eval '.tests[].name' "$TEST_PASS_DIR/test-matrix.yaml" | while read -r test_name; do
+        echo "  ✓ $test_name"
+    done
+fi
 
-# Display ignored tests
+# Display ignored tests (extract all names in one yq call)
 if [ "$ignored_count" -gt 0 ]; then
     echo ""
-    echo "Ignored tests:"
-    for ((i=0; i<ignored_count; i++)); do
-        test_name=$(yq eval ".ignoredTests[$i].name" "$TEST_PASS_DIR/test-matrix.yaml")
+    echo "→ Ignored tests:"
+    yq eval '.ignoredTests[].name' "$TEST_PASS_DIR/test-matrix.yaml" | while read -r test_name; do
         echo "  ✗ $test_name [ignored]"
     done
 fi
 
 echo ""
-echo "Total: $test_count tests to execute, $ignored_count ignored"
+echo "→ Total: $test_count tests to execute, $ignored_count ignored"
 
 # Prompt user for confirmation (unless -y flag was set)
 if [ "$AUTO_YES" = false ]; then
@@ -354,10 +362,10 @@ if [ "$FAILED" -gt 0 ]; then
     readarray -t FAILED_TESTS < <(yq eval '.tests[] | select(.status == "fail") | .name' "$TEST_PASS_DIR/results.yaml")
 fi
 
-echo "Results:"
-echo "  Total: $test_count"
-echo "  Passed: $PASSED"
-echo "  Failed: $FAILED"
+echo "→ Results:"
+echo "  → Total: $test_count"
+echo "  ✓ Passed: $PASSED"
+echo "  ✗ Failed: $FAILED"
 if [ "$FAILED" -gt 0 ]; then
     for test_name in "${FAILED_TESTS[@]}"; do
         echo "    - $test_name"
@@ -369,7 +377,7 @@ echo ""
 HOURS=$((DURATION / 3600))
 MINUTES=$(((DURATION % 3600) / 60))
 SECONDS=$((DURATION % 60))
-printf "Total time: %02d:%02d:%02d\n" $HOURS $MINUTES $SECONDS
+printf "→ Total time: %02d:%02d:%02d\n" $HOURS $MINUTES $SECONDS
 
 # 6. Generate dashboard
 echo ""
@@ -391,16 +399,10 @@ echo ""
 if [ "$FAILED" -eq 0 ]; then
     echo "╲ ✓ All tests passed!"
     echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-    echo "Results: results.yaml, results.md"
-    [ -f results.html ] && echo "HTML Report: results.html"
     EXIT_FINAL=0
 else
     echo "╲ ✗ $FAILED test(s) failed"
     echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-    echo ""
-    echo "Results: results.yaml, results.md"
-    [ -f results.html ] && echo "HTML Report: results.html"
-    echo "Logs: logs/ directory"
     EXIT_FINAL=1
 fi
 

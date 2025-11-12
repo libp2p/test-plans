@@ -100,162 +100,186 @@ else
     echo "→ Using CLI test-ignore: $TEST_IGNORE"
 fi
 
-echo ""
-echo "Filter settings:"
-echo "  test-filter: ${TEST_FILTER:-<all>}"
-echo "  test-ignore: ${TEST_IGNORE:-<none>}"
-echo ""
-
 # Compute cache key from impls.yaml + all test-selection.yaml files + filter + ignore
-echo "→ Computing cache key..."
-cache_key=$({ cat impls.yaml impls/*/test-selection.yaml test-selection.yaml 2>/dev/null; echo "$TEST_FILTER|$TEST_IGNORE|$DEBUG"; } | sha256sum | cut -d' ' -f1)
-echo "→ Cache key computed: ${cache_key:0:8}"
+cache_key=$({ cat impls.yaml impls/*/test-selection.yaml test-selection.yaml 2>/dev/null; echo "$TEST_FILTER||$TEST_IGNORE||$DEBUG"; } | sha256sum | cut -d' ' -f1)
+echo "→ Computed cache key: ${cache_key:0:8}"
 
 cache_file="$CACHE_DIR/test-matrix/${cache_key}.yaml"
 
 # Check cache
 if [ -f "$cache_file" ]; then
-    echo "→ Using cached test matrix: ${cache_key:0:8}.yaml"
+    echo "  ✓ [HIT] Using cached test matrix: ${cache_key:0:8}.yaml"
     cp "$cache_file" "$OUTPUT_DIR/test-matrix.yaml"
 
     # Show cached test count
     test_count=$(yq eval '.metadata.totalTests' "$OUTPUT_DIR/test-matrix.yaml")
-    echo ""
-    echo "✓ Loaded $test_count tests from cache"
+    echo "  ✓ Loaded $test_count tests from cache"
     exit 0
 fi
 
-echo "→ Generating new test matrix (cache miss)"
+echo "  → [MISS] Generating new test matrix"
 mkdir -p "$CACHE_DIR/test-matrix"
 echo ""
 
 # Read all implementations
 impl_count=$(yq eval '.implementations | length' impls.yaml)
 echo "→ Found $impl_count implementations in impls.yaml"
+
+# Declare associative arrays for O(1) lookups
+declare -A impl_transports    # impl_transports[rust-v0.56]="tcp ws quic-v1"
+declare -A impl_secure        # impl_secure[rust-v0.56]="tls noise"
+declare -A impl_muxers        # impl_muxers[rust-v0.56]="yamux mplex"
+declare -a impl_ids           # impl_ids=(rust-v0.56 rust-v0.55 ...)
+
+# Load all implementation data using yq
+echo "→ Loading implementation data into memory..."
+for ((i=0; i<impl_count; i++)); do
+    id=$(yq eval ".implementations[$i].id" impls.yaml)
+    transports=$(yq eval ".implementations[$i].transports | join(\" \")" impls.yaml)
+    secure=$(yq eval ".implementations[$i].secureChannels | join(\" \")" impls.yaml)
+    muxers=$(yq eval ".implementations[$i].muxers | join(\" \")" impls.yaml)
+
+    impl_ids+=("$id")
+    impl_transports["$id"]="$transports"
+    impl_secure["$id"]="$secure"
+    impl_muxers["$id"]="$muxers"
+done
+
+echo "  ✓ Loaded ${#impl_ids[@]} implementations into memory"
+
+# Pre-parse filter and ignore patterns once
+declare -a FILTER_PATTERNS
+declare -a IGNORE_PATTERNS
+
+if [ -n "$TEST_FILTER" ]; then
+    IFS='|' read -ra FILTER_PATTERNS <<< "$TEST_FILTER"
+    echo "  ✓ Loaded ${#FILTER_PATTERNS[@]} filter patterns"
+fi
+
+if [ -n "$TEST_IGNORE" ]; then
+    IFS='|' read -ra IGNORE_PATTERNS <<< "$TEST_IGNORE"
+    echo "  ✓ Loaded ${#IGNORE_PATTERNS[@]} ignore patterns"
+fi
+
+# Helper function to check if test name matches filter
+matches_filter() {
+    local test_name="$1"
+
+    # No filter = match all
+    [ ${#FILTER_PATTERNS[@]} -eq 0 ] && return 0
+
+    # Check each filter pattern
+    for filter in "${FILTER_PATTERNS[@]}"; do
+        [[ "$test_name" == *"$filter"* ]] && return 0
+    done
+
+    return 1
+}
+
+# Helper function to check if test name should be ignored
+should_ignore() {
+    local test_name="$1"
+
+    # No ignore patterns = don't ignore
+    [ ${#IGNORE_PATTERNS[@]} -eq 0 ] && return 1
+
+    # Check each ignore pattern
+    for ignore in "${IGNORE_PATTERNS[@]}"; do
+        [[ "$test_name" == *"$ignore"* ]] && return 0
+    done
+
+    return 1
+}
+
+# Get common elements between two space-separated lists
+get_common() {
+    local list1="$1"
+    local list2="$2"
+    local result=""
+
+    for item in $list1; do
+        if [[ " $list2 " == *" $item "* ]]; then
+            result="$result $item"
+        fi
+    done
+
+    echo "$result"
+}
+
 echo ""
+echo "╲ Generating test combinations..."
+echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
 # Initialize test lists
 tests=()
 ignored_tests=()
 test_num=0
 
-echo "╲ Considering test combinations:"
-echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+# Iterate through all dialer/listener pairs using pre-loaded data
+for dialer_id in "${impl_ids[@]}"; do
+    dialer_transports="${impl_transports[$dialer_id]}"
+    dialer_secure="${impl_secure[$dialer_id]}"
+    dialer_muxers="${impl_muxers[$dialer_id]}"
 
-# Generate all combinations (3D matrix)
-for ((i=0; i<impl_count; i++)); do
-    dialer_id=$(yq eval ".implementations[$i].id" impls.yaml)
-    dialer_transports=$(yq eval ".implementations[$i].transports[]" impls.yaml 2>/dev/null)
-    dialer_secure=$(yq eval ".implementations[$i].secureChannels[]" impls.yaml 2>/dev/null)
-    dialer_muxers=$(yq eval ".implementations[$i].muxers[]" impls.yaml 2>/dev/null)
+    for listener_id in "${impl_ids[@]}"; do
+        listener_transports="${impl_transports[$listener_id]}"
+        listener_secure="${impl_secure[$listener_id]}"
+        listener_muxers="${impl_muxers[$listener_id]}"
 
-    for ((j=0; j<impl_count; j++)); do
-        listener_id=$(yq eval ".implementations[$j].id" impls.yaml)
-        listener_transports=$(yq eval ".implementations[$j].transports[]" impls.yaml 2>/dev/null)
-        listener_secure=$(yq eval ".implementations[$j].secureChannels[]" impls.yaml 2>/dev/null)
-        listener_muxers=$(yq eval ".implementations[$j].muxers[]" impls.yaml 2>/dev/null)
+        # Find common transports (much faster than grep)
+        common_transports=$(get_common "$dialer_transports" "$listener_transports")
 
-        # Find common transports
-        for transport in $dialer_transports; do
-            if echo "$listener_transports" | grep -q "^${transport}$"; then
+        # Skip if no common transports
+        [ -z "$common_transports" ] && continue
 
-                # Check if standalone transport
-                if is_standalone_transport "$transport"; then
-                    # Standalone: no muxer/secure needed
-                    test_name="$dialer_id x $listener_id ($transport)"
+        # Process each common transport
+        for transport in $common_transports; do
 
-                    # Apply filter (if any)
-                    if [ -n "$TEST_FILTER" ]; then
-                        match=false
-                        IFS='|' read -ra FILTERS <<< "$TEST_FILTER"
-                        for filter in "${FILTERS[@]}"; do
-                            if [[ "$test_name" == *"$filter"* ]]; then
-                                match=true
-                                break
-                            fi
-                        done
-                        if [ "$match" = false ]; then
-                            continue
-                        fi
+            if is_standalone_transport "$transport"; then
+                # Standalone transport
+                test_name="$dialer_id x $listener_id ($transport)"
+
+                # Check filter/ignore (using pre-parsed functions)
+                if matches_filter "$test_name"; then
+                    if should_ignore "$test_name"; then
+                        ignored_tests+=("$test_name|$dialer_id|$listener_id|$transport|null|null")
+                    else
+                        test_num=$((test_num + 1))
+                        tests+=("$test_name|$dialer_id|$listener_id|$transport|null|null")
                     fi
+                fi
 
-                    # Apply ignore (if any)
-                    if [ -n "$TEST_IGNORE" ]; then
-                        skip=false
-                        IFS='|' read -ra IGNORES <<< "$TEST_IGNORE"
-                        for ignore in "${IGNORES[@]}"; do
-                            if [[ "$test_name" == *"$ignore"* ]]; then
-                                skip=true
-                                break
+            else
+                # Non-standalone: need secure + muxer combinations
+                common_secure=$(get_common "$dialer_secure" "$listener_secure")
+                common_muxers=$(get_common "$dialer_muxers" "$listener_muxers")
+
+                # Skip if no common secure channels or muxers
+                [ -z "$common_secure" ] && continue
+                [ -z "$common_muxers" ] && continue
+
+                # Generate all valid combinations
+                for secure in $common_secure; do
+                    for muxer in $common_muxers; do
+                        test_name="$dialer_id x $listener_id ($transport, $secure, $muxer)"
+
+                        # Check filter/ignore (using pre-parsed functions)
+                        if matches_filter "$test_name"; then
+                            if should_ignore "$test_name"; then
+                                ignored_tests+=("$test_name|$dialer_id|$listener_id|$transport|$secure|$muxer")
+                            else
+                                test_num=$((test_num + 1))
+                                tests+=("$test_name|$dialer_id|$listener_id|$transport|$secure|$muxer")
                             fi
-                        done
-                        if [ "$skip" = true ]; then
-                            # Add to ignored tests list
-                            ignored_tests+=("$test_name|$dialer_id|$listener_id|$transport|null|null")
-                            continue
-                        fi
-                    fi
-
-                    # Add test (standalone)
-                    test_num=$((test_num + 1))
-                    echo "  [$test_num] ✓ $test_name"
-                    tests+=("$test_name|$dialer_id|$listener_id|$transport|null|null")
-
-                else
-                    # Non-standalone: need secure channel + muxer combinations
-                    for secure in $dialer_secure; do
-                        if echo "$listener_secure" | grep -q "^${secure}$"; then
-
-                            for muxer in $dialer_muxers; do
-                                if echo "$listener_muxers" | grep -q "^${muxer}$"; then
-
-                                    test_name="$dialer_id x $listener_id ($transport, $secure, $muxer)"
-
-                                    # Apply filter (if any)
-                                    if [ -n "$TEST_FILTER" ]; then
-                                        match=false
-                                        IFS='|' read -ra FILTERS <<< "$TEST_FILTER"
-                                        for filter in "${FILTERS[@]}"; do
-                                            if [[ "$test_name" == *"$filter"* ]]; then
-                                                match=true
-                                                break
-                                            fi
-                                        done
-                                        if [ "$match" = false ]; then
-                                            continue
-                                        fi
-                                    fi
-
-                                    # Apply ignore (if any)
-                                    if [ -n "$TEST_IGNORE" ]; then
-                                        skip=false
-                                        IFS='|' read -ra IGNORES <<< "$TEST_IGNORE"
-                                        for ignore in "${IGNORES[@]}"; do
-                                            if [[ "$test_name" == *"$ignore"* ]]; then
-                                                skip=true
-                                                break
-                                            fi
-                                        done
-                                        if [ "$skip" = true ]; then
-                                            # Add to ignored tests list
-                                            ignored_tests+=("$test_name|$dialer_id|$listener_id|$transport|$secure|$muxer")
-                                            continue
-                                        fi
-                                    fi
-
-                                    # Add test (3D combination)
-                                    test_num=$((test_num + 1))
-                                    echo "  [$test_num] ✓ $test_name"
-                                    tests+=("$test_name|$dialer_id|$listener_id|$transport|$secure|$muxer")
-                                fi
-                            done
                         fi
                     done
-                fi
+                done
             fi
         done
     done
 done
+
+echo "✓ Generated ${#tests[@]} tests (${#ignored_tests[@]} ignored)"
 
 echo ""
 
@@ -319,4 +343,4 @@ cp "$OUTPUT_DIR/test-matrix.yaml" "$cache_file"
 
 echo "╲ ✓ Generated test matrix with ${#tests[@]} tests (${#ignored_tests[@]} ignored)"
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-echo "  Cached as: ${cache_key:0:8}.yaml"
+echo "✓ Cached as: ${cache_key:0:8}.yaml"

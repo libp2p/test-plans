@@ -3,9 +3,6 @@
 
 set -euo pipefail
 
-echo "Checking dependencies..."
-echo ""
-
 has_error=false
 
 # Function to compare semantic versions
