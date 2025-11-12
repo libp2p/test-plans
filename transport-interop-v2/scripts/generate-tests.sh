@@ -8,8 +8,7 @@ set -euo pipefail
 CACHE_DIR="${CACHE_DIR:-/srv/cache}"
 CLI_TEST_FILTER="${1:-}"
 CLI_TEST_IGNORE="${2:-}"
-IMPL_PATH="${3:-}"  # Optional: impl path for loading defaults (e.g., "impls/rust")
-DEBUG="${4:-false}"  # Optional: debug mode flag
+DEBUG="${3:-false}"  # Optional: debug mode flag
 OUTPUT_DIR="${TEST_PASS_DIR:-.}"  # Use TEST_PASS_DIR if set, otherwise current directory
 
 # Standalone transports (don't require muxer/secureChannel)
@@ -21,40 +20,26 @@ is_standalone_transport() {
     echo "$STANDALONE_TRANSPORTS" | grep -qw "$transport"
 }
 
-# Load test selection defaults from YAML files
+# Load test selection defaults from YAML file
 load_test_filter_from_yaml() {
-    local impl_path="$1"
-    local selection_file
-
-    if [ -n "$impl_path" ] && [ -f "$impl_path/test-selection.yaml" ]; then
-        selection_file="$impl_path/test-selection.yaml"
-    elif [ -f "test-selection.yaml" ]; then
-        selection_file="test-selection.yaml"
-    else
+    if [ ! -f "test-selection.yaml" ]; then
         echo ""
         return
     fi
 
     # Extract test-filter list (pipe-separated)
-    local filter=$(yq eval '.test-filter[]' "$selection_file" 2>/dev/null | paste -sd'|' -)
+    local filter=$(yq eval '.test-filter[]' "test-selection.yaml" 2>/dev/null | paste -sd'|' -)
     echo "$filter"
 }
 
 load_test_ignore_from_yaml() {
-    local impl_path="$1"
-    local selection_file
-
-    if [ -n "$impl_path" ] && [ -f "$impl_path/test-selection.yaml" ]; then
-        selection_file="$impl_path/test-selection.yaml"
-    elif [ -f "test-selection.yaml" ]; then
-        selection_file="test-selection.yaml"
-    else
+    if [ ! -f "test-selection.yaml" ]; then
         echo ""
         return
     fi
 
     # Extract test-ignore list (pipe-separated)
-    local ignore=$(yq eval '.test-ignore[]' "$selection_file" 2>/dev/null | paste -sd'|' -)
+    local ignore=$(yq eval '.test-ignore[]' "test-selection.yaml" 2>/dev/null | paste -sd'|' -)
     echo "$ignore"
 }
 
@@ -69,14 +54,10 @@ echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔�
 
 # Load from YAML if not provided via CLI
 if [ -z "$CLI_TEST_FILTER" ]; then
-    YAML_FILTER=$(load_test_filter_from_yaml "$IMPL_PATH")
+    YAML_FILTER=$(load_test_filter_from_yaml)
     if [ -n "$YAML_FILTER" ]; then
         TEST_FILTER="$YAML_FILTER"
-        if [ -n "$IMPL_PATH" ]; then
-            echo "→ Loaded test-filter from $IMPL_PATH/test-selection.yaml"
-        else
-            echo "→ Loaded test-filter from test-selection.yaml"
-        fi
+        echo "→ Loaded test-filter from test-selection.yaml: $TEST_FILTER"
     else
         echo "→ No test-filter specified (will include all tests)"
     fi
@@ -85,14 +66,10 @@ else
 fi
 
 if [ -z "$CLI_TEST_IGNORE" ]; then
-    YAML_IGNORE=$(load_test_ignore_from_yaml "$IMPL_PATH")
+    YAML_IGNORE=$(load_test_ignore_from_yaml)
     if [ -n "$YAML_IGNORE" ]; then
         TEST_IGNORE="$YAML_IGNORE"
-        if [ -n "$IMPL_PATH" ]; then
-            echo "→ Loaded test-ignore from $IMPL_PATH/test-selection.yaml"
-        else
-            echo "→ Loaded test-ignore from test-selection.yaml"
-        fi
+        echo "→ Loaded test-ignore from test-selection.yaml: $TEST_IGNORE"
     else
         echo "→ No test-ignore specified"
     fi

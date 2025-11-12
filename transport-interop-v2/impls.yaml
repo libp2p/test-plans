@@ -167,6 +167,74 @@ implementations:
     muxers: [mplex, yamux]
     dialOnly: [wss]
 
+  # Nim implementation
+  - id: nim-v1.14
+    source:
+      type: github
+      repo: status-im/nim-libp2p
+      commit: 0309685cd27d4bf763c8b3be86a76c33bcfe67ea
+      dockerfile: interop/transport/Dockerfile
+    transports: [tcp, ws]
+    secureChannels: [noise]
+    muxers: [mplex, yamux]
+
+  # JVM implementation
+  - id: jvm-v1.2
+    source:
+      type: github
+      repo: libp2p/jvm-libp2p
+      commit: 737456de5d96db030aa04c8527585af1a510898f
+      dockerfile: Dockerfile
+    transports: [tcp, ws, quic-v1]
+    secureChannels: [tls, noise]
+    muxers: [mplex, yamux]
+
+  # C implementation
+  - id: c-v0.0.1
+    source:
+      type: github
+      repo: Pier-Two/c-libp2p
+      commit: 23a617223a3bbfb4b2af8f219f389e440b9c1ac2
+      dockerfile: interop-tests/transport/Dockerfile
+      requiresSubmodules: true  # Needs git submodules
+      complexBuild: true  # Has many external dependencies
+    transports: [tcp, quic-v1]
+    secureChannels: [noise]
+    muxers: [mplex, yamux]
+
+  # .NET implementation
+  - id: dotnet-v1.0
+    source:
+      type: github
+      repo: NethermindEth/dotnet-libp2p
+      commit: 91be8757237dba57b1f1688799c4fec808060fdb
+      dockerfile: src/samples/transport-interop/Dockerfile
+    transports: [tcp]
+    secureChannels: [noise]
+    muxers: [yamux]
+
+  # Zig implementation
+  - id: zig-v0.0.1
+    source:
+      type: github
+      repo: marcopolo/zig-libp2p
+      commit: d4a679ee48acae25b5c55c91918f89dec1b78e85
+      dockerfile: interop/Dockerfile
+    transports: [quic-v1]
+    secureChannels: []
+    muxers: []
+
+  # Ethereum P2P implementation (Zig-based)
+  - id: eth-p2p-z-v0.0.1
+    source:
+      type: github
+      repo: zen-eth/eth-p2p-z
+      commit: a517a15d7845698c56c37e9135d45eb437660845
+      dockerfile: interop/transport/Dockerfile
+    transports: [quic-v1]
+    secureChannels: []
+    muxers: []
+
   # Browser implementations (require local build)
   # Note: Browser images are built from js implementations
   - id: chromium-js-v1.x
@@ -257,73 +325,3 @@ implementations:
     secureChannels: [noise]
     muxers: [mplex, yamux]
     dialOnly: [webtransport, webrtc-direct, ws]
-
-  # Nim implementation
-  - id: nim-v1.14
-    source:
-      type: github
-      repo: status-im/nim-libp2p
-      commit: 0309685cd27d4bf763c8b3be86a76c33bcfe67ea
-      dockerfile: Dockerfile  # In impl/nim/v1.14/ directory
-      buildContext: local
-    transports: [tcp, ws]
-    secureChannels: [noise]
-    muxers: [mplex, yamux]
-
-  # JVM implementation
-  - id: jvm-v1.2
-    source:
-      type: github
-      repo: libp2p/jvm-libp2p
-      commit: 737456de5d96db030aa04c8527585af1a510898f
-      dockerfile: Dockerfile
-    transports: [tcp, ws, quic-v1]
-    secureChannels: [tls, noise]
-    muxers: [mplex, yamux]
-
-  # C implementation
-  - id: c-v0.0.1
-    source:
-      type: github
-      repo: Pier-Two/c-libp2p
-      commit: 23a617223a3bbfb4b2af8f219f389e440b9c1ac2
-      dockerfile: interop-tests/transport/Dockerfile
-      requiresSubmodules: true  # Needs git submodules
-      complexBuild: true  # Has many external dependencies
-    transports: [tcp, quic-v1]
-    secureChannels: [noise]
-    muxers: [mplex, yamux]
-
-  # .NET implementation
-  - id: dotnet-v1.0
-    source:
-      type: github
-      repo: NethermindEth/dotnet-libp2p
-      commit: 91be8757237dba57b1f1688799c4fec808060fdb
-      dockerfile: src/samples/transport-interop/Dockerfile
-    transports: [tcp]
-    secureChannels: [noise]
-    muxers: [yamux]
-
-  # Zig implementation
-  - id: zig-v0.0.1
-    source:
-      type: github
-      repo: marcopolo/zig-libp2p
-      commit: d4a679ee48acae25b5c55c91918f89dec1b78e85
-      dockerfile: interop/Dockerfile
-    transports: [quic-v1]
-    secureChannels: []
-    muxers: []
-
-  # Ethereum P2P implementation (Zig-based)
-  - id: eth-p2p-z-v0.0.1
-    source:
-      type: github
-      repo: optimism-java/op-p2p
-      commit: c8b0d8d4c3e93b3fcf8c02e2e7f4d5a6b7c8d9e0  # Placeholder - need actual commit
-      dockerfile: Dockerfile  # Need to verify path
-      buildContext: local
-    transports: [quic-v1]
-    secureChannels: []
-    muxers: []

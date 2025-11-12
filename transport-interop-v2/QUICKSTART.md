@@ -45,7 +45,7 @@ cd test-plans/transport-interop-v2
 Expected output:
 ```
 ╔════════════════════════════════════════════════════════════╗
-║  Transport Interoperability Test Suite                    ║
+║  Transport Interoperability Test Suite                     ║
 ╚════════════════════════════════════════════════════════════╝
 
 Test Pass: transport-interop-full

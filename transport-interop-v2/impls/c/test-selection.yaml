@@ -1,7 +1,0 @@
-# Test selection configuration for C implementations
-
-test-filter:
-  - c-v0.0.1
-
-test-ignore:
-  - c-v0.0.1 x c-v0.0.1  # Skip self-tests

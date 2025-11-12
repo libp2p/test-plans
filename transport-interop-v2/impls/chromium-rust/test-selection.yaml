@@ -1,8 +1,0 @@
-# Test selection configuration for Chromium-Rust browser implementations
-
-test-filter:
-  - chromium-rust
-
-test-ignore:
-  - chromium-rust-v0.53 x chromium-rust-v0.53  # Skip self-tests
-  - chromium-rust-v0.54 x chromium-rust-v0.54

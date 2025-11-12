@@ -141,12 +141,12 @@ scripts/
 ## Dependencies
 
 - bash 4.0+
-- git 2.0+
 - docker 20.10+
 - yq 4.0+
-- wget, unzip
+- wget
+- unzip
 
-**No Node.js, npm, TypeScript, or make required!**
+**No Node.js, git, npm, TypeScript, or make required!**
 
 ## Test Execution
 
@@ -215,27 +215,3 @@ tests:
    ```bash
    ./run_tests.sh --test-filter "go-v0.35"
    ```
-
-## Comparison to Original
-
-| Aspect | Old (TypeScript) | New (Bash) |
-|--------|------------------|------------|
-| Lines of Code | ~2000 | ~1300 |
-| Dependencies | Node.js, npm, TS, make | bash, git, docker, yq |
-| Config Format | JSON | YAML |
-| Results Format | CSV | YAML |
-| Caching | S3 + local | Local (content-addressed) |
-| Snapshots | None | Full reproducibility |
-
-## Documentation
-
-- `README.md` - This file
-- `QUICKSTART.md` - Getting started guide
-- `CONTRIBUTING.md` - How to add implementations
-- `ARCHITECTURE.md` - Technical deep dive
-
-## Status
-
-⚠️ **IN PROGRESS** - Base structure created, scripts need implementation.
-
-See hole-punch-interop-v2 for reference implementation of the same architecture.

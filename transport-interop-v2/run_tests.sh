@@ -8,7 +8,6 @@ CACHE_DIR="${CACHE_DIR:-/srv/cache}"
 TEST_FILTER="${TEST_FILTER:-}"
 TEST_IGNORE="${TEST_IGNORE:-}"
 WORKER_COUNT="${WORKER_COUNT:-$(nproc 2>/dev/null || echo 4)}"
-KIND="full"
 CHECK_DEPS_ONLY=false
 CREATE_SNAPSHOT=false
 AUTO_YES=false
@@ -27,8 +26,6 @@ Options:
   --test-ignore VALUE    Ignore tests (pipe-separated substrings)
   --workers VALUE        Number of parallel workers (default: $(nproc 2>/dev/null || echo 4))
   --cache-dir VALUE      Cache directory (default: /srv/cache)
-  --kind VALUE           Test kind: full, rust, python, go, etc. (default: auto-detect)
-  --type VALUE           Alias for --kind
   --snapshot             Create test pass snapshot after completion
   --debug                Enable debug mode (sets debug=true in test containers)
   --force-rebuild        Force the rebuilding of all docker images in the test pass
@@ -39,8 +36,8 @@ Options:
 Examples:
   $0 --cache-dir /srv/cache --workers 4
   $0 --test-filter "rust-v0.53" --workers 8
-  $0 --test-ignore "webrtc" --type rust
-  $0 --type rust --test-filter "rust-v0.56"
+  $0 --test-ignore "webrtc"
+  $0 --test-filter "rust-v0.56"
   $0 --snapshot --workers 8
 
 Dependencies:
@@ -56,7 +53,6 @@ while [[ $# -gt 0 ]]; do
         --test-ignore) TEST_IGNORE="$2"; shift 2 ;;
         --workers) WORKER_COUNT="$2"; shift 2 ;;
         --cache-dir) CACHE_DIR="$2"; shift 2 ;;
-        --kind|--type) KIND="$2"; shift 2 ;;  # Accept both --kind and --type
         --snapshot) CREATE_SNAPSHOT=true; shift ;;
         --debug) DEBUG=true; shift ;;
         --force-rebuild) FORCE_REBUILD=true; shift ;;
@@ -76,22 +72,6 @@ if [ "$CHECK_DEPS_ONLY" = true ]; then
     exit $?
 fi
 
-# KIND defaults to "full"
-if [ -z "$KIND" ]; then
-    KIND="full"
-fi
-
-# Determine impl path for test-selection.yaml loading
-IMPL_PATH=""
-if [ "$KIND" != "full" ]; then
-    if [ ! -d "impls/${KIND}" ]; then
-	echo ""
-	show_help
-	exit 1
-    fi
-    IMPL_PATH="impls/${KIND}"
-fi
-
 export CACHE_DIR
 export DEBUG
 
@@ -107,7 +87,7 @@ echo "╲ Transport Interoperability Test Suite"
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
 # Generate test pass name and folder
-TEST_PASS_NAME="transport-interop-${KIND}-$(date +%H%M%S-%d-%m-%Y)"
+TEST_PASS_NAME="transport-interop-$(date +%H%M%S-%d-%m-%Y)"
 TEST_PASS_DIR="$CACHE_DIR/test-passes/$TEST_PASS_NAME"
 
 echo "→ Test Pass: $TEST_PASS_NAME"
@@ -150,8 +130,8 @@ fi
 echo ""
 echo "╲ Generating test matrix..."
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-echo "→ bash scripts/generate-tests.sh \"$TEST_FILTER\" \"$TEST_IGNORE\" \"$IMPL_PATH\" \"$DEBUG\""
-bash scripts/generate-tests.sh "$TEST_FILTER" "$TEST_IGNORE" "$IMPL_PATH" "$DEBUG"
+echo "→ bash scripts/generate-tests.sh \"$TEST_FILTER\" \"$TEST_IGNORE\" \"$DEBUG\""
+bash scripts/generate-tests.sh "$TEST_FILTER" "$TEST_IGNORE" "$DEBUG"
 
 # 3. Extract unique implementations from test matrix and build only those
 echo ""
