@@ -148,8 +148,9 @@ done
 echo "  ✓ Loaded ${#impl_ids[@]} implementations into memory"
 
 # Pre-parse filter and ignore patterns once
-declare -a FILTER_PATTERNS
-declare -a IGNORE_PATTERNS
+# Always declare arrays (even if empty) to avoid unbound variable errors
+declare -a FILTER_PATTERNS=()
+declare -a IGNORE_PATTERNS=()
 
 if [ -n "$TEST_FILTER" ]; then
     IFS='|' read -ra FILTER_PATTERNS <<< "$TEST_FILTER"
