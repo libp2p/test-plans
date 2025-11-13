@@ -11,7 +11,7 @@ on:
       update-readme:
         description: 'Update impl/python/README.md with results?'
         required: false
-        default: 'true'
+        default: true
         type: boolean
 
   pull_request:
@@ -27,6 +27,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.event.pull_request.head.repo.full_name != '' && github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event.pull_request.head.ref != '' && github.event.pull_request.head.ref || github.ref_name }}
           fetch-depth: 0
 
       # Build test-filter by scanning the transport-interop/impl/python/ subdirs
