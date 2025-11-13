@@ -88,4 +88,4 @@ jobs:
           test-ignore: ${{ steps.test-ignore.outputs.test-ignore }}
           test-root: ${{ steps.build-test-root.outputs.test-root }}
           update-readme: ${{ inputs.update-readme }}
-          gh-token: ${{ secrets.secrets.GITHUB_TOKEN }}
+          gh-token: ${{ secrets.GITHUB_TOKEN }}
