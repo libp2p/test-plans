@@ -8,11 +8,6 @@ on:
         required: false
         default: ''
         type: string
-      update-readme:
-        description: 'Update impl/c/README.md with results?'
-        required: false
-        default: 'true'
-        type: boolean
 
   pull_request:
     paths:
@@ -26,7 +21,6 @@ jobs:
       - name: Checkout PR branch
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.WRITE_README_AND_DASHBOARD }}
           ref: ${{ github.head_ref }}
           fetch-depth: 0
 
@@ -89,4 +83,3 @@ jobs:
           test-ignore: ${{ steps.test-ignore.outputs.test-ignore }}
           test-root: ${{ steps.build-test-root.outputs.test-root }}
           update-readme: ${{ inputs.update-readme }}
-          gh-token: ${{ secrets.WRITE_README_AND_DASHBOARD }}

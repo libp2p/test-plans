@@ -8,11 +8,6 @@ on:
         required: false
         default: ''
         type: string
-      update-readme:
-        description: 'Update impl/python/README.md with results?'
-        required: false
-        default: true
-        type: boolean
 
   pull_request:
     paths:
@@ -26,9 +21,7 @@ jobs:
       - name: Checkout PR branch
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          repository: ${{ github.event.pull_request.head.repo.full_name != '' && github.event.pull_request.head.repo.full_name || github.repository }}
-          ref: ${{ github.event.pull_request.head.ref != '' && github.event.pull_request.head.ref || github.ref_name }}
+          ref: ${{ github.ref_name }}
           fetch-depth: 0
 
       # Build test-filter by scanning the transport-interop/impl/python/ subdirs
@@ -90,4 +83,3 @@ jobs:
           test-ignore: ${{ steps.test-ignore.outputs.test-ignore }}
           test-root: ${{ steps.build-test-root.outputs.test-root }}
           update-readme: ${{ inputs.update-readme }}
-          gh-token: ${{ secrets.GITHUB_TOKEN }}
