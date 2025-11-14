@@ -261,7 +261,7 @@ implementations:
 Same format as hole-punch-interop:
 
 ```yaml
-test-filter:
+test-select:
   - rust-v0.53
   - rust-v0.54
 

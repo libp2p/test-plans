@@ -5,10 +5,12 @@ set -euo pipefail
 
 # Defaults
 CACHE_DIR="${CACHE_DIR:-/srv/cache}"
-TEST_FILTER="${TEST_FILTER:-}"
+TEST_SELECT="${TEST_SELECT:-}"
 TEST_IGNORE="${TEST_IGNORE:-}"
 WORKER_COUNT="${WORKER_COUNT:-$(nproc 2>/dev/null || echo 4)}"
 CHECK_DEPS_ONLY=false
+LIST_IMPLS=false
+LIST_TESTS=false
 CREATE_SNAPSHOT=false
 AUTO_YES=false
 DEBUG=false
@@ -22,7 +24,7 @@ Transport Interoperability Test Runner
 Usage: $0 [options]
 
 Options:
-  --test-filter VALUE    Filter tests (pipe-separated substrings)
+  --test-select VALUE    Select tests (pipe-separated substrings)
   --test-ignore VALUE    Ignore tests (pipe-separated substrings)
   --workers VALUE        Number of parallel workers (default: $(nproc 2>/dev/null || echo 4))
   --cache-dir VALUE      Cache directory (default: /srv/cache)
@@ -31,13 +33,15 @@ Options:
   --force-rebuild        Force the rebuilding of all docker images in the test pass
   -y, --yes              Skip confirmation prompt and run tests immediately
   --check-deps           Only check dependencies and exit
+  --list-impls           List all implementation IDs and exit
+  --list-tests           List all selected tests and exit
   --help                 Show this help message
 
 Examples:
   $0 --cache-dir /srv/cache --workers 4
-  $0 --test-filter "rust-v0.53" --workers 8
+  $0 --test-select "rust-v0.53" --workers 8
   $0 --test-ignore "webrtc"
-  $0 --test-filter "rust-v0.56"
+  $0 --test-select "rust-v0.56"
   $0 --snapshot --workers 8
 
 Dependencies:
@@ -49,7 +53,7 @@ EOF
 # Parse arguments
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --test-filter) TEST_FILTER="$2"; shift 2 ;;
+        --test-select) TEST_SELECT="$2"; shift 2 ;;
         --test-ignore) TEST_IGNORE="$2"; shift 2 ;;
         --workers) WORKER_COUNT="$2"; shift 2 ;;
         --cache-dir) CACHE_DIR="$2"; shift 2 ;;
@@ -58,6 +62,8 @@ while [[ $# -gt 0 ]]; do
         --force-rebuild) FORCE_REBUILD=true; shift ;;
         -y|--yes) AUTO_YES=true; shift ;;
         --check-deps) CHECK_DEPS_ONLY=true; shift ;;
+        --list-impls) LIST_IMPLS=true; shift ;;
+        --list-tests) LIST_TESTS=true; shift ;;
         --help|-h) show_help; exit 0 ;;
         *) echo "Unknown option: $1"; echo ""; show_help; exit 1 ;;
     esac
@@ -65,6 +71,71 @@ done
 
 # Change to script directory
 cd "$(dirname "$0")"
+
+echo ""
+echo "                        ╔╦╦╗  ╔═╗"
+echo "▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁ ║╠╣╚╦═╬╝╠═╗ ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁"
+echo "═══════════════════════ ║║║║║║║╔╣║║ ════════════════════════"
+echo "▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔ ╚╩╩═╣╔╩═╣╔╝ ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+echo "                            ╚╝  ╚╝"
+echo ""
+
+# List implementations
+if [ "$LIST_IMPLS" = true ]; then
+    if [ ! -f "impls.yaml" ]; then
+        echo "Error: impls.yaml not found"
+        exit 1
+    fi
+    echo "╲ Available Implementations"
+    echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+    yq eval '.implementations[].id' impls.yaml | sed 's/^/→ /'
+    echo ""
+    exit 0
+fi
+
+# List tests
+if [ "$LIST_TESTS" = true ]; then
+    # Create temporary directory for test matrix generation
+    TEMP_DIR=$(mktemp -d)
+    trap "rm -rf $TEMP_DIR" EXIT
+
+    export TEST_PASS_DIR="$TEMP_DIR"
+    export CACHE_DIR="${CACHE_DIR:-/srv/cache}"
+    export DEBUG="${DEBUG:-false}"
+
+    echo "╲ Generating test matrix..."
+    echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+
+    # Generate test matrix
+    if ! bash scripts/generate-tests.sh "$TEST_SELECT" "$TEST_IGNORE" "$DEBUG" > /dev/null 2>&1; then
+        echo "Error: Failed to generate test matrix"
+        exit 1
+    fi
+
+    # Extract and display test counts
+    test_count=$(yq eval '.metadata.totalTests' "$TEMP_DIR/test-matrix.yaml")
+    ignored_count=$(yq eval '.metadata.ignoredTests' "$TEMP_DIR/test-matrix.yaml")
+
+    echo ""
+    echo "╲ Selected Tests ($test_count tests)"
+    echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+
+    if [ "$test_count" -gt 0 ]; then
+        yq eval '.tests[].name' "$TEMP_DIR/test-matrix.yaml" | sed 's/^/→ /'
+    else
+        echo "→ No tests selected"
+    fi
+
+    if [ "$ignored_count" -gt 0 ]; then
+        echo ""
+        echo "╲ Ignored Tests ($ignored_count tests)"
+        echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+        yq eval '.ignoredTests[].name' "$TEMP_DIR/test-matrix.yaml" | sed 's/^/→ /'
+    fi
+
+    echo ""
+    exit 0
+fi
 
 # Check dependencies
 if [ "$CHECK_DEPS_ONLY" = true ]; then
@@ -74,14 +145,6 @@ fi
 
 export CACHE_DIR
 export DEBUG
-
-echo ""
-echo "                        ╔╦╦╗  ╔═╗"
-echo "▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁ ║╠╣╚╦═╬╝╠═╗ ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁"
-echo "═══════════════════════ ║║║║║║║╔╣║║ ════════════════════════"
-echo "▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔ ╚╩╩═╣╔╩═╣╔╝ ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-echo "                            ╚╝  ╚╝"
-echo ""
 
 echo "╲ Transport Interoperability Test Suite"
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
@@ -94,7 +157,7 @@ echo "→ Test Pass: $TEST_PASS_NAME"
 echo "→ Cache Dir: $CACHE_DIR"
 echo "→ Test Pass Dir: $TEST_PASS_DIR"
 echo "→ Workers: $WORKER_COUNT"
-[ -n "$TEST_FILTER" ] && echo "→ Filter: $TEST_FILTER"
+[ -n "$TEST_SELECT" ] && echo "→ Select: $TEST_SELECT"
 [ -n "$TEST_IGNORE" ] && echo "→ Ignore: $TEST_IGNORE"
 echo "→ Create Snapshot: $CREATE_SNAPSHOT"
 echo "→ Debug: $DEBUG"
@@ -130,8 +193,8 @@ fi
 echo ""
 echo "╲ Generating test matrix..."
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-echo "→ bash scripts/generate-tests.sh \"$TEST_FILTER\" \"$TEST_IGNORE\" \"$DEBUG\""
-bash scripts/generate-tests.sh "$TEST_FILTER" "$TEST_IGNORE" "$DEBUG"
+echo "→ bash scripts/generate-tests.sh \"$TEST_SELECT\" \"$TEST_IGNORE\" \"$DEBUG\""
+bash scripts/generate-tests.sh "$TEST_SELECT" "$TEST_IGNORE" "$DEBUG"
 
 # 3. Extract unique implementations from test matrix and build only those
 echo ""

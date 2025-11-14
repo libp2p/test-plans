@@ -80,7 +80,7 @@ Expected output:
 
 ╲ Test Matrix Generation
  ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
-→ No test-filter specified (will include all tests)
+→ No test-select specified (will include all tests)
 → Loaded test-ignore from test-selection.yaml
 → Computed cache key: fdd31961
   → [MISS] Generating new test matrix
@@ -197,23 +197,23 @@ pandoc -f markdown -t html -s -o results.html results.md
 
 ```bash
 # Test only Rust
-./run_tests.sh --test-filter "rust" --workers 4
+./run_tests.sh --test-select "rust" --workers 4
 
 # Test only Python
-./run_tests.sh --test-filter "python" --workers 2
+./run_tests.sh --test-select "python" --workers 2
 
 # Test specific version
-./run_tests.sh --test-filter "rust-v0.53" --workers 4
+./run_tests.sh --test-select "rust-v0.53" --workers 4
 ```
 
 ### Test Specific Transports
 
 ```bash
 # Test only QUIC
-./run_tests.sh --test-filter "quic" --workers 4
+./run_tests.sh --test-select "quic" --workers 4
 
 # Test only TCP
-./run_tests.sh --test-filter "tcp" --workers 8
+./run_tests.sh --test-select "tcp" --workers 8
 
 # Skip WebRTC
 ./run_tests.sh --test-ignore "webrtc" --workers 4
@@ -223,10 +223,10 @@ pandoc -f markdown -t html -s -o results.html results.md
 
 ```bash
 # Test only noise secure channel
-./run_tests.sh --test-filter "noise" --workers 4
+./run_tests.sh --test-select "noise" --workers 4
 
 # Test only yamux muxer
-./run_tests.sh --test-filter "yamux" --workers 4
+./run_tests.sh --test-select "yamux" --workers 4
 
 # Skip plaintext (insecure)
 ./run_tests.sh --test-ignore "plaintext" --workers 8
@@ -239,7 +239,7 @@ pandoc -f markdown -t html -s -o results.html results.md
 ./run_tests.sh --debug --workers 4
 
 # Combine with filters
-./run_tests.sh --test-filter "rust-v0.56" --debug --workers 2
+./run_tests.sh --test-select "rust-v0.56" --debug --workers 2
 ```
 
 ### Create Debug Snapshot
@@ -352,7 +352,7 @@ cat logs/rust-v0.53_x_rust-v0.54_tcp_noise_yamux.log
 3. **Filter during development**
    ```bash
    # Only test what you're working on
-   ./run_tests.sh --test-filter "rust-v0.54" --workers 2
+   ./run_tests.sh --test-select "rust-v0.54" --workers 2
    ```
 
 ## Next Steps
@@ -374,7 +374,7 @@ cat logs/rust-v0.53_x_rust-v0.54_tcp_noise_yamux.log
 vim impls.yaml
 
 # 4. Test only new version (with debug output)
-./run_tests.sh --test-filter "rust-v0.55" --debug --cache-dir ~/.cache/libp2p
+./run_tests.sh --test-select "rust-v0.55" --debug --cache-dir ~/.cache/libp2p
 
 # 5. Run full suite
 ./run_tests.sh --cache-dir ~/.cache/libp2p --workers 8

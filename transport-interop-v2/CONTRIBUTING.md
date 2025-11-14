@@ -39,7 +39,7 @@ implementations:
 
 **For global test selection** (`test-selection.yaml` in project root):
 ```yaml
-test-filter:
+test-select:
   - go-v0.35
 
 test-ignore:
@@ -55,7 +55,7 @@ export CACHE_DIR=/tmp/cache
 bash scripts/build-images.sh go-v0.35
 
 # Run tests filtered to your implementation
-./run_tests.sh --test-filter "go-v0.35" --cache-dir /tmp/cache --workers 4
+./run_tests.sh --test-select "go-v0.35" --cache-dir /tmp/cache --workers 4
 ```
 
 ### 4. Submit Pull Request
@@ -124,16 +124,16 @@ fn main() {
 
 ```bash
 # Test only TCP transport
-./run_tests.sh --test-filter "tcp" --workers 8
+./run_tests.sh --test-select "tcp" --workers 8
 
 # Test only noise secure channel
-./run_tests.sh --test-filter "noise" --workers 4
+./run_tests.sh --test-select "noise" --workers 4
 
 # Test only yamux muxer
-./run_tests.sh --test-filter "yamux" --workers 4
+./run_tests.sh --test-select "yamux" --workers 4
 
 # Combine filters (OR logic)
-./run_tests.sh --test-filter "tcp|quic" --workers 8
+./run_tests.sh --test-select "tcp|quic" --workers 8
 ```
 
 ### Ignore Problematic Tests
@@ -309,7 +309,7 @@ vim impls.yaml
 rm /srv/cache/snapshots/<old-commit>.zip
 
 # 3. Run tests
-./run_tests.sh --test-filter "rust-v0.54" --cache-dir /srv/cache
+./run_tests.sh --test-select "rust-v0.54" --cache-dir /srv/cache
 ```
 
 ## Test Matrix Examples

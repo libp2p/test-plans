@@ -147,11 +147,19 @@ cat > "$SNAPSHOT_DIR/re-run.sh" <<'EOF'
 
 set -euo pipefail
 
-echo "Re-running test pass from snapshot..."
-echo ""
-
 # Change to snapshot directory
 cd "$(dirname "$0")"
+
+echo ""
+echo "                        ╔╦╦╗  ╔═╗"
+echo "▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁ ║╠╣╚╦═╬╝╠═╗ ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁"
+echo "═══════════════════════ ║║║║║║║╔╣║║ ════════════════════════"
+echo "▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔ ╚╩╩═╣╔╩═╣╔╝ ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+echo "                            ╚╝  ╚╝"
+echo ""
+
+echo "╲ Re-running test pass from snapshot..."
+echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
 # Check if required files exist
 if [ ! -f impls.yaml ] || [ ! -f test-matrix.yaml ]; then
@@ -161,8 +169,9 @@ fi
 
 # Read settings
 if [ -f settings.yaml ]; then
-    echo "Snapshot configuration:"
-    grep -v "^cacheDir:" settings.yaml
+    echo "╲ Snapshot configuration:"
+    echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+    grep -v '^#' settings.yaml | grep -v '^cacheDir:' | sed 's/^/  /'
     echo ""
 fi
 
@@ -183,9 +192,9 @@ cp test-matrix.yaml "$RERUN_DIR/"
 
 export TEST_PASS_DIR="$RERUN_DIR"
 
-echo "This snapshot contains all source code and configurations."
-echo "Re-run results will be saved to: re-runs/$RERUN_TIMESTAMP"
-echo "Re-running will use the cached artifacts in this directory."
+echo "  This snapshot contains all source code and configurations."
+echo "  Re-run results will be saved to: re-runs/$RERUN_TIMESTAMP"
+echo "  Re-running will use the cached artifacts in this directory."
 echo ""
 read -p "Continue? (Y/n) " -n 1 response
 response=${response:-Y} # Default to Y if user just presses enter
@@ -247,8 +256,7 @@ if [ -d docker-images ]; then
     for image_file in docker-images/*.tar.gz; do
         if [ -f "$image_file" ]; then
             image_name=$(basename "$image_file" .tar.gz)
-            echo "  Loading: $image_name"
-            gunzip -c "$image_file" | docker load
+            gunzip -c "$image_file" | docker load | sed 's/^/  → /'
         fi
     done
     echo "  ✓ All images loaded"
@@ -257,17 +265,14 @@ else
     bash scripts/build-images.sh
 fi
 
+WORKER_COUNT=$(nproc 2>/dev/null || echo 4)
+
 # Re-run tests in parallel
 echo ""
-echo "╲ Re-running tests..."
+echo "╲ Re-running tests... ($WORKER_COUNT workers)"
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
 test_count=$(yq eval '.tests | length' test-matrix.yaml)
-WORKER_COUNT=$(nproc 2>/dev/null || echo 4)
-
-echo "Total tests: $test_count"
-echo "Parallel workers: $WORKER_COUNT"
-echo ""
 
 # Initialize results
 > "$RERUN_DIR/results.yaml.tmp"
@@ -387,13 +392,13 @@ if [ "$FAILED" -gt 0 ]; then
     readarray -t FAILED_TESTS < <(yq eval '.tests[] | select(.status == "fail") | .name' "$RERUN_DIR/results.yaml")
 fi
 
-echo "Results:"
-echo "  Total: $test_count"
-echo "  Passed: $PASSED"
-echo "  Failed: $FAILED"
+echo "→ Results:"
+echo "  → Total: $test_count"
+echo "  ✓ Passed: $PASSED"
+echo "  ✗ Failed: $FAILED"
 if [ "$FAILED" -gt 0 ]; then
-    for test_name in "\${FAILED_TESTS[@]}"; do
-        echo "    - \$test_name"
+    for test_name in "${FAILED_TESTS[@]}"; do
+        echo "    - $test_name"
     done
 fi
 echo ""
@@ -402,23 +407,31 @@ echo ""
 HOURS=$((RERUN_DURATION / 3600))
 MINUTES=$(((RERUN_DURATION % 3600) / 60))
 SECONDS=$((RERUN_DURATION % 60))
-printf "Total time: %02d:%02d:%02d\n" $HOURS $MINUTES $SECONDS
+printf "→ Total time: %02d:%02d:%02d\n" $HOURS $MINUTES $SECONDS
+
+echo ""
+if [ "$FAILED" -eq 0 ]; then
+    echo "╲ ✓ All tests passed!"
+    echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+else
+    echo "╲ ✗ $FAILED test(s) failed"
+    echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+fi
 
 # Generate dashboard
 echo ""
 echo "╲ Generating results dashboard..."
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+echo "→ bash scripts/generate-dashboard.sh"
 bash scripts/generate-dashboard.sh
 
 echo ""
 echo "╲ ✓ Re-run complete"
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-echo ""
-echo "Results saved to: re-runs/$RERUN_TIMESTAMP/"
-echo "  - results.yaml"
-echo "  - results.md"
-echo "  - results.html"
-echo "  - logs/"
+echo "→ Results saved to: re-runs/$RERUN_TIMESTAMP/"
+echo "  ✓ results.yaml"
+echo "  ✓ results.md"
+echo "  ✓ logs/"
 EOF
 
 chmod +x "$SNAPSHOT_DIR/re-run.sh"
@@ -482,9 +495,9 @@ echo "╲ ✓ Snapshot created successfully"
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 echo "→ Snapshot: $test_pass"
 echo "→ Location: $SNAPSHOT_DIR"
-echo "→ Archive: ${test_pass}.tar.gz ($snapshot_size)"
+echo "→ Archive: $CACHE_DIR/test-passes/${test_pass}.tar.gz ($snapshot_size)"
 echo ""
 echo "→ To extract and re-run:"
-echo "    tar -xzf ${test_pass}.tar.gz"
+echo "    tar -xzf $CACHE_DIR/test-passes/${test_pass}.tar.gz"
 echo "    cd $test_pass"
 echo "    ./re-run.sh"

@@ -69,7 +69,7 @@ Each test runs with just 2 containers: `dialer` and `listener`.
 ./run_tests.sh --cache-dir /srv/cache --workers 8
 
 # Run only rust tests
-./run_tests.sh --test-filter "rust" --workers 4
+./run_tests.sh --test-select "rust" --workers 4
 
 # Skip quic tests
 ./run_tests.sh --test-ignore "quic" --workers 4
@@ -98,7 +98,7 @@ implementations:
 
 **test-selection.yaml** (global, in project root):
 ```yaml
-test-filter: []
+test-select: []
 test-ignore:
   - flaky
 ```
@@ -218,5 +218,5 @@ tests:
 
 3. Run tests:
    ```bash
-   ./run_tests.sh --test-filter "go-v0.35"
+   ./run_tests.sh --test-select "go-v0.35"
    ```

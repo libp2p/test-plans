@@ -103,7 +103,7 @@ for ((i=0; i<impl_count; i++)); do
             fi
 
             # Build Docker image
-            echo "→ Building Docker image..."
+            echo "→ Building Docker image: docker build -f $extracted_dir/$dockerfile -t $impl_id $extracted_dir"
             if ! docker build -f "$extracted_dir/$dockerfile" -t "$impl_id" "$extracted_dir"; then
                 echo "✗ Docker build failed"
                 exit 1

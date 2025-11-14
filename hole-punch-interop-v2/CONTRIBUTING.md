@@ -29,24 +29,17 @@ implementations:
 
 ### 2. Update test-selection.yaml (Optional)
 
-If you want to filter or ignore specific tests for this implementation:
+Update global test selection defaults (`test-selection.yaml`):
 
-**For language-wide defaults** (`impls/rust/test-selection.yaml`):
 ```yaml
-test-filter:
-  - rust-v0.54  # Add your version
-
-test-ignore:
-  - rust-v0.54 x rust-v0.54 (tcp)  # Skip specific tests if needed
-```
-
-**For global defaults** (`test-selection.yaml`):
-```yaml
-test-filter: []  # Usually empty for full test runs
+test-select: []  # Empty = all tests (or add specific filters)
 
 test-ignore:
   - experimental  # Global ignores apply to all tests
+  - flaky
 ```
+
+**Note:** Test filtering is primarily done via CLI args, not YAML files.
 
 ### 3. Test Locally
 
@@ -56,7 +49,13 @@ export CACHE_DIR=/tmp/cache
 bash scripts/build-images.sh rust-v0.54
 
 # Run tests filtered to your implementation
-./run_tests.sh --test-filter "rust-v0.54" --cache-dir /tmp/cache --workers 4
+./run_tests.sh --test-select "rust-v0.54" --cache-dir /tmp/cache --workers 4
+
+# Run with debug output enabled
+./run_tests.sh --test-select "rust-v0.54" --debug --yes
+
+# Force rebuild images
+./run_tests.sh --test-select "rust-v0.54" --force-rebuild
 ```
 
 ### 4. Submit Pull Request
@@ -78,6 +77,7 @@ Your implementation must:
 5. **Output Results** - Print test results to stdout
 6. **Exit Codes** - Return 0 on success, non-zero on failure
 7. **Timeout** - Respect `TEST_TIMEOUT_SECONDS` environment variable
+8. **Debug Mode** - Honor `DEBUG=true` environment variable for verbose logging (optional)
 
 ### Example Dockerfile
 
@@ -143,13 +143,13 @@ Adjust worker count based on your machine:
 
 ```bash
 # Test only Rust implementations
-./run_tests.sh --test-filter "rust"
+./run_tests.sh --test-select "rust"
 
 # Test only TCP transport
-./run_tests.sh --test-filter "tcp"
+./run_tests.sh --test-select "tcp"
 
 # Test specific version
-./run_tests.sh --test-filter "rust-v0.54"
+./run_tests.sh --test-select "rust-v0.54"
 
 # Ignore flaky tests
 ./run_tests.sh --test-ignore "experimental"
@@ -288,7 +288,7 @@ vim impls.yaml
 rm /srv/cache/snapshots/<old-commit>.zip
 
 # 3. Run tests
-./run_tests.sh --test-filter "rust-v0.54"
+./run_tests.sh --test-select "rust-v0.54"
 ```
 
 ## Architecture Overview
@@ -329,7 +329,7 @@ All artifacts are cached by content hash:
 
 - **Snapshots**: `/srv/cache/snapshots/<commit-sha>.zip`
 - **Test matrices**: `/srv/cache/test-matrix/<sha256>.yaml`
-- **Test passes**: `/srv/cache/test-passes/hole-punch-<kind>-<timestamp>.tar.gz`
+- **Test passes**: `/srv/cache/test-passes/hole-punch-<timestamp>/`
 
 ## Questions?
 
