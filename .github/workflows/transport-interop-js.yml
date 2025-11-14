@@ -21,7 +21,6 @@ jobs:
       - name: Checkout PR branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref }}
           fetch-depth: 0
 
       # Build test-filter by scanning the transport-interop/impl/js/ subdirs
