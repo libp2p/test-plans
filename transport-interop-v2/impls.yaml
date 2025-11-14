@@ -1,0 +1,327 @@
+# Transport Interop - Implementation Definitions
+# This file defines all libp2p implementations to test for transport interoperability
+
+implementations:
+  # Rust implementations
+  - id: rust-v0.53
+    source:
+      type: github
+      repo: libp2p/rust-libp2p
+      commit: b7914e407da34c99fb76dcc300b3d44b9af97fac
+      dockerfile: interop-tests/Dockerfile.native
+    transports: [ws, tcp, quic-v1, webrtc-direct]
+    secureChannels: [tls, noise]
+    muxers: [mplex, yamux]
+
+  - id: rust-v0.54
+    source:
+      type: github
+      repo: libp2p/rust-libp2p
+      commit: d7beb55f672dce54017fa4b30f67ecb8d66b9810
+      dockerfile: interop-tests/Dockerfile.native
+    transports: [ws, tcp, quic-v1, webrtc-direct]
+    secureChannels: [tls, noise]
+    muxers: [mplex, yamux]
+
+  - id: rust-v0.55
+    source:
+      type: github
+      repo: libp2p/rust-libp2p
+      commit: 9698607c72ea7b8f5e661963ab0e24384aef1e4e
+      dockerfile: interop-tests/Dockerfile.native
+    transports: [ws, tcp, quic-v1, webrtc-direct]
+    secureChannels: [tls, noise]
+    muxers: [mplex, yamux]
+
+  - id: rust-v0.56
+    source:
+      type: github
+      repo: libp2p/rust-libp2p
+      commit: 70082df7e6181722630eabc5de5373733aac9a21
+      dockerfile: interop-tests/Dockerfile.native
+    transports: [ws, tcp, quic-v1, webrtc-direct]
+    secureChannels: [tls, noise]
+    muxers: [mplex, yamux]
+
+  # Go implementations (commit SHAs from git tags)
+  - id: go-v0.38
+    source:
+      type: github
+      repo: libp2p/go-libp2p
+      commit: 7ce9c5024bc4c91fa7a3420e9a542435b9af6831  # v0.38.1
+      dockerfile: test-plans/PingDockerfile
+    transports: [tcp, ws, wss, quic-v1, webtransport, webrtc-direct]
+    secureChannels: [tls, noise]
+    muxers: [yamux]
+
+  - id: go-v0.39
+    source:
+      type: github
+      repo: libp2p/go-libp2p
+      commit: f38ab369bd8452a3df73ac6add0e02dd3f31fce3  # v0.39.0
+      dockerfile: test-plans/PingDockerfile
+    transports: [tcp, ws, wss, quic-v1, webtransport, webrtc-direct]
+    secureChannels: [tls, noise]
+    muxers: [yamux]
+
+  - id: go-v0.40
+    source:
+      type: github
+      repo: libp2p/go-libp2p
+      commit: ce335621f2966a54001161ec313dbfda7a1296fe  # v0.40.0
+      dockerfile: test-plans/PingDockerfile
+    transports: [tcp, ws, wss, quic-v1, webtransport, webrtc-direct]
+    secureChannels: [tls, noise]
+    muxers: [yamux]
+
+  - id: go-v0.41
+    source:
+      type: github
+      repo: libp2p/go-libp2p
+      commit: 578af0c651a61549cc51a08c70f611c8977ae75e  # v0.41.0
+      dockerfile: test-plans/PingDockerfile
+    transports: [tcp, ws, wss, quic-v1, webtransport, webrtc-direct]
+    secureChannels: [tls, noise]
+    muxers: [yamux]
+
+  - id: go-v0.42
+    source:
+      type: github
+      repo: libp2p/go-libp2p
+      commit: 000582cf2c5864b406122d9cff46dd3b8b04abe3  # v0.42.0
+      dockerfile: test-plans/PingDockerfile
+    transports: [tcp, ws, wss, quic-v1, webtransport, webrtc-direct]
+    secureChannels: [tls, noise]
+    muxers: [yamux]
+
+  - id: go-v0.43
+    source:
+      type: github
+      repo: libp2p/go-libp2p
+      commit: b75e678e64557ced9e02130b7253610c2a09447a  # v0.43.0
+      dockerfile: test-plans/PingDockerfile
+    transports: [tcp, ws, wss, quic-v1, webtransport, webrtc-direct]
+    secureChannels: [tls, noise]
+    muxers: [yamux]
+
+  - id: go-v0.44
+    source:
+      type: github
+      repo: libp2p/go-libp2p
+      commit: bc0a6d52f507f378b7e6e66979b5cbd82c239bef  # v0.44.0
+      dockerfile: test-plans/PingDockerfile
+    transports: [tcp, ws, wss, quic-v1, webtransport, webrtc-direct]
+    secureChannels: [tls, noise]
+    muxers: [yamux]
+
+  - id: go-v0.45
+    source:
+      type: github
+      repo: libp2p/go-libp2p
+      commit: d0ecbf99a977f95428c72ec436b96ba17bbcfea0  # v0.45.0
+      dockerfile: test-plans/PingDockerfile
+    transports: [tcp, ws, wss, quic-v1, webtransport, webrtc-direct]
+    secureChannels: [tls, noise]
+    muxers: [yamux]
+
+  # Python implementation
+  - id: python-v0.4 # scripts split '-' into impl/python/v0.4
+    source:
+      type: github
+      repo: libp2p/py-libp2p
+      commit: 09d0064f1d1dbee64a148d72374ed51ecc80ad4d
+      dockerfile: Dockerfile  # In impl/python/v0.4/ directory
+      buildContext: local  # Uses local Dockerfile, not from repo
+    transports: [tcp, quic-v1]
+    secureChannels: [noise]
+    muxers: [mplex, yamux]
+
+  # JavaScript implementations (Node.js)
+  - id: js-v1.x
+    source:
+      type: local
+      path: impls/js/v1.x
+      dockerfile: Dockerfile
+    transports: [tcp, ws, wss]
+    secureChannels: [noise]
+    muxers: [mplex, yamux]
+    dialOnly: [wss]  # wss can only dial
+
+  - id: js-v2.x
+    source:
+      type: local
+      path: impls/js/v2.x
+      dockerfile: Dockerfile
+    transports: [tcp, ws, wss]
+    secureChannels: [noise]
+    muxers: [mplex, yamux]
+    dialOnly: [wss]
+
+  - id: js-v3.x
+    source:
+      type: local
+      path: impls/js/v3.x
+      dockerfile: Dockerfile
+    transports: [tcp, ws, wss]
+    secureChannels: [noise]
+    muxers: [mplex, yamux]
+    dialOnly: [wss]
+
+  # Nim implementation
+  - id: nim-v1.14
+    source:
+      type: github
+      repo: status-im/nim-libp2p
+      commit: 0309685cd27d4bf763c8b3be86a76c33bcfe67ea
+      dockerfile: interop/transport/Dockerfile
+    transports: [tcp, ws]
+    secureChannels: [noise]
+    muxers: [mplex, yamux]
+
+  # JVM implementation
+  - id: jvm-v1.2
+    source:
+      type: github
+      repo: libp2p/jvm-libp2p
+      commit: 737456de5d96db030aa04c8527585af1a510898f
+      dockerfile: Dockerfile
+    transports: [tcp, ws, quic-v1]
+    secureChannels: [tls, noise]
+    muxers: [mplex, yamux]
+
+  # C implementation
+  - id: c-v0.0.1
+    source:
+      type: github
+      repo: Pier-Two/c-libp2p
+      commit: 23a617223a3bbfb4b2af8f219f389e440b9c1ac2
+      dockerfile: interop-tests/transport/Dockerfile
+      requiresSubmodules: true  # Needs git submodules
+      complexBuild: true  # Has many external dependencies
+    transports: [tcp, quic-v1]
+    secureChannels: [noise]
+    muxers: [mplex, yamux]
+
+  # .NET implementation
+  - id: dotnet-v1.0
+    source:
+      type: github
+      repo: NethermindEth/dotnet-libp2p
+      commit: 91be8757237dba57b1f1688799c4fec808060fdb
+      dockerfile: src/samples/transport-interop/Dockerfile
+    transports: [tcp]
+    secureChannels: [noise]
+    muxers: [yamux]
+
+  # Zig implementation
+  - id: zig-v0.0.1
+    source:
+      type: github
+      repo: marcopolo/zig-libp2p
+      commit: d4a679ee48acae25b5c55c91918f89dec1b78e85
+      dockerfile: interop/Dockerfile
+    transports: [quic-v1]
+    secureChannels: []
+    muxers: []
+
+  # Ethereum P2P implementation (Zig-based)
+  - id: eth-p2p-z-v0.0.1
+    source:
+      type: github
+      repo: zen-eth/eth-p2p-z
+      commit: a517a15d7845698c56c37e9135d45eb437660845
+      dockerfile: interop/transport/Dockerfile
+    transports: [quic-v1]
+    secureChannels: []
+    muxers: []
+
+  # Browser implementations (require local build)
+  # Note: Browser images are built from js implementations
+  - id: chromium-js-v1.x
+    source:
+      type: browser
+      baseImage: js-v1.x
+      browser: chromium
+      dockerfile: impls/js/v1.x/BrowserDockerfile
+    transports: [webtransport, wss, webrtc-direct, webrtc]
+    secureChannels: [noise]
+    muxers: [mplex, yamux]
+    dialOnly: [webtransport, wss, webrtc-direct]
+
+  - id: chromium-js-v2.x
+    source:
+      type: browser
+      baseImage: js-v2.x
+      browser: chromium
+      dockerfile: impls/js/v2.x/BrowserDockerfile
+    transports: [webtransport, wss, webrtc-direct, webrtc]
+    secureChannels: [noise]
+    muxers: [mplex, yamux]
+    dialOnly: [webtransport, wss, webrtc-direct]
+
+  - id: firefox-js-v1.x
+    source:
+      type: browser
+      baseImage: js-v1.x
+      browser: firefox
+      dockerfile: impls/js/v1.x/BrowserDockerfile
+    transports: [webtransport, wss, webrtc-direct, webrtc]
+    secureChannels: [noise]
+    muxers: [mplex, yamux]
+    dialOnly: [webtransport, wss, webrtc-direct]
+
+  - id: firefox-js-v2.x
+    source:
+      type: browser
+      baseImage: js-v2.x
+      browser: firefox
+      dockerfile: impls/js/v2.x/BrowserDockerfile
+    transports: [webtransport, wss, webrtc-direct, webrtc]
+    secureChannels: [noise]
+    muxers: [mplex, yamux]
+    dialOnly: [webtransport, wss, webrtc-direct]
+
+  - id: webkit-js-v1.x
+    source:
+      type: browser
+      baseImage: js-v1.x
+      browser: webkit
+      dockerfile: impls/js/v1.x/BrowserDockerfile
+    transports: [wss, webrtc-direct, webrtc]
+    secureChannels: [noise]
+    muxers: [mplex, yamux]
+    dialOnly: [wss, webrtc-direct]
+
+  - id: webkit-js-v2.x
+    source:
+      type: browser
+      baseImage: js-v2.x
+      browser: webkit
+      dockerfile: impls/js/v2.x/BrowserDockerfile
+    transports: [wss, webrtc-direct, webrtc]
+    secureChannels: [noise]
+    muxers: [mplex, yamux]
+    dialOnly: [wss, webrtc-direct]
+
+  # Rust browser implementations
+  - id: chromium-rust-v0.53
+    source:
+      type: browser
+      baseImage: rust-v0.53
+      browser: chromium
+      dockerfile: impls/chromium-rust/BrowserDockerfile
+    transports: [webtransport, webrtc-direct, ws]
+    secureChannels: [noise]
+    muxers: [mplex, yamux]
+    dialOnly: [webtransport, webrtc-direct, ws]
+
+  - id: chromium-rust-v0.54
+    source:
+      type: browser
+      baseImage: rust-v0.54
+      browser: chromium
+      dockerfile: impls/chromium-rust/BrowserDockerfile
+    transports: [webtransport, webrtc-direct, ws]
+    secureChannels: [noise]
+    muxers: [mplex, yamux]
+    dialOnly: [webtransport, webrtc-direct, ws]

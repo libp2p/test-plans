@@ -1,0 +1,13 @@
+# Hole Punch Interop - Implementation Definitions
+# This file defines all libp2p implementations to test for hole punching interoperability
+
+implementations:
+  - id: rust-v0.53
+    source:
+      type: github
+      repo: libp2p/rust-libp2p
+      commit: b7914e407da34c99fb76dcc300b3d44b9af97fac
+      dockerfile: hole-punching-tests/Dockerfile
+    transports:
+      - tcp
+      - quic

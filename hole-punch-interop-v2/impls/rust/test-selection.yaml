@@ -1,0 +1,12 @@
+# Test selection configuration for Rust implementations
+# Used as default when no --test-filter or --test-ignore args provided
+
+# test-filter: List of substring patterns to match test names (OR logic)
+# If empty or omitted, all tests are initially selected
+test-filter:
+  - rust-v0.53
+
+# test-ignore: List of substring patterns to exclude from selected tests
+# Applied after test-filter
+test-ignore:
+  - rust-v0.53 x rust-v0.53 (tcp)  # Skip rust self-tests on TCP
