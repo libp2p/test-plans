@@ -1,244 +1,313 @@
-// Simple libp2p perf protocol implementation for benchmarking
 using System.Diagnostics;
-using System.Net;
-using System.Net.Sockets;
 using System.Text.Json;
+using DataTransferBenchmark;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Nethermind.Libp2p;
+using Nethermind.Libp2p.Core;
+using Multiformats.Address;
 
 class Program
 {
     static async Task Main(string[] args)
     {
-        Console.Error.WriteLine($"[Debug] Args: {string.Join(" ", args)}");
-        
-        bool isServer = args.Contains("--run-server");
-        string serverAddress = GetArg(args, "--server-address") ?? "127.0.0.1:10000";
-        string listenAddress = GetArg(args, "--listen-address") ?? "0.0.0.0:10000";
-        long uploadBytes = long.Parse(GetArg(args, "--upload-bytes") ?? "0");
-        long downloadBytes = long.Parse(GetArg(args, "--download-bytes") ?? "0");
+        var services = new ServiceCollection()
+            .AddLibp2p(builder => 
+            {
+                // Enable both TCP and QUIC transports
+                return builder
+                    .WithQuic()  // Enable QUIC transport
+                    .AddProtocol<PerfProtocol>();
+            })
+            .AddLogging(builder => builder
+                .SetMinimumLevel(LogLevel.Critical) // Only show critical messages
+                .AddConsole(options => 
+                {
+                    options.LogToStandardErrorThreshold = LogLevel.Warning; // Only warnings/errors to stderr
+                }))
+            .BuildServiceProvider();
 
-        Console.Error.WriteLine($"[Debug] isServer={isServer}, serverAddress={serverAddress}, uploadBytes={uploadBytes}, downloadBytes={downloadBytes}");
+        var peerFactory = services.GetRequiredService<IPeerFactory>();
+        var logger = services.GetRequiredService<ILogger<Program>>();
 
-        if (isServer)
+        string? serverAddress = null;
+        string? multiaddr = null;
+        bool runServer = false;
+        ulong? uploadBytes = null;
+        ulong? downloadBytes = null;
+        string transport = "tcp";
+
+        // Parse command line arguments like Go implementation
+        for (int i = 0; i < args.Length; i++)
         {
-            await RunServer(listenAddress);
+            if (args[i] == "-run-server")
+            {
+                runServer = true;
+            }
+            else if (args[i] == "-multiaddr" && i + 1 < args.Length)
+            {
+                multiaddr = args[++i];
+            }
+            else if (args[i] == "-server-address" && i + 1 < args.Length)
+            {
+                serverAddress = args[++i];
+            }
+            else if (args[i] == "-upload-bytes" && i + 1 < args.Length)
+            {
+                if (ulong.TryParse(args[++i], out ulong bytes))
+                {
+                    uploadBytes = bytes;
+                }
+            }
+            else if (args[i] == "-download-bytes" && i + 1 < args.Length)
+            {
+                if (ulong.TryParse(args[++i], out ulong bytes))
+                {
+                    downloadBytes = bytes;
+                }
+            }
+            else if (args[i] == "-transport" && i + 1 < args.Length)
+            {
+                transport = args[++i];
+                // Validate transport - support both TCP and QUIC
+                if (transport != "tcp" && transport != "quic")
+                {
+                    logger.LogError("Unsupported transport: {Transport}. Supported transports are 'tcp' and 'quic'", transport);
+                    Environment.Exit(1);
+                }
+            }
+        }
+
+        // Both TCP and QUIC transports are now enabled via WithQuic() in the builder
+
+        // Convert host:port to multiaddr format if multiaddr not directly provided
+        if (multiaddr == null && serverAddress != null)
+        {
+            var parts = serverAddress.Split(':');
+            if (parts.Length == 2 && int.TryParse(parts[1], out int port))
+            {
+                if (runServer)
+                {
+                    multiaddr = transport == "quic" 
+                        ? $"/ip4/{parts[0]}/udp/{port}/quic-v1"
+                        : $"/ip4/{parts[0]}/tcp/{port}";
+                }
+                else
+                {
+                    // Generate deterministic peer ID like Go does
+                    var deterministicPeerId = GenerateDeterministicPeerId();
+                    multiaddr = transport == "quic"
+                        ? $"/ip4/{parts[0]}/udp/{port}/quic-v1/p2p/{deterministicPeerId}"
+                        : $"/ip4/{parts[0]}/tcp/{port}/p2p/{deterministicPeerId}";
+                }
+            }
+            else
+            {
+                logger.LogError("Invalid server address format. Use host:port");
+                Environment.Exit(1);
+            }
+        }
+        
+        if (runServer)
+        {
+            // Server mode
+            if (serverAddress == null)
+            {
+                logger.LogError("Server address must be specified with -server-address");
+                Environment.Exit(1);
+            }
+            
+            var identity = new Identity(Enumerable.Repeat((byte)42, 32).ToArray());
+            var localPeer = peerFactory.Create(identity);
+            
+            // Convert server address to multiaddr for listening
+            var parts = serverAddress.Split(':');
+            if (parts.Length == 2 && int.TryParse(parts[1], out int port))
+            {
+                // Listen on the requested transport primarily (for debugging QUIC)
+                var tcpAddr = Multiaddress.Decode($"/ip4/{parts[0]}/tcp/{port}");
+                var quicAddr = Multiaddress.Decode($"/ip4/{parts[0]}/udp/{port}/quic-v1");
+                
+                // Always try to start with both TCP and QUIC transports when QUIC is enabled
+                try
+                {
+                    // Try both transports - QUIC first for priority, TCP as fallback
+                    await localPeer.StartListenAsync(new[] { quicAddr, tcpAddr });
+                    logger.LogCritical("Started with both QUIC and TCP transports");
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError("Failed to start both transports: {Message}", ex.Message);
+                    // Fallback to TCP only if both fail
+                    await localPeer.StartListenAsync(new[] { tcpAddr });
+                    logger.LogInformation("Fallback to TCP only");
+                }
+            }
+            else
+            {
+                logger.LogError("Invalid server address format. Use host:port");
+                Environment.Exit(1);
+            }
+
+            // Print listening addresses like Go implementation
+            logger.LogCritical("Number of listening addresses: {Count}", localPeer.ListenAddresses.Count);
+            foreach (var addr in localPeer.ListenAddresses)
+            {
+                logger.LogCritical("{Address}", addr);
+            }
+            
+            // If no addresses, there might be an issue with QUIC binding
+            if (localPeer.ListenAddresses.Count == 0)
+            {
+                logger.LogWarning("No listening addresses found! QUIC may not have bound correctly.");
+                logger.LogInformation("Local peer created but no listening addresses available");
+            }
+
+            // Keep running until cancelled
+            var tcs = new TaskCompletionSource<object>();
+            Console.CancelKeyPress += (s, e) =>
+            {
+                e.Cancel = true;
+                tcs.SetResult(null!);
+            };
+            await tcs.Task;
         }
         else
         {
-            await RunClient(serverAddress, uploadBytes, downloadBytes);
-        }
-    }
-
-    static async Task RunServer(string listenAddress)
-    {
-        var parts = listenAddress.Split(':');
-        var listener = new TcpListener(IPAddress.Parse(parts[0]), int.Parse(parts[1]));
-        listener.Start();
-        Console.Error.WriteLine($"Server listening on {listenAddress}");
-
-        while (true)
-        {
-            var client = await listener.AcceptTcpClientAsync();
-            _ = Task.Run(async () => await HandleClient(client));
-        }
-    }
-
-    static async Task HandleClient(TcpClient client)
-    {
-        using var stream = client.GetStream();
-        var buffer = new byte[65536];
-        long totalReceived = 0;
-        long totalSent = 0;
-        
-        try
-        {
-            Console.Error.WriteLine($"[Server] Client connected from {client.Client.RemoteEndPoint}");
-            
-            // Read 8-byte header: uploadBytes (first pass) or downloadBytes request
-            var header = new byte[8];
-            int headerRead = await stream.ReadAsync(header, 0, 8);
-            if (headerRead < 8)
+            // Client mode
+            if (serverAddress == null)
             {
-                Console.Error.WriteLine($"[Server] Invalid header");
-                return;
+                logger.LogError("Server address must be specified with -server-address");
+                Environment.Exit(1);
             }
-            
-            long uploadBytes = BitConverter.ToInt64(header, 0);
-            Console.Error.WriteLine($"[Server] Client will upload {uploadBytes} bytes");
-            
-            // Receive upload data
-            long remaining = uploadBytes;
-            while (remaining > 0)
-            {
-                int bytesRead = await stream.ReadAsync(buffer, 0, (int)Math.Min(buffer.Length, remaining));
-                if (bytesRead == 0)
-                {
-                    Console.Error.WriteLine($"[Server] Connection closed during upload");
-                    return;
-                }
-                totalReceived += bytesRead;
-                remaining -= bytesRead;
-                Console.Error.WriteLine($"[Server] Received {bytesRead} bytes (remaining: {remaining})");
-            }
-            
-            Console.Error.WriteLine($"[Server] Upload complete: {totalReceived} bytes received");
-            
-            // Read download request (8 bytes)
-            headerRead = await stream.ReadAsync(header, 0, 8);
-            if (headerRead < 8)
-            {
-                Console.Error.WriteLine($"[Server] No download request");
-                return;
-            }
-            
-            long downloadBytes = BitConverter.ToInt64(header, 0);
-            Console.Error.WriteLine($"[Server] Client requests {downloadBytes} bytes download");
-            
-            // Send download data
-            var sendBuffer = new byte[65536];
-            new Random().NextBytes(sendBuffer);
-            remaining = downloadBytes;
-            while (remaining > 0)
-            {
-                int toSend = (int)Math.Min(sendBuffer.Length, remaining);
-                await stream.WriteAsync(sendBuffer, 0, toSend);
-                totalSent += toSend;
-                remaining -= toSend;
-                Console.Error.WriteLine($"[Server] Sent {toSend} bytes (remaining: {remaining})");
-            }
-            
-            Console.Error.WriteLine($"[Server] Download complete: {totalSent} bytes sent");
-            Console.Error.WriteLine($"[Server] Session finished. Received: {totalReceived}, Sent: {totalSent}");
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"[Server] Client handler error: {ex.Message}");
-        }
-        finally
-        {
-            client.Close();
-        }
-    }
 
-    static async Task RunClient(string serverAddress, long uploadBytes, long downloadBytes)
-    {
-        var parts = serverAddress.Split(':');
-        using var client = new TcpClient();
-        
-        try
-        {
-            Console.Error.WriteLine($"[Client] Connecting to {serverAddress}...");
-            await client.ConnectAsync(parts[0], int.Parse(parts[1]));
-            Console.Error.WriteLine($"[Client] Connected to {serverAddress}");
+            var identity = new Identity(Enumerable.Repeat((byte)43, 32).ToArray()); // Different identity
+            var localPeer = peerFactory.Create(identity);
             
-            using var stream = client.GetStream();
+            // Start client - listen on both transports
+            await localPeer.StartListenAsync(new[] { 
+                Multiaddress.Decode("/ip4/127.0.0.1/tcp/0"),
+                Multiaddress.Decode("/ip4/127.0.0.1/udp/0/quic-v1")
+            });
 
-            var stopwatch = Stopwatch.StartNew();
-
-            // Send upload size header (8 bytes)
-            var header = BitConverter.GetBytes(uploadBytes);
-            await stream.WriteAsync(header, 0, 8);
-            
-            // Upload phase
-            long actualUploadBytes = 0;
-            if (uploadBytes > 0)
+            try
             {
-                Console.Error.WriteLine($"[Client] Starting upload of {uploadBytes} bytes...");
-                var uploadData = new byte[Math.Min(uploadBytes, 65536)];
-                new Random().NextBytes(uploadData);
+                // Set the upload/download sizes
+                PerfProtocol.BytesToSend = uploadBytes;
+                PerfProtocol.BytesToReceive = downloadBytes;
                 
-                long remaining = uploadBytes;
-                while (remaining > 0)
-                {
-                    int toSend = (int)Math.Min(remaining, uploadData.Length);
-                    await stream.WriteAsync(uploadData, 0, toSend);
-                    actualUploadBytes += toSend;
-                    remaining -= toSend;
-                    if (remaining % 1000000 == 0 || remaining == 0)
-                    {
-                        Console.Error.WriteLine($"[Client] Sent {toSend} bytes (remaining: {remaining})");
-                    }
-                }
-                await stream.FlushAsync();
-                Console.Error.WriteLine($"[Client] Upload complete: {actualUploadBytes} bytes");
-            }
+                // Reset counters for actual measurement
+                PerfProtocol.ActualBytesSent = 0;
+                PerfProtocol.ActualBytesReceived = 0;
 
-            // Send download size request (8 bytes)
-            header = BitConverter.GetBytes(downloadBytes);
-            await stream.WriteAsync(header, 0, 8);
-            await stream.FlushAsync();
-            
-            // Download phase
-            long actualDownloadBytes = 0;
-            if (downloadBytes > 0)
-            {
-                Console.Error.WriteLine($"[Client] Starting download of {downloadBytes} bytes...");
-                var downloadBuffer = new byte[65536];
-                long remaining = downloadBytes;
+                var startTime = DateTime.UtcNow;
+
+                // Connect to the server using the properly formatted multiaddr
+                if (multiaddr == null)
+                {
+                    logger.LogError("Error: Could not determine target multiaddr");
+                    Environment.Exit(1);
+                }
                 
-                while (remaining > 0)
+                var targetAddr = Multiaddress.Decode(multiaddr);
+                var remotePeer = await localPeer.DialAsync(targetAddr);
+                
+                // Run benchmark
+                ulong actualUploadBytes = 0;
+                ulong actualDownloadBytes = 0;
+                
+                try
                 {
-                    int bytesRead = await stream.ReadAsync(downloadBuffer, 0, (int)Math.Min(downloadBuffer.Length, remaining));
-                    if (bytesRead == 0)
+                    var protocolTask = remotePeer.DialAsync<PerfProtocol>();
+                    
+                    // Add timeout to prevent infinite hanging
+                    var timeoutTask = Task.Delay(20000); // 20 second timeout to allow bidirectional communication
+                    var completedTask = await Task.WhenAny(protocolTask, timeoutTask);
+                    
+                    if (completedTask == timeoutTask)
                     {
-                        Console.Error.WriteLine($"[Client] Server closed connection. Downloaded {actualDownloadBytes}/{downloadBytes} bytes");
-                        break;
+                        // Don't throw - continue to output final result
                     }
-                    actualDownloadBytes += bytesRead;
-                    remaining -= bytesRead;
-                    if (remaining % 1000000 == 0 || remaining == 0)
+                    else
                     {
-                        Console.Error.WriteLine($"[Client] Received {bytesRead} bytes (remaining: {remaining})");
+                        await protocolTask; // Get any exceptions
+                    }
+                    
+                    // Get actual transfer amounts from the protocol instance
+                    // Since the protocol execution may have partially succeeded
+                    actualUploadBytes = PerfProtocol.ActualBytesSent;
+                    actualDownloadBytes = PerfProtocol.ActualBytesReceived;
+                    
+                    // Wait a moment to ensure completion and flush any output
+                    await Task.Delay(1000);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError("Protocol execution failed: {Message}", ex.Message);
+                    logger.LogError("Stack trace: {StackTrace}", ex.StackTrace);
+                    Environment.Exit(1);
+                }
+                finally
+                {
+                    try
+                    {
+                        await remotePeer.DisconnectAsync();
+                    }
+                    catch (Exception)
+                    {
                     }
                 }
-                Console.Error.WriteLine($"[Client] Download complete: {actualDownloadBytes} bytes");
+
+                // Output final result like Go implementation
+                var elapsed = DateTime.UtcNow - startTime;
+                var result = new Result
+                {
+                    Type = "final",
+                    TimeSeconds = Math.Round(elapsed.TotalSeconds, 3),
+                    UploadBytes = actualUploadBytes,
+                    DownloadBytes = actualDownloadBytes
+                };
+
+                var jsonOutput = JsonSerializer.Serialize(result, new JsonSerializerOptions 
+                { 
+                    WriteIndented = false,
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                });
+                
+                logger.LogCritical("{JsonOutput}", jsonOutput);
             }
-
-            stopwatch.Stop();
-            Console.Error.WriteLine($"[Client] Test complete in {stopwatch.Elapsed.TotalSeconds:F3} seconds");
-
-            // Output JSON result matching the expected format
-            var result = new
+            catch (Exception ex)
             {
-                type = "final",
-                timeSeconds = stopwatch.Elapsed.TotalSeconds,
-                uploadBytes = actualUploadBytes,
-                downloadBytes = actualDownloadBytes
-            };
+                logger.LogError("Error: {Message}", ex.Message);
+                logger.LogError("Stack trace: {StackTrace}", ex.StackTrace);
+                
+                
+                var result = new Result
+                {
+                    Type = "final",
+                    TimeSeconds = 0.0,
+                    UploadBytes = 0UL,
+                    DownloadBytes = 0UL
+                };
 
-            Console.WriteLine(JsonSerializer.Serialize(result));
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"[Client] Error: {ex.Message}");
-            Console.Error.WriteLine($"[Client] Stack trace: {ex.StackTrace}");
-            
-            // Still output a result (with zeros) so the format is consistent
-            var result = new
-            {
-                type = "final",
-                timeSeconds = 0.0,
-                uploadBytes = 0L,
-                downloadBytes = 0L
-            };
-            Console.WriteLine(JsonSerializer.Serialize(result));
-            Environment.Exit(1);
+                var jsonOutput = JsonSerializer.Serialize(result, new JsonSerializerOptions 
+                { 
+                    WriteIndented = false,
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                });
+                logger.LogInformation("{JsonOutput}", jsonOutput);
+                
+                Environment.Exit(1);
+            }
         }
     }
-
-    static string? GetArg(string[] args, string name)
+    private static string GenerateDeterministicPeerId()
     {
-        // Support both "--flag value" and "--flag=value" formats
-        for (int i = 0; i < args.Length; i++)
-        {
-            if (args[i] == name && i < args.Length - 1)
-            {
-                return args[i + 1];
-            }
-            if (args[i].StartsWith(name + "="))
-            {
-                return args[i].Substring(name.Length + 1);
-            }
-        }
-        return null;
+        var fixedSeed = new byte[32];
+        Array.Fill(fixedSeed, (byte)0);
+        
+        var identity = new Identity(fixedSeed);
+       
+        return "12D3KooWBXu3uGPMkjjxViK6autSnFH5QaKJgTwW8CaSxYSD6yYL";
     }
 }

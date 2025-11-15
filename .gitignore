@@ -68,3 +68,13 @@ perf/impl/dotnet-libp2p/v1.0/obj/Debug/net9.0/PerfBenchmarks.GeneratedMSBuildEdi
 perf/impl/dotnet-libp2p/v1.0/obj/Debug/net9.0/PerfBenchmarks.genruntimeconfig.cache
 perf/impl/dotnet-libp2p/v1.0/obj/Debug/net9.0/PerfBenchmarks.GlobalUsings.g.cs
 perf/impl/dotnet-libp2p/v1.0/obj/PerfBenchmarks.csproj.nuget.g.targets
+perf/impl/dotnet-libp2p/v1.0/bin/Debug/net9.0/runtimes/ios-arm64/native/libsodium.a
+perf/impl/dotnet-libp2p/v1.0/bin/Debug/net9.0/runtimes/maccatalyst-arm64/native/libsodium.a
+perf/impl/dotnet-libp2p/v1.0/bin/Debug/net9.0/runtimes/maccatalyst-x64/native/libsodium.a
+perf/impl/dotnet-libp2p/v1.0/bin/Debug/net9.0/runtimes/tvos-arm64/native/libsodium.a
+perf/impl/dotnet-libp2p/v1.0/obj/Debug/net7.0/.NETCoreApp,Version=v7.0.AssemblyAttributes.cs
+perf/impl/dotnet-libp2p/v1.0/obj/Debug/net7.0/PerfBenchmarks.AssemblyInfo.cs
+perf/impl/dotnet-libp2p/v1.0/obj/Debug/net7.0/PerfBenchmarks.AssemblyInfoInputs.cache
+perf/impl/dotnet-libp2p/v1.0/obj/Debug/net7.0/PerfBenchmarks.assets.cache
+perf/impl/dotnet-libp2p/v1.0/obj/Debug/net7.0/PerfBenchmarks.csproj.AssemblyReference.cache
+perf/impl/dotnet-libp2p/v1.0/obj/Debug/net7.0/PerfBenchmarks.GlobalUsings.g.cs
