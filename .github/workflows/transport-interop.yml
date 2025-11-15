@@ -4,7 +4,6 @@ on:
     paths:
       - "transport-interop/**"
       - ".github/actions/run-transport-interop-test/action.yml"
-      - ".github/workflows/transport-interop.yml"
   push:
     branches:
       - "master"
@@ -15,23 +14,23 @@ name: libp2p transport interop test
 
 jobs:
   run-transport-interop:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, ephemeral]
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/run-transport-interop-test
         with:
-          s3-cache-bucket: ${{ vars.S3_LIBP2P_BUILD_CACHE_BUCKET_NAME }}
-          s3-access-key-id: ${{ vars.S3_LIBP2P_BUILD_CACHE_AWS_ACCESS_KEY_ID }}
-          s3-secret-access-key: ${{ secrets.S3_LIBP2P_BUILD_CACHE_AWS_SECRET_ACCESS_KEY }}
-          worker-count: 16
-          test-ignore: "jvm-v1.2 x zig-v0.0.1 (quic-v1)|zig-v0.0.1 x jvm-v1.2 (quic-v1)|rust-chromium-v0.53 x jvm-v1.2 (ws)|js-v1.x x jvm-v1.2 (ws, noise, yamux)|js-v1.x x jvm-v1.2 (ws, noise, mplex)|rust-chromium-v0.53 x jvm-v1.2 (ws, noise, mplex)"
+          worker-count: 8
+          cache-dir: /srv/cache
+          #verbose: true
+          test-ignore: "jvm-v1.2 x zig-v0.0.1 (quic-v1)|zig-v0.0.1 x jvm-v1.2 (quic-v1)|rust-chromium-v0.53 x jvm-v1.2 (ws)|js-v1.x x jvm-v1.2 (ws, noise, yamux)|js-v1.x x jvm-v1.2 (ws, noise, mplex)|rust-chromium-v0.53 x jvm-v1.2 (ws, noise, mplex)|nim-v1.10.x"
   build-without-secrets:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, ephemeral]
     steps:
       - uses: actions/checkout@v3
       # Purposely not using secrets to replicate how forks will behave.
       - uses: ./.github/actions/run-transport-interop-test
         with:
           # It's okay to not run the tests, we only care to check if the tests build without cache.
+          #verbose: true
           upload-results: false
           test-filter: '"no test matches this, skip all"'
