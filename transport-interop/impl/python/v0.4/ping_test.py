@@ -214,8 +214,16 @@ class PingTest:
                 print(f"responded with pong to {peer_id}", file=sys.stderr)
                 self.ping_received = True
         except Exception as e:
-            print(f"Error in ping handler: {e}", file=sys.stderr)
-            await stream.reset()
+            # DEBUG: Print the full exception traceback
+            import traceback
+            error_msg = str(e) if e else "Unknown error (exception object is None or empty)"
+            error_type = type(e).__name__ if e else "UnknownException"
+            print(f"Error in ping handler: {error_type}: {error_msg}", file=sys.stderr)
+            traceback.print_exc(file=sys.stderr)
+            try:
+                await stream.reset()
+            except Exception:
+                pass
     
     def log_protocols(self) -> None:
         """Log registered protocols for debugging."""
