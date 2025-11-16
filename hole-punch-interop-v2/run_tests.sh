@@ -26,7 +26,7 @@ Usage: $0 [options]
 Options:
   --test-select VALUE    Select tests (pipe-separated substrings)
   --test-ignore VALUE    Ignore tests (pipe-separated substrings)
-  --workers VALUE        Number of parallel workers (default: $(nproc 2>/dev/null || echo 4))
+  --workers VALUE        Number of parallel workers (default: $WORKER_COUNT)
   --cache-dir VALUE      Cache directory (default: /srv/cache)
   --snapshot             Create test pass snapshot after completion
   --debug                Enable debug mode (sets debug=true in test containers)
