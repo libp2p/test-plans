@@ -7,8 +7,7 @@
       "quic-v1"
     ],
     "secureChannels": [
-      "noise",
-      "plaintext"
+      "noise"
     ],
     "muxers": [
       "mplex",
