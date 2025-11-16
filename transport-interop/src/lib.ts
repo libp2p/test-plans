@@ -19,16 +19,23 @@ export type ResultFile = ResultLine[];
 
 export type CellRender = (a: string, b: string, line: ResultLine) => string;
 
+// Configurable emoji symbols for test results
+export const RESULT_EMOJIS = {
+  success: "🟢",      // Green circle for successful tests
+  failure: "🔴",      // Red circle for failed tests
+  untested: "⚪",     // White circle for untested combinations
+} as const;
+
 /**
  * called for every cell in the table.
  *
  * This is designed to let future implementers add more complex ouput interpretation, with nested tables, etc.
  */
 export const defaultCellRender: CellRender = (a, b, line) => {
-  let result = ":red_circle:";
+  let result: string = RESULT_EMOJIS.failure;
 
   if (line.outcome === "success") {
-    result = ":green_circle:";
+    result = RESULT_EMOJIS.success;
   }
 
   if (process.env.RUN_URL) {
@@ -82,7 +89,7 @@ export const generateEmptyMatrix = (
 
 export const generateTable = (
   results: Array<ParsedResultLine>,
-  defaultValue: string = ":white_circle:",
+  defaultValue: string = RESULT_EMOJIS.untested,
   testedCell: CellRender = defaultCellRender
 ): string[][] => {
   const pairs = results.map(({ implA, implB }) => [implA, implB] as PairOfImplementation);

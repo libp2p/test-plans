@@ -11,7 +11,7 @@ logs/
 *.log
 
 # Generated reports
-results_report.md
+python_results_report.md
 
 # Temporary directories
 tmp/
