@@ -18,6 +18,31 @@ from collections import defaultdict
 from pathlib import Path
 
 
+def find_project_root(start_path=None):
+    """Find the transport-interop project root directory.
+    
+    Looks for the project root by checking for run_tests.sh or package.json
+    in parent directories.
+    """
+    if start_path is None:
+        start_path = Path(__file__).parent.resolve()
+    else:
+        start_path = Path(start_path).resolve()
+    
+    current = start_path
+    # Look up to 5 levels up
+    for _ in range(5):
+        if (current / "run_tests.sh").exists() or (current / "package.json").exists():
+            return current
+        parent = current.parent
+        if parent == current:  # Reached filesystem root
+            break
+        current = parent
+    
+    # Fallback: return the directory where the script is located
+    return start_path
+
+
 def parse_test_name(name):
     """Parse test name into components."""
     if " x " not in name:
@@ -38,8 +63,14 @@ def parse_test_name(name):
     return dialer, listener, config
 
 
-def analyze_results(results_file="results.csv"):
+def analyze_results(results_file=None):
     """Analyze results.csv and return structured data."""
+    if results_file is None:
+        project_root = find_project_root()
+        results_file = project_root / "results.csv"
+    else:
+        results_file = Path(results_file)
+    
     results = []
     
     with open(results_file, 'r') as f:
@@ -187,6 +218,17 @@ def generate_tldr(data):
     return "\n".join(lines)
 
 
+def visual_width(text):
+    """Calculate visual width of text, accounting for emoji width."""
+    # Emoji widths: ✅ and ❌ are typically 2 chars wide, ⚠️ is 1 char wide in some fonts
+    width = len(text)
+    # Add 1 extra char for wide emojis (✅ and ❌ are 2 chars wide but len() counts as 1)
+    width += text.count('✅')  # 2 chars wide
+    width += text.count('❌')  # 2 chars wide
+    # ⚠️ is 1 char wide, so no adjustment needed
+    return width
+
+
 def generate_tests_summary(data):
     """Generate tests summary section."""
     lines = []
@@ -197,9 +239,23 @@ def generate_tests_summary(data):
     lines.append("## By Implementation")
     lines.append("")
     lines.append("| Implementation | Success | Failure | Total | Success Rate |")
-    lines.append("|----------------|---------|---------|-------|--------------|")
     
+    # Calculate max width for implementation column (header + emoji + content)
+    header_width = len("Implementation")
+    max_impl_width = header_width
     impls = sorted(data['by_impl'].items(), key=lambda x: x[0])
+    for impl, stats in impls:
+        total_impl = stats['success'] + stats['failure']
+        if total_impl > 0:
+            status = "✅" if stats['failure'] == 0 else "⚠️" if (stats['success'] / total_impl * 100) > 50 else "❌"
+            content = f"{status} {impl}"
+            max_impl_width = max(max_impl_width, visual_width(content))
+    
+    # Generate separator with proper width (accounting for spaces in cells)
+    # Cell format is: " {content} " so we need content width + 2 spaces
+    impl_sep_width = max(max_impl_width, header_width) + 2
+    lines.append(f"|{'-' * impl_sep_width}|---------|---------|-------|--------------|")
+    
     for impl, stats in impls:
         total_impl = stats['success'] + stats['failure']
         if total_impl > 0:
@@ -213,9 +269,23 @@ def generate_tests_summary(data):
     lines.append("## By Configuration")
     lines.append("")
     lines.append("| Configuration | Success | Failure | Total | Success Rate |")
-    lines.append("|---------------|---------|---------|-------|--------------|")
     
+    # Calculate max width for configuration column
+    header_width = len("Configuration")
+    max_config_width = header_width
     configs = sorted(data['by_config'].items(), key=lambda x: x[0])
+    for config, stats in configs:
+        total_config = stats['success'] + stats['failure']
+        if total_config > 0:
+            status = "✅" if stats['failure'] == 0 else "⚠️" if (stats['success'] / total_config * 100) > 50 else "❌"
+            content = f"{status} {config}"
+            max_config_width = max(max_config_width, visual_width(content))
+    
+    # Generate separator with proper width (accounting for spaces in cells)
+    # Cell format is: " {content} " so we need content width + 2 spaces
+    config_sep_width = max(max_config_width, header_width) + 2
+    lines.append(f"|{'-' * config_sep_width}|---------|---------|-------|--------------|")
+    
     for config, stats in configs:
         total_config = stats['success'] + stats['failure']
         if total_config > 0:
@@ -248,7 +318,9 @@ def find_log_files(test_name):
     log_files = []
     
     # First, check standardized logs directory (from compose-runner.ts)
-    logs_dir = os.getenv("LOGS_DIR", os.path.join(os.getcwd(), "logs"))
+    # Find project root for default logs directory
+    project_root = find_project_root()
+    logs_dir = os.getenv("LOGS_DIR", str(project_root / "logs"))
     if os.path.exists(logs_dir):
         # Sanitize test name to match log file naming (same as compose-runner.ts)
         # compose-runner.ts uses: namespace.replace(/[^a-zA-Z0-9]/g, "-")
@@ -807,21 +879,25 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  %(prog)s                           # Generate results_report.md from results.csv
+  %(prog)s                           # Generate python_results_report.md from results.csv
   %(prog)s -o my_report.md           # Generate custom report file
   %(prog)s -i custom_results.csv     # Use custom input CSV file
   %(prog)s -i results.csv -o report.md  # Specify both input and output
         """
     )
+    # Find project root for default input file
+    project_root = find_project_root()
+    default_input = str(project_root / "results.csv")
+    
     parser.add_argument(
         "-i", "--input",
-        default="results.csv",
-        help="Input CSV file with test results (default: results.csv)"
+        default=default_input,
+        help=f"Input CSV file with test results (default: {default_input})"
     )
     parser.add_argument(
         "-o", "--output",
-        default="results_report.md",
-        help="Output markdown file (default: results_report.md). Use '-' for stdout"
+        default="python_results_report.md",
+        help="Output markdown file (default: python_results_report.md). Use '-' for stdout"
     )
     
     args = parser.parse_args()
