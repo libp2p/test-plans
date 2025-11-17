@@ -263,7 +263,7 @@ const argv = yargs
         'test-filter': {
             type: 'string',
             array: true,
-            choices: ['js-libp2p', 'rust-libp2p', 'go-libp2p', 'https', 'quic-go', 'all'],
+            choices: ['js-libp2p', 'rust-libp2p', 'go-libp2p', 'https', 'quic-go', 'dotnet-libp2p', 'all'],
             description: 'Filter tests to run, only the implementations here will be run. It defaults to all.',
             demandOption: false,
             default: 'all'
