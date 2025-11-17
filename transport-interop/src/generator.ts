@@ -6,7 +6,30 @@ import { matchesFilter, TestFilterOptions } from "./testFilter";
 
 function buildExtraEnv(timeoutOverride: { [key: string]: number }, test1ID: string, test2ID: string): { [key: string]: string } {
     const maxTimeout = Math.max(timeoutOverride[test1ID] || 0, timeoutOverride[test2ID] || 0)
-    return maxTimeout > 0 ? { "test_timeout_seconds": maxTimeout.toString(10) } : {}
+    const env: { [key: string]: string } = {}
+    
+    if (maxTimeout > 0) {
+        env["test_timeout_seconds"] = maxTimeout.toString(10)
+    }
+    
+    // Enable debug logging only when SAVE_LOGS=all (to reduce noise and log size)
+    const saveLogs = process.env.SAVE_LOGS
+    const shouldEnableDebug = saveLogs === "all" || saveLogs === "1" || saveLogs === "true"
+    
+    if (shouldEnableDebug) {
+        const impls = [test1ID, test2ID]
+        if (impls.includes("c-v0.0.1")) {
+            env["LIBP2P_LOG_LEVEL"] = "debug"
+        }
+        if (impls.some(id => id.startsWith("rust-"))) {
+            env["RUST_LOG"] = "debug"
+        }
+        if (impls.includes("python-v0.4")) {
+            env["LIBP2P_DEBUG"] = "DEBUG"
+        }
+    }
+    
+    return env
 }
 
 export async function buildTestSpecs(versions: Array<Version>, nameFilter: string[] | null, nameIgnore: string[] | null, verbose: boolean): Promise<Array<ComposeSpecification>> {

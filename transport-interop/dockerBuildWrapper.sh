@@ -15,5 +15,6 @@ elif [[ -n "${CI}" ]] && [[ -n "${AWS_BUCKET}" ]]; then
 fi
 
 docker buildx build \
+    --progress=plain \
     --load \
     -t $IMAGE_NAME $CACHING_OPTIONS "$@"

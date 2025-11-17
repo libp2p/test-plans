@@ -83,9 +83,11 @@ runs:
 
     - name: Set up Docker Buildx
       id: buildx
-      uses: docker/setup-buildx-action@v2
+      uses: docker/setup-buildx-action@v3
       with:
         config: ${{ steps.buildkit.outputs.config }}
+        version: v0.29.1
+        driver-opts: image=moby/buildkit:v0.25.2
 
     - name: Create cache directories
       run: |
