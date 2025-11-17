@@ -194,7 +194,6 @@ public class PerfProtocol : ISessionProtocol
         // Send our bytes  
         await SendBytesAsync(channel, bytesToSend);
         
-        // Keep connection open for client to read
-        await Task.Delay(5000); // Longer delay to ensure client has time to read
+        // Connection will close naturally when protocol completes
     }
 }
