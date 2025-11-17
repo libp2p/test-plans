@@ -7,7 +7,7 @@ import { stringify as YAMLStringify } from "yaml"
 import yargs from "yargs/yargs"
 import path from "path";
 import { parseFilterArgs } from "./src/testFilter";
-import { displaySelectedTestsBanner, displayTestBanner } from "./src/bannerUtils";
+import { displaySelectedTestsBanner } from "./src/bannerUtils";
 
 (async () => {
     const WorkerCount = parseInt(process.env.WORKER_COUNT || "1")
@@ -112,12 +112,6 @@ import { displaySelectedTestsBanner, displayTestBanner } from "./src/bannerUtils
 
             // Display test banner based on verbose mode
             const testName = testSpec.name || "unknown test";
-            if (!verbose) {
-                displayTestBanner(testName);
-            } else {
-                console.log("Running test spec: " + testName);
-            }
-
             const failure = await run(testName, testSpec, { up: { exitCodeFrom: "dialer", renewAnonVolumes: true }, })
             if (failure != null) {
                 failures.push(failure)
@@ -130,7 +124,9 @@ import { displaySelectedTestsBanner, displayTestBanner } from "./src/bannerUtils
     await Promise.all(workers)
 
     console.log(`${failures.length} failures`, failures)
-    await fs.writeFile("results.csv", stringify(statuses))
+    await fs.writeFile("results.csv", stringify(statuses, { 
+        quoted_match: /[(),\s]/
+    }))
 
     console.log("Run complete")
 })()

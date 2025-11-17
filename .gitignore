@@ -55,3 +55,7 @@ perf/impl/dotnet-libp2p/*/*.user
 perf/impl/dotnet-libp2p/*/*.suo
 perf/impl/dotnet-libp2p/*/*.tmp
 perf/impl/dotnet-libp2p/*/*.log
+# ignore downloads directory
+downloads/
+
+.nvim

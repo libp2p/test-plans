@@ -1,4 +1,196 @@
-# Transport Interoperability tests
+# Transport Interoperability Tests
+
+## Current Status
+
+<!--INTEROP_DASHBOARD_START-->
+## Using: quic-v1
+| ⬇️ dialer 📞 \  ➡️ listener 🎧 | c-v0.0.1 | eth-p2p-z-v0.0.1 | go-v0.40 | go-v0.41 | go-v0.42 | go-v0.43 | go-v0.44 | go-v0.45 | jvm-v1.2 | rust-v0.53 | rust-v0.54 | rust-v0.55 | rust-v0.56 |
+| ------------------------------ | -------- | ---------------- | -------- | -------- | -------- | -------- | -------- | -------- | -------- | ---------- | ---------- | ---------- | ---------- |
+| c-v0.0.1 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| eth-p2p-z-v0.0.1 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| go-v0.40 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| go-v0.41 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| go-v0.42 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| go-v0.43 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| go-v0.44 | :red_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| go-v0.45 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| jvm-v1.2 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| rust-v0.53 | :red_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| rust-v0.54 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| rust-v0.55 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| rust-v0.56 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+
+## Using: webrtc-direct
+| ⬇️ dialer 📞 \  ➡️ listener 🎧 | chromium-rust-v0.53 | chromium-rust-v0.54 | go-v0.40 | go-v0.41 | go-v0.42 | go-v0.43 | go-v0.44 | go-v0.45 | rust-v0.53 | rust-v0.54 | rust-v0.55 | rust-v0.56 |
+| ------------------------------ | ------------------- | ------------------- | -------- | -------- | -------- | -------- | -------- | -------- | ---------- | ---------- | ---------- | ---------- |
+| chromium-rust-v0.53 | :white_circle: | :white_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :red_circle: | :green_circle: |
+| chromium-rust-v0.54 | :white_circle: | :white_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| go-v0.40 | :white_circle: | :white_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :red_circle: |
+| go-v0.41 | :white_circle: | :white_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :red_circle: |
+| go-v0.42 | :white_circle: | :white_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :red_circle: |
+| go-v0.43 | :white_circle: | :white_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :red_circle: |
+| go-v0.44 | :white_circle: | :white_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :red_circle: |
+| go-v0.45 | :white_circle: | :white_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :red_circle: |
+| rust-v0.53 | :white_circle: | :white_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| rust-v0.54 | :white_circle: | :white_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| rust-v0.55 | :white_circle: | :white_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| rust-v0.56 | :white_circle: | :white_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+
+## Using: webtransport
+| ⬇️ dialer 📞 \  ➡️ listener 🎧 | chromium-rust-v0.53 | chromium-rust-v0.54 | go-v0.40 | go-v0.41 | go-v0.42 | go-v0.43 | go-v0.44 | go-v0.45 |
+| ------------------------------ | ------------------- | ------------------- | -------- | -------- | -------- | -------- | -------- | -------- |
+| chromium-rust-v0.53 | :white_circle: | :white_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| chromium-rust-v0.54 | :white_circle: | :white_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| go-v0.40 | :white_circle: | :white_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| go-v0.41 | :white_circle: | :white_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| go-v0.42 | :white_circle: | :white_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| go-v0.43 | :white_circle: | :white_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| go-v0.44 | :white_circle: | :white_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| go-v0.45 | :white_circle: | :white_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+
+## Using: tcp, noise, yamux
+| ⬇️ dialer 📞 \  ➡️ listener 🎧 | c-v0.0.1 | dotnet-v1.0 | go-v0.40 | go-v0.41 | go-v0.42 | go-v0.43 | go-v0.44 | go-v0.45 | jvm-v1.2 | nim-v1.14 | python-v0.4 | rust-v0.53 | rust-v0.54 | rust-v0.55 | rust-v0.56 |
+| ------------------------------ | -------- | ----------- | -------- | -------- | -------- | -------- | -------- | -------- | -------- | --------- | ----------- | ---------- | ---------- | ---------- | ---------- |
+| c-v0.0.1 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :red_circle: | :green_circle: | :red_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| dotnet-v1.0 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :red_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| go-v0.40 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :red_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| go-v0.41 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :red_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| go-v0.42 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :red_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| go-v0.43 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :red_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| go-v0.44 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :red_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| go-v0.45 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :red_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| jvm-v1.2 | :red_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :red_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| nim-v1.14 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :red_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| python-v0.4 | :red_circle: | :red_circle: | :red_circle: | :red_circle: | :red_circle: | :red_circle: | :red_circle: | :red_circle: | :red_circle: | :red_circle: | :red_circle: | :red_circle: | :red_circle: | :red_circle: | :red_circle: |
+| rust-v0.53 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :red_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| rust-v0.54 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :red_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| rust-v0.55 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :red_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| rust-v0.56 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :red_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+
+## Using: tcp, noise, mplex
+| ⬇️ dialer 📞 \  ➡️ listener 🎧 | c-v0.0.1 | jvm-v1.2 | nim-v1.14 | python-v0.4 | rust-v0.53 | rust-v0.54 | rust-v0.55 | rust-v0.56 |
+| ------------------------------ | -------- | -------- | --------- | ----------- | ---------- | ---------- | ---------- | ---------- |
+| c-v0.0.1 | :green_circle: | :green_circle: | :green_circle: | :red_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| jvm-v1.2 | :green_circle: | :green_circle: | :green_circle: | :red_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| nim-v1.14 | :green_circle: | :green_circle: | :green_circle: | :red_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| python-v0.4 | :red_circle: | :red_circle: | :red_circle: | :red_circle: | :red_circle: | :red_circle: | :red_circle: | :red_circle: |
+| rust-v0.53 | :green_circle: | :green_circle: | :green_circle: | :red_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| rust-v0.54 | :green_circle: | :green_circle: | :green_circle: | :red_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| rust-v0.55 | :green_circle: | :green_circle: | :green_circle: | :red_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| rust-v0.56 | :green_circle: | :green_circle: | :green_circle: | :red_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+
+## Using: ws, tls, yamux
+| ⬇️ dialer 📞 \  ➡️ listener 🎧 | go-v0.40 | go-v0.41 | go-v0.42 | go-v0.43 | go-v0.44 | go-v0.45 | jvm-v1.2 | rust-v0.53 | rust-v0.54 | rust-v0.55 | rust-v0.56 |
+| ------------------------------ | -------- | -------- | -------- | -------- | -------- | -------- | -------- | ---------- | ---------- | ---------- | ---------- |
+| go-v0.40 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| go-v0.41 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| go-v0.42 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| go-v0.43 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| go-v0.44 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| go-v0.45 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| jvm-v1.2 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| rust-v0.53 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| rust-v0.54 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| rust-v0.55 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| rust-v0.56 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+
+## Using: ws, noise, yamux
+| ⬇️ dialer 📞 \  ➡️ listener 🎧 | chromium-rust-v0.53 | chromium-rust-v0.54 | go-v0.40 | go-v0.41 | go-v0.42 | go-v0.43 | go-v0.44 | go-v0.45 | jvm-v1.2 | nim-v1.14 | rust-v0.53 | rust-v0.54 | rust-v0.55 | rust-v0.56 |
+| ------------------------------ | ------------------- | ------------------- | -------- | -------- | -------- | -------- | -------- | -------- | -------- | --------- | ---------- | ---------- | ---------- | ---------- |
+| chromium-rust-v0.53 | :white_circle: | :white_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| chromium-rust-v0.54 | :white_circle: | :white_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| go-v0.40 | :white_circle: | :white_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| go-v0.41 | :white_circle: | :white_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| go-v0.42 | :white_circle: | :white_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| go-v0.43 | :white_circle: | :white_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| go-v0.44 | :white_circle: | :white_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| go-v0.45 | :white_circle: | :white_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| jvm-v1.2 | :white_circle: | :white_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| nim-v1.14 | :white_circle: | :white_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| rust-v0.53 | :white_circle: | :white_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| rust-v0.54 | :white_circle: | :white_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| rust-v0.55 | :white_circle: | :white_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| rust-v0.56 | :white_circle: | :white_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+
+## Using: ws, noise, mplex
+| ⬇️ dialer 📞 \  ➡️ listener 🎧 | chromium-rust-v0.53 | chromium-rust-v0.54 | jvm-v1.2 | nim-v1.14 | rust-v0.53 | rust-v0.54 | rust-v0.55 | rust-v0.56 |
+| ------------------------------ | ------------------- | ------------------- | -------- | --------- | ---------- | ---------- | ---------- | ---------- |
+| chromium-rust-v0.53 | :white_circle: | :white_circle: | :red_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| chromium-rust-v0.54 | :white_circle: | :white_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| jvm-v1.2 | :white_circle: | :white_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| nim-v1.14 | :white_circle: | :white_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| rust-v0.53 | :white_circle: | :white_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| rust-v0.54 | :white_circle: | :white_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| rust-v0.55 | :white_circle: | :white_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| rust-v0.56 | :white_circle: | :white_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+
+## Using: ws, tls, mplex
+| ⬇️ dialer 📞 \  ➡️ listener 🎧 | jvm-v1.2 | rust-v0.53 | rust-v0.54 | rust-v0.55 | rust-v0.56 |
+| ------------------------------ | -------- | ---------- | ---------- | ---------- | ---------- |
+| jvm-v1.2 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| rust-v0.53 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| rust-v0.54 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| rust-v0.55 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| rust-v0.56 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+
+## Using: tcp, tls, yamux
+| ⬇️ dialer 📞 \  ➡️ listener 🎧 | go-v0.40 | go-v0.41 | go-v0.42 | go-v0.43 | go-v0.44 | go-v0.45 | jvm-v1.2 | rust-v0.53 | rust-v0.54 | rust-v0.55 | rust-v0.56 |
+| ------------------------------ | -------- | -------- | -------- | -------- | -------- | -------- | -------- | ---------- | ---------- | ---------- | ---------- |
+| go-v0.40 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| go-v0.41 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| go-v0.42 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| go-v0.43 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| go-v0.44 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| go-v0.45 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| jvm-v1.2 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| rust-v0.53 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| rust-v0.54 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| rust-v0.55 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| rust-v0.56 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+
+## Using: tcp, tls, mplex
+| ⬇️ dialer 📞 \  ➡️ listener 🎧 | jvm-v1.2 | rust-v0.53 | rust-v0.54 | rust-v0.55 | rust-v0.56 |
+| ------------------------------ | -------- | ---------- | ---------- | ---------- | ---------- |
+| jvm-v1.2 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| rust-v0.53 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| rust-v0.54 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| rust-v0.55 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| rust-v0.56 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+
+## Using: wss, tls, yamux
+| ⬇️ dialer 📞 \  ➡️ listener 🎧 | go-v0.40 | go-v0.41 | go-v0.42 | go-v0.43 | go-v0.44 | go-v0.45 |
+| ------------------------------ | -------- | -------- | -------- | -------- | -------- | -------- |
+| go-v0.40 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| go-v0.41 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| go-v0.42 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| go-v0.43 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| go-v0.44 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| go-v0.45 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+
+## Using: wss, noise, yamux
+| ⬇️ dialer 📞 \  ➡️ listener 🎧 | go-v0.40 | go-v0.41 | go-v0.42 | go-v0.43 | go-v0.44 | go-v0.45 |
+| ------------------------------ | -------- | -------- | -------- | -------- | -------- | -------- |
+| go-v0.40 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| go-v0.41 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| go-v0.42 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| go-v0.43 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| go-v0.44 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+| go-v0.45 | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: | :green_circle: |
+
+## Using: tcp, plaintext, yamux
+| ⬇️ dialer 📞 \  ➡️ listener 🎧 | python-v0.4 |
+| ------------------------------ | ----------- |
+| python-v0.4 | :red_circle: |
+
+## Using: tcp, plaintext, mplex
+| ⬇️ dialer 📞 \  ➡️ listener 🎧 | python-v0.4 |
+| ------------------------------ | ----------- |
+| python-v0.4 | :red_circle: |
+
+
+<!--INTEROP_DASHBOARD_END-->
+
+## About
 
 This tests that different libp2p implementations can communicate with each other
 on each of their supported (transport) capabilities.
@@ -11,7 +203,7 @@ This repo and tests adhere to these constraints:
 2. Caching is an optimization. Things should be fine without it.
 3. If we have a cache hit, be fast.
 
-# Test spec
+## Test spec
 
 The implementation is run in a container and is passed parameters via
 environment variables. The current parameters are:
@@ -61,7 +253,7 @@ DEBUG=*:yamux:trace transport=tcp muxer=yamux security=noise is_dialer=true   np
 
 For more details on how to run a dialer vs a listener, see the sections below.
 
-## Dialer
+### Dialer
 
 The dialer should emit all diagnostic logs to `stderr`. Only the final JSON
 string result should be emitted to `stdout`.
@@ -80,7 +272,7 @@ string result should be emitted to `stdout`.
 
 On error, the dialer should return a non-zero exit code.
 
-## Listener
+### Listener
 
 The listener should emit all diagnostic logs to `stderr`.
 
@@ -94,7 +286,7 @@ The listener should emit all diagnostic logs to `stderr`.
 
 On error, the listener should return a non-zero exit code.
 
-# Caching
+## Caching
 
 The caching strategy is opinionated in an attempt to make things simpler and
 faster. Here's how it works:
