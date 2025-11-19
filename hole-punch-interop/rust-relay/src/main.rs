@@ -6,11 +6,12 @@ use libp2p::{
         transport::Transport,
         upgrade,
     },
-    futures::future::Either,
-    futures::StreamExt,
-    identify, identity, noise, ping, quic, relay,
-    swarm::{NetworkBehaviour, SwarmBuilder, SwarmEvent},
-    tcp, yamux, PeerId, Swarm,
+    futures::{future::Either, StreamExt},
+    identify,
+    identity::{self, Keypair},
+    noise, ping, quic, relay,
+    swarm::{NetworkBehaviour, SwarmEvent},
+    tcp, yamux, PeerId, Swarm, SwarmBuilder,
 };
 use redis::AsyncCommands;
 use std::net::{IpAddr, Ipv4Addr};
@@ -90,34 +91,26 @@ fn quic_addr(addr: IpAddr) -> Multiaddr {
 }
 
 fn make_swarm() -> Result<Swarm<Behaviour>> {
-    let local_key = identity::Keypair::generate_ed25519();
-    let local_peer_id = PeerId::from(local_key.public());
-    log::info!("Local peer id: {local_peer_id}");
-
-    let transport = tcp::tokio::Transport::new(tcp::Config::default().nodelay(true))
-        .upgrade(upgrade::Version::V1Lazy)
-        .authenticate(noise::Config::new(&local_key)?)
-        .multiplex(yamux::Config::default())
-        .or_transport(quic::tokio::Transport::new(quic::Config::new(&local_key)))
-        .map(|either_output, _| match either_output {
-            Either::Left((peer_id, muxer)) => (peer_id, StreamMuxerBox::new(muxer)),
-            Either::Right((peer_id, muxer)) => (peer_id, StreamMuxerBox::new(muxer)),
-        })
-        .boxed();
-    let behaviour = Behaviour {
-        relay: relay::Behaviour::new(local_peer_id, relay::Config::default()),
-        identify: identify::Behaviour::new(identify::Config::new(
-            "/hole-punch-tests/1".to_owned(),
-            local_key.public(),
-        )),
-        ping: ping::Behaviour::default(),
-    };
-
-    Ok(
-        SwarmBuilder::with_tokio_executor(transport, behaviour, local_peer_id)
-            .substream_upgrade_protocol_override(upgrade::Version::V1Lazy)
-            .build(),
-    )
+    Ok(SwarmBuilder::with_new_identity()
+        .with_tokio()
+        .with_tcp(
+            tcp::Config::default().nodelay(true),
+            |k: &Keypair| noise::Config::new(k),
+            || yamux::Config::default(),
+        )?
+        .with_quic()
+        .with_behaviour(|local_key| {
+            let local_peer_id = PeerId::from(local_key.public());
+            Behaviour {
+                relay: relay::Behaviour::new(local_peer_id, relay::Config::default()),
+                identify: identify::Behaviour::new(identify::Config::new(
+                    "/hole-punch-tests/1".to_owned(),
+                    local_key.public(),
+                )),
+                ping: ping::Behaviour::default(),
+            }
+        })?
+        .build())
 }
 
 struct RedisClient {
