@@ -81,7 +81,7 @@ Expected output:
 ╲ Test Matrix Generation
  ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
 → No test-select specified (will include all tests)
-→ Loaded test-ignore from test-selection.yaml
+→ No test-ignore specified
 → Computed cache key: fdd31961
   → [MISS] Generating new test matrix
 
@@ -256,6 +256,9 @@ cd /tmp/cache/test-passes
 tar -xzf transport-interop-full-*.tar.gz
 cd transport-interop-full-*
 ./re-run.sh
+
+# Force rebuild all images before re-running
+./re-run.sh --force-rebuild
 ```
 
 ## Understanding Test Combinations
@@ -354,6 +357,47 @@ cat logs/rust-v0.53_x_rust-v0.54_tcp_noise_yamux.log
    # Only test what you're working on
    ./run_tests.sh --test-select "rust-v0.54" --workers 2
    ```
+
+## Debugging with Local Implementations
+
+For development and debugging, you can switch implementations from GitHub sources to local directories:
+
+```yaml
+# In impls.yaml
+implementations:
+  - id: rust-v0.56
+    source:
+      type: local              # Changed from 'github' to 'local'
+      path: /home/user/rust-libp2p  # Local clone
+      commit: b7914e40        # Still tracked for documentation
+      dockerfile: interop-tests/Dockerfile.native
+    transports: [tcp, ws, quic-v1]
+    secureChannels: [noise, tls]
+    muxers: [yamux, mplex]
+```
+
+Benefits:
+- Make changes without committing to GitHub
+- Test modifications immediately
+- Use your local IDE and debugging tools
+- Faster iteration during development
+- Switch back to `github` type when done
+
+Example workflow:
+```bash
+# 1. Clone repo locally
+git clone https://github.com/libp2p/rust-libp2p.git ~/rust-libp2p
+
+# 2. Edit impls.yaml to use local path
+vim impls.yaml
+# Change rust-v0.56 source type to 'local' and set path
+
+# 3. Make your changes
+vim ~/rust-libp2p/transports/tcp/src/transport.rs
+
+# 4. Test with your changes
+./run_tests.sh --test-select "rust-v0.56" --force-rebuild --workers 2
+```
 
 ## Next Steps
 

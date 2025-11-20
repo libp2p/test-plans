@@ -115,7 +115,6 @@ hole-punch-interop-v2/
 │   ├── generate-dashboard.sh
 │   └── check-dependencies.sh
 ├── impls.yaml                 # Implementation definitions (source of truth)
-├── test-selection.yaml        # Default test selection
 ├── run_tests.sh              # Main orchestrator
 └── README.md                  # This file
 ```
@@ -127,7 +126,6 @@ Each test run creates a unique test pass directory with all results:
 ```
 /srv/cache/test-passes/hole-punch-HHMMSS-DD-MM-YYYY/
 ├── impls.yaml                 # Captured configuration
-├── test-selection.yaml        # Captured test selection
 ├── test-matrix.yaml          # Generated test matrix
 ├── results.yaml              # Structured test results
 ├── results.md                # Markdown dashboard
@@ -137,7 +135,7 @@ Each test run creates a unique test pass directory with all results:
 ├── docker-images/            # Saved Docker images
 ├── docker-compose/           # Generated compose files
 ├── logs/                     # Test execution logs
-├── re-run.sh                 # Reproducibility script
+├── re-run.sh                 # Reproducibility script (supports --force-rebuild)
 └── README.md                 # Snapshot documentation
 ```
 
@@ -146,8 +144,26 @@ Each test run creates a unique test pass directory with all results:
 ### impls.yaml
 Defines all implementations to test with their source repositories and supported transports.
 
-### test-selection.yaml
-Default test filters and ignore patterns. Used when no CLI arguments provided.
+Each implementation can use one of two source types:
+- **github**: Automatically fetches and builds from a GitHub repository (specified by `repo` and `commit`)
+- **local**: Builds from a local directory clone (specified by `path`)
+
+Switching an implementation from `github` to `local` type makes debugging easy:
+```yaml
+implementations:
+  - id: rust-v0.56
+    source:
+      type: local
+      path: /home/user/rust-libp2p  # Local clone for debugging
+      commit: b7914e40  # Still tracked for documentation
+    transports: [tcp, quic]
+```
+
+This allows you to:
+- Make local code changes without committing
+- Test modifications immediately without rebuilding from GitHub
+- Debug issues with your IDE and local tooling
+- Switch back to `github` type when done debugging
 
 ## Command-Line Options
 
@@ -180,7 +196,7 @@ Test selection uses pipe-separated substring matching:
 - `--test-select "rust-v0.53|go-v0.43"` - Select tests matching either pattern
 - `--test-ignore "tcp"` - Exclude tests containing "tcp"
 
-If no CLI args provided, defaults from `test-selection.yaml` are used.
+Without CLI arguments, all tests are run. Use `--test-select` and `--test-ignore` to filter tests as needed.
 
 ## Content-Addressed Caching
 
@@ -233,6 +249,9 @@ Each test pass is fully self-contained and reproducible:
 ```bash
 cd /srv/cache/test-passes/hole-punch-HHMMSS-DD-MM-YYYY
 ./re-run.sh
+
+# Force rebuild all images before re-running
+./re-run.sh --force-rebuild
 ```
 
 The snapshot includes:
@@ -240,6 +259,8 @@ The snapshot includes:
 - All Docker images (saved as tar.gz)
 - Complete configuration
 - All scripts and tooling
+
+The `--force-rebuild` flag forces rebuilding of all Docker images from the captured snapshots, useful when you need to ensure a clean build environment or verify reproducibility from scratch.
 
 ## Documentation
 

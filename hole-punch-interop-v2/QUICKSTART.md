@@ -174,6 +174,9 @@ open results.html  # or xdg-open on Linux
 # Re-run from snapshot
 cd /tmp/cache/test-passes/hole-punch-*
 ./re-run.sh
+
+# Force rebuild all images before re-running
+./re-run.sh --force-rebuild
 ```
 
 ### Adjust Parallelism
@@ -239,6 +242,44 @@ cat logs/rust-v0.53_x_rust-v0.53_tcp.log
 
 # View all failed tests
 grep -l "failed" logs/*.log
+```
+
+## Debugging with Local Implementations
+
+For development and debugging, you can switch implementations from GitHub sources to local directories:
+
+```yaml
+# In impls.yaml
+implementations:
+  - id: rust-v0.56
+    source:
+      type: local              # Changed from 'github' to 'local'
+      path: /home/user/rust-libp2p  # Local clone
+      commit: b7914e40        # Still tracked for documentation
+    transports: [tcp, quic]
+```
+
+Benefits:
+- Make changes without committing to GitHub
+- Test modifications immediately
+- Use your local IDE and debugging tools
+- Faster iteration during development
+- Switch back to `github` type when done
+
+Example workflow:
+```bash
+# 1. Clone repo locally
+git clone https://github.com/libp2p/rust-libp2p.git ~/rust-libp2p
+
+# 2. Edit impls.yaml to use local path
+vim impls.yaml
+# Change rust-v0.56 source type to 'local' and set path
+
+# 3. Make your changes
+vim ~/rust-libp2p/protocols/dcutr/src/behaviour.rs
+
+# 4. Test with your changes
+./run_tests.sh --test-select "rust-v0.56" --force-rebuild
 ```
 
 ## Next Steps

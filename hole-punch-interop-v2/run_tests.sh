@@ -170,7 +170,6 @@ START_TIME=$(date +%s)
 mkdir -p "$TEST_PASS_DIR"
 
 cp impls.yaml "$TEST_PASS_DIR/"
-[ -f test-selection.yaml ] && cp test-selection.yaml "$TEST_PASS_DIR/"
 
 # 1. Check dependencies
 echo "╲ Checking dependencies..."

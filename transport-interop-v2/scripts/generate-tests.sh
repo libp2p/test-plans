@@ -20,29 +20,6 @@ is_standalone_transport() {
     echo "$STANDALONE_TRANSPORTS" | grep -qw "$transport"
 }
 
-# Load test selection defaults from YAML file
-load_test_select_from_yaml() {
-    if [ ! -f "test-selection.yaml" ]; then
-        echo ""
-        return
-    fi
-
-    # Extract test-select list (pipe-separated)
-    local select=$(yq eval '.test-select[]' "test-selection.yaml" 2>/dev/null | paste -sd'|' -)
-    echo "$select"
-}
-
-load_test_ignore_from_yaml() {
-    if [ ! -f "test-selection.yaml" ]; then
-        echo ""
-        return
-    fi
-
-    # Extract test-ignore list (pipe-separated)
-    local ignore=$(yq eval '.test-ignore[]' "test-selection.yaml" 2>/dev/null | paste -sd'|' -)
-    echo "$ignore"
-}
-
 # Load aliases from impls.yaml into an associative array
 load_aliases() {
     declare -gA ALIASES  # Global associative array
@@ -167,8 +144,7 @@ expand_aliases() {
 # Load test aliases from impls.yaml
 load_aliases
 
-# Determine test select and ignore values
-# Priority: CLI args > YAML files
+# Use test select and ignore values from CLI arguments
 TEST_SELECT="$CLI_TEST_SELECT"
 TEST_IGNORE="$CLI_TEST_IGNORE"
 
@@ -176,17 +152,11 @@ echo ""
 echo "╲ Test Matrix Generation"
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
-# Load from YAML if not provided via CLI
-if [ -z "$CLI_TEST_SELECT" ]; then
-    YAML_SELECT=$(load_test_select_from_yaml)
-    if [ -n "$YAML_SELECT" ]; then
-        TEST_SELECT="$YAML_SELECT"
-        echo "→ Loaded test-select from test-selection.yaml: $TEST_SELECT"
-    else
-        echo "→ No test-select specified (will include all tests)"
-    fi
+# Display test selection
+if [ -n "$TEST_SELECT" ]; then
+    echo "→ Test select: $TEST_SELECT"
 else
-    echo "→ Using CLI test-select: $TEST_SELECT"
+    echo "→ No test-select specified (will include all tests)"
 fi
 
 # Expand aliases in TEST_SELECT
@@ -198,16 +168,11 @@ if [ -n "$TEST_SELECT" ]; then
     fi
 fi
 
-if [ -z "$CLI_TEST_IGNORE" ]; then
-    YAML_IGNORE=$(load_test_ignore_from_yaml)
-    if [ -n "$YAML_IGNORE" ]; then
-        TEST_IGNORE="$YAML_IGNORE"
-        echo "→ Loaded test-ignore from test-selection.yaml: $TEST_IGNORE"
-    else
-        echo "→ No test-ignore specified"
-    fi
+# Display test ignore
+if [ -n "$TEST_IGNORE" ]; then
+    echo "→ Test ignore: $TEST_IGNORE"
 else
-    echo "→ Using CLI test-ignore: $TEST_IGNORE"
+    echo "→ No test-ignore specified"
 fi
 
 # Expand aliases in TEST_IGNORE
@@ -219,8 +184,8 @@ if [ -n "$TEST_IGNORE" ]; then
     fi
 fi
 
-# Compute cache key from impls.yaml + all test-selection.yaml files + select + ignore
-cache_key=$({ cat impls.yaml impls/*/test-selection.yaml test-selection.yaml 2>/dev/null; echo "$TEST_SELECT||$TEST_IGNORE||$DEBUG"; } | sha256sum | cut -d' ' -f1)
+# Compute cache key from impls.yaml + select + ignore + debug
+cache_key=$({ cat impls.yaml 2>/dev/null; echo "$TEST_SELECT||$TEST_IGNORE||$DEBUG"; } | sha256sum | cut -d' ' -f1)
 echo "→ Computed cache key: ${cache_key:0:8}"
 
 cache_file="$CACHE_DIR/test-matrix/${cache_key}.yaml"
