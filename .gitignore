@@ -48,6 +48,13 @@ dist
 # ignore system files
 .DS_Store
 
+# .NET build artifacts
+perf/impl/dotnet-libp2p/*/bin/
+perf/impl/dotnet-libp2p/*/obj/
+perf/impl/dotnet-libp2p/*/*.user
+perf/impl/dotnet-libp2p/*/*.suo
+perf/impl/dotnet-libp2p/*/*.tmp
+perf/impl/dotnet-libp2p/*/*.log
 # ignore downloads directory
 downloads/
 
