@@ -151,7 +151,7 @@ echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔�
 
 # Generate test pass name and folder
 TEST_PASS_NAME="transport-interop-$(date +%H%M%S-%d-%m-%Y)"
-TEST_PASS_DIR="$CACHE_DIR/test-passes/$TEST_PASS_NAME"
+export TEST_PASS_DIR="$CACHE_DIR/test-passes/$TEST_PASS_NAME"
 
 echo "→ Test Pass: $TEST_PASS_NAME"
 echo "→ Cache Dir: $CACHE_DIR"
@@ -170,7 +170,6 @@ mkdir -p "$TEST_PASS_DIR"/{logs,docker-compose}
 START_TIME=$(date +%s)
 
 export TEST_PASS_NAME
-export TEST_PASS_DIR
 
 # 1. Check dependencies
 echo "╲ Checking dependencies..."

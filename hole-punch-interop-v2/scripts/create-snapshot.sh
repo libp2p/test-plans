@@ -123,7 +123,7 @@ os: $(uname -s)
 cacheDir: $CACHE_DIR
 
 # Original test configuration
-testFilter: $(yq eval '.metadata.filter' "$SNAPSHOT_DIR/test-matrix.yaml")
+testSelect: $(yq eval '.metadata.select' "$SNAPSHOT_DIR/test-matrix.yaml")
 testIgnore: $(yq eval '.metadata.ignore' "$SNAPSHOT_DIR/test-matrix.yaml")
 
 # Test results summary
@@ -141,6 +141,43 @@ cat > "$SNAPSHOT_DIR/re-run.sh" <<'EOF'
 # This script recreates the exact test run from the snapshot
 
 set -euo pipefail
+
+FORCE_REBUILD=false
+
+# Show help
+show_help() {
+    cat <<HELP
+Re-run Test Pass Snapshot
+
+Usage: $0 [options]
+
+Options:
+  --force-rebuild    Force rebuilding of all docker images before re-running
+  --help, -h         Show this help message
+
+Examples:
+  $0                    # Re-run tests using cached Docker images
+  $0 --force-rebuild    # Rebuild images and re-run tests
+
+Description:
+  This script re-runs a snapshot of a previous test pass. By default, it will
+  use pre-saved Docker images from the snapshot. If the images are not present
+  or --force-rebuild is specified, it will rebuild only the images needed for
+  the tests in this snapshot based on impls.yaml and test-matrix.yaml.
+
+Dependencies:
+  bash 4.0+, docker 20.10+, yq 4.0+, wget, unzip
+HELP
+}
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --force-rebuild) FORCE_REBUILD=true; shift ;;
+        --help|-h) show_help; exit 0 ;;
+        *) echo "Unknown option: $1"; echo ""; show_help; exit 1 ;;
+    esac
+done
 
 # Change to snapshot directory
 cd "$(dirname "$0")"
@@ -238,23 +275,58 @@ else
     echo "  ✓ All snapshots present"
 fi
 
-# Load Docker images from snapshot
+# Load or build Docker images
 echo ""
-echo "╲ Loading Docker images..."
+echo "╲ Loading/Building Docker images..."
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
-if [ -d docker-images ]; then
+# Get unique implementations from test matrix (dialer + listener)
+REQUIRED_IMPLS=$(mktemp)
+yq eval '.tests[].dialer' test-matrix.yaml | sort -u > "$REQUIRED_IMPLS"
+yq eval '.tests[].listener' test-matrix.yaml | sort -u >> "$REQUIRED_IMPLS"
+sort -u "$REQUIRED_IMPLS" -o "$REQUIRED_IMPLS"
+
+# Also add base images for any browser-type implementations
+REQUIRED_IMPLS_WITH_DEPS=$(mktemp)
+cp "$REQUIRED_IMPLS" "$REQUIRED_IMPLS_WITH_DEPS"
+
+while IFS= read -r impl_id; do
+    # Check if this is a browser-type implementation
+    source_type=$(yq eval ".implementations[] | select(.id == \"$impl_id\") | .source.type" impls.yaml)
+    if [ "$source_type" = "browser" ]; then
+        # Add its base image as a dependency
+        base_image=$(yq eval ".implementations[] | select(.id == \"$impl_id\") | .source.baseImage" impls.yaml)
+        echo "$base_image" >> "$REQUIRED_IMPLS_WITH_DEPS"
+    fi
+done < "$REQUIRED_IMPLS"
+
+# Sort and deduplicate
+sort -u "$REQUIRED_IMPLS_WITH_DEPS" -o "$REQUIRED_IMPLS_WITH_DEPS"
+
+IMPL_COUNT=$(wc -l < "$REQUIRED_IMPLS_WITH_DEPS")
+
+if [ "$FORCE_REBUILD" = true ]; then
+    echo "  → Force rebuild requested, building $IMPL_COUNT required implementations..."
+    IMPL_FILTER=$(cat "$REQUIRED_IMPLS_WITH_DEPS" | paste -sd'|' -)
+    bash scripts/build-images.sh "$IMPL_FILTER" "true"
+    echo "  ✓ All images rebuilt"
+elif [ -d docker-images ] && [ "$(ls -A docker-images 2>/dev/null)" ]; then
+    echo "  → Loading $IMPL_COUNT images from snapshot..."
     for image_file in docker-images/*.tar.gz; do
         if [ -f "$image_file" ]; then
             image_name=$(basename "$image_file" .tar.gz)
-            gunzip -c "$image_file" | docker load | sed 's/^/  /'
+            gunzip -c "$image_file" | docker load | sed 's/^/    /'
         fi
     done
     echo "  ✓ All images loaded"
 else
-    echo "  ! No docker-images directory found, attempting to build..."
-    bash scripts/build-images.sh
+    echo "  ! No docker-images directory found, building $IMPL_COUNT required implementations..."
+    IMPL_FILTER=$(cat "$REQUIRED_IMPLS_WITH_DEPS" | paste -sd'|' -)
+    bash scripts/build-images.sh "$IMPL_FILTER" "false"
+    echo "  ✓ All images built"
 fi
+
+rm -f "$REQUIRED_IMPLS" "$REQUIRED_IMPLS_WITH_DEPS"
 
 # Start global services
 echo ""
@@ -444,15 +516,27 @@ This is a self-contained snapshot of a hole punch interoperability test run.
 To reproduce this test run on any machine with bash, docker, git, yq, wget, and unzip:
 
 \`\`\`bash
-./re-run.sh
+./re-run.sh [options]
+\`\`\`
+
+Options:
+- \`--help, -h\`: Show help information
+- \`--force-rebuild\`: Force rebuilding all Docker images before re-running tests
+
+Examples:
+\`\`\`bash
+./re-run.sh                  # Use cached Docker images from snapshot
+./re-run.sh --force-rebuild  # Rebuild images from source before running
+./re-run.sh --help           # Show help information
 \`\`\`
 
 This will:
 1. Validate all required snapshots are present
-2. Load Docker images from snapshot (or rebuild if needed)
-3. Start global services (Redis, Relay)
-4. Re-run all tests with the same configuration in parallel
-5. Generate new results in re-runs/ subdirectory
+2. Load Docker images from snapshot (or rebuild if needed/requested)
+3. Build only the implementations required for tests (based on impls.yaml and test-matrix.yaml)
+4. Start global services (Redis, Relay)
+5. Re-run all tests with the same configuration in parallel
+6. Generate new results in re-runs/ subdirectory
 
 ## Test Summary
 

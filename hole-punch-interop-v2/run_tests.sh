@@ -151,7 +151,7 @@ echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔�
 
 # Generate test pass name and folder
 TEST_PASS_NAME="hole-punch-$(date +%H%M%S-%d-%m-%Y)"
-TEST_PASS_DIR="$CACHE_DIR/test-passes/$TEST_PASS_NAME"
+export TEST_PASS_DIR="$CACHE_DIR/test-passes/$TEST_PASS_NAME"
 
 echo "→ Test Pass: $TEST_PASS_NAME"
 echo "→ Cache Dir: $CACHE_DIR"
@@ -168,7 +168,6 @@ START_TIME=$(date +%s)
 
 # Create test pass directory and copy configuration
 mkdir -p "$TEST_PASS_DIR"
-export TEST_PASS_DIR
 
 cp impls.yaml "$TEST_PASS_DIR/"
 [ -f test-selection.yaml ] && cp test-selection.yaml "$TEST_PASS_DIR/"
