@@ -7,10 +7,12 @@ set -euo pipefail
 center() {
     local str="$1"
     local width="${2:-16}"
-    local inner=$((width - 2))
-    ((inner < 1)) && inner=1
-    str="${str:0:inner}"
-    printf "%*s" $(( (inner + ${#str}) / 2 )) "$str"
+    ((width < 1)) && width=1
+    str="${str:0:width}"
+    local strlen=${#str}
+    local left_pad=$(( (width - strlen) / 2 ))
+    local right_pad=$(( width - strlen - left_pad ))
+    printf "%*s%s%*s" "$left_pad" "" "$str" "$right_pad" ""
 }
 
 # Use the docker compose command passed via environment variable
@@ -47,7 +49,9 @@ SUBNET_ID_2=$(( (16#${TEST_KEY:2:2} + 32) % 256 ))
 WAN_SUBNET="10.${SUBNET_ID_1}.${SUBNET_ID_2}.64/29"
 WAN_GATEWAY="10.${SUBNET_ID_1}.${SUBNET_ID_2}.70"
 LAN_DIALER_SUBNET="10.${SUBNET_ID_1}.${SUBNET_ID_2}.92/30"
+LAN_DIALER_GATEWAY="10.${SUBNET_ID_1}.${SUBNET_ID_2}.93/30"
 LAN_LISTENER_SUBNET="10.${SUBNET_ID_1}.${SUBNET_ID_2}.128/30"
+LAN_LISTENER_GATEWAY="10.${SUBNET_ID_1}.${SUBNET_ID_2}.129/30"
 
 # Calculate fixed IP addresses
 RELAY_IP="10.${SUBNET_ID_1}.${SUBNET_ID_2}.65"
@@ -83,36 +87,45 @@ echo "Transport:      $TRANSPORT" >> "$LOG_FILE"
 echo "Debug Mode:     $DEBUG" >> "$LOG_FILE"
 echo "" >> "$LOG_FILE"
 
-____CWRIP_____=$(center "$RELAY_IP" 16)
-____CWDIP_____=$(center "$DIALIER_ROUTER_WAN_IP" 16)
-____CWLIP_____=$(center "$DIALIER_ROUTER_WAN_IP" 16)
-____CLDIP_____=$(center "$DIALER_ROUTER_LAN_IP" 16)
-____CLLIP_____=$(center "$DIALER_ROUTER_LAN_IP" 16)
-_____CDIP_____=$(center "$DIALER_IP" 16)
-_____CLIP_____=$(center "$LISTENER_IP" 16)
+_____CWSN_______=$(center "$WAN_SUBNET" 17)
+_____CWGW_______=$(center "$WAN_GATEWAY" 17)
+_____CWRIP______=$(center "$RELAY_IP" 17)
+_____CWDIP______=$(center "$DIALER_ROUTER_WAN_IP" 17)
+_____CWLIP______=$(center "$LISTENER_ROUTER_WAN_IP" 17)
+
+_____CLDSN______=$(center "$LAN_DIALER_SUBNET" 17)
+_____CLDGW______=$(center "$LAN_DIALER_GATEWAY" 17)
+_____CLDIP______=$(center "$DIALER_ROUTER_LAN_IP" 17)
+_____CDIP_______=$(center "$DIALER_IP" 17)
+
+_____CLLSN______=$(center "$LAN_LISTENER_SUBNET" 17)
+_____CLLGW______=$(center "$LAN_LISTENER_GATEWAY" 17)
+_____CLLIP______=$(center "$LISTENER_ROUTER_LAN_IP" 17)
+_____CLIP_______=$(center "$LISTENER_IP" 17)
 
 echo "╲ Network Toplogy" >> "$LOG_FILE"
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔" >> "$LOG_FILE"
 echo "" >> "$LOG_FILE"
-echo "                    Internet (WAN Network)" >> "$LOG_FILE"
-echo "                    $WAN_SUBNET" >> "$LOG_FILE"
-echo "                    Gateway: $WAN_GATEWAY" >> "$LOG_FILE"
-echo "                             |" >> "$LOG_FILE"
-echo "         +-------------------+-------------------+" >> "$LOG_FILE"
-echo "         |                   |                   |" >> "$LOG_FILE"
-echo "+-----------------+ +-----------------+ +-----------------+" >> "$LOG_FILE"
-echo "| $____CWDIP_____ | | $____CWRIP_____ | | $____CWLIP_____ |" >> "$LOG_FILE"
-echo "| DialerRouterNAT | |      Relay      | | ListenRouterNAT |" >> "$LOG_FILE"
-echo "| $____CLDIP_____ | |                 | | $____CLLIP_____ |" >> "$LOG_FILE"
-echo "+-----------------+ +-----------------+ +-----------------+" >> "$LOG_FILE"
-echo "         |                                       |" >> "$LOG_FILE"
-echo " LAN Dialer Subnet                      LAN Listener Subnet" >> "$LOG_FILE"
-echo " $LAN_DIALER_SUBNET                     $LAN_LISTENER_SUBNET" >> "$LOG_FILE"
-echo "         |                                       |" >> "$LOG_FILE"
-echo "+-----------------+                     +-----------------+" >> "$LOG_FILE"
-echo "| $_____CDIP_____ |                     | $_____CLIP_____ |" >> "$LOG_FILE"
-echo "|      Dialer     |                     |     Listener    |" >> "$LOG_FILE"
-echo "+-----------------+                     +-----------------+" >> "$LOG_FILE"
+echo "                      Internet (WAN Network)" >> "$LOG_FILE"
+echo "                      Subnet: $_____CWSN_______" >> "$LOG_FILE"
+echo "                      Gateway: $_____CWGW_______" >> "$LOG_FILE"
+echo "                                |" >> "$LOG_FILE"
+echo "          +---------------------+---------------------+" >> "$LOG_FILE"
+echo "          |                     |                     |" >> "$LOG_FILE"
+echo "+-------------------+ +-------------------+ +-------------------+" >> "$LOG_FILE"
+echo "| $_____CWDIP______ | | $_____CWRIP______ | | $_____CWLIP______ |" >> "$LOG_FILE"
+echo "| Dialer Router NAT | |       Relay       | | Listen Router NAT |" >> "$LOG_FILE"
+echo "| $_____CLDIP______ | |                   | | $_____CLLIP______ |" >> "$LOG_FILE"
+echo "+-------------------+ +-------------------+ +-------------------+" >> "$LOG_FILE"
+echo "          |                                           |" >> "$LOG_FILE"
+echo " Dialer (LAN Network)                        Listener (LAN Network)" >> "$LOG_FILE"
+echo " Subnet: $_____CLDSN______                   Subnet: $_____CLLSN______" >> "$LOG_FILE"
+echo " Gateway: $_____CLDGW______                  Gateway: $_____CLLGW______" >> "$LOG_FILE"
+echo "          |                                           |" >> "$LOG_FILE"
+echo "+-------------------+                       +-------------------+" >> "$LOG_FILE"
+echo "| $_____CDIP_______ |                       | $_____CLIP_______ |" >> "$LOG_FILE"
+echo "|       Dialer      |                       |      Listener     |" >> "$LOG_FILE"
+echo "+-------------------+                       +-------------------+" >> "$LOG_FILE"
 echo "" >> "$LOG_FILE"
 
 echo "╲ Subnet Configuration" >> "$LOG_FILE"
@@ -120,26 +133,27 @@ echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔�
 echo "Subnet ID Base:       $SUBNET_ID_1.$SUBNET_ID_2" >> "$LOG_FILE"
 echo "" >> "$LOG_FILE"
 echo "WAN Network:" >> "$LOG_FILE"
-echo "  Subnet:             $WAN_SUBNET" >> "$LOG_FILE"
-echo "  Gateway:            $WAN_GATEWAY" >> "$LOG_FILE"
-echo "  Relay IP:           $RELAY_IP" >> "$LOG_FILE"
-echo "  Dialer Router WAN:  $DIALER_ROUTER_WAN_IP" >> "$LOG_FILE"
+echo "  Subnet:              $WAN_SUBNET" >> "$LOG_FILE"
+echo "  Gateway:             $WAN_GATEWAY" >> "$LOG_FILE"
+echo "  Relay IP:            $RELAY_IP" >> "$LOG_FILE"
+echo "  Dialer Router WAN:   $DIALER_ROUTER_WAN_IP" >> "$LOG_FILE"
 echo "  Listener Router WAN: $LISTENER_ROUTER_WAN_IP" >> "$LOG_FILE"
 echo "" >> "$LOG_FILE"
 echo "LAN Dialer Network:" >> "$LOG_FILE"
-echo "  Subnet:             $LAN_DIALER_SUBNET" >> "$LOG_FILE"
-echo "  Router LAN IP:      $DIALER_ROUTER_LAN_IP" >> "$LOG_FILE"
-echo "  Dialer IP:          $DIALER_IP" >> "$LOG_FILE"
+echo "  Subnet:              $LAN_DIALER_SUBNET" >> "$LOG_FILE"
+echo "  Gateway:             $LAN_DIALER_GATEWAY" >> "$LOG_FILE"
+echo "  Router LAN IP:       $DIALER_ROUTER_LAN_IP" >> "$LOG_FILE"
+echo "  Dialer IP:           $DIALER_IP" >> "$LOG_FILE"
 echo "" >> "$LOG_FILE"
 echo "LAN Listener Network:" >> "$LOG_FILE"
-echo "  Subnet:             $LAN_LISTENER_SUBNET" >> "$LOG_FILE"
-echo "  Router LAN IP:      $LISTENER_ROUTER_LAN_IP" >> "$LOG_FILE"
-echo "  Listener IP:        $LISTENER_IP" >> "$LOG_FILE"
+echo "  Subnet:              $LAN_LISTENER_SUBNET" >> "$LOG_FILE"
+echo "  Gateway:             $LAN_LISTENER_GATEWAY" >> "$LOG_FILE"
+echo "  Router LAN IP:       $LISTENER_ROUTER_LAN_IP" >> "$LOG_FILE"
+echo "  Listener IP:         $LISTENER_IP" >> "$LOG_FILE"
 echo "" >> "$LOG_FILE"
 
 echo "╲ Docker Containers" >> "$LOG_FILE"
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔" >> "$LOG_FILE"
-echo "" >> "$LOG_FILE"
 echo "Container 1: Relay" >> "$LOG_FILE"
 echo "  Container Name: ${TEST_SLUG}_relay" >> "$LOG_FILE"
 echo "  Image:          $RELAY_IMAGE" >> "$LOG_FILE"

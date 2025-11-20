@@ -81,14 +81,16 @@ All artifacts are named by their content hash for automatic deduplication:
 **Connection Flow:**
 1. Test starts with unique TEST_KEY (hash of test name)
 2. All containers receive TEST_KEY via environment variable
-3. Relay publishes multiaddr to `relay:{TEST_KEY}` in Redis
-4. Dialer/Listener fetch relay multiaddr from Redis
-5. Both peers connect to relay for DCUtR signaling
-6. Dialer attempts direct connection to Listener through NATs
-7. NAT routers perform SNAT and add 100ms delay
-8. Successful hole punch establishes direct P2P connection
-9. Test coordination continues with namespaced Redis keys
-10. Keys auto-expire after test completion
+3. Relay publishes transport-specific multiaddr to `relay:{TEST_KEY}:{transport}` in Redis
+4. Listener fetches relay multiaddr, connects to relay, publishes peer ID to `listener:{TEST_KEY}:peer_id`
+5. Dialer fetches relay multiaddr and listener peer ID from Redis
+6. Dialer connects to relay and initiates relay circuit to listener
+7. DCutR protocol automatically negotiates hole punch over relay connection
+8. Both peers attempt simultaneous connection through their NATs
+9. NAT routers perform SNAT and add 100ms delay
+10. Successful hole punch establishes direct P2P connection
+11. Test coordination continues with namespaced Redis keys
+12. Keys auto-expire after test completion (5 minute TTL)
 
 **Network Delays:**
 - Relay network interface: 25ms (applied at relay eth0)
@@ -112,24 +114,51 @@ TEST_KEY=$(echo -n "$TEST_NAME" | sha256sum | cut -c1-10)
 
 **Key Namespace:**
 ```
-relay:{TEST_KEY}              # Relay multiaddr (set by relay)
-ready:{TEST_KEY}:dialer       # Dialer ready signal
-ready:{TEST_KEY}:listener     # Listener ready signal
-result:{TEST_KEY}:dialer      # Dialer test result
-result:{TEST_KEY}:listener    # Listener test result
+relay:{TEST_KEY}:tcp          # Relay TCP multiaddr (set by relay)
+relay:{TEST_KEY}:quic         # Relay QUIC multiaddr (set by relay)
+listener:{TEST_KEY}:peer_id   # Listener's peer ID (set by listener)
+ready:{TEST_KEY}:dialer       # Dialer ready signal (optional)
+ready:{TEST_KEY}:listener     # Listener ready signal (optional)
+result:{TEST_KEY}:dialer      # Dialer test result (optional)
+result:{TEST_KEY}:listener    # Listener test result (optional)
 ```
 
-**Relay Multiaddr Distribution:**
-1. Relay starts and publishes to Redis:
+**DCutR Signaling Flow:**
+1. Relay starts and publishes multiaddr to Redis:
    ```
-   SET relay:{TEST_KEY} "/ip4/10.x.x.65/tcp/4001/p2p/{peer_id}"
-   EXPIRE relay:{TEST_KEY} 300
+   RPUSH relay:{TEST_KEY}:tcp "/ip4/10.x.x.65/tcp/4001/p2p/{relay_peer_id}"
+   EXPIRE relay:{TEST_KEY}:tcp 300
+
+   RPUSH relay:{TEST_KEY}:quic "/ip4/10.x.x.65/udp/4001/quic-v1/p2p/{relay_peer_id}"
+   EXPIRE relay:{TEST_KEY}:quic 300
    ```
-2. Dialer/Listener wait for relay:
+
+2. Listener starts, fetches relay multiaddr, and publishes its peer ID:
    ```
-   GET relay:{TEST_KEY}  # Blocking until relay publishes
+   # Fetch relay address (blocks until available)
+   BLPOP relay:{TEST_KEY}:{transport} 30
+
+   # Connect to relay, then publish own peer ID
+   RPUSH listener:{TEST_KEY}:peer_id "{listener_peer_id}"
+   EXPIRE listener:{TEST_KEY}:peer_id 300
    ```
-3. All subsequent coordination uses namespaced keys
+
+3. Dialer fetches relay multiaddr and listener peer ID:
+   ```
+   # Fetch relay address
+   BLPOP relay:{TEST_KEY}:{transport} 30
+
+   # Fetch listener peer ID
+   BLPOP listener:{TEST_KEY}:peer_id 30
+
+   # Construct relay circuit address
+   {relay_addr}/p2p-circuit/p2p/{listener_peer_id}
+
+   # Connect via relay circuit - DCutR happens automatically
+   ```
+
+4. DCutR protocol exchanges observed addresses and coordinates hole punch
+5. Direct P2P connection established after successful hole punch
 
 **Benefits:**
 - Complete isolation between concurrent tests
