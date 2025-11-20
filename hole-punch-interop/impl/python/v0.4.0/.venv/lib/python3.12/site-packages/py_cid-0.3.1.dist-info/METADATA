@@ -1,0 +1,116 @@
+Metadata-Version: 2.4
+Name: py-cid
+Version: 0.3.1
+Summary: Self-describing content-addressed identifiers for distributed systems
+Author-email: Dhruv Baldawa <dhruv@dhruvb.com>
+Maintainer: acul71
+Maintainer-email: Dhruv Baldawa <dhruv@dhruvb.com>, pacrob <pacrob-py-libp2p@protonmail.com>
+License: MIT
+Project-URL: Homepage, https://github.com/ipld/py-cid
+Project-URL: Documentation, https://py-cid.readthedocs.io
+Project-URL: Repository, https://github.com/ipld/py-cid
+Project-URL: Bug Tracker, https://github.com/ipld/py-cid/issues
+Keywords: cid,ipfs,ipld,content-addressed,multihash,multibase,multicodec
+Classifier: Development Status :: 2 - Pre-Alpha
+Classifier: Intended Audience :: Developers
+Classifier: Natural Language :: English
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Programming Language :: Python :: 3.13
+Requires-Python: >=3.10
+Description-Content-Type: text/x-rst
+License-File: LICENSE
+License-File: AUTHORS.rst
+Requires-Dist: base58<2.0,>=1.0.2
+Requires-Dist: py-multibase<2.0.0,>=1.0.0
+Requires-Dist: py-multicodec<0.3.0
+Requires-Dist: morphys<2.0,>=1.0
+Requires-Dist: pymultihash<1.0.0,>=0.8.0
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0.0; extra == "dev"
+Requires-Dist: pytest-cov>=4.0.0; extra == "dev"
+Requires-Dist: pytest-runner>=6.0.0; extra == "dev"
+Requires-Dist: hypothesis>=6.0.0; extra == "dev"
+Requires-Dist: coverage>=7.0.0; extra == "dev"
+Requires-Dist: sphinx>=7.0.0; extra == "dev"
+Requires-Dist: watchdog[watchmedo]>=3.0.0; extra == "dev"
+Requires-Dist: tox>=4.0.0; extra == "dev"
+Requires-Dist: twine>=4.0.0; extra == "dev"
+Requires-Dist: wheel; extra == "dev"
+Requires-Dist: bump_my_version>=0.19.0; extra == "dev"
+Requires-Dist: codecov>=2.0.0; extra == "dev"
+Requires-Dist: build; extra == "dev"
+Requires-Dist: cryptography>=44.0.1; extra == "dev"
+Requires-Dist: ruff>=0.1.0; extra == "dev"
+Requires-Dist: mypy>=1.5.0; extra == "dev"
+Requires-Dist: pre-commit>=3.0.0; extra == "dev"
+Requires-Dist: towncrier<25,>=24; extra == "dev"
+Requires-Dist: pyrefly<0.18.0,>=0.17.1; extra == "dev"
+Provides-Extra: docs
+Requires-Dist: sphinx>=7.0.0; extra == "docs"
+Dynamic: license-file
+
+CID (Content IDentifier)
+------------------------
+
+
+.. image:: https://img.shields.io/pypi/v/py-cid.svg
+        :target: https://pypi.python.org/pypi/py-cid
+
+.. image:: https://codecov.io/gh/ipld/py-cid/branch/master/graph/badge.svg
+        :target: https://codecov.io/gh/ipld/py-cid
+
+.. image:: https://readthedocs.org/projects/py-cid/badge/?version=stable
+        :target: https://py-cid.readthedocs.io/en/stable/?badge=stable
+        :alt: Documentation Status
+
+
+What is CID ?
+=============
+
+`CID <https://github.com/ipld/cid>`_ is a format for referencing content in distributed information systems,
+like `IPFS <https://ipfs.io>`_.
+It leverages `content addressing <https://en.wikipedia.org/wiki/Content-addressable_storage>`_,
+`cryptographic hashing <https://simple.wikipedia.org/wiki/Cryptographic_hash_function>`_, and
+`self-describing formats <https://github.com/multiformats/multiformats>`_.
+
+It is the core identifier used by `IPFS <https://ipfs.io>`_ and `IPLD <https://ipld.io>`_.
+
+CID is a self-describing content-addressed identifier.
+
+It uses cryptographic hashes to achieve content addressing.
+
+It uses several `multiformats <https://github.com/multiformats/multiformats>`_ to achieve flexible self-description,
+namely `multihash <https://github.com/multiformats/multihash>`_ for hashes,
+`multicodec <https://github.com/multiformats/multicodec>`_ for data content
+types, and `multibase <https://github.com/multiformats/multibase>`_ to encode the CID itself into strings.
+
+Sample Usage
+============
+
+.. code-block:: python
+
+    >>> from cid import make_cid
+    >>> make_cid('QmaozNR7DZHQK1ZcU9p7QdrshMvXqWK6gpu5rmrkPdT3L4')
+    CIDv0(version=0, codec=dag-pb, multihash=b"\x12 \xb9M'\xb9\x93M>\x08\xa5.R\xd7\xda}\xab\xfa\xc4\x84..")
+
+    >>> cid = make_cid('QmaozNR7DZHQK1ZcU9p7QdrshMvXqWK6gpu5rmrkPdT3L4')
+    >>> print(cid.version, cid.codec, cid.multihash)
+
+    >>> print(cid.encode())
+    QmaozNR7DZHQK1ZcU9p7QdrshMvXqWK6gpu5rmrkPdT3L4
+
+    >>> str(cid)
+    'QmaozNR7DZHQK1ZcU9p7QdrshMvXqWK6gpu5rmrkPdT3L4'
+
+
+
+
+Other info
+==========
+
+* Free software: MIT license
+* Documentation: https://py-cid.readthedocs.io.
+* Python versions: 3.10+

@@ -1,0 +1,4 @@
+async_generator-stubs
+outcome-stubs
+trio-stubs
+trio_typing

@@ -1,0 +1,8 @@
+#!/home/shweini/Desktop/dev/codemaestro64/libp2p/test-plans/hole-punch-interop/impl/python/v0.4.0/.venv/bin/python3
+# -*- coding: utf-8 -*-
+import re
+import sys
+from examples.echo.echo_quic import main
+if __name__ == '__main__':
+    sys.argv[0] = re.sub(r'(-script\.pyw|\.exe)?$', '', sys.argv[0])
+    sys.exit(main())

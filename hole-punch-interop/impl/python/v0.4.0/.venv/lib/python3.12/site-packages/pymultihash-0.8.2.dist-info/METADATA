@@ -1,0 +1,44 @@
+Metadata-Version: 2.0
+Name: pymultihash
+Version: 0.8.2
+Summary: Python implementation of the multihash specification
+Home-page: https://github.com/ivilata/pymultihash
+Author: Ivan Vilata-i-Balaguer
+Author-email: ivan@selidor.net
+License: MIT
+Keywords: multihash hash digest format ASCII encoding
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3 :: Only
+Classifier: Programming Language :: Python :: 3.4
+Classifier: Programming Language :: Python :: 3.5
+Classifier: Topic :: Security :: Cryptography
+Provides-Extra: blake2
+Requires-Dist: pyblake2; extra == 'blake2'
+Provides-Extra: sha3
+Requires-Dist: pysha3; extra == 'sha3'
+
+======================================================
+ Python implementation of the multihash specification
+======================================================
+
+This is an implementation of the `multihash`_ specification in Python.
+The main component in the module is the `Multihash` class, a named tuple that
+represents a hash function and a digest created with it, with extended
+abilities to work with hashlib-compatible hash functions, verify the integrity
+of data, and encode itself to a byte string in the binary format described in
+the specification (possibly ASCII-encoded).  The `decode()` function can be
+used for the inverse operation, i.e. converting a (possibly ASCII-encoded)
+byte string into a `Multihash` object.
+
+.. _multihash: https://github.com/jbenet/multihash
+
+For more information, please see the documentation under the ``docs``
+directory and the docstrings in the ``multihash`` package.  Ready-to-read
+documentation is also available in https://pymultihash.readthedocs.io/.
+
+This package requires at least Python 3.4.
+
+
