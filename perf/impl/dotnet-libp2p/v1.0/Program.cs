@@ -40,33 +40,33 @@ class Program
         // Parse command line arguments like Go implementation
         for (int i = 0; i < args.Length; i++)
         {
-            if (args[i] == "-run-server")
+            if (args[i] == "--run-server")
             {
                 runServer = true;
             }
-            else if (args[i] == "-multiaddr" && i + 1 < args.Length)
+            else if (args[i] == "--multiaddr" && i + 1 < args.Length)
             {
                 multiaddr = args[++i];
             }
-            else if (args[i] == "-server-address" && i + 1 < args.Length)
+            else if (args[i] == "--server-address" && i + 1 < args.Length)
             {
                 serverAddress = args[++i];
             }
-            else if (args[i] == "-upload-bytes" && i + 1 < args.Length)
+            else if (args[i] == "--upload-bytes" && i + 1 < args.Length)
             {
                 if (ulong.TryParse(args[++i], out ulong bytes))
                 {
                     uploadBytes = bytes;
                 }
             }
-            else if (args[i] == "-download-bytes" && i + 1 < args.Length)
+            else if (args[i] == "--download-bytes" && i + 1 < args.Length)
             {
                 if (ulong.TryParse(args[++i], out ulong bytes))
                 {
                     downloadBytes = bytes;
                 }
             }
-            else if (args[i] == "-transport" && i + 1 < args.Length)
+            else if (args[i] == "--transport" && i + 1 < args.Length)
             {
                 transport = args[++i];
                 // Validate transport - support both TCP and QUIC
@@ -113,7 +113,7 @@ class Program
             // Server mode
             if (serverAddress == null)
             {
-                logger.LogError("Server address must be specified with -server-address");
+                logger.LogError("Server address must be specified with --server-address");
                 Environment.Exit(1);
             }
             
@@ -177,7 +177,7 @@ class Program
             // Client mode
             if (serverAddress == null)
             {
-                logger.LogError("Server address must be specified with -server-address");
+                logger.LogError("Server address must be specified with --server-address");
                 Environment.Exit(1);
             }
 
@@ -219,27 +219,14 @@ class Program
                 try
                 {
                     var protocolTask = remotePeer.DialAsync<PerfProtocol>();
-                    
-                    // Add timeout to prevent infinite hanging
-                    var timeoutTask = Task.Delay(20000); // 20 second timeout to allow bidirectional communication
-                    var completedTask = await Task.WhenAny(protocolTask, timeoutTask);
-                    
-                    if (completedTask == timeoutTask)
-                    {
-                        // Don't throw - continue to output final result
-                    }
-                    else
-                    {
-                        await protocolTask; // Get any exceptions
-                    }
+
+                    // Await protocol task directly — allow long-running benchmarks
+                    await protocolTask; // Get any exceptions
                     
                     // Get actual transfer amounts from the protocol instance
                     // Since the protocol execution may have partially succeeded
                     actualUploadBytes = PerfProtocol.ActualBytesSent;
                     actualDownloadBytes = PerfProtocol.ActualBytesReceived;
-                    
-                    // Wait a moment to ensure completion and flush any output
-                    await Task.Delay(1000);
                 }
                 catch (Exception ex)
                 {
@@ -308,6 +295,6 @@ class Program
         
         var identity = new Identity(fixedSeed);
        
-        return "12D3KooWBXu3uGPMkjjxViK6autSnFH5QaKJgTwW8CaSxYSD6yYL";
+        return identity.PeerId.ToString();
     }
 }

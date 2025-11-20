@@ -93,7 +93,7 @@ public class PerfProtocol : ISessionProtocol
             try
             {
                 // Use WaitAny to avoid hanging on small transfers
-                var read = await channel.ReadAsync(1024, ReadBlockingMode.WaitAny).OrThrow();
+                var read = await channel.ReadAsync(BlockSize, ReadBlockingMode.WaitAny).OrThrow();
                 
                 if (read.Length == 0)
                 {
