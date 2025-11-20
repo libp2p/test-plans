@@ -1,0 +1,16 @@
+# Default test selection for full test passes
+# Used when no impls-specific test-selection.yaml applies
+
+# test-filter: List of substring patterns to match test names (OR logic)
+# If empty or omitted, all tests are initially selected
+test-filter: []
+
+# test-ignore: List of substring patterns to exclude from selected tests
+# Applied after test-filter
+# These tests do not build properly
+test-ignore:
+  - c-v0.0.1
+  - js-v2.x
+  - chromium
+  - firefox
+  - webkit
