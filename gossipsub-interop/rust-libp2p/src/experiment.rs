@@ -203,7 +203,7 @@ impl ScriptedNode {
                                         if before_extension != after_extension {
                                             info!(self.stderr_logger, "Got new data. Will republish. {before_extension:?} {after_extension:?}");
                                             if after_extension == vec![255] {
-                                                info!(self.stdout_logger, "Received Full Partial Message";
+                                                info!(self.stdout_logger, "All parts received";
                                                     // "topic" => topic_id,
                                                     // "group_id" => group_id,
                                                     "from" => propagation_source.to_string());
