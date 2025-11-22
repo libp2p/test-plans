@@ -205,6 +205,7 @@ func (n *scriptedNode) runInstruction(ctx context.Context, instruction ScriptIns
 				}
 				return nil
 			},
+			MergePartsMetadata: MergeMetadata,
 		}
 
 		psOpts := pubsubOptions(n.slogger, a.GossipSubParams, pme)

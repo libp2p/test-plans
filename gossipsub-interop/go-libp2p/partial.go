@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"math/bits"
+	"slices"
 
 	"github.com/libp2p/go-libp2p-pubsub/partialmessages"
 )
@@ -23,6 +24,18 @@ func (p *PartialMessage) PartsMetadata() partialmessages.PartsMetadata {
 		if len(p.parts[i]) > 0 {
 			out[0] |= 1 << i
 		}
+	}
+	return out
+}
+
+func MergeMetadata(_topic string, left, right partialmessages.PartsMetadata) partialmessages.PartsMetadata {
+	// by convention let the left be the larger one
+	if len(right) > len(left) {
+		left, right = right, left
+	}
+	out := slices.Clone(left)
+	for i := range right {
+		out[i] |= right[i]
 	}
 	return out
 }
