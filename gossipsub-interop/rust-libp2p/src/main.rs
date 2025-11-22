@@ -1,15 +1,13 @@
 use clap::Parser;
 use libp2p::{
-    core::upgrade,
-    gossipsub::{self, MessageAuthenticity, MessageId, ValidationMode},
-    identify,
-    identity::Keypair,
-    noise, tcp, yamux, PeerId, Swarm, Transport,
+    core::upgrade, identify, identity::Keypair, noise, tcp, yamux, PeerId, Swarm, Transport,
 };
+use libp2p_gossipsub::{self, MessageAuthenticity, MessageId, ValidationMode};
 use slog::{o, Drain, FnValue, Logger, PushFnValue, Record};
 use std::time::Instant;
 use tracing_subscriber::{layer::SubscriberExt, Layer};
 
+mod bitmap;
 mod connector;
 mod experiment;
 mod log_filter;
@@ -116,7 +114,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             );
             params.into()
         }
-        None => gossipsub::ConfigBuilder::default(),
+        None => libp2p_gossipsub::ConfigBuilder::default(),
     };
     config_builder
         .validation_mode(ValidationMode::Anonymous)
@@ -127,7 +125,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create gossipsub configuration
     let gossipsub_config = config_builder.build().expect("Valid gossipsub config");
     // Create gossipsub behavior
-    let gossipsub = gossipsub::Behaviour::new(MessageAuthenticity::Anonymous, gossipsub_config)?;
+    let gossipsub =
+        libp2p_gossipsub::Behaviour::new(MessageAuthenticity::Anonymous, gossipsub_config)?;
     let identify = identify::Behaviour::new(identify::Config::new(
         "/interop/1.0.0".into(),
         local_key.public(),
