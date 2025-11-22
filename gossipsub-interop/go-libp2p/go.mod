@@ -5,7 +5,7 @@ go 1.24.1
 require (
 	github.com/libp2p/go-libp2p v0.41.1
 	// fork with partial messages
-	github.com/libp2p/go-libp2p-pubsub v0.14.4-0.20250930192224-4bec5400d65c
+	github.com/libp2p/go-libp2p-pubsub v0.15.1-0.20251114013250-ca33674ef866
 )
 
 require (
