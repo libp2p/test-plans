@@ -225,7 +225,10 @@ func (n *scriptedNode) runInstruction(ctx context.Context, instruction ScriptIns
 		n.logger.Printf("Node %d connected to %d peers", n.nodeID, len(n.h.Network().Peers()))
 	case IfNodeIDEqualsInstruction:
 		if a.NodeID == n.nodeID {
-			n.runInstruction(ctx, a.Instruction)
+			err := n.runInstruction(ctx, a.Instruction)
+			if err != nil {
+				return err
+			}
 		}
 	case WaitUntilInstruction:
 		targetTime := n.startTime.Add(time.Duration(a.ElapsedSeconds) * time.Second)
