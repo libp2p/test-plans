@@ -100,8 +100,10 @@ Finally, add it to the `composition` function in `experiment.py`.
 Minimal test of partial messages
 
 ```bash
-uv run run.py --node_count 2 --composition "all-go" --scenario "partial-messages"
+uv run run.py --node_count 2 --composition "all-go" --scenario "partial-messages" && uv run checks/partial_messages.py latest/
 ```
+
+That command runs the shadow simulation and then verifies the stdout logs have the expected message.
 
 ## Future work (contributions welcome)
 

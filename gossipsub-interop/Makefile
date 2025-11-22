@@ -7,7 +7,7 @@ binaries:
 
 # Clean all generated shadow simulation files
 clean:
-	rm -rf *.data || true
+	rm -rf shadow-outputs || true
 	rm plots/* || true
 
 .PHONY: binaries all clean
