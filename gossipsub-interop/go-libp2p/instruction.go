@@ -52,9 +52,10 @@ func (AddPartialMessage) isInstruction() {}
 
 // PublishPartialInstruction represents a partial publish instruction in the script
 type PublishPartialInstruction struct {
-	Type    string `json:"type"`
-	TopicID string `json:"topicID"`
-	GroupID int    `json:"groupID"`
+	Type             string `json:"type"`
+	TopicID          string `json:"topicID"`
+	GroupID          int    `json:"groupID"`
+	PublishToNodeIDs []int  `json:"publishToNodeIDs"`
 }
 
 // isInstruction implements the ScriptInstruction interface

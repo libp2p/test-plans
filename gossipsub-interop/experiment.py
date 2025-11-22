@@ -185,6 +185,69 @@ def partial_message_chain_scenario(
     return instructions
 
 
+def partial_message_fanout_scenario(
+    disable_gossip: bool, node_count: int
+) -> List[ScriptInstruction]:
+    instructions: List[ScriptInstruction] = []
+    gs_params = GossipSubParams()
+    if disable_gossip:
+        gs_params.Dlazy = 0
+        gs_params.GossipFactor = 0
+    instructions.extend(spread_heartbeat_delay(node_count, gs_params))
+
+    number_of_conns_per_node = min(20, node_count - 1)
+    instructions.extend(random_network_mesh(node_count, number_of_conns_per_node))
+
+    topic = "a-subnet"
+    for i in range(node_count):
+        # The first node will not subscribe to the topic.
+        if i == 0:
+            continue
+
+        instructions.append(
+            script_instruction.IfNodeIDEquals(
+                nodeID=i,
+                instruction=script_instruction.SubscribeToTopic(
+                    topicID=topic, partial=True
+                ),
+            )
+        )
+
+    groupID = random.randint(0, (2**8) - 1)
+
+    # Wait for some setup time
+    elapsed_seconds = 30
+    instructions.append(script_instruction.WaitUntil(elapsedSeconds=elapsed_seconds))
+
+    # First node has everything
+    instructions.append(
+        script_instruction.IfNodeIDEquals(
+            nodeID=0,
+            instruction=script_instruction.AddPartialMessage(
+                topicID=topic, groupID=groupID, parts=0xFF
+            ),
+        )
+    )
+
+    # First node publishes to a fanout set, here we are saying the first 7 nodes after the publisher
+    instructions.append(
+        script_instruction.IfNodeIDEquals(
+            nodeID=0,
+            instruction=script_instruction.PublishPartial(
+                topicID=topic,
+                groupID=groupID,
+                publishToNodeIDs=list(range(1, min(8, node_count))),
+            ),
+        )
+    )
+
+    # Wait for everything to flush
+    elapsed_seconds += 10
+    instructions.append(script_instruction.WaitUntil(elapsedSeconds=elapsed_seconds))
+
+    return instructions
+
+
 def scenario(
     scenario_name: str, node_count: int, disable_gossip: bool
 ) -> ExperimentParams:
@@ -194,6 +257,8 @@ def scenario(
             instructions = partial_message_scenario(disable_gossip, node_count)
         case "partial-messages-chain":
             instructions = partial_message_chain_scenario(disable_gossip, node_count)
+        case "partial-messages-fanout":
+            instructions = partial_message_fanout_scenario(disable_gossip, node_count)
         case "subnet-blob-msg":
             gs_params = GossipSubParams()
             if disable_gossip:

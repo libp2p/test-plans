@@ -40,6 +40,7 @@ class PublishPartial(BaseModel):
     type: Literal["publishPartial"] = "publishPartial"
     topicID: str
     groupID: int  # uint64 representing groupID
+    publishToNodeIDs: List[NodeID] | None = None
 
 
 class Publish(BaseModel):

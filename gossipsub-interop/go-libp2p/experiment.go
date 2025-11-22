@@ -35,8 +35,9 @@ type partialMsgWithTopic struct {
 	msg   *PartialMessage
 }
 type publishReq struct {
-	topic   string
-	groupID []byte
+	topic          string
+	groupID        []byte
+	publishToPeers []peer.ID
 }
 
 type partialMsgManager struct {
@@ -80,7 +81,10 @@ func (m *partialMsgManager) run() {
 		case req := <-m.publish:
 			pm := m.partialMessages[req.topic][string(req.groupID)]
 			m.Info("publishing partial message", "groupID", hex.EncodeToString(pm.GroupID()), "topic", req.topic)
-			m.pubsub.PublishPartialMessage(req.topic, pm, partialmessages.PublishOptions{})
+			opts := partialmessages.PublishOptions{
+				PublishToPeers: req.publishToPeers,
+			}
+			m.pubsub.PublishPartialMessage(req.topic, pm, opts)
 		case <-m.done:
 			return
 		}
@@ -120,10 +124,10 @@ func (m *partialMsgManager) handleRPC(rpc incomingPartialRPC) {
 		}
 	}
 	afterExtend := pm.PartsMetadata()[0]
-	var shouldRepublish bool
+	var extended bool
 	if beforeExtend != afterExtend {
 		m.Info("Extended partial message")
-		shouldRepublish = true
+		extended = true
 
 	}
 
@@ -134,15 +138,25 @@ func (m *partialMsgManager) handleRPC(rpc incomingPartialRPC) {
 	}
 
 	pmHas := pm.PartsMetadata()
-	if !shouldRepublish && len(rpc.PartsMetadata) == 1 {
-		shouldRepublish = pmHas[0] != rpc.PartsMetadata[0]
-		if shouldRepublish {
+	var shouldRequest bool
+	if len(rpc.PartsMetadata) == 1 {
+		shouldRequest = pmHas[0] != rpc.PartsMetadata[0]
+		if shouldRequest {
 			m.Info("Republishing partial message because a peer has something I want")
 		}
 	}
 
-	if shouldRepublish {
+	if extended {
+		// We've extended our set. Let our mesh peers know
 		m.pubsub.PublishPartialMessage(rpc.GetTopicID(), pm, partialmessages.PublishOptions{})
+	}
+
+	if shouldRequest {
+		// This peer has parts we are missing. Request them from the peer
+		// explicitly.
+		m.pubsub.PublishPartialMessage(rpc.GetTopicID(), pm, partialmessages.PublishOptions{
+			PublishToPeers: []peer.ID{rpc.from},
+		})
 	}
 }
 
@@ -288,6 +302,9 @@ func (n *scriptedNode) runInstruction(ctx context.Context, instruction ScriptIns
 		pm := &PartialMessage{}
 		binary.BigEndian.AppendUint64(pm.groupID[:0], uint64(a.GroupID))
 		pm.FillParts(uint8(a.Parts))
+		if pm.complete() {
+			n.slogger.Info("All parts received", "group id", uint64(a.GroupID))
+		}
 		n.partialMsgMgr.add <- partialMsgWithTopic{
 			topic: a.TopicID,
 			msg:   pm,
@@ -296,9 +313,21 @@ func (n *scriptedNode) runInstruction(ctx context.Context, instruction ScriptIns
 	case PublishPartialInstruction:
 		var groupID [8]byte
 		binary.BigEndian.AppendUint64(groupID[:0], uint64(a.GroupID))
+		var publishToPeers []peer.ID
+		if len(a.PublishToNodeIDs) > 0 {
+			publishToPeers = make([]peer.ID, 0, len(a.PublishToNodeIDs))
+			for _, targetNodeID := range a.PublishToNodeIDs {
+				peerID, err := peer.IDFromPrivateKey(nodePrivKey(targetNodeID))
+				if err != nil {
+					return fmt.Errorf("failed to derive peer ID for node %d: %w", targetNodeID, err)
+				}
+				publishToPeers = append(publishToPeers, peerID)
+			}
+		}
 		n.partialMsgMgr.publish <- publishReq{
-			topic:   a.TopicID,
-			groupID: groupID[:],
+			topic:          a.TopicID,
+			groupID:        groupID[:],
+			publishToPeers: publishToPeers,
 		}
 
 	default:

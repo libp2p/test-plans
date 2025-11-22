@@ -28,6 +28,15 @@ func (p *PartialMessage) PartsMetadata() partialmessages.PartsMetadata {
 	return out
 }
 
+func (p *PartialMessage) complete() bool {
+	for i := range p.parts {
+		if len(p.parts[i]) == 0 {
+			return false
+		}
+	}
+	return true
+}
+
 func MergeMetadata(_topic string, left, right partialmessages.PartsMetadata) partialmessages.PartsMetadata {
 	// by convention let the left be the larger one
 	if len(right) > len(left) {
