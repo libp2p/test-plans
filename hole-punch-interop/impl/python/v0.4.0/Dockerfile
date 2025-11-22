@@ -1,7 +1,7 @@
 FROM python:3.12-slim
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y git build-essential iptables && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y git build-essential iptables libgmp-dev && rm -rf /var/lib/apt/lists/*
 
 # Upgrade pip and build tools
 RUN python -m pip install --upgrade pip setuptools wheel
