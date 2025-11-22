@@ -4,5 +4,11 @@
     "transports": ["tcp", "quic"],
     "secureChannels": [],
     "muxers": []
+  },
+  {
+    "id": "python-v0.4.0",
+    "transports": ["tcp", "quic"],
+    "secureChannels": [],
+    "muxers": []
   }
 ]
