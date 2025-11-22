@@ -105,6 +105,14 @@ uv run run.py --node_count 2 --composition "all-go" --scenario "partial-messages
 
 That command runs the shadow simulation and then verifies the stdout logs have the expected message.
 
+## Tests
+
+```bash
+make test
+```
+
+This runs various shadow simulations and checks.
+
 ## Future work (contributions welcome)
 
 - Add more scenarios.

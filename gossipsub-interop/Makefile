@@ -10,4 +10,17 @@ clean:
 	rm -rf shadow-outputs || true
 	rm plots/* || true
 
-.PHONY: binaries all clean
+test:
+	# Testing partial messages
+	@echo "Testing partial messages"
+	@uv run run.py --node_count 8 --composition "all-go" --scenario "partial-messages" && uv run checks/partial_messages.py latest --count 1
+
+	@echo "Testing partial messages chain"
+	@uv run run.py --node_count 8 --composition "all-go" --scenario "partial-messages-chain" && uv run checks/partial_messages.py latest --count 16
+
+	@echo "Testing fanout"
+	@uv run run.py --node_count 2 --composition "all-go" --scenario "partial-messages-fanout" && uv run checks/partial_messages.py latest/
+
+
+
+.PHONY: binaries all clean test
