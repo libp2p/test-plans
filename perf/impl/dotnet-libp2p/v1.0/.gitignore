@@ -1,0 +1,93 @@
+# .NET Core
+bin/
+obj/
+*.user
+*.suo
+*.tmp
+*.log
+
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+
+# NuGet
+*.nuget.targets
+packages/
+*.nupkg
+*.snupkg
+*.nuspec
+
+# .NET Core Tools
+.dotnet/
+tools/
+*.cake
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Test results
+TestResults/
+*.trx
+*.xml
+
+# Coverage
+*.coverage
+*.coveragexml
+
+# Rider
+.idea/
+
+# Visual Studio Code
+.vscode/
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux
+*~
+
+# JetBrains Rider
+.idea/
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build scripts
+build/
+dist/
+
+# Temporary files
+*.tmp
+*.temp
