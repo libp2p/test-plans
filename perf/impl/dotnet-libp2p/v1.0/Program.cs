@@ -20,7 +20,7 @@ class Program
                     .AddProtocol<PerfProtocol>();
             })
             .AddLogging(builder => builder
-                .SetMinimumLevel(LogLevel.Critical) // Only show critical messages
+                .SetMinimumLevel(LogLevel.Information) // Show information and above
                 .AddConsole(options => 
                 {
                     options.LogToStandardErrorThreshold = LogLevel.Warning; // Only warnings/errors to stderr
@@ -94,11 +94,12 @@ class Program
                 }
                 else
                 {
-                    // Generate deterministic peer ID like Go does
-                    var deterministicPeerId = GenerateDeterministicPeerId();
+                    // Generate deterministic peer ID like Go does for server
+                    var serverIdentity = GenerateDeterministicIdentity(1);
+                    var serverPeerId = serverIdentity.PeerId.ToString();
                     multiaddr = transport == "quic"
-                        ? $"/ip4/{parts[0]}/udp/{port}/quic-v1/p2p/{deterministicPeerId}"
-                        : $"/ip4/{parts[0]}/tcp/{port}/p2p/{deterministicPeerId}";
+                        ? $"/ip4/{parts[0]}/udp/{port}/quic-v1/p2p/{serverPeerId}"
+                        : $"/ip4/{parts[0]}/tcp/{port}/p2p/{serverPeerId}";
                 }
             }
             else
@@ -117,7 +118,8 @@ class Program
                 Environment.Exit(1);
             }
             
-            var identity = new Identity(Enumerable.Repeat((byte)42, 32).ToArray());
+            //var identity = new Identity(Enumerable.Repeat((byte)42, 32).ToArray());
+            var identity = GenerateDeterministicIdentity(1);
             var localPeer = peerFactory.Create(identity);
             
             // Convert server address to multiaddr for listening
@@ -131,16 +133,16 @@ class Program
                 // Always try to start with both TCP and QUIC transports when QUIC is enabled
                 try
                 {
-                    // Try both transports - QUIC first for priority, TCP as fallback
-                    await localPeer.StartListenAsync(new[] { quicAddr, tcpAddr });
-                    logger.LogCritical("Started with both QUIC and TCP transports");
+                    // Try both transports
+                    await localPeer.StartListenAsync(new[] { tcpAddr, quicAddr });
+                    logger.LogCritical("Started listening on TCP and QUIC transports");
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError("Failed to start both transports: {Message}", ex.Message);
-                    // Fallback to TCP only if both fail
+                    logger.LogWarning("Failed to start QUIC transport: {Message}, falling back to TCP only", ex.Message);
+                    // Fallback to TCP only if QUIC fails
                     await localPeer.StartListenAsync(new[] { tcpAddr });
-                    logger.LogInformation("Fallback to TCP only");
+                    logger.LogInformation("Started listening on TCP transport only");
                 }
             }
             else
@@ -175,32 +177,41 @@ class Program
         else
         {
             // Client mode
+            logger.LogInformation("Starting client mode");
             if (serverAddress == null)
             {
                 logger.LogError("Server address must be specified with --server-address");
                 Environment.Exit(1);
             }
+            logger.LogInformation("Server address: {ServerAddress}", serverAddress);
 
-            var identity = new Identity(Enumerable.Repeat((byte)43, 32).ToArray()); // Different identity
-            var localPeer = peerFactory.Create(identity);
+            logger.LogInformation("Creating client identity");
+            // var identity = new Identity(Enumerable.Repeat((byte)43, 32).ToArray()); // Different identity
+            // var localPeer = peerFactory.Create(identity);
             
-            // Start client - listen on both transports
-            await localPeer.StartListenAsync(new[] { 
-                Multiaddress.Decode("/ip4/127.0.0.1/tcp/0"),
-                Multiaddress.Decode("/ip4/127.0.0.1/udp/0/quic-v1")
-            });
+            // // Start client - listen on both transports
+            // await localPeer.StartListenAsync(new[] { 
+            //     Multiaddress.Decode("/ip4/127.0.0.1/tcp/0"),
+            //     Multiaddress.Decode("/ip4/127.0.0.1/udp/0/quic-v1")
+            // });
+
+             var localPeer = peerFactory.Create();
+             logger.LogInformation("Client peer created");
 
             try
             {
                 // Set the upload/download sizes
                 PerfProtocol.BytesToSend = uploadBytes;
                 PerfProtocol.BytesToReceive = downloadBytes;
+                logger.LogInformation("Set protocol parameters: upload={Upload}, download={Download}", uploadBytes, downloadBytes);
                 
                 // Reset counters for actual measurement
                 PerfProtocol.ActualBytesSent = 0;
                 PerfProtocol.ActualBytesReceived = 0;
+                logger.LogInformation("Reset protocol counters");
 
                 var startTime = DateTime.UtcNow;
+                logger.LogInformation("Benchmark start time: {StartTime}", startTime);
 
                 // Connect to the server using the properly formatted multiaddr
                 if (multiaddr == null)
@@ -208,9 +219,12 @@ class Program
                     logger.LogError("Error: Could not determine target multiaddr");
                     Environment.Exit(1);
                 }
+                logger.LogInformation("Target multiaddr: {Multiaddr}", multiaddr);
                 
                 var targetAddr = Multiaddress.Decode(multiaddr);
+                logger.LogInformation("Dialing server at: {TargetAddr}", targetAddr);
                 var remotePeer = await localPeer.DialAsync(targetAddr);
+                logger.LogInformation("Successfully connected to server");
                 
                 // Run benchmark
                 ulong actualUploadBytes = 0;
@@ -218,15 +232,19 @@ class Program
                 
                 try
                 {
+                    logger.LogInformation("Starting protocol dial for PerfProtocol");
                     var protocolTask = remotePeer.DialAsync<PerfProtocol>();
+                    logger.LogInformation("Protocol dial initiated, awaiting completion");
 
                     // Await protocol task directly — allow long-running benchmarks
                     await protocolTask; // Get any exceptions
+                    logger.LogInformation("Protocol execution completed successfully");
                     
                     // Get actual transfer amounts from the protocol instance
                     // Since the protocol execution may have partially succeeded
                     actualUploadBytes = PerfProtocol.ActualBytesSent;
                     actualDownloadBytes = PerfProtocol.ActualBytesReceived;
+                    logger.LogInformation("Actual transfer: sent={Sent}, received={Received}", actualUploadBytes, actualDownloadBytes);
                 }
                 catch (Exception ex)
                 {
@@ -238,15 +256,19 @@ class Program
                 {
                     try
                     {
+                        logger.LogInformation("Disconnecting from server");
                         await remotePeer.DisconnectAsync();
+                        logger.LogInformation("Disconnected successfully");
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
+                        logger.LogWarning("Error during disconnect: {Message}", ex.Message);
                     }
                 }
 
                 // Output final result like Go implementation
                 var elapsed = DateTime.UtcNow - startTime;
+                logger.LogInformation("Benchmark completed in {Elapsed} seconds", elapsed.TotalSeconds);
                 var result = new Result
                 {
                     Type = "final",
@@ -288,13 +310,16 @@ class Program
             }
         }
     }
-    private static string GenerateDeterministicPeerId()
+   // private static string GenerateDeterministicPeerId()
+    private static Identity GenerateDeterministicIdentity(byte seed)
     {
         var fixedSeed = new byte[32];
-        Array.Fill(fixedSeed, (byte)0);
+        Array.Fill(fixedSeed, (byte)seed);//0);
         
         var identity = new Identity(fixedSeed);
        
-        return identity.PeerId.ToString();
+        //return identity.PeerId.ToString();
+         return new Identity(fixedSeed);
+
     }
 }

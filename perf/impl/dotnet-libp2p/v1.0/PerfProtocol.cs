@@ -77,6 +77,8 @@ public class PerfProtocol : ISessionProtocol
             lastReportWrite += (ulong)toSend;
             ActualBytesSent += (ulong)toSend; // Track actual bytes sent
         }
+
+        _logger?.LogInformation("SendBytesAsync: sent {Bytes} bytes", ActualBytesSent);
     }
 
     private async Task<ulong> DrainStreamAsync(IChannel channel, ulong expectedBytes = 0)
@@ -140,6 +142,7 @@ public class PerfProtocol : ISessionProtocol
             }
         }
 
+        _logger?.LogInformation("DrainStreamAsync: drained {Total} bytes, expected {Expected}", total, expectedBytes);
         return total;
     }
 
@@ -172,6 +175,19 @@ public class PerfProtocol : ISessionProtocol
         {
             throw new InvalidOperationException($"Expected to receive {bytesToRecv} bytes, got {recvd}");
         }
+
+        // Send acknowledgment of received bytes
+        var ackBuf = new byte[8];
+        if (BitConverter.IsLittleEndian)
+        {
+            var bytes = BitConverter.GetBytes(recvd).Reverse().ToArray();
+            bytes.CopyTo(ackBuf, 0);
+        }
+        else
+        {
+            BitConverter.TryWriteBytes(ackBuf, recvd);
+        }
+        await channel.WriteAsync(new ReadOnlySequence<byte>(ackBuf));
     }
 
     public async Task ListenAsync(IChannel channel, ISessionContext context)
@@ -193,6 +209,20 @@ public class PerfProtocol : ISessionProtocol
 
         // Send our bytes  
         await SendBytesAsync(channel, bytesToSend);
+        
+        // Read acknowledgment from client
+        var ackBuf = new byte[8];
+        var ackReadResult = await channel.ReadAsync(8, ReadBlockingMode.WaitAll).OrThrow();
+        if (ackReadResult.Length != 8)
+            throw new InvalidDataException("Could not read ack");
+        ackReadResult.CopyTo(ackBuf);
+        if (BitConverter.IsLittleEndian)
+            Array.Reverse(ackBuf);
+        var ack = BitConverter.ToUInt64(ackBuf);
+        if (ack != bytesToSend)
+        {
+            throw new InvalidOperationException($"Client acknowledged {ack} bytes, expected {bytesToSend}");
+        }
         
         // Connection will close naturally when protocol completes
     }
