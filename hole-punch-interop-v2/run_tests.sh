@@ -297,6 +297,9 @@ run_test() {
     local dialer=$(yq eval ".tests[$index].dialer" "$TEST_PASS_DIR/test-matrix.yaml")
     local listener=$(yq eval ".tests[$index].listener" "$TEST_PASS_DIR/test-matrix.yaml")
     local transport=$(yq eval ".tests[$index].transport" "$TEST_PASS_DIR/test-matrix.yaml")
+    local dialer_router=$(yq eval ".tests[$index].dialerRouter" "$TEST_PASS_DIR/test-matrix.yaml")
+    local relay=$(yq eval ".tests[$index].relay" "$TEST_PASS_DIR/test-matrix.yaml")
+    local listener_router=$(yq eval ".tests[$index].listenerRouter" "$TEST_PASS_DIR/test-matrix.yaml")
 
     echo "[$((index + 1))/$test_count] $name"
 
@@ -338,6 +341,9 @@ run_test() {
     dialer: $dialer
     listener: $listener
     transport: $transport
+    dialerRouter: $dialer_router
+    relay: $relay
+    listenerRouter: $listener_router
 EOF
         # Add metrics if available
         if [ -n "$handshake_ms" ]; then

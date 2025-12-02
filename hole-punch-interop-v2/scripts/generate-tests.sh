@@ -200,9 +200,19 @@ echo ""
 impl_count=$(yq eval '.implementations | length' impls.yaml)
 echo "→ Found $impl_count implementations in impls.yaml"
 
+# Read all relay types
+relay_count=$(yq eval '.relays | length' impls.yaml)
+echo "→ Found $relay_count relay types in impls.yaml"
+
+# Read all router types
+router_count=$(yq eval '.routers | length' impls.yaml)
+echo "→ Found $router_count router types in impls.yaml"
+
 # Declare associative arrays for O(1) lookups
-declare -A impl_transports    # impl_transports[rust-v0.56]="tcp quic"
-declare -a impl_ids           # impl_ids=(rust-v0.56 rust-v0.55 ...)
+declare -A impl_transports    # impl_transports[linux]="tcp"
+declare -a impl_ids           # impl_ids=(linux ...)
+declare -a relay_ids          # relay_ids=(linux ...)
+declare -a router_ids         # router_ids=(linux ...)
 
 # Load all implementation data using yq
 echo "→ Loading implementation data into memory..."
@@ -215,6 +225,24 @@ for ((i=0; i<impl_count; i++)); do
 done
 
 echo "  ✓ Loaded ${#impl_ids[@]} implementations into memory"
+
+# Load all relay types using yq
+echo "→ Loading relay types into memory..."
+for ((i=0; i<relay_count; i++)); do
+    relay_id=$(yq eval ".relays[$i].id" impls.yaml)
+    relay_ids+=("$relay_id")
+done
+
+echo "  ✓ Loaded ${#relay_ids[@]} relay types into memory"
+
+# Load all router types using yq
+echo "→ Loading router types into memory..."
+for ((i=0; i<router_count; i++)); do
+    router_id=$(yq eval ".routers[$i].id" impls.yaml)
+    router_ids+=("$router_id")
+done
+
+echo "  ✓ Loaded ${#router_ids[@]} router types into memory"
 
 # Initialize test lists
 tests=()
@@ -284,32 +312,37 @@ echo ""
 echo "╲ Generating test combinations..."
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
-# Iterate through all dialer/listener pairs using pre-loaded data
-for dialer_id in "${impl_ids[@]}"; do
-    dialer_transports="${impl_transports[$dialer_id]}"
+# Iterate through all relay, router, and implementation combinations
+for relay_id in "${relay_ids[@]}"; do
+    for router_id in "${router_ids[@]}"; do
+        for dialer_id in "${impl_ids[@]}"; do
+            dialer_transports="${impl_transports[$dialer_id]}"
 
-    for listener_id in "${impl_ids[@]}"; do
-        listener_transports="${impl_transports[$listener_id]}"
+            for listener_id in "${impl_ids[@]}"; do
+                listener_transports="${impl_transports[$listener_id]}"
 
-        # Find common transports (much faster than grep)
-        common_transports=$(get_common "$dialer_transports" "$listener_transports")
+                # Find common transports (much faster than grep)
+                common_transports=$(get_common "$dialer_transports" "$listener_transports")
 
-        # Skip if no common transports
-        [ -z "$common_transports" ] && continue
+                # Skip if no common transports
+                [ -z "$common_transports" ] && continue
 
-        # Process each common transport
-        for transport in $common_transports; do
-            test_name="$dialer_id x $listener_id ($transport)"
+                # Process each common transport
+                for transport in $common_transports; do
+                    # Test name format: peer x peer (transport) [dialer-router] - [relay] - [listener-router]
+                    test_name="$dialer_id x $listener_id ($transport) [$router_id] - [$relay_id] - [$router_id]"
 
-            # Check select/ignore (using pre-parsed functions)
-            if matches_select "$test_name"; then
-                if should_ignore "$test_name"; then
-                    ignored_tests+=("$test_name|$dialer_id|$listener_id|$transport")
-                else
-                    test_num=$((test_num + 1))
-                    tests+=("$test_name|$dialer_id|$listener_id|$transport")
-                fi
-            fi
+                    # Check select/ignore (using pre-parsed functions)
+                    if matches_select "$test_name"; then
+                        if should_ignore "$test_name"; then
+                            ignored_tests+=("$test_name|$dialer_id|$listener_id|$transport|$relay_id|$router_id")
+                        else
+                            test_num=$((test_num + 1))
+                            tests+=("$test_name|$dialer_id|$listener_id|$transport|$relay_id|$router_id")
+                        fi
+                    fi
+                done
+            done
         done
     done
 done
@@ -332,7 +365,7 @@ tests:
 EOF
 
 for test in "${tests[@]}"; do
-    IFS='|' read -r name dialer listener transport <<< "$test"
+    IFS='|' read -r name dialer listener transport relay_id router_id <<< "$test"
 
     dialer_commit=$(yq eval ".implementations[] | select(.id == \"$dialer\") | .source.commit" impls.yaml)
     listener_commit=$(yq eval ".implementations[] | select(.id == \"$listener\") | .source.commit" impls.yaml)
@@ -342,6 +375,9 @@ for test in "${tests[@]}"; do
     dialer: $dialer
     listener: $listener
     transport: $transport
+    dialerRouter: $router_id
+    relay: $relay_id
+    listenerRouter: $router_id
     dialerSnapshot: snapshots/$dialer_commit.zip
     listenerSnapshot: snapshots/$listener_commit.zip
 EOF
@@ -354,7 +390,7 @@ ignoredTests:
 EOF
 
 for test in "${ignored_tests[@]}"; do
-    IFS='|' read -r name dialer listener transport <<< "$test"
+    IFS='|' read -r name dialer listener transport relay_id router_id <<< "$test"
 
     dialer_commit=$(yq eval ".implementations[] | select(.id == \"$dialer\") | .source.commit" impls.yaml)
     listener_commit=$(yq eval ".implementations[] | select(.id == \"$listener\") | .source.commit" impls.yaml)
@@ -364,6 +400,9 @@ for test in "${ignored_tests[@]}"; do
     dialer: $dialer
     listener: $listener
     transport: $transport
+    dialerRouter: $router_id
+    relay: $relay_id
+    listenerRouter: $router_id
     dialerSnapshot: snapshots/$dialer_commit.zip
     listenerSnapshot: snapshots/$listener_commit.zip
 EOF

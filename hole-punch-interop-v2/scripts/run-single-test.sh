@@ -27,12 +27,38 @@ TRANSPORT="$4"
 # Read DEBUG from test-matrix.yaml
 DEBUG=$(yq eval '.metadata.debug' "${TEST_PASS_DIR:-.}/test-matrix.yaml" 2>/dev/null || echo "false")
 
-# Load router and relay image configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROUTER_IMAGE=$(yq eval '.routers[0].image' "$SCRIPT_DIR/../impls.yaml")
-ROUTER_DELAY=$(yq eval '.routers[0].delayMs' "$SCRIPT_DIR/../impls.yaml")
-RELAY_IMAGE=$(yq eval '.relay.image' "$SCRIPT_DIR/../impls.yaml")
-RELAY_DELAY=$(yq eval '.relay.delayMs' "$SCRIPT_DIR/../impls.yaml")
+
+# Read router and relay types from test matrix for this specific test
+DIALER_ROUTER_TYPE=$(yq eval ".tests[] | select(.name == \"$TEST_NAME\") | .dialerRouter" "${TEST_PASS_DIR:-.}/test-matrix.yaml" 2>/dev/null)
+RELAY_TYPE=$(yq eval ".tests[] | select(.name == \"$TEST_NAME\") | .relay" "${TEST_PASS_DIR:-.}/test-matrix.yaml" 2>/dev/null)
+LISTENER_ROUTER_TYPE=$(yq eval ".tests[] | select(.name == \"$TEST_NAME\") | .listenerRouter" "${TEST_PASS_DIR:-.}/test-matrix.yaml" 2>/dev/null)
+
+# Validate
+if [ -z "$DIALER_ROUTER_TYPE" ] || [ "$DIALER_ROUTER_TYPE" = "null" ]; then
+    echo "ERROR: Could not find dialerRouter for test: $TEST_NAME"
+    exit 1
+fi
+
+if [ -z "$RELAY_TYPE" ] || [ "$RELAY_TYPE" = "null" ]; then
+    echo "ERROR: Could not find relay for test: $TEST_NAME"
+    exit 1
+fi
+
+if [ -z "$LISTENER_ROUTER_TYPE" ] || [ "$LISTENER_ROUTER_TYPE" = "null" ]; then
+    echo "ERROR: Could not find listenerRouter for test: $TEST_NAME"
+    exit 1
+fi
+
+# Compute image names and get delays
+RELAY_IMAGE="hole-punch-relay-${RELAY_TYPE}"
+RELAY_DELAY=$(yq eval ".relays[] | select(.id == \"$RELAY_TYPE\") | .delayMs" "$SCRIPT_DIR/../impls.yaml")
+
+DIALER_ROUTER_IMAGE="hole-punch-router-${DIALER_ROUTER_TYPE}"
+DIALER_ROUTER_DELAY=$(yq eval ".routers[] | select(.id == \"$DIALER_ROUTER_TYPE\") | .delayMs" "$SCRIPT_DIR/../impls.yaml")
+
+LISTENER_ROUTER_IMAGE="hole-punch-router-${LISTENER_ROUTER_TYPE}"
+LISTENER_ROUTER_DELAY=$(yq eval ".routers[] | select(.id == \"$LISTENER_ROUTER_TYPE\") | .delayMs" "$SCRIPT_DIR/../impls.yaml")
 
 # Sanitize test name for file names
 TEST_SLUG=$(echo "$TEST_NAME" | sed 's/[^a-zA-Z0-9-]/_/g')
@@ -49,9 +75,9 @@ SUBNET_ID_2=$(( (16#${TEST_KEY:2:2} + 32) % 256 ))
 WAN_SUBNET="10.${SUBNET_ID_1}.${SUBNET_ID_2}.64/29"
 WAN_GATEWAY="10.${SUBNET_ID_1}.${SUBNET_ID_2}.70"
 LAN_DIALER_SUBNET="10.${SUBNET_ID_1}.${SUBNET_ID_2}.92/30"
-LAN_DIALER_GATEWAY="10.${SUBNET_ID_1}.${SUBNET_ID_2}.93/30"
+LAN_DIALER_GATEWAY="10.${SUBNET_ID_1}.${SUBNET_ID_2}.93"
 LAN_LISTENER_SUBNET="10.${SUBNET_ID_1}.${SUBNET_ID_2}.128/30"
-LAN_LISTENER_GATEWAY="10.${SUBNET_ID_1}.${SUBNET_ID_2}.129/30"
+LAN_LISTENER_GATEWAY="10.${SUBNET_ID_1}.${SUBNET_ID_2}.129"
 
 # Calculate fixed IP addresses
 RELAY_IP="10.${SUBNET_ID_1}.${SUBNET_ID_2}.65"
@@ -171,35 +197,35 @@ echo "" >> "$LOG_FILE"
 
 echo "Container 2: Dialer Router (NAT)" >> "$LOG_FILE"
 echo "  Container Name: ${TEST_SLUG}_dialer_router" >> "$LOG_FILE"
-echo "  Image:          $ROUTER_IMAGE" >> "$LOG_FILE"
+echo "  Image:          $DIALER_ROUTER_IMAGE" >> "$LOG_FILE"
 echo "  Dockerfile:     hole-punch-interop-v2/router/Dockerfile" >> "$LOG_FILE"
 echo "  Purpose:        Simulates a NAT router for the dialer's local network." >> "$LOG_FILE"
 echo "                  Provides network address translation and adds artificial" >> "$LOG_FILE"
 echo "                  latency to simulate real-world network conditions." >> "$LOG_FILE"
 echo "  Networks:       WAN ($DIALER_ROUTER_WAN_IP)" >> "$LOG_FILE"
 echo "                  LAN-Dialer ($DIALER_ROUTER_LAN_IP)" >> "$LOG_FILE"
-echo "  Delay:          ${ROUTER_DELAY}ms" >> "$LOG_FILE"
+echo "  Delay:          ${DIALER_ROUTER_DELAY}ms" >> "$LOG_FILE"
 echo "  Environment:" >> "$LOG_FILE"
-echo "    - DELAY_MS=$ROUTER_DELAY" >> "$LOG_FILE"
+echo "    - DELAY_MS=$DIALER_ROUTER_DELAY" >> "$LOG_FILE"
 echo "" >> "$LOG_FILE"
 
 echo "Container 3: Listener Router (NAT)" >> "$LOG_FILE"
 echo "  Container Name: ${TEST_SLUG}_listener_router" >> "$LOG_FILE"
-echo "  Image:          $ROUTER_IMAGE" >> "$LOG_FILE"
+echo "  Image:          $LISTENER_ROUTER_IMAGE" >> "$LOG_FILE"
 echo "  Dockerfile:     hole-punch-interop-v2/router/Dockerfile" >> "$LOG_FILE"
 echo "  Purpose:        Simulates a NAT router for the listener's local network." >> "$LOG_FILE"
 echo "                  Provides network address translation and adds artificial" >> "$LOG_FILE"
 echo "                  latency to simulate real-world network conditions." >> "$LOG_FILE"
 echo "  Networks:       WAN ($LISTENER_ROUTER_WAN_IP)" >> "$LOG_FILE"
 echo "                  LAN-Listener ($LISTENER_ROUTER_LAN_IP)" >> "$LOG_FILE"
-echo "  Delay:          ${ROUTER_DELAY}ms" >> "$LOG_FILE"
+echo "  Delay:          ${LISTENER_ROUTER_DELAY}ms" >> "$LOG_FILE"
 echo "  Environment:" >> "$LOG_FILE"
-echo "    - DELAY_MS=$ROUTER_DELAY" >> "$LOG_FILE"
+echo "    - DELAY_MS=$LISTENER_ROUTER_DELAY" >> "$LOG_FILE"
 echo "" >> "$LOG_FILE"
 
 echo "Container 4: Dialer" >> "$LOG_FILE"
 echo "  Container Name: ${TEST_SLUG}_dialer" >> "$LOG_FILE"
-echo "  Image:          $DIALER_ID" >> "$LOG_FILE"
+echo "  Image:          hole-punch-peer-${DIALER_ID}" >> "$LOG_FILE"
 echo "  Dockerfile:     Based on implementation from impls.yaml" >> "$LOG_FILE"
 echo "  Purpose:        The peer that initiates the hole punch connection." >> "$LOG_FILE"
 echo "                  Tests the ability to establish a direct connection" >> "$LOG_FILE"
@@ -209,13 +235,13 @@ echo "  Environment:" >> "$LOG_FILE"
 echo "    - REDIS_ADDR=hole-punch-redis:6379" >> "$LOG_FILE"
 echo "    - TEST_KEY=$TEST_KEY" >> "$LOG_FILE"
 echo "    - TRANSPORT=$TRANSPORT" >> "$LOG_FILE"
-echo "    - MODE=dial" >> "$LOG_FILE"
+echo "    - ROLE=dial" >> "$LOG_FILE"
 echo "    - DEBUG=$DEBUG" >> "$LOG_FILE"
 echo "" >> "$LOG_FILE"
 
 echo "Container 5: Listener" >> "$LOG_FILE"
 echo "  Container Name: ${TEST_SLUG}_listener" >> "$LOG_FILE"
-echo "  Image:          $LISTENER_ID" >> "$LOG_FILE"
+echo "  Image:          hole-punch-peer-${LISTENER_ID}" >> "$LOG_FILE"
 echo "  Dockerfile:     Based on implementation from impls.yaml" >> "$LOG_FILE"
 echo "  Purpose:        The peer that receives the hole punch connection." >> "$LOG_FILE"
 echo "                  Tests the ability to accept a direct connection" >> "$LOG_FILE"
@@ -225,7 +251,7 @@ echo "  Environment:" >> "$LOG_FILE"
 echo "    - REDIS_ADDR=hole-punch-redis:6379" >> "$LOG_FILE"
 echo "    - TEST_KEY=$TEST_KEY" >> "$LOG_FILE"
 echo "    - TRANSPORT=$TRANSPORT" >> "$LOG_FILE"
-echo "    - MODE=listen" >> "$LOG_FILE"
+echo "    - ROLE=listen" >> "$LOG_FILE"
 echo "    - DEBUG=$DEBUG" >> "$LOG_FILE"
 echo "" >> "$LOG_FILE"
 
@@ -266,12 +292,14 @@ services:
       - DELAY_MS=${RELAY_DELAY}
       - REDIS_ADDR=hole-punch-redis:6379
       - TEST_KEY=${TEST_KEY}
+      - RELAY_IP=${RELAY_IP}
+      - RELAY_PORT=4001
     cap_add:
       - NET_ADMIN
     init: true
 
   dialer-router:
-    image: ${ROUTER_IMAGE}
+    image: ${DIALER_ROUTER_IMAGE}
     container_name: ${TEST_SLUG}_dialer_router
     networks:
       wan:
@@ -279,7 +307,11 @@ services:
       lan-dialer:
         ipv4_address: ${DIALER_ROUTER_LAN_IP}
     environment:
-      - DELAY_MS=${ROUTER_DELAY}
+      - WAN_SUBNET=${WAN_SUBNET}
+      - WAN_IP=${DIALER_ROUTER_WAN_IP}
+      - LAN_SUBNET=${LAN_DIALER_SUBNET}
+      - LAN_IP=${DIALER_ROUTER_LAN_IP}
+      - DELAY_MS=${DIALER_ROUTER_DELAY}
     cap_add:
       - NET_ADMIN
     init: true
@@ -287,7 +319,7 @@ services:
       - relay
 
   listener-router:
-    image: ${ROUTER_IMAGE}
+    image: ${LISTENER_ROUTER_IMAGE}
     container_name: ${TEST_SLUG}_listener_router
     networks:
       wan:
@@ -295,7 +327,11 @@ services:
       lan-listener:
         ipv4_address: ${LISTENER_ROUTER_LAN_IP}
     environment:
-      - DELAY_MS=${ROUTER_DELAY}
+      - WAN_SUBNET=${WAN_SUBNET}
+      - WAN_IP=${LISTENER_ROUTER_WAN_IP}
+      - LAN_SUBNET=${LAN_LISTENER_SUBNET}
+      - LAN_IP=${LISTENER_ROUTER_LAN_IP}
+      - DELAY_MS=${LISTENER_ROUTER_DELAY}
     cap_add:
       - NET_ADMIN
     init: true
@@ -303,7 +339,7 @@ services:
       - relay
 
   dialer:
-    image: ${DIALER_ID}
+    image: hole-punch-peer-${DIALER_ID}
     container_name: ${TEST_SLUG}_dialer
     networks:
       lan-dialer:
@@ -313,9 +349,10 @@ services:
       - REDIS_ADDR=hole-punch-redis:6379
       - TEST_KEY=${TEST_KEY}
       - TRANSPORT=${TRANSPORT}
-      - MODE=dial
+      - ROLE=dial
       - TEST_TIMEOUT_SECONDS=\${TEST_TIMEOUT_SECONDS:-30}
       - DEBUG=${DEBUG}
+      - DIALER_IP=${DIALER_IP}
     cap_add:
       - NET_ADMIN
     volumes:
@@ -325,7 +362,7 @@ services:
       - relay
 
   listener:
-    image: ${LISTENER_ID}
+    image: hole-punch-peer-${LISTENER_ID}
     container_name: ${TEST_SLUG}_listener
     networks:
       lan-listener:
@@ -335,9 +372,10 @@ services:
       - REDIS_ADDR=hole-punch-redis:6379
       - TEST_KEY=${TEST_KEY}
       - TRANSPORT=${TRANSPORT}
-      - MODE=listen
+      - ROLE=listen
       - TEST_TIMEOUT_SECONDS=\${TEST_TIMEOUT_SECONDS:-30}
       - DEBUG=${DEBUG}
+      - LISTENER_IP=${LISTENER_IP}
     cap_add:
       - NET_ADMIN
     volumes:

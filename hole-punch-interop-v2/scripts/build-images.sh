@@ -103,85 +103,95 @@ EOF
     trap - EXIT
 }
 
-# Build relay image if needed
-build_relay_image() {
-    local relay_image=$(yq eval '.relay.image' impls.yaml)
-    local relay_type=$(yq eval '.relay.source.type' impls.yaml)
+# Build relay images if needed
+build_relay_images() {
+    local relay_count=$(yq eval '.relays | length' impls.yaml)
 
-    # Check if image already exists (skip if not forcing rebuild)
-    if [ "$FORCE_REBUILD" = "false" ] && docker image inspect "$relay_image" &>/dev/null; then
-        echo "  ✓ $relay_image (already built)"
-        return 0
-    fi
+    for ((i=0; i<relay_count; i++)); do
+        local relay_id=$(yq eval ".relays[$i].id" impls.yaml)
+        local relay_image="hole-punch-relay-${relay_id}"
+        local relay_type=$(yq eval ".relays[$i].source.type" impls.yaml)
 
-    echo ""
-    echo "╲ Building: $relay_image"
-    echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-
-    if [ "$relay_type" = "local" ]; then
-        local relay_path=$(yq eval '.relay.source.path' impls.yaml)
-        local relay_dockerfile=$(yq eval '.relay.source.dockerfile' impls.yaml)
-
-        echo "→ Building from local path: $relay_path"
-        echo "→ Command: docker build -f $relay_path/$relay_dockerfile -t $relay_image $relay_path"
-
-        if ! docker build -f "$relay_path/$relay_dockerfile" -t "$relay_image" "$relay_path" 2>&1 | grep -E "^(#|Step|Successfully|ERROR)"; then
-            echo "✗ Docker build failed"
-            return 1
+        # Check if image already exists (skip if not forcing rebuild)
+        if [ "$FORCE_REBUILD" = "false" ] && docker image inspect "$relay_image" &>/dev/null; then
+            echo "  ✓ $relay_image (already built)"
+            continue
         fi
 
-        echo "✓ Built: $relay_image"
-    else
-        local relay_repo=$(yq eval '.relay.source.repo' impls.yaml)
-        local relay_commit=$(yq eval '.relay.source.commit' impls.yaml)
-        local relay_dockerfile=$(yq eval '.relay.source.dockerfile' impls.yaml)
-        local relay_context=$(yq eval '.relay.source.buildContext' impls.yaml)
+        echo ""
+        echo "╲ Building relay: $relay_id ($relay_image)"
+        echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
-        build_image_from_source "$relay_image" "$relay_repo" "$relay_commit" "$relay_dockerfile" "$relay_context"
-    fi
+        if [ "$relay_type" = "local" ]; then
+            local relay_path=$(yq eval ".relays[$i].source.path" impls.yaml)
+            local relay_dockerfile=$(yq eval ".relays[$i].source.dockerfile" impls.yaml)
+
+            echo "→ Building from local path: $relay_path"
+            echo "→ Command: docker build -f $relay_path/$relay_dockerfile -t $relay_image $relay_path"
+
+            if ! docker build -f "$relay_path/$relay_dockerfile" -t "$relay_image" "$relay_path" 2>&1 | grep -E "^(#|Step|Successfully|ERROR)"; then
+                echo "✗ Docker build failed"
+                return 1
+            fi
+
+            echo "✓ Built: $relay_image"
+        else
+            local relay_repo=$(yq eval ".relays[$i].source.repo" impls.yaml)
+            local relay_commit=$(yq eval ".relays[$i].source.commit" impls.yaml)
+            local relay_dockerfile=$(yq eval ".relays[$i].source.dockerfile" impls.yaml)
+            local relay_context=$(yq eval ".relays[$i].source.buildContext" impls.yaml)
+
+            build_image_from_source "$relay_image" "$relay_repo" "$relay_commit" "$relay_dockerfile" "$relay_context"
+        fi
+    done
 }
 
-# Build router image if needed
-build_router_image() {
-    local router_image=$(yq eval '.routers[0].image' impls.yaml)
-    local router_type=$(yq eval '.routers[0].source.type' impls.yaml)
+# Build router images if needed
+build_router_images() {
+    local router_count=$(yq eval '.routers | length' impls.yaml)
 
-    # Check if image already exists (skip if not forcing rebuild)
-    if [ "$FORCE_REBUILD" = "false" ] && docker image inspect "$router_image" &>/dev/null; then
-        echo "  ✓ $router_image (already built)"
-        return 0
-    fi
+    for ((i=0; i<router_count; i++)); do
+        local router_id=$(yq eval ".routers[$i].id" impls.yaml)
+        local router_image="hole-punch-router-${router_id}"
+        local router_type=$(yq eval ".routers[$i].source.type" impls.yaml)
 
-    echo ""
-    echo "╲ Building: $router_image"
-    echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-
-    if [ "$router_type" = "local" ]; then
-        local router_path=$(yq eval '.routers[0].source.path' impls.yaml)
-        local router_dockerfile=$(yq eval '.routers[0].source.dockerfile' impls.yaml)
-
-        echo "→ Building from local path: $router_path"
-        echo "→ Command: docker build -f $router_path/$router_dockerfile -t $router_image $router_path"
-
-        if ! docker build -f "$router_path/$router_dockerfile" -t "$router_image" "$router_path" 2>&1 | grep -E "^(#|Step|Successfully|ERROR)"; then
-            echo "✗ Docker build failed"
-            return 1
+        # Check if image already exists (skip if not forcing rebuild)
+        if [ "$FORCE_REBUILD" = "false" ] && docker image inspect "$router_image" &>/dev/null; then
+            echo "  ✓ $router_image (already built)"
+            continue
         fi
 
-        echo "✓ Built: $router_image"
-    else
-        local router_repo=$(yq eval '.routers[0].source.repo' impls.yaml)
-        local router_commit=$(yq eval '.routers[0].source.commit' impls.yaml)
-        local router_dockerfile=$(yq eval '.routers[0].source.dockerfile' impls.yaml)
-        local router_context=$(yq eval '.routers[0].source.buildContext' impls.yaml)
+        echo ""
+        echo "╲ Building router: $router_id ($router_image)"
+        echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
-        build_image_from_source "$router_image" "$router_repo" "$router_commit" "$router_dockerfile" "$router_context"
-    fi
+        if [ "$router_type" = "local" ]; then
+            local router_path=$(yq eval ".routers[$i].source.path" impls.yaml)
+            local router_dockerfile=$(yq eval ".routers[$i].source.dockerfile" impls.yaml)
+
+            echo "→ Building from local path: $router_path"
+            echo "→ Command: docker build -f $router_path/$router_dockerfile -t $router_image $router_path"
+
+            if ! docker build -f "$router_path/$router_dockerfile" -t "$router_image" "$router_path" 2>&1 | grep -E "^(#|Step|Successfully|ERROR)"; then
+                echo "✗ Docker build failed"
+                return 1
+            fi
+
+            echo "✓ Built: $router_image"
+        else
+            local router_repo=$(yq eval ".routers[$i].source.repo" impls.yaml)
+            local router_commit=$(yq eval ".routers[$i].source.commit" impls.yaml)
+            local router_dockerfile=$(yq eval ".routers[$i].source.dockerfile" impls.yaml)
+            local router_context=$(yq eval ".routers[$i].source.buildContext" impls.yaml)
+
+            build_image_from_source "$router_image" "$router_repo" "$router_commit" "$router_dockerfile" "$router_context"
+        fi
+    done
 }
 
-# Build relay and router first
-build_relay_image
-build_router_image
+# Build relays and routers first
+build_relay_images
+build_router_images
 
 # Parse impls.yaml and build each implementation
 impl_count=$(yq eval '.implementations | length' impls.yaml)
@@ -189,9 +199,8 @@ impl_count=$(yq eval '.implementations | length' impls.yaml)
 for ((i=0; i<impl_count; i++)); do
     # Extract implementation details
     impl_id=$(yq eval ".implementations[$i].id" impls.yaml)
-    repo=$(yq eval ".implementations[$i].source.repo" impls.yaml)
-    commit=$(yq eval ".implementations[$i].source.commit" impls.yaml)
-    dockerfile=$(yq eval ".implementations[$i].source.dockerfile" impls.yaml)
+    impl_image="hole-punch-peer-${impl_id}"
+    source_type=$(yq eval ".implementations[$i].source.type" impls.yaml)
 
     # Apply filter if specified (exact match with anchors)
     if [ -n "$FILTER" ] && [[ ! "$impl_id" =~ ^($FILTER)$ ]]; then
@@ -199,14 +208,36 @@ for ((i=0; i<impl_count; i++)); do
     fi
 
     # Check if image already exists (skip if not forcing rebuild)
-    if [ "$FORCE_REBUILD" = "false" ] && docker image inspect "$impl_id" &>/dev/null; then
-        echo "  ✓ $impl_id (already built)"
+    if [ "$FORCE_REBUILD" = "false" ] && docker image inspect "$impl_image" &>/dev/null; then
+        echo "  ✓ $impl_image (already built)"
         continue
     fi
 
     echo ""
-    echo "╲ Building: $impl_id"
+    echo "╲ Building peer: $impl_id ($impl_image)"
     echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+
+    if [ "$source_type" = "local" ]; then
+        impl_path=$(yq eval ".implementations[$i].source.path" impls.yaml)
+        impl_dockerfile=$(yq eval ".implementations[$i].source.dockerfile" impls.yaml)
+
+        echo "→ Building from local path: $impl_path"
+        echo "→ Command: docker build -f $impl_path/$impl_dockerfile -t $impl_image $impl_path"
+
+        if ! docker build -f "$impl_path/$impl_dockerfile" -t "$impl_image" "$impl_path" 2>&1 | grep -E "^(#|Step|Successfully|ERROR)"; then
+            echo "✗ Docker build failed"
+            exit 1
+        fi
+
+        echo "✓ Built: $impl_image"
+        continue
+    fi
+
+    # GitHub source
+    repo=$(yq eval ".implementations[$i].source.repo" impls.yaml)
+    commit=$(yq eval ".implementations[$i].source.commit" impls.yaml)
+    dockerfile=$(yq eval ".implementations[$i].source.dockerfile" impls.yaml)
+
     echo "→ Repo: $repo"
     echo "→ Commit: ${commit:0:8}"
 
@@ -253,14 +284,14 @@ EOF
 
     # Build Docker image
     echo "→ Building Docker image..."
-    echo "→ Command: docker build -f $extracted_dir/$dockerfile -t $impl_id $extracted_dir"
-    if ! docker build -f "$extracted_dir/$dockerfile" -t "$impl_id" "$extracted_dir" 2>&1 | grep -E "^(#|Step|Successfully|ERROR)"; then
+    echo "→ Command: docker build -f $extracted_dir/$dockerfile -t $impl_image $extracted_dir"
+    if ! docker build -f "$extracted_dir/$dockerfile" -t "$impl_image" "$extracted_dir" 2>&1 | grep -E "^(#|Step|Successfully|ERROR)"; then
         echo "✗ Docker build failed"
         exit 1
     fi
 
     # Get image ID (strip sha256: prefix)
-    image_id=$(docker image inspect "$impl_id" -f '{{.Id}}' | cut -d':' -f2)
+    image_id=$(docker image inspect "$impl_image" -f '{{.Id}}' | cut -d':' -f2)
 
     # Generate image.yaml in impl directory
     impl_lang=$(echo "$impl_id" | cut -d'-' -f1)
@@ -276,7 +307,7 @@ EOF
 
     cat > "$image_yaml" <<EOF
 imageID: $image_id
-imageName: $impl_id
+imageName: $impl_image
 builtAt: $(date -u +%Y-%m-%dT%H:%M:%SZ)
 arch: $(uname -m)
 snapshot: snapshots/$commit.zip
@@ -284,7 +315,7 @@ commit: $commit
 repo: $repo
 EOF
 
-    echo "✓ Built: $impl_id"
+    echo "✓ Built: $impl_image"
     echo "✓ Image ID: ${image_id:0:12}..."
 
     # Clean up

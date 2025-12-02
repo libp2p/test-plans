@@ -1,39 +1,38 @@
 # Hole Punch Interop - Implementation Definitions
-# This file defines all libp2p implementations to test for hole punching interoperability
+# This file defines all implementations to test for hole punching interoperability
 
 # Test Aliases - Define reusable patterns for test selection
-# Usage: --test-select "~rust" or --test-ignore "!~rust"
+# Usage: --test-select "~linux" or --test-ignore "!~linux"
 test-aliases:
-  - alias: "rust"
-    value: "rust-v0.53"
+  - alias: "linux"
+    value: "linux"
 
-# Relay configuration - libp2p relay server for hole punching coordination
-# The relay facilitates connection coordination between peers behind NATs
-relay:
-  id: rust-relay-v0.53
-  source:
-    type: local
-    path: rust-relay
-    dockerfile: Dockerfile
-  image: hole-punch-relay
-  delayMs: 25
-
-# Router/NAT configuration - simulates NAT between local networks and internet
-# Two routers are used per test: one for dialer network, one for listener network
-routers:
-  - id: nat-router-v1
+# Relay configurations - Multiple relay types for testing different implementations
+# Docker image naming: hole-punch-relay-<id>
+relays:
+  - id: linux
     source:
       type: local
-      path: router
+      path: impls/linux/relay
       dockerfile: Dockerfile
-    image: hole-punch-router
+    delayMs: 25
+
+# Router configurations - Multiple router types for testing different NAT implementations
+# Docker image naming: hole-punch-router-<id>
+routers:
+  - id: linux
+    source:
+      type: local
+      path: impls/linux/router
+      dockerfile: Dockerfile
     delayMs: 100
 
+# Implementation definitions
+# Docker image naming: hole-punch-peer-<id>
 implementations:
-  - id: rust-v0.53
+  - id: linux
     source:
-      type: github
-      repo: libp2p/rust-libp2p
-      commit: b7914e407da34c99fb76dcc300b3d44b9af97fac
-      dockerfile: hole-punching-tests/Dockerfile
-    transports: [tcp, quic]
+      type: local
+      path: impls/linux/peer
+      dockerfile: Dockerfile
+    transports: [tcp]
