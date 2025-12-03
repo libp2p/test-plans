@@ -200,37 +200,67 @@ echo ""
 echo "╲ Building Docker images..."
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
-# Get unique implementations from test matrix (dialer + listener)
-REQUIRED_IMPLS=$(mktemp)
-yq eval '.tests[].dialer' "$TEST_PASS_DIR/test-matrix.yaml" | sort -u > "$REQUIRED_IMPLS"
-yq eval '.tests[].listener' "$TEST_PASS_DIR/test-matrix.yaml" | sort -u >> "$REQUIRED_IMPLS"
-sort -u "$REQUIRED_IMPLS" -o "$REQUIRED_IMPLS"
+# Check if test matrix has any tests
+test_count=$(yq eval '.metadata.totalTests' "$TEST_PASS_DIR/test-matrix.yaml")
 
-# Also add base images for any browser-type implementations
-REQUIRED_IMPLS_WITH_DEPS=$(mktemp)
-cp "$REQUIRED_IMPLS" "$REQUIRED_IMPLS_WITH_DEPS"
+if [ "$test_count" -eq 0 ]; then
+    echo "→ No tests in matrix, skipping image builds"
+else
+    # Extract unique RELAYS from test matrix
+    # Note: Relays do NOT have dialOnly - all relays in matrix should be built
+    REQUIRED_RELAYS=$(mktemp)
+    yq eval '.tests[].relay' "$TEST_PASS_DIR/test-matrix.yaml" | sort -u > "$REQUIRED_RELAYS"
+    RELAY_FILTER=$(cat "$REQUIRED_RELAYS" | paste -sd'|' -)
+    rm -f "$REQUIRED_RELAYS"
 
-while IFS= read -r impl_id; do
-    # Check if this is a browser-type implementation
-    source_type=$(yq eval ".implementations[] | select(.id == \"$impl_id\") | .source.type" impls.yaml)
-    if [ "$source_type" = "browser" ]; then
-        # Add its base image as a dependency
-        base_image=$(yq eval ".implementations[] | select(.id == \"$impl_id\") | .source.baseImage" impls.yaml)
-        echo "$base_image" >> "$REQUIRED_IMPLS_WITH_DEPS"
-    fi
-done < "$REQUIRED_IMPLS"
+    # Extract unique ROUTERS from test matrix (dialer router + listener router)
+    # Note: Routers do NOT have dialOnly - all routers in matrix should be built
+    REQUIRED_ROUTERS=$(mktemp)
+    yq eval '.tests[].dialerRouter' "$TEST_PASS_DIR/test-matrix.yaml" | sort -u > "$REQUIRED_ROUTERS"
+    yq eval '.tests[].listenerRouter' "$TEST_PASS_DIR/test-matrix.yaml" | sort -u >> "$REQUIRED_ROUTERS"
+    sort -u "$REQUIRED_ROUTERS" -o "$REQUIRED_ROUTERS"
+    ROUTER_FILTER=$(cat "$REQUIRED_ROUTERS" | paste -sd'|' -)
+    rm -f "$REQUIRED_ROUTERS"
 
-# Sort and deduplicate
-sort -u "$REQUIRED_IMPLS_WITH_DEPS" -o "$REQUIRED_IMPLS_WITH_DEPS"
+    # Extract unique IMPLEMENTATIONS from test matrix (dialer + listener)
+    # Note: Implementations CAN have dialOnly - already filtered during test generation
+    REQUIRED_IMPLS=$(mktemp)
+    yq eval '.tests[].dialer' "$TEST_PASS_DIR/test-matrix.yaml" | sort -u > "$REQUIRED_IMPLS"
+    yq eval '.tests[].listener' "$TEST_PASS_DIR/test-matrix.yaml" | sort -u >> "$REQUIRED_IMPLS"
+    sort -u "$REQUIRED_IMPLS" -o "$REQUIRED_IMPLS"
 
-IMPL_COUNT=$(wc -l < "$REQUIRED_IMPLS_WITH_DEPS")
-echo "→ Building $IMPL_COUNT required implementations (including base images)"
-echo ""
+    # Also add base images for any browser-type implementations
+    REQUIRED_IMPLS_WITH_DEPS=$(mktemp)
+    cp "$REQUIRED_IMPLS" "$REQUIRED_IMPLS_WITH_DEPS"
 
-# Build each required implementation using pipe-separated list
-IMPL_FILTER=$(cat "$REQUIRED_IMPLS_WITH_DEPS" | paste -sd'|' -)
-echo "→ bash scripts/build-images.sh \"$IMPL_FILTER\" \"$FORCE_REBUILD\""
-bash scripts/build-images.sh "$IMPL_FILTER" "$FORCE_REBUILD"
+    while IFS= read -r impl_id; do
+        # Check if this is a browser-type implementation
+        source_type=$(yq eval ".implementations[] | select(.id == \"$impl_id\") | .source.type" impls.yaml)
+        if [ "$source_type" = "browser" ]; then
+            # Add its base image as a dependency
+            base_image=$(yq eval ".implementations[] | select(.id == \"$impl_id\") | .source.baseImage" impls.yaml)
+            echo "$base_image" >> "$REQUIRED_IMPLS_WITH_DEPS"
+        fi
+    done < "$REQUIRED_IMPLS"
+
+    # Sort and deduplicate
+    sort -u "$REQUIRED_IMPLS_WITH_DEPS" -o "$REQUIRED_IMPLS_WITH_DEPS"
+    IMPL_FILTER=$(cat "$REQUIRED_IMPLS_WITH_DEPS" | paste -sd'|' -)
+
+    # Count what we're building
+    RELAY_COUNT=$(echo "$RELAY_FILTER" | tr '|' '\n' | grep -v '^$' | wc -l)
+    ROUTER_COUNT=$(echo "$ROUTER_FILTER" | tr '|' '\n' | grep -v '^$' | wc -l)
+    IMPL_COUNT=$(wc -l < "$REQUIRED_IMPLS_WITH_DEPS")
+
+    echo "→ Building $RELAY_COUNT relay(s), $ROUTER_COUNT router(s), $IMPL_COUNT implementation(s) (including base images)"
+    echo ""
+
+    # Build images with filters (relay, router, impl filters passed separately)
+    echo "→ bash scripts/build-images.sh \"$RELAY_FILTER\" \"$ROUTER_FILTER\" \"$IMPL_FILTER\" \"$FORCE_REBUILD\""
+    bash scripts/build-images.sh "$RELAY_FILTER" "$ROUTER_FILTER" "$IMPL_FILTER" "$FORCE_REBUILD"
+
+    rm -f "$REQUIRED_IMPLS" "$REQUIRED_IMPLS_WITH_DEPS"
+fi
 
 # Display test list and prompt for confirmation
 echo ""

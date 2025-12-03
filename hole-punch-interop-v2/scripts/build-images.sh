@@ -6,11 +6,15 @@ set -euo pipefail
 
 # Configuration
 CACHE_DIR="${CACHE_DIR:-/srv/cache}"
-FILTER="${1:-}"  # Optional: filter to specific impl (e.g., "rust")
-FORCE_REBUILD="${2:-false}"  # Optional: force rebuild all images
+RELAY_FILTER="${1:-}"      # Optional: pipe-separated relay ID filter
+ROUTER_FILTER="${2:-}"     # Optional: pipe-separated router ID filter
+IMPL_FILTER="${3:-}"       # Optional: pipe-separated implementation ID filter
+FORCE_REBUILD="${4:-false}"  # Optional: force rebuild all images
 
 echo "  → Cache directory: $CACHE_DIR"
-[ -n "$FILTER" ] && echo "  → Filter: $FILTER"
+[ -n "$RELAY_FILTER" ] && echo "  → Relay filter: $RELAY_FILTER"
+[ -n "$ROUTER_FILTER" ] && echo "  → Router filter: $ROUTER_FILTER"
+[ -n "$IMPL_FILTER" ] && echo "  → Implementation filter: $IMPL_FILTER"
 [ "$FORCE_REBUILD" = "true" ] && echo "  → Force rebuild: enabled"
 
 # Ensure cache directory exists
@@ -112,6 +116,21 @@ build_relay_images() {
         local relay_image="hole-punch-relay-${relay_id}"
         local relay_type=$(yq eval ".relays[$i].source.type" impls.yaml)
 
+        # Apply filter if specified (substring match on pipe-separated list)
+        if [ -n "$RELAY_FILTER" ]; then
+            match_found=false
+            IFS='|' read -ra FILTER_PATTERNS <<< "$RELAY_FILTER"
+            for pattern in "${FILTER_PATTERNS[@]}"; do
+                if [[ "$relay_id" == *"$pattern"* ]]; then
+                    match_found=true
+                    break
+                fi
+            done
+            if [ "$match_found" = false ]; then
+                continue  # Skip silently
+            fi
+        fi
+
         # Check if image already exists (skip if not forcing rebuild)
         if [ "$FORCE_REBUILD" = "false" ] && docker image inspect "$relay_image" &>/dev/null; then
             echo "  ✓ $relay_image (already built)"
@@ -154,6 +173,21 @@ build_router_images() {
         local router_id=$(yq eval ".routers[$i].id" impls.yaml)
         local router_image="hole-punch-router-${router_id}"
         local router_type=$(yq eval ".routers[$i].source.type" impls.yaml)
+
+        # Apply filter if specified (substring match on pipe-separated list)
+        if [ -n "$ROUTER_FILTER" ]; then
+            match_found=false
+            IFS='|' read -ra FILTER_PATTERNS <<< "$ROUTER_FILTER"
+            for pattern in "${FILTER_PATTERNS[@]}"; do
+                if [[ "$router_id" == *"$pattern"* ]]; then
+                    match_found=true
+                    break
+                fi
+            done
+            if [ "$match_found" = false ]; then
+                continue  # Skip silently
+            fi
+        fi
 
         # Check if image already exists (skip if not forcing rebuild)
         if [ "$FORCE_REBUILD" = "false" ] && docker image inspect "$router_image" &>/dev/null; then
@@ -203,10 +237,10 @@ for ((i=0; i<impl_count; i++)); do
     source_type=$(yq eval ".implementations[$i].source.type" impls.yaml)
 
     # Apply filter if specified (substring match on pipe-separated list)
-    if [ -n "$FILTER" ]; then
+    if [ -n "$IMPL_FILTER" ]; then
         # Check if impl_id matches any of the pipe-separated filter patterns
         match_found=false
-        IFS='|' read -ra FILTER_PATTERNS <<< "$FILTER"
+        IFS='|' read -ra FILTER_PATTERNS <<< "$IMPL_FILTER"
         for pattern in "${FILTER_PATTERNS[@]}"; do
             if [[ "$impl_id" == *"$pattern"* ]]; then
                 match_found=true
