@@ -15,7 +15,7 @@ All artifacts are named by their content hash for automatic deduplication:
 /srv/cache/
 ├── snapshots/<commit-sha>.zip     # Git SHA-1 (40 chars)
 ├── test-matrix/<sha256>.yaml      # SHA-256 (64 chars)
-└── test-passes/hole-punch-<timestamp>/  # Self-contained test pass directories
+└── test-runs/hole-punch-<timestamp>/  # Self-contained test pass directories
 ```
 
 ### 3. Hybrid Architecture
@@ -550,7 +550,7 @@ Both can reach Redis (via global network attachment to routers), but tests are i
 Each test pass creates a self-contained directory:
 
 ```
-/srv/cache/test-passes/hole-punch-143022-09-11-2025/
+/srv/cache/test-runs/hole-punch-143022-09-11-2025/
 ├── re-run.sh              # Executable reproduction script
 ├── README.md              # Complete instructions
 ├── settings.yaml          # Snapshot metadata

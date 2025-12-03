@@ -413,7 +413,7 @@ For debugging or CI artifacts:
 ./run_tests.sh --snapshot --cache-dir /srv/cache
 ```
 
-This creates a self-contained archive in `/srv/cache/test-passes/` that can be:
+This creates a self-contained archive in `/srv/cache/test-runs/` that can be:
 - Shared with other developers
 - Attached to bug reports
 - Re-run on any machine with bash, docker, git, yq
@@ -467,7 +467,7 @@ bash scripts/stop-global-services.sh
 If you have a snapshot:
 
 ```bash
-cd /srv/cache/test-passes/hole-punch-rust-143022-08-11-2025
+cd /srv/cache/test-runs/hole-punch-rust-143022-08-11-2025
 ./re-run.sh
 ```
 
@@ -523,7 +523,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: test-snapshot
-          path: /tmp/cache/test-passes/*.tar.gz
+          path: /tmp/cache/test-runs/*.tar.gz
 ```
 
 ## Updating Commit Hashes
@@ -579,7 +579,7 @@ All artifacts are cached by content hash:
 
 - **Snapshots**: `/srv/cache/snapshots/<commit-sha>.zip`
 - **Test matrices**: `/srv/cache/test-matrix/<sha256>.yaml`
-- **Test passes**: `/srv/cache/test-passes/hole-punch-<timestamp>/`
+- **Test passes**: `/srv/cache/test-runs/hole-punch-<timestamp>/`
 
 ## Questions?
 

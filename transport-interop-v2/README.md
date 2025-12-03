@@ -155,7 +155,7 @@ scripts/
 /srv/cache/
 ├── snapshots/<commit-sha>.zip       # Source code archives
 ├── test-matrix/<sha256>.yaml        # Generated test matrices
-└── test-passes/<timestamp>.tar.gz   # Test snapshots
+└── test-runs/<timestamp>.tar.gz   # Test snapshots
 ```
 
 ## Dependencies

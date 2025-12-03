@@ -124,7 +124,7 @@ hole-punch-interop-v2/
 Each test run creates a unique test pass directory with all results:
 
 ```
-/srv/cache/test-passes/hole-punch-HHMMSS-DD-MM-YYYY/
+/srv/cache/test-runs/hole-punch-HHMMSS-DD-MM-YYYY/
 ├── impls.yaml                 # Captured configuration
 ├── test-matrix.yaml          # Generated test matrix
 ├── results.yaml              # Structured test results
@@ -203,7 +203,7 @@ Without CLI arguments, all tests are run. Use `--test-select` and `--test-ignore
 All artifacts cached under `/srv/cache/`:
 - `snapshots/<commitSha>.zip` - GitHub repository snapshots (git SHA-1)
 - `test-matrix/<sha256>.yaml` - Test matrices (cached by filter+ignore+debug)
-- `test-passes/hole-punch-<timestamp>/` - Complete test pass directories
+- `test-runs/hole-punch-<timestamp>/` - Complete test pass directories
 
 Cache keys use double-pipe `||` delimiter to prevent ambiguous collisions:
 ```bash
@@ -247,7 +247,7 @@ All hash algorithm prefixes are omitted from identifiers for simplicity.
 Each test pass is fully self-contained and reproducible:
 
 ```bash
-cd /srv/cache/test-passes/hole-punch-HHMMSS-DD-MM-YYYY
+cd /srv/cache/test-runs/hole-punch-HHMMSS-DD-MM-YYYY
 ./re-run.sh
 
 # Force rebuild all images before re-running

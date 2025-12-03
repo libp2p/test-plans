@@ -293,7 +293,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: test-snapshot
-          path: /tmp/cache/test-passes/*.tar.gz
+          path: /tmp/cache/test-runs/*.tar.gz
 ```
 
 ## Updating Implementations

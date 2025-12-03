@@ -570,7 +570,7 @@ EOF
 
 # Create archive
 echo "→ Creating archive..."
-cd "$CACHE_DIR/test-passes"
+cd "$CACHE_DIR/test-runs"
 tar -czf "${test_pass}.tar.gz" "$test_pass"
 
 snapshot_size=$(du -h "${test_pass}.tar.gz" | cut -f1)
@@ -580,9 +580,9 @@ echo "╲ ✓ Snapshot created successfully"
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 echo "→ Snapshot: $test_pass"
 echo "→ Location: $SNAPSHOT_DIR"
-echo "→ Archive: $CACHE_DIR/test-passes/${test_pass}.tar.gz ($snapshot_size)"
+echo "→ Archive: $CACHE_DIR/test-runs/${test_pass}.tar.gz ($snapshot_size)"
 echo ""
 echo "→ To extract and re-run:"
-echo "    tar -xzf $CACHE_DIR/test-passes/${test_pass}.tar.gz"
+echo "    tar -xzf $CACHE_DIR/test-runs/${test_pass}.tar.gz"
 echo "    cd $test_pass"
 echo "    ./re-run.sh"

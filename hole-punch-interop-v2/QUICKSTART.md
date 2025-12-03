@@ -57,7 +57,7 @@ Expected output:
 
 → Test Pass: hole-punch-143022-09-11-2025
 → Cache Dir: /tmp/cache
-→ Test Pass Dir: /tmp/cache/test-passes/hole-punch-143022-09-11-2025
+→ Test Pass Dir: /tmp/cache/test-runs/hole-punch-143022-09-11-2025
 → Workers: 2
 
 ╲ Checking dependencies...
@@ -116,8 +116,8 @@ Each test runs in **complete isolation**:
  ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
 
 → Output files:
-  → /tmp/cache/test-passes/hole-punch-143022-09-11-2025/results.yaml
-  → /tmp/cache/test-passes/hole-punch-143022-09-11-2025/results.md
+  → /tmp/cache/test-runs/hole-punch-143022-09-11-2025/results.yaml
+  → /tmp/cache/test-runs/hole-punch-143022-09-11-2025/results.md
 ```
 
 ## View Results
@@ -169,10 +169,10 @@ open results.html  # or xdg-open on Linux
 ./run_tests.sh --snapshot --cache-dir /tmp/cache --workers 4
 
 # Snapshot saved to:
-# /tmp/cache/test-passes/hole-punch-<timestamp>/
+# /tmp/cache/test-runs/hole-punch-<timestamp>/
 
 # Re-run from snapshot
-cd /tmp/cache/test-passes/hole-punch-*
+cd /tmp/cache/test-runs/hole-punch-*
 ./re-run.sh
 
 # Force rebuild all images before re-running

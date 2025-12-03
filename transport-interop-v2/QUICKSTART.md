@@ -54,7 +54,7 @@ Expected output:
  ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
 → Test Pass: transport-interop-223702-11-11-2025
 → Cache Dir: /srv/cache
-→ Test Pass Dir: /srv/cache/test-passes/transport-interop-223702-11-11-2025
+→ Test Pass Dir: /srv/cache/test-runs/transport-interop-223702-11-11-2025
 → Workers: 4
 → Create Snapshot: false
 → Debug: false
@@ -171,8 +171,8 @@ Expected output:
 ╲ Generating results dashboard...
  ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
 → bash scripts/generate-dashboard.sh
-  ✓ Generated /srv/cache/test-passes/transport-interop-224128-11-11-2025/results.md
-  ✓ Generated /srv/cache/test-passes/transport-interop-224128-11-11-2025/results.html
+  ✓ Generated /srv/cache/test-runs/transport-interop-224128-11-11-2025/results.md
+  ✓ Generated /srv/cache/test-runs/transport-interop-224128-11-11-2025/results.html
 
 ╲ ✗ 121 test(s) failed
  ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
@@ -249,10 +249,10 @@ pandoc -f markdown -t html -s -o results.html results.md
 ./run_tests.sh --snapshot --cache-dir /tmp/cache --workers 4
 
 # Snapshot saved to:
-# /tmp/cache/test-passes/transport-interop-full-<timestamp>.tar.gz
+# /tmp/cache/test-runs/transport-interop-full-<timestamp>.tar.gz
 
 # Extract and re-run
-cd /tmp/cache/test-passes
+cd /tmp/cache/test-runs
 tar -xzf transport-interop-full-*.tar.gz
 cd transport-interop-full-*
 ./re-run.sh

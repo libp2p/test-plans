@@ -15,7 +15,7 @@ All artifacts named by content hash:
 /srv/cache/
 ├── snapshots/<commit-sha>.zip     # Git SHA-1 (40 chars)
 ├── test-matrix/<sha256>.yaml      # SHA-256 (64 chars)
-└── test-passes/<timestamp>.tar.gz # Timestamped snapshots
+└── test-runs/<timestamp>.tar.gz # Timestamped snapshots
 ```
 
 ### 3. Simplified Architecture (vs Hole-Punch)

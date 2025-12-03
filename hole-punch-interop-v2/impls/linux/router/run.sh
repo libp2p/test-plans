@@ -31,15 +31,8 @@ echo "  LAN IP:      $LAN_IP"
 echo "  Delay:       ${DELAY_MS}ms"
 echo ""
 
-# Enable IP forwarding
-echo "Enabling IP forwarding..."
-sysctl -w net.ipv4.ip_forward=1
-sysctl -w net.ipv4.conf.all.forwarding=1
-sysctl -w net.ipv4.conf.default.forwarding=1
-
-# Disable reverse path filtering (needed for NAT)
-sysctl -w net.ipv4.conf.all.rp_filter=0
-sysctl -w net.ipv4.conf.default.rp_filter=0
+# Note: Kernel parameters (ip_forward, rp_filter) are configured via
+# sysctls in docker-compose.yaml for proper container operation
 
 # Find network interfaces
 WAN_IF=""
@@ -47,8 +40,8 @@ LAN_IF=""
 
 echo "Detecting network interfaces..."
 for iface in $(ls /sys/class/net | grep -v "^lo$"); do
-    # Get IP address for this interface
-    IP=$(ip -4 addr show "$iface" 2>/dev/null | grep -oP '(?<=inet\s)\d+(\.\d+){3}' || echo "")
+    # Get IP address for this interface (extract IP from "inet <IP>/<mask>" format)
+    IP=$(ip -4 addr show "$iface" 2>/dev/null | awk '/inet / {print $2}' | cut -d'/' -f1 || echo "")
 
     if [ -z "$IP" ]; then
         continue

@@ -151,7 +151,7 @@ echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔�
 
 # Generate test pass name and folder
 TEST_PASS_NAME="transport-interop-$(date +%H%M%S-%d-%m-%Y)"
-export TEST_PASS_DIR="$CACHE_DIR/test-passes/$TEST_PASS_NAME"
+export TEST_PASS_DIR="$CACHE_DIR/test-runs/$TEST_PASS_NAME"
 
 echo "→ Test Pass: $TEST_PASS_NAME"
 echo "→ Cache Dir: $CACHE_DIR"

@@ -72,21 +72,19 @@ SUBNET_ID_1=$(( (16#${TEST_KEY:0:2} + 32) % 256 ))
 SUBNET_ID_2=$(( (16#${TEST_KEY:2:2} + 32) % 256 ))
 
 # Calculate network addresses
-WAN_SUBNET="10.${SUBNET_ID_1}.${SUBNET_ID_2}.64/29"
-WAN_GATEWAY="10.${SUBNET_ID_1}.${SUBNET_ID_2}.70"
-LAN_DIALER_SUBNET="10.${SUBNET_ID_1}.${SUBNET_ID_2}.92/30"
-LAN_DIALER_GATEWAY="10.${SUBNET_ID_1}.${SUBNET_ID_2}.93"
-LAN_LISTENER_SUBNET="10.${SUBNET_ID_1}.${SUBNET_ID_2}.128/30"
-LAN_LISTENER_GATEWAY="10.${SUBNET_ID_1}.${SUBNET_ID_2}.129"
+WAN_SUBNET="10.${SUBNET_ID_1}.${SUBNET_ID_2}.64/27"
+LAN_DIALER_SUBNET="10.${SUBNET_ID_1}.${SUBNET_ID_2}.96/27"
+LAN_LISTENER_SUBNET="10.${SUBNET_ID_1}.${SUBNET_ID_2}.128/27"
 
 # Calculate fixed IP addresses
-RELAY_IP="10.${SUBNET_ID_1}.${SUBNET_ID_2}.65"
-DIALER_ROUTER_WAN_IP="10.${SUBNET_ID_1}.${SUBNET_ID_2}.66"
-DIALER_ROUTER_LAN_IP="10.${SUBNET_ID_1}.${SUBNET_ID_2}.93"
-LISTENER_ROUTER_WAN_IP="10.${SUBNET_ID_1}.${SUBNET_ID_2}.67"
-LISTENER_ROUTER_LAN_IP="10.${SUBNET_ID_1}.${SUBNET_ID_2}.129"
-DIALER_IP="10.${SUBNET_ID_1}.${SUBNET_ID_2}.94"
-LISTENER_IP="10.${SUBNET_ID_1}.${SUBNET_ID_2}.130"
+# Note: Docker auto-assigns first usable IP (.65, .97, .129) to bridge gateway
+RELAY_IP="10.${SUBNET_ID_1}.${SUBNET_ID_2}.66"
+DIALER_ROUTER_WAN_IP="10.${SUBNET_ID_1}.${SUBNET_ID_2}.67"
+DIALER_ROUTER_LAN_IP="10.${SUBNET_ID_1}.${SUBNET_ID_2}.98"
+LISTENER_ROUTER_WAN_IP="10.${SUBNET_ID_1}.${SUBNET_ID_2}.68"
+LISTENER_ROUTER_LAN_IP="10.${SUBNET_ID_1}.${SUBNET_ID_2}.130"
+DIALER_IP="10.${SUBNET_ID_1}.${SUBNET_ID_2}.99"
+LISTENER_IP="10.${SUBNET_ID_1}.${SUBNET_ID_2}.131"
 
 # Use TEST_PASS_DIR if set, otherwise fall back to local logs directory
 LOGS_DIR="${TEST_PASS_DIR:-.}/logs"
@@ -114,18 +112,15 @@ echo "Debug Mode:     $DEBUG" >> "$LOG_FILE"
 echo "" >> "$LOG_FILE"
 
 _____CWSN_______=$(center "$WAN_SUBNET" 17)
-_____CWGW_______=$(center "$WAN_GATEWAY" 17)
 _____CWRIP______=$(center "$RELAY_IP" 17)
 _____CWDIP______=$(center "$DIALER_ROUTER_WAN_IP" 17)
 _____CWLIP______=$(center "$LISTENER_ROUTER_WAN_IP" 17)
 
 _____CLDSN______=$(center "$LAN_DIALER_SUBNET" 17)
-_____CLDGW______=$(center "$LAN_DIALER_GATEWAY" 17)
 _____CLDIP______=$(center "$DIALER_ROUTER_LAN_IP" 17)
 _____CDIP_______=$(center "$DIALER_IP" 17)
 
 _____CLLSN______=$(center "$LAN_LISTENER_SUBNET" 17)
-_____CLLGW______=$(center "$LAN_LISTENER_GATEWAY" 17)
 _____CLLIP______=$(center "$LISTENER_ROUTER_LAN_IP" 17)
 _____CLIP_______=$(center "$LISTENER_IP" 17)
 
@@ -134,7 +129,6 @@ echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔�
 echo "" >> "$LOG_FILE"
 echo "                      Internet (WAN Network)" >> "$LOG_FILE"
 echo "                      Subnet: $_____CWSN_______" >> "$LOG_FILE"
-echo "                      Gateway: $_____CWGW_______" >> "$LOG_FILE"
 echo "                                |" >> "$LOG_FILE"
 echo "          +---------------------+---------------------+" >> "$LOG_FILE"
 echo "          |                     |                     |" >> "$LOG_FILE"
@@ -146,7 +140,6 @@ echo "+-------------------+ +-------------------+ +-------------------+" >> "$LO
 echo "          |                                           |" >> "$LOG_FILE"
 echo " Dialer (LAN Network)                        Listener (LAN Network)" >> "$LOG_FILE"
 echo " Subnet: $_____CLDSN______                   Subnet: $_____CLLSN______" >> "$LOG_FILE"
-echo " Gateway: $_____CLDGW______                  Gateway: $_____CLLGW______" >> "$LOG_FILE"
 echo "          |                                           |" >> "$LOG_FILE"
 echo "+-------------------+                       +-------------------+" >> "$LOG_FILE"
 echo "| $_____CDIP_______ |                       | $_____CLIP_______ |" >> "$LOG_FILE"
@@ -160,20 +153,17 @@ echo "Subnet ID Base:       $SUBNET_ID_1.$SUBNET_ID_2" >> "$LOG_FILE"
 echo "" >> "$LOG_FILE"
 echo "WAN Network:" >> "$LOG_FILE"
 echo "  Subnet:              $WAN_SUBNET" >> "$LOG_FILE"
-echo "  Gateway:             $WAN_GATEWAY" >> "$LOG_FILE"
 echo "  Relay IP:            $RELAY_IP" >> "$LOG_FILE"
 echo "  Dialer Router WAN:   $DIALER_ROUTER_WAN_IP" >> "$LOG_FILE"
 echo "  Listener Router WAN: $LISTENER_ROUTER_WAN_IP" >> "$LOG_FILE"
 echo "" >> "$LOG_FILE"
 echo "LAN Dialer Network:" >> "$LOG_FILE"
 echo "  Subnet:              $LAN_DIALER_SUBNET" >> "$LOG_FILE"
-echo "  Gateway:             $LAN_DIALER_GATEWAY" >> "$LOG_FILE"
 echo "  Router LAN IP:       $DIALER_ROUTER_LAN_IP" >> "$LOG_FILE"
 echo "  Dialer IP:           $DIALER_IP" >> "$LOG_FILE"
 echo "" >> "$LOG_FILE"
 echo "LAN Listener Network:" >> "$LOG_FILE"
 echo "  Subnet:              $LAN_LISTENER_SUBNET" >> "$LOG_FILE"
-echo "  Gateway:             $LAN_LISTENER_GATEWAY" >> "$LOG_FILE"
 echo "  Router LAN IP:       $LISTENER_ROUTER_LAN_IP" >> "$LOG_FILE"
 echo "  Listener IP:         $LISTENER_IP" >> "$LOG_FILE"
 echo "" >> "$LOG_FILE"
@@ -268,7 +258,6 @@ networks:
     ipam:
       config:
         - subnet: ${WAN_SUBNET}
-          gateway: ${WAN_GATEWAY}
   lan-dialer:
     driver: bridge
     ipam:
@@ -314,6 +303,12 @@ services:
       - DELAY_MS=${DIALER_ROUTER_DELAY}
     cap_add:
       - NET_ADMIN
+    sysctls:
+      - net.ipv4.ip_forward=1
+      - net.ipv4.conf.all.forwarding=1
+      - net.ipv4.conf.default.forwarding=1
+      - net.ipv4.conf.all.rp_filter=0
+      - net.ipv4.conf.default.rp_filter=0
     init: true
     depends_on:
       - relay
@@ -334,6 +329,12 @@ services:
       - DELAY_MS=${LISTENER_ROUTER_DELAY}
     cap_add:
       - NET_ADMIN
+    sysctls:
+      - net.ipv4.ip_forward=1
+      - net.ipv4.conf.all.forwarding=1
+      - net.ipv4.conf.default.forwarding=1
+      - net.ipv4.conf.all.rp_filter=0
+      - net.ipv4.conf.default.rp_filter=0
     init: true
     depends_on:
       - relay
@@ -353,6 +354,7 @@ services:
       - TEST_TIMEOUT_SECONDS=\${TEST_TIMEOUT_SECONDS:-30}
       - DEBUG=${DEBUG}
       - DIALER_IP=${DIALER_IP}
+      - ROUTER_LAN_IP=${DIALER_ROUTER_LAN_IP}
     cap_add:
       - NET_ADMIN
     volumes:
@@ -360,6 +362,7 @@ services:
     depends_on:
       - dialer-router
       - relay
+      - listener
 
   listener:
     image: hole-punch-peer-${LISTENER_ID}
@@ -376,6 +379,7 @@ services:
       - TEST_TIMEOUT_SECONDS=\${TEST_TIMEOUT_SECONDS:-30}
       - DEBUG=${DEBUG}
       - LISTENER_IP=${LISTENER_IP}
+      - ROUTER_LAN_IP=${LISTENER_ROUTER_LAN_IP}
     cap_add:
       - NET_ADMIN
     volumes:
