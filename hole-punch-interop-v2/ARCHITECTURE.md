@@ -271,7 +271,7 @@ impls.yaml
     ↓
 Docker Images + image.yaml files
     ↓
-[generate-tests.sh] + test-selection.yaml
+[generate-tests.sh]
     ↓
 test-matrix.yaml (cached)
     ↓
@@ -348,23 +348,6 @@ implementations:
 - `generate-tests.sh` - to create test combinations from implementations
 - `start-global-services.sh` - to start relay with correct configuration
 - `run-single-test.sh` - to configure NAT routers for each test
-
-### test-selection.yaml
-
-Defines default test filters:
-
-```yaml
-test-select: []  # All tests by default
-test-ignore:
-  - experimental
-  - flaky
-```
-
-**Priority:**
-1. CLI args (`--test-select`, `--test-ignore`)
-2. Global test-selection.yaml
-
-**Note:** Per-language test-selection.yaml files are not used - test filtering is done at runtime via CLI args.
 
 ### test-matrix.yaml (Generated)
 
@@ -452,11 +435,11 @@ fi
 
 ### 2. Test Matrix Caching
 
-**Cache Key:** SHA-256(impls.yaml + test-selection.yaml + filter + ignore + debug)
+**Cache Key:** SHA-256(impls.yaml + filter + ignore + debug)
 
 ```bash
 cache_key=$({
-    cat impls.yaml test-selection.yaml 2>/dev/null
+    cat impls.yaml
     echo "$TEST_FILTER||$TEST_IGNORE||$DEBUG"
 } | sha256sum | cut -d' ' -f1)
 
@@ -555,7 +538,6 @@ Each test pass creates a self-contained directory:
 ├── README.md              # Complete instructions
 ├── settings.yaml          # Snapshot metadata
 ├── impls.yaml             # Implementation config (captured)
-├── test-selection.yaml    # Test selection (captured)
 ├── test-matrix.yaml       # Generated matrix
 ├── results.yaml           # Original test results
 ├── results.md             # Markdown dashboard
@@ -700,9 +682,8 @@ Ensures global services are always stopped, even on error.
 ### Adding New Languages
 
 1. Create `impls/<language>/` directory
-2. Add `test-selection.yaml`
-3. Add implementations to `impls.yaml`
-4. Run tests
+2. Add implementations to `impls.yaml`
+3. Run tests
 
 ### Adding New Transports
 

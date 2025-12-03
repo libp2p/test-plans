@@ -202,9 +202,20 @@ for ((i=0; i<impl_count; i++)); do
     impl_image="hole-punch-peer-${impl_id}"
     source_type=$(yq eval ".implementations[$i].source.type" impls.yaml)
 
-    # Apply filter if specified (exact match with anchors)
-    if [ -n "$FILTER" ] && [[ ! "$impl_id" =~ ^($FILTER)$ ]]; then
-        continue
+    # Apply filter if specified (substring match on pipe-separated list)
+    if [ -n "$FILTER" ]; then
+        # Check if impl_id matches any of the pipe-separated filter patterns
+        match_found=false
+        IFS='|' read -ra FILTER_PATTERNS <<< "$FILTER"
+        for pattern in "${FILTER_PATTERNS[@]}"; do
+            if [[ "$impl_id" == *"$pattern"* ]]; then
+                match_found=true
+                break
+            fi
+        done
+        if [ "$match_found" = false ]; then
+            continue  # Skip silently
+        fi
     fi
 
     # Check if image already exists (skip if not forcing rebuild)

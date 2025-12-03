@@ -213,6 +213,7 @@ echo "→ Found $impl_count implementations in impls.yaml"
 declare -A impl_transports    # impl_transports[rust-v0.56]="tcp ws quic-v1"
 declare -A impl_secure        # impl_secure[rust-v0.56]="tls noise"
 declare -A impl_muxers        # impl_muxers[rust-v0.56]="yamux mplex"
+declare -A impl_dial_only     # impl_dial_only[chromium-rust-v0.54]="webtransport webrtc-direct ws"
 declare -a impl_ids           # impl_ids=(rust-v0.56 rust-v0.55 ...)
 
 # Load all implementation data using yq
@@ -222,11 +223,13 @@ for ((i=0; i<impl_count; i++)); do
     transports=$(yq eval ".implementations[$i].transports | join(\" \")" impls.yaml)
     secure=$(yq eval ".implementations[$i].secureChannels | join(\" \")" impls.yaml)
     muxers=$(yq eval ".implementations[$i].muxers | join(\" \")" impls.yaml)
+    dial_only=$(yq eval ".implementations[$i].dialOnly | join(\" \")" impls.yaml 2>/dev/null || echo "")
 
     impl_ids+=("$id")
     impl_transports["$id"]="$transports"
     impl_secure["$id"]="$secure"
     impl_muxers["$id"]="$muxers"
+    impl_dial_only["$id"]="$dial_only"
 done
 
 echo "  ✓ Loaded ${#impl_ids[@]} implementations into memory"
@@ -245,6 +248,21 @@ if [ -n "$TEST_IGNORE" ]; then
     IFS='|' read -ra IGNORE_PATTERNS <<< "$TEST_IGNORE"
     echo "  ✓ Loaded ${#IGNORE_PATTERNS[@]} ignore patterns"
 fi
+
+# Helper function to check if implementation ID matches select patterns
+impl_matches_select() {
+    local impl_id="$1"
+
+    # No select = match all
+    [ ${#SELECT_PATTERNS[@]} -eq 0 ] && return 0
+
+    # Check each select pattern against implementation ID
+    for select in "${SELECT_PATTERNS[@]}"; do
+        [[ "$impl_id" == *"$select"* ]] && return 0
+    done
+
+    return 1
+}
 
 # Helper function to check if test name matches select
 matches_select() {
@@ -276,6 +294,25 @@ should_ignore() {
     return 1
 }
 
+# Check if a transport can be used with an implementation as listener
+# Returns 0 (true) if transport can be used as listener, 1 (false) if dialOnly
+can_be_listener_for_transport() {
+    local impl_id="$1"
+    local transport="$2"
+
+    local dial_only_transports="${impl_dial_only[$impl_id]:-}"
+
+    # If no dialOnly restrictions, can always be listener
+    [ -z "$dial_only_transports" ] && return 0
+
+    # Check if transport is in dialOnly list
+    if [[ " $dial_only_transports " == *" $transport "* ]]; then
+        return 1  # Cannot be listener for this transport
+    fi
+
+    return 0  # Can be listener
+}
+
 # Get common elements between two space-separated lists
 get_common() {
     local list1="$1"
@@ -302,11 +339,17 @@ test_num=0
 
 # Iterate through all dialer/listener pairs using pre-loaded data
 for dialer_id in "${impl_ids[@]}"; do
+    # Skip if dialer doesn't match select filter
+    impl_matches_select "$dialer_id" || continue
+
     dialer_transports="${impl_transports[$dialer_id]}"
     dialer_secure="${impl_secure[$dialer_id]}"
     dialer_muxers="${impl_muxers[$dialer_id]}"
 
     for listener_id in "${impl_ids[@]}"; do
+        # Skip if listener doesn't match select filter
+        impl_matches_select "$listener_id" || continue
+
         listener_transports="${impl_transports[$listener_id]}"
         listener_secure="${impl_secure[$listener_id]}"
         listener_muxers="${impl_muxers[$listener_id]}"
@@ -319,6 +362,10 @@ for dialer_id in "${impl_ids[@]}"; do
 
         # Process each common transport
         for transport in $common_transports; do
+            # Check if listener can handle this transport (not in dialOnly list)
+            if ! can_be_listener_for_transport "$listener_id" "$transport"; then
+                continue  # Skip: listener has this transport in dialOnly
+            fi
 
             if is_standalone_transport "$transport"; then
                 # Standalone transport

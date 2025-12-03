@@ -6,6 +6,10 @@
 test-aliases:
   - alias: "browsers"
     value: "chromium-rust-v0.53|chromium-rust-v0.54|chromium-js-v1.x|chromium-js-v2.x|firefox-js-v1.x|firefox-js-v2.x|webkit-js-v1.x|webkit-js-v2.x"
+  - alias: "rust-browsers"
+    value: "chromium-rust-v0.53|chromium-rust-v0.54"
+  - alias: "js-browsers"
+    value: "chromium-js-v1.x|chromium-js-v2.x|firefox-js-v1.x|firefox-js-v2.x|webkit-js-v1.x|webkit-js-v2.x"
   - alias: "rust"
     value: "rust-v0.53|rust-v0.54|rust-v0.55|rust-v0.56"
   - alias: "go"
@@ -157,7 +161,7 @@ implementations:
     source:
       type: github
       repo: libp2p/py-libp2p
-      commit: 8b34e4654ac46cfe6043ba75e7aa64e4c3c29777
+      commit: 651f54ce43f463bf55512d4a9e4664955372205c
       dockerfile: interop/transport/Dockerfile
     transports: [tcp, quic-v1]
     secureChannels: [noise]
@@ -333,10 +337,10 @@ implementations:
   # Rust browser implementations
   - id: chromium-rust-v0.53
     source:
-      type: browser
-      baseImage: rust-v0.53
-      browser: chromium
-      dockerfile: impls/chromium-rust/BrowserDockerfile
+      type: github
+      repo: libp2p/rust-libp2p
+      commit: b7914e407da34c99fb76dcc300b3d44b9af97fac
+      dockerfile: interop-tests/Dockerfile.chromium
     transports: [webtransport, webrtc-direct, ws]
     secureChannels: [noise]
     muxers: [mplex, yamux]
@@ -344,11 +348,13 @@ implementations:
 
   - id: chromium-rust-v0.54
     source:
-      type: browser
-      baseImage: rust-v0.54
-      browser: chromium
-      dockerfile: impls/chromium-rust/BrowserDockerfile
+      type: github
+      repo: libp2p/rust-libp2p
+      commit: d7beb55f672dce54017fa4b30f67ecb8d66b9810
+      dockerfile: interop-tests/Dockerfile.chromium
     transports: [webtransport, webrtc-direct, ws]
     secureChannels: [noise]
     muxers: [mplex, yamux]
     dialOnly: [webtransport, webrtc-direct, ws]
+
+

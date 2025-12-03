@@ -156,7 +156,7 @@ impls.yaml
     ↓
 Docker Images + image.yaml files
     ↓
-[generate-tests.sh] + test-selection.yaml
+[generate-tests.sh]
     ↓
 test-matrix.yaml (3D combinations, cached)
     ↓
@@ -256,23 +256,6 @@ implementations:
 - `build-images.sh` - to build Docker images
 - `generate-tests.sh` - to create 3D test combinations
 
-### test-selection.yaml Files
-
-Same format as hole-punch-interop:
-
-```yaml
-test-select:
-  - rust-v0.53
-  - rust-v0.54
-
-test-ignore:
-  - rust-v0.53 x rust-v0.53
-  - flaky
-```
-
-**Location:**
-- Global: `test-selection.yaml` (root of project)
-
 ### test-matrix.yaml (Generated)
 
 ```yaml
@@ -343,7 +326,7 @@ Identical to hole-punch-interop.
 
 ### 2. Test Matrix Caching
 
-**Cache Key:** SHA-256(impls.yaml + test-selection.yaml + filter||ignore||debug)
+**Cache Key:** SHA-256(impls.yaml + filter||ignore||debug)
 
 Content-addressed caching ensures:
 - Same config = instant cache hit
@@ -394,7 +377,6 @@ transport-interop-full-144732-09-11-2025/
 ├── README.md
 ├── settings.yaml
 ├── impls.yaml
-├── test-selection.yaml
 ├── test-matrix.yaml
 ├── results.yaml
 ├── results.md
@@ -453,9 +435,8 @@ EOF
 ### Adding New Languages
 
 1. Create `impls/<language>/` directory
-2. Add `test-selection.yaml`
-3. Add implementations to `impls.yaml`
-4. Run tests
+2. Add implementations to `impls.yaml`
+3. Run tests
 
 ### Adding New Transports
 

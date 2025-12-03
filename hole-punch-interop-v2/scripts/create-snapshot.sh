@@ -25,7 +25,6 @@ mkdir -p "$SNAPSHOT_DIR"/{scripts,snapshots,docker-compose,logs,docker-images}
 # Copy essential files (only if they don't already exist in snapshot dir)
 echo "→ Copying configuration files..."
 cp impls.yaml "$SNAPSHOT_DIR/" 2>/dev/null || true
-cp test-selection.yaml "$SNAPSHOT_DIR/" 2>/dev/null || true
 cp -r impls "$SNAPSHOT_DIR/" 2>/dev/null || true
 
 echo "→ Copying scripts..."

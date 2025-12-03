@@ -263,6 +263,21 @@ if [ -n "$TEST_IGNORE" ]; then
     echo "  ✓ Loaded ${#IGNORE_PATTERNS[@]} ignore patterns"
 fi
 
+# Helper function to check if implementation ID matches select patterns
+impl_matches_select() {
+    local impl_id="$1"
+
+    # No select = match all
+    [ ${#SELECT_PATTERNS[@]} -eq 0 ] && return 0
+
+    # Check each select pattern against implementation ID
+    for select in "${SELECT_PATTERNS[@]}"; do
+        [[ "$impl_id" == *"$select"* ]] && return 0
+    done
+
+    return 1
+}
+
 # Helper function to check if test name matches select
 matches_select() {
     local test_name="$1"
@@ -316,9 +331,15 @@ echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔�
 for relay_id in "${relay_ids[@]}"; do
     for router_id in "${router_ids[@]}"; do
         for dialer_id in "${impl_ids[@]}"; do
+            # Skip if dialer doesn't match select filter
+            impl_matches_select "$dialer_id" || continue
+
             dialer_transports="${impl_transports[$dialer_id]}"
 
             for listener_id in "${impl_ids[@]}"; do
+                # Skip if listener doesn't match select filter
+                impl_matches_select "$listener_id" || continue
+
                 listener_transports="${impl_transports[$listener_id]}"
 
                 # Find common transports (much faster than grep)

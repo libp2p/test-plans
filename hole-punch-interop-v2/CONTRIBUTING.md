@@ -27,21 +27,7 @@ implementations:
 - Dockerfile path is relative to repository root
 - Only list transports that your implementation supports
 
-### 2. Update test-selection.yaml (Optional)
-
-Update global test selection defaults (`test-selection.yaml`):
-
-```yaml
-test-select: []  # Empty = all tests (or add specific filters)
-
-test-ignore:
-  - experimental  # Global ignores apply to all tests
-  - flaky
-```
-
-**Note:** Test filtering is primarily done via CLI args, not YAML files.
-
-### 3. Test Locally
+### 2. Test Locally
 
 ```bash
 # Build only your implementation
@@ -58,11 +44,10 @@ bash scripts/build-images.sh rust-v0.54
 ./run_tests.sh --test-select "rust-v0.54" --force-rebuild
 ```
 
-### 4. Submit Pull Request
+### 3. Submit Pull Request
 
 Include in your PR:
 - Updated `impls.yaml`
-- Any test-selection changes
 - Description of what changed
 - Link to the commit in the implementation repo
 

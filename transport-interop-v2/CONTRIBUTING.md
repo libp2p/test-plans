@@ -35,19 +35,7 @@ implementations:
 - List all supported transports, secureChannels, and muxers
 - Standalone transports (quic-v1, webrtc) don't need secure/muxer in tests
 
-### 2. Update test-selection.yaml (Optional)
-
-**For global test selection** (`test-selection.yaml` in project root):
-```yaml
-test-select:
-  - go-v0.35
-
-test-ignore:
-  - go-v0.35 x go-v0.35  # Skip self-tests if desired
-  - flaky
-```
-
-### 3. Test Locally
+### 2. Test Locally
 
 ```bash
 # Build only your implementation
@@ -58,11 +46,10 @@ bash scripts/build-images.sh go-v0.35
 ./run_tests.sh --test-select "go-v0.35" --cache-dir /tmp/cache --workers 4
 ```
 
-### 4. Submit Pull Request
+### 3. Submit Pull Request
 
 Include in your PR:
 - Updated `impls.yaml`
-- Any test-selection changes (if modifying global `test-selection.yaml`)
 - Description of transport/secure/muxer support
 - Link to the commit in the implementation repo
 
