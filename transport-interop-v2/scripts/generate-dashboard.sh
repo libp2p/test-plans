@@ -71,16 +71,18 @@ declare -A test_status_map
 declare -A test_secure_map
 declare -A test_muxer_map
 
-# Export all test data as TSV in one yq call (much faster than individual calls)
-test_data=$(yq eval '.tests[] | [.name, .status, .dialer, .listener, .transport, .secureChannel, .muxer, .duration, .handshakePlusOneRTTMs // "", .pingRTTMs // ""] | @tsv' "$RESULTS_FILE")
+# Only process tests if there are any
+if [ "$test_count" -gt 0 ]; then
+    # Export all test data as TSV in one yq call (much faster than individual calls)
+    test_data=$(yq eval '.tests[] | [.name, .status, .dialer, .listener, .transport, .secureChannel, .muxer, .duration, .handshakePlusOneRTTMs // "", .pingRTTMs // ""] | @tsv' "$RESULTS_FILE")
 
-# Process each test and build both the table and hash maps
-while IFS=$'\t' read -r name status dialer listener transport secure muxer test_duration handshake_ms ping_ms; do
+    # Process each test and build both the table and hash maps
+    while IFS=$'\t' read -r name status dialer listener transport secure muxer test_duration handshake_ms ping_ms; do
 
-    # Store in hash maps for later matrix lookup
-    test_status_map["$name"]="$status"
-    test_secure_map["$name"]="$secure"
-    test_muxer_map["$name"]="$muxer"
+        # Store in hash maps for later matrix lookup
+        test_status_map["$name"]="$status"
+        test_secure_map["$name"]="$secure"
+        test_muxer_map["$name"]="$muxer"
 
     # Status icon
     if [ "$status" = "pass" ]; then
@@ -99,8 +101,11 @@ while IFS=$'\t' read -r name status dialer listener transport secure muxer test_
 
     echo "| $name | $dialer | $listener | $transport | $secure | $muxer | $status_icon | $test_duration | $handshake_ms | $ping_ms |" >> "$OUTPUT_FILE"
 done <<< "$test_data"
+fi
 
-cat >> "$OUTPUT_FILE" <<EOF
+# Only generate matrix view if there are tests
+if [ "$test_count" -gt 0 ]; then
+    cat >> "$OUTPUT_FILE" <<EOF
 
 ---
 
@@ -108,8 +113,8 @@ cat >> "$OUTPUT_FILE" <<EOF
 
 EOF
 
-# Generate matrix view grouped by transport
-transports=$(yq eval '.tests[].transport' "$RESULTS_FILE" | sort -u)
+    # Generate matrix view grouped by transport
+    transports=$(yq eval '.tests[].transport' "$RESULTS_FILE" | sort -u)
 
 for transport in $transports; do
     echo "### Transport: $transport" >> "$OUTPUT_FILE"
@@ -185,6 +190,7 @@ for transport in $transports; do
 
     echo "" >> "$OUTPUT_FILE"
 done
+fi
 
 cat >> "$OUTPUT_FILE" <<EOF
 

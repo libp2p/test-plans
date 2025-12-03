@@ -200,39 +200,46 @@ echo ""
 echo "╲ Building Docker images..."
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
-# Get unique implementations from test matrix (dialer + listener)
-REQUIRED_IMPLS=$(mktemp)
-yq eval '.tests[].dialer' "$TEST_PASS_DIR/test-matrix.yaml" | sort -u > "$REQUIRED_IMPLS"
-yq eval '.tests[].listener' "$TEST_PASS_DIR/test-matrix.yaml" | sort -u >> "$REQUIRED_IMPLS"
-sort -u "$REQUIRED_IMPLS" -o "$REQUIRED_IMPLS"
+# Check if test matrix has any tests
+test_count=$(yq eval '.metadata.totalTests' "$TEST_PASS_DIR/test-matrix.yaml")
 
-# Also add base images for any browser-type implementations
-REQUIRED_IMPLS_WITH_DEPS=$(mktemp)
-cp "$REQUIRED_IMPLS" "$REQUIRED_IMPLS_WITH_DEPS"
+if [ "$test_count" -eq 0 ]; then
+    echo "→ No tests in matrix, skipping image builds"
+else
+    # Get unique implementations from test matrix (dialer + listener)
+    REQUIRED_IMPLS=$(mktemp)
+    yq eval '.tests[].dialer' "$TEST_PASS_DIR/test-matrix.yaml" | sort -u > "$REQUIRED_IMPLS"
+    yq eval '.tests[].listener' "$TEST_PASS_DIR/test-matrix.yaml" | sort -u >> "$REQUIRED_IMPLS"
+    sort -u "$REQUIRED_IMPLS" -o "$REQUIRED_IMPLS"
 
-while IFS= read -r impl_id; do
-    # Check if this is a browser-type implementation
-    source_type=$(yq eval ".implementations[] | select(.id == \"$impl_id\") | .source.type" impls.yaml)
-    if [ "$source_type" = "browser" ]; then
-        # Add its base image as a dependency
-        base_image=$(yq eval ".implementations[] | select(.id == \"$impl_id\") | .source.baseImage" impls.yaml)
-        echo "$base_image" >> "$REQUIRED_IMPLS_WITH_DEPS"
-    fi
-done < "$REQUIRED_IMPLS"
+    # Also add base images for any browser-type implementations
+    REQUIRED_IMPLS_WITH_DEPS=$(mktemp)
+    cp "$REQUIRED_IMPLS" "$REQUIRED_IMPLS_WITH_DEPS"
 
-# Sort and deduplicate
-sort -u "$REQUIRED_IMPLS_WITH_DEPS" -o "$REQUIRED_IMPLS_WITH_DEPS"
+    while IFS= read -r impl_id; do
+        # Check if this is a browser-type implementation
+        source_type=$(yq eval ".implementations[] | select(.id == \"$impl_id\") | .source.type" impls.yaml)
+        if [ "$source_type" = "browser" ]; then
+            # Add its base image as a dependency
+            base_image=$(yq eval ".implementations[] | select(.id == \"$impl_id\") | .source.baseImage" impls.yaml)
+            echo "$base_image" >> "$REQUIRED_IMPLS_WITH_DEPS"
+        fi
+    done < "$REQUIRED_IMPLS"
 
-IMPL_COUNT=$(wc -l < "$REQUIRED_IMPLS_WITH_DEPS")
-echo "→ Building $IMPL_COUNT required implementations (including base images)"
-echo ""
+    # Sort and deduplicate
+    sort -u "$REQUIRED_IMPLS_WITH_DEPS" -o "$REQUIRED_IMPLS_WITH_DEPS"
 
-# Build each required implementation using pipe-separated list
-IMPL_FILTER=$(cat "$REQUIRED_IMPLS_WITH_DEPS" | paste -sd'|' -)
-echo "→ bash scripts/build-images.sh \"$IMPL_FILTER\" \"$FORCE_REBUILD\""
-bash scripts/build-images.sh "$IMPL_FILTER" "$FORCE_REBUILD"
+    IMPL_COUNT=$(wc -l < "$REQUIRED_IMPLS_WITH_DEPS")
+    echo "→ Building $IMPL_COUNT required implementations (including base images)"
+    echo ""
 
-rm -f "$REQUIRED_IMPLS" "$REQUIRED_IMPLS_WITH_DEPS"
+    # Build each required implementation using pipe-separated list
+    IMPL_FILTER=$(cat "$REQUIRED_IMPLS_WITH_DEPS" | paste -sd'|' -)
+    echo "→ bash scripts/build-images.sh \"$IMPL_FILTER\" \"$FORCE_REBUILD\""
+    bash scripts/build-images.sh "$IMPL_FILTER" "$FORCE_REBUILD"
+
+    rm -f "$REQUIRED_IMPLS" "$REQUIRED_IMPLS_WITH_DEPS"
+fi
 
 # Display test list and prompt for confirmation
 echo ""
