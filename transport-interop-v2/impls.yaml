@@ -176,7 +176,7 @@ implementations:
     transports: [tcp, ws, wss]
     secureChannels: [noise]
     muxers: [mplex, yamux]
-    dialOnly: [wss]  # wss can only dial
+    dialOnly: [wss]
 
   - id: js-v2.x
     source:
