@@ -3,9 +3,6 @@
 
 set -euo pipefail
 
-echo "Checking dependencies..."
-echo ""
-
 has_error=false
 
 # Function to compare semantic versions
@@ -43,20 +40,6 @@ if [ -n "${BASH_VERSION:-}" ]; then
     fi
 else
     echo "✗ bash not detected"
-    has_error=true
-fi
-
-# Check git
-if command -v git &> /dev/null; then
-    git_version=$(git --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-    if [[ $(version_compare "$git_version" "2.0.0") -ge 0 ]]; then
-        echo "✓ git $git_version (minimum: 2.0.0)"
-    else
-        echo "✗ git $git_version is too old (minimum: 2.0.0)"
-        has_error=true
-    fi
-else
-    echo "✗ git is not installed"
     has_error=true
 fi
 
@@ -121,12 +104,10 @@ fi
 echo ""
 
 if [ "$has_error" = true ]; then
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "✗ Some dependencies are missing or outdated"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "╲ ✗ Some dependencies are missing or outdated"
+    echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
     exit 1
 else
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "✓ All dependencies are satisfied"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "╲ ✓ All dependencies are satisfied"
+    echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 fi

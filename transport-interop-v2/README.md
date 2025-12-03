@@ -69,7 +69,7 @@ Each test runs with just 2 containers: `dialer` and `listener`.
 ./run_tests.sh --cache-dir /srv/cache --workers 8
 
 # Run only rust tests
-./run_tests.sh --test-filter "rust" --workers 4
+./run_tests.sh --test-select "rust" --workers 4
 
 # Skip quic tests
 ./run_tests.sh --test-ignore "quic" --workers 4
@@ -83,8 +83,15 @@ Each test runs with just 2 containers: `dialer` and `listener`.
 ### Configuration Files
 
 **impls.yaml**:
+Defines all implementations with their source repositories and supported protocols.
+
+Each implementation can use one of two source types:
+- **github**: Automatically fetches and builds from a GitHub repository
+- **local**: Builds from a local directory clone for debugging
+
 ```yaml
 implementations:
+  # GitHub source (production)
   - id: rust-v0.53
     source:
       type: github
@@ -94,14 +101,24 @@ implementations:
     transports: [tcp, ws, quic-v1]
     secureChannels: [noise, tls]
     muxers: [yamux, mplex]
+
+  # Local source (debugging)
+  - id: rust-v0.56
+    source:
+      type: local
+      path: /home/user/rust-libp2p  # Local clone
+      commit: b7914e40  # Still tracked for documentation
+      dockerfile: interop-tests/Dockerfile.native
+    transports: [tcp, ws, quic-v1]
+    secureChannels: [noise, tls]
+    muxers: [yamux, mplex]
 ```
 
-**test-selection.yaml** (global, in project root):
-```yaml
-test-filter: []
-test-ignore:
-  - flaky
-```
+Switching to `local` type makes debugging easy:
+- Make local code changes without committing
+- Test modifications immediately
+- Use your IDE and debugging tools
+- Switch back to `github` when done
 
 ### Test Matrix Generation
 
@@ -138,7 +155,7 @@ scripts/
 /srv/cache/
 ├── snapshots/<commit-sha>.zip       # Source code archives
 ├── test-matrix/<sha256>.yaml        # Generated test matrices
-└── test-passes/<timestamp>.tar.gz   # Test snapshots
+└── test-runs/<timestamp>.tar.gz   # Test snapshots
 ```
 
 ## Dependencies
@@ -214,9 +231,25 @@ tests:
      muxers: [yamux, mplex]
    ```
 
-2. Optionally update `test-selection.yaml` (in project root) to filter tests
-
-3. Run tests:
+2. Run tests:
    ```bash
-   ./run_tests.sh --test-filter "go-v0.35"
+   ./run_tests.sh --test-select "go-v0.35"
+   ```
+
+3. For debugging, switch to local source:
+   ```yaml
+   - id: go-v0.35
+     source:
+       type: local
+       path: /home/user/go-libp2p
+       commit: <commit-sha>
+       dockerfile: interop-tests/Dockerfile
+     transports: [tcp, quic-v1]
+     secureChannels: [noise, tls]
+     muxers: [yamux, mplex]
+   ```
+
+   Then test with local changes:
+   ```bash
+   ./run_tests.sh --test-select "go-v0.35" --force-rebuild
    ```

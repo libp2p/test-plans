@@ -1,6 +1,34 @@
 # Transport Interop - Implementation Definitions
 # This file defines all libp2p implementations to test for transport interoperability
 
+# Test Aliases - Define reusable patterns for test selection
+# Usage: --test-select "~browsers" or --test-ignore "!~browsers"
+test-aliases:
+  - alias: "browsers"
+    value: "chromium-rust-v0.53|chromium-rust-v0.54|chromium-js-v1.x|chromium-js-v2.x|firefox-js-v1.x|firefox-js-v2.x|webkit-js-v1.x|webkit-js-v2.x"
+  - alias: "rust"
+    value: "rust-v0.53|rust-v0.54|rust-v0.55|rust-v0.56"
+  - alias: "go"
+    value: "go-v0.38|go-v0.39|go-v0.40|go-v0.41|go-v0.42|go-v0.43|go-v0.44|go-v0.45"
+  - alias: "python"
+    value: "python-v0.4"
+  - alias: "js"
+    value: "js-v1.x|js-v2.x|js-v3.x"
+  - alias: "nim"
+    value: "nim-v1.14"
+  - alias: "jvm"
+    value: "jvm-v1.2"
+  - alias: "c"
+    value: "c-v0.0.1"
+  - alias: "dotnet"
+    value: "dotnet-v1.0"
+  - alias: "zig"
+    value: "zig-v0.0.1"
+  - alias: "eth-p2p"
+    value: "eth-p2p-z-v0.0.1"
+  - alias: "failing"
+    value: "js-v2.x|c-v0.0.1"
+
 implementations:
   # Rust implementations
   - id: rust-v0.53
@@ -125,13 +153,12 @@ implementations:
     muxers: [yamux]
 
   # Python implementation
-  - id: python-v0.4 # scripts split '-' into impl/python/v0.4
+  - id: python-v0.4
     source:
       type: github
       repo: libp2p/py-libp2p
-      commit: 09d0064f1d1dbee64a148d72374ed51ecc80ad4d
-      dockerfile: Dockerfile  # In impl/python/v0.4/ directory
-      buildContext: local  # Uses local Dockerfile, not from repo
+      commit: 8b34e4654ac46cfe6043ba75e7aa64e4c3c29777
+      dockerfile: interop/transport/Dockerfile
     transports: [tcp, quic-v1]
     secureChannels: [noise]
     muxers: [mplex, yamux]

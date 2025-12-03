@@ -45,48 +45,79 @@ cd test-plans/hole-punch-interop-v2
 
 Expected output:
 ```
-╔════════════════════════════════════════════════════════════╗
-║  Hole Punch Interoperability Test Suite                   ║
-╚════════════════════════════════════════════════════════════╝
 
-Test Pass: hole-punch-full
-Cache Dir: /tmp/cache
-Workers: 2
+                        ╔╦╦╗  ╔═╗
+▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁ ║╠╣╚╦═╬╝╠═╗ ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+═══════════════════════ ║║║║║║║╔╣║║ ════════════════════════
+▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔ ╚╩╩═╣╔╩═╣╔╝ ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+                            ╚╝  ╚╝
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Checking dependencies...
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✓ bash 5.1.16 (minimum: 4.0)
-✓ git 2.34.1 (minimum: 2.0.0)
-✓ docker 24.0.5 (minimum: 20.10.0)
-✓ Docker daemon is running
-✓ yq 4.35.1 (minimum: 4.0.0)
-✓ wget is installed
-✓ unzip is installed
+╲ Hole Punch Interoperability Test Suite
+ ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Building Docker images...
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Building: rust-v0.53
-  Repo: libp2p/rust-libp2p
-  Commit: b7914e40
-→ Downloading snapshot...
-  ✓ Cached: b7914e40.zip
+→ Test Pass: hole-punch-143022-09-11-2025
+→ Cache Dir: /tmp/cache
+→ Test Pass Dir: /tmp/cache/test-runs/hole-punch-143022-09-11-2025
+→ Workers: 2
+
+╲ Checking dependencies...
+ ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+  ✓ bash 5.1.16 (minimum: 4.0)
+  ✓ docker 24.0.5 (minimum: 20.10.0)
+  ✓ yq 4.35.1 (minimum: 4.0.0)
+  ✓ wget is installed
+  ✓ unzip is installed
+
+╲ Building Docker images...
+ ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+
+→ Building relay image...
+╲ Building: hole-punch-relay
+ ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+→ Repo: libp2p/rust-libp2p
+→ Commit: b7914e40
+  ✓ [HIT] Using cached snapshot: b7914e40.zip
+✓ Built: hole-punch-relay
+
+→ Building router image...
+╲ Building: hole-punch-router
+ ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+→ Repo: libp2p/rust-libp2p
+→ Commit: b7914e40
+  ✓ [HIT] Using cached snapshot: b7914e40.zip
+✓ Built: hole-punch-router
+
+╲ Building: rust-v0.53
+ ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+→ Repo: libp2p/rust-libp2p
+→ Commit: b7914e40
+  ✓ [HIT] Using cached snapshot: b7914e40.zip
 → Extracting snapshot...
 → Building Docker image...
-  ✓ Built image: rust-v0.53
+✓ Built: rust-v0.53
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✓ All images built successfully
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✓ All required images built successfully
+
+**Note:** The test suite automatically builds three types of images:
+1. **Relay** (hole-punch-relay) - Per-test libp2p relay (25ms delay)
+2. **Router** (hole-punch-router) - NAT simulation gateways (100ms delay each)
+3. **Implementations** - Test implementations (rust-v0.53, etc.)
+
+Each test runs in **complete isolation**:
+- Unique three-tier network topology (WAN + 2 LANs)
+- Per-test relay instance on WAN network
+- Two-octet subnet derivation: 65,536 unique combinations
+- Redis key namespacing using TEST_KEY
+- All Redis operations scoped: `relay:{TEST_KEY}`, `ready:{TEST_KEY}:*`
 
 ...
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✓ All tests passed!
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+╲ ✓ All tests passed!
+ ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
 
-Results: results.yaml, results.md
+→ Output files:
+  → /tmp/cache/test-runs/hole-punch-143022-09-11-2025/results.yaml
+  → /tmp/cache/test-runs/hole-punch-143022-09-11-2025/results.md
 ```
 
 ## View Results
@@ -106,13 +137,19 @@ open results.html  # or xdg-open on Linux
 
 ```bash
 # Test only Rust
-./run_tests.sh --test-filter "rust" --workers 4
+./run_tests.sh --test-select "rust" --workers 4
 
 # Test only QUIC transport
-./run_tests.sh --test-filter "quic" --workers 4
+./run_tests.sh --test-select "quic" --workers 4
 
 # Test specific version
-./run_tests.sh --test-filter "rust-v0.53" --workers 2
+./run_tests.sh --test-select "rust-v0.53" --workers 2
+
+# Run with debug output
+./run_tests.sh --test-select "rust-v0.53" --debug
+
+# Force rebuild all images
+./run_tests.sh --force-rebuild --yes
 ```
 
 ### Ignore Problematic Tests
@@ -132,13 +169,14 @@ open results.html  # or xdg-open on Linux
 ./run_tests.sh --snapshot --cache-dir /tmp/cache --workers 4
 
 # Snapshot saved to:
-# /tmp/cache/test-passes/hole-punch-full-<timestamp>.tar.gz
+# /tmp/cache/test-runs/hole-punch-<timestamp>/
 
-# Extract and re-run
-cd /tmp/cache/test-passes
-tar -xzf hole-punch-full-*.tar.gz
-cd hole-punch-full-*
+# Re-run from snapshot
+cd /tmp/cache/test-runs/hole-punch-*
 ./re-run.sh
+
+# Force rebuild all images before re-running
+./re-run.sh --force-rebuild
 ```
 
 ### Adjust Parallelism
@@ -206,6 +244,44 @@ cat logs/rust-v0.53_x_rust-v0.53_tcp.log
 grep -l "failed" logs/*.log
 ```
 
+## Debugging with Local Implementations
+
+For development and debugging, you can switch implementations from GitHub sources to local directories:
+
+```yaml
+# In impls.yaml
+implementations:
+  - id: rust-v0.56
+    source:
+      type: local              # Changed from 'github' to 'local'
+      path: /home/user/rust-libp2p  # Local clone
+      commit: b7914e40        # Still tracked for documentation
+    transports: [tcp, quic]
+```
+
+Benefits:
+- Make changes without committing to GitHub
+- Test modifications immediately
+- Use your local IDE and debugging tools
+- Faster iteration during development
+- Switch back to `github` type when done
+
+Example workflow:
+```bash
+# 1. Clone repo locally
+git clone https://github.com/libp2p/rust-libp2p.git ~/rust-libp2p
+
+# 2. Edit impls.yaml to use local path
+vim impls.yaml
+# Change rust-v0.56 source type to 'local' and set path
+
+# 3. Make your changes
+vim ~/rust-libp2p/protocols/dcutr/src/behaviour.rs
+
+# 4. Test with your changes
+./run_tests.sh --test-select "rust-v0.56" --force-rebuild
+```
+
 ## Next Steps
 
 - Read [CONTRIBUTING.md](CONTRIBUTING.md) to add implementations
@@ -235,7 +311,7 @@ grep -l "failed" logs/*.log
 3. **Filter tests during development**
    ```bash
    # Only test what you're working on
-   ./run_tests.sh --test-filter "rust-v0.54"
+   ./run_tests.sh --test-select "rust-v0.54"
    ```
 
 4. **Reuse snapshots**
@@ -257,7 +333,7 @@ vim impls.yaml
 # Add rust-v0.54 entry
 
 # 4. Test only new version
-./run_tests.sh --test-filter "rust-v0.54" --cache-dir ~/.cache/libp2p
+./run_tests.sh --test-select "rust-v0.54" --cache-dir ~/.cache/libp2p
 
 # 5. Run full test suite
 ./run_tests.sh --cache-dir ~/.cache/libp2p --workers 8

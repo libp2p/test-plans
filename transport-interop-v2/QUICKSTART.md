@@ -54,7 +54,7 @@ Expected output:
  ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
 → Test Pass: transport-interop-223702-11-11-2025
 → Cache Dir: /srv/cache
-→ Test Pass Dir: /srv/cache/test-passes/transport-interop-223702-11-11-2025
+→ Test Pass Dir: /srv/cache/test-runs/transport-interop-223702-11-11-2025
 → Workers: 4
 → Create Snapshot: false
 → Debug: false
@@ -80,8 +80,8 @@ Expected output:
 
 ╲ Test Matrix Generation
  ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
-→ No test-filter specified (will include all tests)
-→ Loaded test-ignore from test-selection.yaml
+→ No test-select specified (will include all tests)
+→ No test-ignore specified
 → Computed cache key: fdd31961
   → [MISS] Generating new test matrix
 
@@ -171,8 +171,8 @@ Expected output:
 ╲ Generating results dashboard...
  ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
 → bash scripts/generate-dashboard.sh
-  ✓ Generated /srv/cache/test-passes/transport-interop-224128-11-11-2025/results.md
-  ✓ Generated /srv/cache/test-passes/transport-interop-224128-11-11-2025/results.html
+  ✓ Generated /srv/cache/test-runs/transport-interop-224128-11-11-2025/results.md
+  ✓ Generated /srv/cache/test-runs/transport-interop-224128-11-11-2025/results.html
 
 ╲ ✗ 121 test(s) failed
  ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
@@ -197,23 +197,23 @@ pandoc -f markdown -t html -s -o results.html results.md
 
 ```bash
 # Test only Rust
-./run_tests.sh --test-filter "rust" --workers 4
+./run_tests.sh --test-select "rust" --workers 4
 
 # Test only Python
-./run_tests.sh --test-filter "python" --workers 2
+./run_tests.sh --test-select "python" --workers 2
 
 # Test specific version
-./run_tests.sh --test-filter "rust-v0.53" --workers 4
+./run_tests.sh --test-select "rust-v0.53" --workers 4
 ```
 
 ### Test Specific Transports
 
 ```bash
 # Test only QUIC
-./run_tests.sh --test-filter "quic" --workers 4
+./run_tests.sh --test-select "quic" --workers 4
 
 # Test only TCP
-./run_tests.sh --test-filter "tcp" --workers 8
+./run_tests.sh --test-select "tcp" --workers 8
 
 # Skip WebRTC
 ./run_tests.sh --test-ignore "webrtc" --workers 4
@@ -223,10 +223,10 @@ pandoc -f markdown -t html -s -o results.html results.md
 
 ```bash
 # Test only noise secure channel
-./run_tests.sh --test-filter "noise" --workers 4
+./run_tests.sh --test-select "noise" --workers 4
 
 # Test only yamux muxer
-./run_tests.sh --test-filter "yamux" --workers 4
+./run_tests.sh --test-select "yamux" --workers 4
 
 # Skip plaintext (insecure)
 ./run_tests.sh --test-ignore "plaintext" --workers 8
@@ -239,7 +239,7 @@ pandoc -f markdown -t html -s -o results.html results.md
 ./run_tests.sh --debug --workers 4
 
 # Combine with filters
-./run_tests.sh --test-filter "rust-v0.56" --debug --workers 2
+./run_tests.sh --test-select "rust-v0.56" --debug --workers 2
 ```
 
 ### Create Debug Snapshot
@@ -249,13 +249,16 @@ pandoc -f markdown -t html -s -o results.html results.md
 ./run_tests.sh --snapshot --cache-dir /tmp/cache --workers 4
 
 # Snapshot saved to:
-# /tmp/cache/test-passes/transport-interop-full-<timestamp>.tar.gz
+# /tmp/cache/test-runs/transport-interop-full-<timestamp>.tar.gz
 
 # Extract and re-run
-cd /tmp/cache/test-passes
+cd /tmp/cache/test-runs
 tar -xzf transport-interop-full-*.tar.gz
 cd transport-interop-full-*
 ./re-run.sh
+
+# Force rebuild all images before re-running
+./re-run.sh --force-rebuild
 ```
 
 ## Understanding Test Combinations
@@ -352,8 +355,49 @@ cat logs/rust-v0.53_x_rust-v0.54_tcp_noise_yamux.log
 3. **Filter during development**
    ```bash
    # Only test what you're working on
-   ./run_tests.sh --test-filter "rust-v0.54" --workers 2
+   ./run_tests.sh --test-select "rust-v0.54" --workers 2
    ```
+
+## Debugging with Local Implementations
+
+For development and debugging, you can switch implementations from GitHub sources to local directories:
+
+```yaml
+# In impls.yaml
+implementations:
+  - id: rust-v0.56
+    source:
+      type: local              # Changed from 'github' to 'local'
+      path: /home/user/rust-libp2p  # Local clone
+      commit: b7914e40        # Still tracked for documentation
+      dockerfile: interop-tests/Dockerfile.native
+    transports: [tcp, ws, quic-v1]
+    secureChannels: [noise, tls]
+    muxers: [yamux, mplex]
+```
+
+Benefits:
+- Make changes without committing to GitHub
+- Test modifications immediately
+- Use your local IDE and debugging tools
+- Faster iteration during development
+- Switch back to `github` type when done
+
+Example workflow:
+```bash
+# 1. Clone repo locally
+git clone https://github.com/libp2p/rust-libp2p.git ~/rust-libp2p
+
+# 2. Edit impls.yaml to use local path
+vim impls.yaml
+# Change rust-v0.56 source type to 'local' and set path
+
+# 3. Make your changes
+vim ~/rust-libp2p/transports/tcp/src/transport.rs
+
+# 4. Test with your changes
+./run_tests.sh --test-select "rust-v0.56" --force-rebuild --workers 2
+```
 
 ## Next Steps
 
@@ -374,7 +418,7 @@ cat logs/rust-v0.53_x_rust-v0.54_tcp_noise_yamux.log
 vim impls.yaml
 
 # 4. Test only new version (with debug output)
-./run_tests.sh --test-filter "rust-v0.55" --debug --cache-dir ~/.cache/libp2p
+./run_tests.sh --test-select "rust-v0.55" --debug --cache-dir ~/.cache/libp2p
 
 # 5. Run full suite
 ./run_tests.sh --cache-dir ~/.cache/libp2p --workers 8

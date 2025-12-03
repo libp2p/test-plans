@@ -29,24 +29,17 @@ implementations:
 
 ### 2. Update test-selection.yaml (Optional)
 
-If you want to filter or ignore specific tests for this implementation:
+Update global test selection defaults (`test-selection.yaml`):
 
-**For language-wide defaults** (`impls/rust/test-selection.yaml`):
 ```yaml
-test-filter:
-  - rust-v0.54  # Add your version
-
-test-ignore:
-  - rust-v0.54 x rust-v0.54 (tcp)  # Skip specific tests if needed
-```
-
-**For global defaults** (`test-selection.yaml`):
-```yaml
-test-filter: []  # Usually empty for full test runs
+test-select: []  # Empty = all tests (or add specific filters)
 
 test-ignore:
   - experimental  # Global ignores apply to all tests
+  - flaky
 ```
+
+**Note:** Test filtering is primarily done via CLI args, not YAML files.
 
 ### 3. Test Locally
 
@@ -56,7 +49,13 @@ export CACHE_DIR=/tmp/cache
 bash scripts/build-images.sh rust-v0.54
 
 # Run tests filtered to your implementation
-./run_tests.sh --test-filter "rust-v0.54" --cache-dir /tmp/cache --workers 4
+./run_tests.sh --test-select "rust-v0.54" --cache-dir /tmp/cache --workers 4
+
+# Run with debug output enabled
+./run_tests.sh --test-select "rust-v0.54" --debug --yes
+
+# Force rebuild images
+./run_tests.sh --test-select "rust-v0.54" --force-rebuild
 ```
 
 ### 4. Submit Pull Request
@@ -75,9 +74,69 @@ Your implementation must:
 2. **Connect to Redis** - Use `REDIS_ADDR` environment variable
 3. **Support MODE** - Handle `MODE=dial` or `MODE=listen` env var
 4. **Use TRANSPORT** - Honor `TRANSPORT` environment variable (tcp, quic, etc.)
-5. **Output Results** - Print test results to stdout
-6. **Exit Codes** - Return 0 on success, non-zero on failure
-7. **Timeout** - Respect `TEST_TIMEOUT_SECONDS` environment variable
+5. **Implement DCutR Signaling** - Follow the signaling protocol (see below)
+6. **Output Results** - Print test results to stdout as JSON
+7. **Exit Codes** - Return 0 on success, non-zero on failure
+8. **Timeout** - Respect `TEST_TIMEOUT_SECONDS` environment variable
+9. **Debug Mode** - Honor `DEBUG=true` environment variable for verbose logging (optional)
+
+### DCutR Signaling Protocol
+
+Your implementation must follow this signaling flow via Redis:
+
+**Environment Variables Provided:**
+- `REDIS_ADDR`: Redis server address (e.g., `hole-punch-redis:6379`)
+- `TEST_KEY`: Unique test identifier for Redis key namespacing (e.g., `a4be363ecc`)
+- `TRANSPORT`: Transport protocol to use (`tcp` or `quic`)
+- `MODE`: Role in the test (`dial` or `listen`)
+
+**Listener Implementation:**
+1. Connect to Redis
+2. Fetch relay multiaddr from Redis (blocking):
+   ```
+   BLPOP relay:{TEST_KEY}:{transport} 30
+   ```
+3. Parse the relay multiaddr (includes relay peer ID)
+4. Connect to the relay server
+5. Publish your peer ID to Redis:
+   ```
+   RPUSH listener:{TEST_KEY}:peer_id {your_peer_id}
+   EXPIRE listener:{TEST_KEY}:peer_id 300
+   ```
+6. Wait for incoming relay circuit connection from dialer
+7. DCutR protocol negotiates hole punch automatically
+8. Verify direct connection established
+9. Send/receive test data
+10. Report results and exit
+
+**Dialer Implementation:**
+1. Connect to Redis
+2. Fetch relay multiaddr from Redis (blocking):
+   ```
+   BLPOP relay:{TEST_KEY}:{transport} 30
+   ```
+3. Fetch listener peer ID from Redis (blocking):
+   ```
+   BLPOP listener:{TEST_KEY}:peer_id 30
+   ```
+4. Parse the relay multiaddr and listener peer ID
+5. Connect to the relay server
+6. Construct relay circuit address:
+   ```
+   {relay_multiaddr}/p2p-circuit/p2p/{listener_peer_id}
+   ```
+7. Initiate connection to listener via relay circuit
+8. DCutR protocol negotiates hole punch automatically
+9. Verify direct connection established
+10. Send/receive test data
+11. Report results and exit
+
+**Example Redis Keys:**
+```
+relay:a4be363ecc:tcp          → /ip4/10.151.84.65/tcp/4001/p2p/12D3KooW...
+relay:a4be363ecc:quic         → /ip4/10.151.84.65/udp/4001/quic-v1/p2p/12D3KooW...
+listener:a4be363ecc:peer_id   → 12D3KooWListenerPeerID...
+```
 
 ### Example Dockerfile
 
@@ -94,27 +153,218 @@ COPY --from=builder /app/target/release/examples/hole-punch-test /usr/local/bin/
 ENTRYPOINT ["hole-punch-test"]
 ```
 
-### Example Test Implementation
+### Example Implementation: Python (py-libp2p)
 
-Your test binary should:
+Here's a complete example showing how to add py-libp2p to the test suite:
 
-```rust
-fn main() {
-    let redis_addr = env::var("REDIS_ADDR").unwrap();
-    let mode = env::var("MODE").unwrap(); // "dial" or "listen"
-    let transport = env::var("TRANSPORT").unwrap();
-    let timeout = env::var("TEST_TIMEOUT_SECONDS")
-        .unwrap_or("30".to_string())
-        .parse::<u64>()
-        .unwrap();
-
-    if mode == "listen" {
-        run_listener(redis_addr, transport, timeout);
-    } else {
-        run_dialer(redis_addr, transport, timeout);
-    }
-}
+**1. Add to impls.yaml:**
+```yaml
+implementations:
+  - id: py-libp2p-v0.1.5
+    source:
+      type: github
+      repo: libp2p/py-libp2p
+      commit: a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0  # Full 40-char SHA
+      dockerfile: tests/hole-punch/Dockerfile
+    transports:
+      - tcp
 ```
+
+**2. Create Dockerfile in your repo (`tests/hole-punch/Dockerfile`):**
+```dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt redis
+
+# Copy test implementation
+COPY tests/hole-punch/hole_punch_test.py .
+
+ENTRYPOINT ["python", "hole_punch_test.py"]
+```
+
+**3. Implement the test (`tests/hole-punch/hole_punch_test.py`):**
+```python
+#!/usr/bin/env python3
+import os
+import sys
+import time
+import json
+import redis
+from libp2p import new_host
+from libp2p.network.stream.net_stream_interface import INetStream
+from multiaddr import Multiaddr
+
+def main():
+    # Read environment variables
+    redis_addr = os.environ['REDIS_ADDR']
+    test_key = os.environ['TEST_KEY']
+    transport = os.environ['TRANSPORT']
+    mode = os.environ['MODE']
+    timeout = int(os.environ.get('TEST_TIMEOUT_SECONDS', '30'))
+
+    # Connect to Redis
+    redis_host, redis_port = redis_addr.split(':')
+    r = redis.Redis(host=redis_host, port=int(redis_port))
+
+    if mode == 'listen':
+        run_listener(r, test_key, transport, timeout)
+    else:
+        run_dialer(r, test_key, transport, timeout)
+
+def run_listener(r, test_key, transport, timeout):
+    """Listener: Wait for dialer to hole punch and connect"""
+    start_time = time.time()
+
+    # 1. Create libp2p host
+    host = new_host(transport=[transport])
+
+    # 2. Fetch relay multiaddr from Redis
+    relay_key = f"relay:{test_key}:{transport}"
+    result = r.blpop(relay_key, timeout=30)
+    if not result:
+        print(f"ERROR: Timeout waiting for relay address at {relay_key}")
+        sys.exit(1)
+
+    relay_addr = result[1].decode('utf-8')
+    print(f"Fetched relay address: {relay_addr}")
+
+    # 3. Connect to relay
+    relay_multiaddr = Multiaddr(relay_addr)
+    await host.connect(relay_multiaddr)
+    print(f"Connected to relay")
+
+    # 4. Publish our peer ID to Redis
+    my_peer_id = str(host.get_id())
+    listener_key = f"listener:{test_key}:peer_id"
+    r.rpush(listener_key, my_peer_id)
+    r.expire(listener_key, 300)
+    print(f"Published peer ID: {my_peer_id}")
+
+    # 5. Set up stream handler for incoming connections
+    connection_established = False
+
+    async def stream_handler(stream: INetStream):
+        nonlocal connection_established
+        connection_established = True
+        # Read test data from dialer
+        data = await stream.read(1024)
+        print(f"Received: {data.decode('utf-8')}")
+        # Echo back
+        await stream.write(b"PONG from listener")
+        await stream.close()
+
+    host.set_stream_handler("/hole-punch-test/1.0.0", stream_handler)
+
+    # 6. Wait for connection with timeout
+    while time.time() - start_time < timeout:
+        if connection_established:
+            # Success! Direct connection established via hole punch
+            elapsed = (time.time() - start_time) * 1000
+            result = {
+                "handshakePlusOneRTTMillis": elapsed,
+                "pingRTTMilllis": 0  # Not measured in this simple example
+            }
+            print(json.dumps(result))
+            sys.exit(0)
+        time.sleep(0.1)
+
+    print("ERROR: Timeout waiting for connection")
+    sys.exit(1)
+
+def run_dialer(r, test_key, transport, timeout):
+    """Dialer: Fetch relay and listener info, initiate hole punch"""
+    start_time = time.time()
+
+    # 1. Create libp2p host
+    host = new_host(transport=[transport])
+
+    # 2. Fetch relay multiaddr from Redis
+    relay_key = f"relay:{test_key}:{transport}"
+    result = r.blpop(relay_key, timeout=30)
+    if not result:
+        print(f"ERROR: Timeout waiting for relay address at {relay_key}")
+        sys.exit(1)
+
+    relay_addr = result[1].decode('utf-8')
+    print(f"Fetched relay address: {relay_addr}")
+
+    # 3. Fetch listener peer ID from Redis
+    listener_key = f"listener:{test_key}:peer_id"
+    result = r.blpop(listener_key, timeout=30)
+    if not result:
+        print(f"ERROR: Timeout waiting for listener peer ID at {listener_key}")
+        sys.exit(1)
+
+    listener_peer_id = result[1].decode('utf-8')
+    print(f"Fetched listener peer ID: {listener_peer_id}")
+
+    # 4. Connect to relay
+    relay_multiaddr = Multiaddr(relay_addr)
+    await host.connect(relay_multiaddr)
+    print(f"Connected to relay")
+
+    # 5. Construct relay circuit address to listener
+    circuit_addr = f"{relay_addr}/p2p-circuit/p2p/{listener_peer_id}"
+    circuit_multiaddr = Multiaddr(circuit_addr)
+    print(f"Connecting via relay circuit: {circuit_addr}")
+
+    # 6. Initiate connection via relay circuit
+    # DCutR will automatically negotiate hole punch
+    stream = await host.new_stream(circuit_multiaddr, ["/hole-punch-test/1.0.0"])
+
+    # 7. Send test data
+    await stream.write(b"PING from dialer")
+    response = await stream.read(1024)
+    print(f"Received: {response.decode('utf-8')}")
+    await stream.close()
+
+    # 8. Success! Report metrics
+    elapsed = (time.time() - start_time) * 1000
+    result = {
+        "handshakePlusOneRTTMillis": elapsed,
+        "pingRTTMilllis": 0  # Not measured in this simple example
+    }
+    print(json.dumps(result))
+    sys.exit(0)
+
+if __name__ == '__main__':
+    main()
+```
+
+**4. Test your implementation:**
+```bash
+# Add to impls.yaml first
+vim impls.yaml
+
+# Run tests filtered to your implementation
+./run_tests.sh --test-select "py-libp2p" --debug --yes
+
+# Cross-test with other implementations
+./run_tests.sh --test-select "py-libp2p|rust" --yes
+```
+
+**Key Points:**
+- Use Redis `BLPOP` for blocking fetch (waits up to 30 seconds)
+- Always use namespaced keys: `relay:{TEST_KEY}:{transport}` and `listener:{TEST_KEY}:peer_id`
+- Construct relay circuit address: `{relay_addr}/p2p-circuit/p2p/{listener_peer_id}`
+- DCutR negotiation happens automatically when using relay circuit
+- Print JSON results to stdout for metric collection
+- Exit 0 on success, non-zero on failure
+
+### Updating Existing Implementations
+
+If you have an existing implementation that needs to be updated for the new signaling protocol:
+
+1. **Update to use TEST_KEY in Redis keys** - Change from global keys to namespaced keys
+2. **Add listener peer ID publishing** - Listener must publish its peer ID to Redis
+3. **Update dialer to fetch listener peer ID** - Dialer must fetch both relay address and listener peer ID
+4. **Ensure proper key expiry** - All Redis keys should have TTL set to 300 seconds
+
+The relay has been updated to use the new protocol, so all test implementations must follow the DCutR signaling flow documented above.
 
 ## Testing Best Practices
 
@@ -143,13 +393,13 @@ Adjust worker count based on your machine:
 
 ```bash
 # Test only Rust implementations
-./run_tests.sh --test-filter "rust"
+./run_tests.sh --test-select "rust"
 
 # Test only TCP transport
-./run_tests.sh --test-filter "tcp"
+./run_tests.sh --test-select "tcp"
 
 # Test specific version
-./run_tests.sh --test-filter "rust-v0.54"
+./run_tests.sh --test-select "rust-v0.54"
 
 # Ignore flaky tests
 ./run_tests.sh --test-ignore "experimental"
@@ -163,7 +413,7 @@ For debugging or CI artifacts:
 ./run_tests.sh --snapshot --cache-dir /srv/cache
 ```
 
-This creates a self-contained archive in `/srv/cache/test-passes/` that can be:
+This creates a self-contained archive in `/srv/cache/test-runs/` that can be:
 - Shared with other developers
 - Attached to bug reports
 - Re-run on any machine with bash, docker, git, yq
@@ -217,7 +467,7 @@ bash scripts/stop-global-services.sh
 If you have a snapshot:
 
 ```bash
-cd /srv/cache/test-passes/hole-punch-rust-143022-08-11-2025
+cd /srv/cache/test-runs/hole-punch-rust-143022-08-11-2025
 ./re-run.sh
 ```
 
@@ -273,7 +523,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: test-snapshot
-          path: /tmp/cache/test-passes/*.tar.gz
+          path: /tmp/cache/test-runs/*.tar.gz
 ```
 
 ## Updating Commit Hashes
@@ -288,7 +538,7 @@ vim impls.yaml
 rm /srv/cache/snapshots/<old-commit>.zip
 
 # 3. Run tests
-./run_tests.sh --test-filter "rust-v0.54"
+./run_tests.sh --test-select "rust-v0.54"
 ```
 
 ## Architecture Overview
@@ -329,7 +579,7 @@ All artifacts are cached by content hash:
 
 - **Snapshots**: `/srv/cache/snapshots/<commit-sha>.zip`
 - **Test matrices**: `/srv/cache/test-matrix/<sha256>.yaml`
-- **Test passes**: `/srv/cache/test-passes/hole-punch-<kind>-<timestamp>.tar.gz`
+- **Test passes**: `/srv/cache/test-runs/hole-punch-<timestamp>/`
 
 ## Questions?
 

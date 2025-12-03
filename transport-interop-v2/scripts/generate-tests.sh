@@ -6,7 +6,7 @@ set -euo pipefail
 
 # Configuration
 CACHE_DIR="${CACHE_DIR:-/srv/cache}"
-CLI_TEST_FILTER="${1:-}"
+CLI_TEST_SELECT="${1:-}"
 CLI_TEST_IGNORE="${2:-}"
 DEBUG="${3:-false}"  # Optional: debug mode flag
 OUTPUT_DIR="${TEST_PASS_DIR:-.}"  # Use TEST_PASS_DIR if set, otherwise current directory
@@ -20,65 +20,172 @@ is_standalone_transport() {
     echo "$STANDALONE_TRANSPORTS" | grep -qw "$transport"
 }
 
-# Load test selection defaults from YAML file
-load_test_filter_from_yaml() {
-    if [ ! -f "test-selection.yaml" ]; then
+# Load aliases from impls.yaml into an associative array
+load_aliases() {
+    declare -gA ALIASES  # Global associative array
+
+    if [ ! -f "impls.yaml" ]; then
+        return
+    fi
+
+    # Check if test-aliases exists
+    local alias_count=$(yq eval '.test-aliases | length' impls.yaml 2>/dev/null || echo 0)
+
+    if [ "$alias_count" -eq 0 ] || [ "$alias_count" = "null" ]; then
+        return
+    fi
+
+    # Load each alias
+    for ((i=0; i<alias_count; i++)); do
+        local alias_name=$(yq eval ".test-aliases[$i].alias" impls.yaml)
+        local alias_value=$(yq eval ".test-aliases[$i].value" impls.yaml)
+        ALIASES["$alias_name"]="$alias_value"
+    done
+}
+
+# Get all implementation IDs as a pipe-separated string
+get_all_impl_ids() {
+    yq eval '.implementations[].id' impls.yaml | paste -sd'|' -
+}
+
+# Expand a single negated alias (!~alias)
+# Returns the expanded value (all impl IDs that DON'T match the alias value)
+expand_negated_alias() {
+    local alias_name="$1"
+
+    # Get the alias value
+    if [ -z "${ALIASES[$alias_name]:-}" ]; then
         echo ""
         return
     fi
 
-    # Extract test-filter list (pipe-separated)
-    local filter=$(yq eval '.test-filter[]' "test-selection.yaml" 2>/dev/null | paste -sd'|' -)
-    echo "$filter"
+    local alias_value="${ALIASES[$alias_name]}"
+
+    # Get all implementation IDs
+    local all_impls=$(get_all_impl_ids)
+
+    # Split alias value by | to get patterns to exclude
+    IFS='|' read -ra EXCLUDE_PATTERNS <<< "$alias_value"
+
+    # Split all impl IDs by |
+    IFS='|' read -ra ALL_IDS <<< "$all_impls"
+
+    # Filter: keep IDs that DON'T match any exclude pattern
+    local result=""
+    for impl_id in "${ALL_IDS[@]}"; do
+        local should_exclude=false
+
+        for pattern in "${EXCLUDE_PATTERNS[@]}"; do
+            if [[ "$impl_id" == *"$pattern"* ]]; then
+                should_exclude=true
+                break
+            fi
+        done
+
+        if [ "$should_exclude" = false ]; then
+            if [ -z "$result" ]; then
+                result="$impl_id"
+            else
+                result="$result|$impl_id"
+            fi
+        fi
+    done
+
+    echo "$result"
 }
 
-load_test_ignore_from_yaml() {
-    if [ ! -f "test-selection.yaml" ]; then
+# Expand aliases in a test selection string
+# Handles both ~alias and !~alias syntax
+expand_aliases() {
+    local input="$1"
+
+    # If empty, return empty
+    if [ -z "$input" ]; then
         echo ""
         return
     fi
 
-    # Extract test-ignore list (pipe-separated)
-    local ignore=$(yq eval '.test-ignore[]' "test-selection.yaml" 2>/dev/null | paste -sd'|' -)
-    echo "$ignore"
+    local result="$input"
+
+    # Process negated aliases first (!~alias)
+    while [[ "$result" =~ \!~([a-zA-Z0-9_-]+) ]]; do
+        local alias_name="${BASH_REMATCH[1]}"
+        local expanded=$(expand_negated_alias "$alias_name")
+
+        if [ -n "$expanded" ]; then
+            # Replace !~alias with expanded value
+            result="${result//!~$alias_name/$expanded}"
+        else
+            # Unknown alias, remove it
+            result="${result//!~$alias_name/}"
+        fi
+    done
+
+    # Process regular aliases (~alias)
+    while [[ "$result" =~ ~([a-zA-Z0-9_-]+) ]]; do
+        local alias_name="${BASH_REMATCH[1]}"
+
+        if [ -n "${ALIASES[$alias_name]:-}" ]; then
+            local alias_value="${ALIASES[$alias_name]}"
+            # Replace ~alias with its value
+            result="${result//~$alias_name/$alias_value}"
+        else
+            # Unknown alias, remove it
+            result="${result//~$alias_name/}"
+        fi
+    done
+
+    # Clean up any double pipes or leading/trailing pipes
+    result=$(echo "$result" | sed 's/||*/|/g' | sed 's/^|//; s/|$//')
+
+    echo "$result"
 }
 
-# Determine test filter and ignore values
-# Priority: CLI args > YAML files
-TEST_FILTER="$CLI_TEST_FILTER"
+# Load test aliases from impls.yaml
+load_aliases
+
+# Use test select and ignore values from CLI arguments
+TEST_SELECT="$CLI_TEST_SELECT"
 TEST_IGNORE="$CLI_TEST_IGNORE"
 
 echo ""
 echo "╲ Test Matrix Generation"
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
-# Load from YAML if not provided via CLI
-if [ -z "$CLI_TEST_FILTER" ]; then
-    YAML_FILTER=$(load_test_filter_from_yaml)
-    if [ -n "$YAML_FILTER" ]; then
-        TEST_FILTER="$YAML_FILTER"
-        echo "→ Loaded test-filter from test-selection.yaml: $TEST_FILTER"
-    else
-        echo "→ No test-filter specified (will include all tests)"
-    fi
+# Display test selection
+if [ -n "$TEST_SELECT" ]; then
+    echo "→ Test select: $TEST_SELECT"
 else
-    echo "→ Using CLI test-filter: $TEST_FILTER"
+    echo "→ No test-select specified (will include all tests)"
 fi
 
-if [ -z "$CLI_TEST_IGNORE" ]; then
-    YAML_IGNORE=$(load_test_ignore_from_yaml)
-    if [ -n "$YAML_IGNORE" ]; then
-        TEST_IGNORE="$YAML_IGNORE"
-        echo "→ Loaded test-ignore from test-selection.yaml: $TEST_IGNORE"
-    else
-        echo "→ No test-ignore specified"
+# Expand aliases in TEST_SELECT
+if [ -n "$TEST_SELECT" ]; then
+    ORIGINAL_SELECT="$TEST_SELECT"
+    TEST_SELECT=$(expand_aliases "$TEST_SELECT")
+    if [ "$TEST_SELECT" != "$ORIGINAL_SELECT" ]; then
+        echo "  → Expanded aliases to: $TEST_SELECT"
     fi
-else
-    echo "→ Using CLI test-ignore: $TEST_IGNORE"
 fi
 
-# Compute cache key from impls.yaml + all test-selection.yaml files + filter + ignore
-cache_key=$({ cat impls.yaml impls/*/test-selection.yaml test-selection.yaml 2>/dev/null; echo "$TEST_FILTER||$TEST_IGNORE||$DEBUG"; } | sha256sum | cut -d' ' -f1)
+# Display test ignore
+if [ -n "$TEST_IGNORE" ]; then
+    echo "→ Test ignore: $TEST_IGNORE"
+else
+    echo "→ No test-ignore specified"
+fi
+
+# Expand aliases in TEST_IGNORE
+if [ -n "$TEST_IGNORE" ]; then
+    ORIGINAL_IGNORE="$TEST_IGNORE"
+    TEST_IGNORE=$(expand_aliases "$TEST_IGNORE")
+    if [ "$TEST_IGNORE" != "$ORIGINAL_IGNORE" ]; then
+        echo "  → Expanded aliases to: $TEST_IGNORE"
+    fi
+fi
+
+# Compute cache key from impls.yaml + select + ignore + debug
+cache_key=$({ cat impls.yaml 2>/dev/null; echo "$TEST_SELECT||$TEST_IGNORE||$DEBUG"; } | sha256sum | cut -d' ' -f1)
 echo "→ Computed cache key: ${cache_key:0:8}"
 
 cache_file="$CACHE_DIR/test-matrix/${cache_key}.yaml"
@@ -124,14 +231,14 @@ done
 
 echo "  ✓ Loaded ${#impl_ids[@]} implementations into memory"
 
-# Pre-parse filter and ignore patterns once
+# Pre-parse select and ignore patterns once
 # Always declare arrays (even if empty) to avoid unbound variable errors
-declare -a FILTER_PATTERNS=()
+declare -a SELECT_PATTERNS=()
 declare -a IGNORE_PATTERNS=()
 
-if [ -n "$TEST_FILTER" ]; then
-    IFS='|' read -ra FILTER_PATTERNS <<< "$TEST_FILTER"
-    echo "  ✓ Loaded ${#FILTER_PATTERNS[@]} filter patterns"
+if [ -n "$TEST_SELECT" ]; then
+    IFS='|' read -ra SELECT_PATTERNS <<< "$TEST_SELECT"
+    echo "  ✓ Loaded ${#SELECT_PATTERNS[@]} select patterns"
 fi
 
 if [ -n "$TEST_IGNORE" ]; then
@@ -139,16 +246,16 @@ if [ -n "$TEST_IGNORE" ]; then
     echo "  ✓ Loaded ${#IGNORE_PATTERNS[@]} ignore patterns"
 fi
 
-# Helper function to check if test name matches filter
-matches_filter() {
+# Helper function to check if test name matches select
+matches_select() {
     local test_name="$1"
 
-    # No filter = match all
-    [ ${#FILTER_PATTERNS[@]} -eq 0 ] && return 0
+    # No select = match all
+    [ ${#SELECT_PATTERNS[@]} -eq 0 ] && return 0
 
-    # Check each filter pattern
-    for filter in "${FILTER_PATTERNS[@]}"; do
-        [[ "$test_name" == *"$filter"* ]] && return 0
+    # Check each select pattern
+    for select in "${SELECT_PATTERNS[@]}"; do
+        [[ "$test_name" == *"$select"* ]] && return 0
     done
 
     return 1
@@ -217,8 +324,8 @@ for dialer_id in "${impl_ids[@]}"; do
                 # Standalone transport
                 test_name="$dialer_id x $listener_id ($transport)"
 
-                # Check filter/ignore (using pre-parsed functions)
-                if matches_filter "$test_name"; then
+                # Check select/ignore (using pre-parsed functions)
+                if matches_select "$test_name"; then
                     if should_ignore "$test_name"; then
                         ignored_tests+=("$test_name|$dialer_id|$listener_id|$transport|null|null")
                     else
@@ -241,8 +348,8 @@ for dialer_id in "${impl_ids[@]}"; do
                     for muxer in $common_muxers; do
                         test_name="$dialer_id x $listener_id ($transport, $secure, $muxer)"
 
-                        # Check filter/ignore (using pre-parsed functions)
-                        if matches_filter "$test_name"; then
+                        # Check select/ignore (using pre-parsed functions)
+                        if matches_select "$test_name"; then
                             if should_ignore "$test_name"; then
                                 ignored_tests+=("$test_name|$dialer_id|$listener_id|$transport|$secure|$muxer")
                             else
@@ -265,7 +372,7 @@ echo ""
 cat > "$OUTPUT_DIR/test-matrix.yaml" <<EOF
 metadata:
   generatedAt: $(date -u +%Y-%m-%dT%H:%M:%SZ)
-  filter: $(echo "$TEST_FILTER" | sed 's/|/, /g')
+  select: $(echo "$TEST_SELECT" | sed 's/|/, /g')
   ignore: $(echo "$TEST_IGNORE" | sed 's/|/, /g')
   totalTests: ${#tests[@]}
   ignoredTests: ${#ignored_tests[@]}
