@@ -35,4 +35,5 @@ implementations:
       type: local
       path: impls/linux/peer
       dockerfile: Dockerfile
-    transports: [tcp]
+    transports:
+      - tcp

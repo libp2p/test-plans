@@ -341,17 +341,7 @@ run_test() {
     dialer: $dialer
     listener: $listener
     transport: $transport
-    dialerRouter: $dialer_router
-    relay: $relay
-    listenerRouter: $listener_router
 EOF
-        # Add metrics if available
-        if [ -n "$handshake_ms" ]; then
-            echo "    handshakePlusOneRTTMs: $handshake_ms" >> "$TEST_PASS_DIR/results.yaml.tmp"
-        fi
-        if [ -n "$ping_ms" ]; then
-            echo "    pingRTTMs: $ping_ms" >> "$TEST_PASS_DIR/results.yaml.tmp"
-        fi
     ) 200>/tmp/results.lock
 
     return $exit_code

@@ -261,7 +261,3 @@ The snapshot includes:
 - All scripts and tooling
 
 The `--force-rebuild` flag forces rebuilding of all Docker images from the captured snapshots, useful when you need to ensure a clean build environment or verify reproducibility from scratch.
-
-## Documentation
-
-See `simplification-plan.md` and `caching-architecture.md` in the parent `hole-punch-interop/` directory for complete design documentation.

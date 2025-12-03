@@ -32,7 +32,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.WRITE_README_AND_DASHBOARD }}
-          ref: ${{ github.head_ref }}
           fetch-depth: 0
 
       - id: check

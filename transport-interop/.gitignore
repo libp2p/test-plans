@@ -5,3 +5,13 @@ dashboard.html
 results.csv
 # Logs from testground
 *.tgz
+
+# Logs from compose-runner
+logs/
+*.log
+
+# Generated reports
+python_results_report.md
+
+# Temporary directories
+tmp/
