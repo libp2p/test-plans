@@ -4,6 +4,7 @@
     "transports": [
       "tcp",
       "ws",
+      "wss",
       "quic-v1"
     ],
     "secureChannels": [

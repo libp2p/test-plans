@@ -13,13 +13,21 @@ This implementation follows the transport-interop test specification:
 import json
 import logging
 import os
+import ssl
 import sys
 import time
+import tempfile
+import ipaddress
 from typing import Optional
 
 import redis
 import trio
 import multiaddr
+from cryptography import x509
+from cryptography.x509.oid import NameOID
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+from datetime import datetime, timedelta
 from libp2p import new_host, create_yamux_muxer_option, create_mplex_muxer_option
 from libp2p.custom_types import TProtocol
 from libp2p.network.stream.net_stream import INetStream
@@ -88,7 +96,7 @@ class PingTest:
 
     def validate_configuration(self) -> None:
         """Validate configuration parameters."""
-        valid_transports = ["tcp", "ws", "quic-v1"]
+        valid_transports = ["tcp", "ws", "wss", "quic-v1"]
         valid_security = ["noise", "plaintext"]
         valid_muxers = ["mplex", "yamux"]
         
@@ -129,6 +137,94 @@ class PingTest:
             return create_mplex_muxer_option()
         else:
             raise ValueError(f"Unsupported muxer: {self.muxer}")
+    
+    def create_tls_client_config(self) -> Optional[ssl.SSLContext]:
+        """Create TLS client config for WSS dialing (doesn't verify certificates for interop)."""
+        if self.transport == "wss":
+            ctx = ssl.create_default_context()
+            ctx.check_hostname = False
+            ctx.verify_mode = ssl.CERT_NONE
+            print("[DEBUG] TLS client config created: verify_mode=0, check_hostname=False", file=sys.stderr)
+            return ctx
+        return None
+    
+    def create_tls_server_config(self) -> Optional[ssl.SSLContext]:
+        """Create TLS server config for WSS listening with self-signed certificate."""
+        if self.transport == "wss":
+            try:
+                # Generate a self-signed certificate for interop tests
+                # This is needed for Python-to-Python WSS connections
+                private_key = rsa.generate_private_key(
+                    public_exponent=65537,
+                    key_size=2048,
+                )
+                
+                # Create a self-signed certificate
+                subject = issuer = x509.Name([
+                    x509.NameAttribute(NameOID.COUNTRY_NAME, "US"),
+                    x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, "CA"),
+                    x509.NameAttribute(NameOID.LOCALITY_NAME, "San Francisco"),
+                    x509.NameAttribute(NameOID.ORGANIZATION_NAME, "libp2p"),
+                    x509.NameAttribute(NameOID.COMMON_NAME, "libp2p.local"),
+                ])
+                
+                cert = x509.CertificateBuilder().subject_name(
+                    subject
+                ).issuer_name(
+                    issuer
+                ).public_key(
+                    private_key.public_key()
+                ).serial_number(
+                    x509.random_serial_number()
+                ).not_valid_before(
+                    datetime.utcnow()
+                ).not_valid_after(
+                    datetime.utcnow() + timedelta(days=365)
+                ).add_extension(
+                    x509.SubjectAlternativeName([
+                        x509.DNSName("localhost"),
+                        x509.DNSName("libp2p.local"),
+                        x509.IPAddress(ipaddress.IPv4Address("127.0.0.1")),
+                    ]),
+                    critical=False,
+                ).sign(private_key, hashes.SHA256())
+                
+                # Create SSL context with the certificate
+                ctx = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+                ctx.check_hostname = False
+                ctx.verify_mode = ssl.CERT_NONE
+                
+                # Load the certificate and private key into the context
+                # We need to use temporary files because load_cert_chain expects file paths
+                with tempfile.NamedTemporaryFile(mode='wb', delete=False) as cert_file, \
+                     tempfile.NamedTemporaryFile(mode='wb', delete=False) as key_file:
+                    cert_file.write(cert.public_bytes(serialization.Encoding.PEM))
+                    key_file.write(private_key.private_bytes(
+                        encoding=serialization.Encoding.PEM,
+                        format=serialization.PrivateFormat.PKCS8,
+                        encryption_algorithm=serialization.NoEncryption()
+                    ))
+                    cert_path = cert_file.name
+                    key_path = key_file.name
+                
+                try:
+                    ctx.load_cert_chain(cert_path, key_path)
+                    print("[DEBUG] WSS listener: Created TLS server config with self-signed certificate", file=sys.stderr)
+                    return ctx
+                finally:
+                    # Clean up temporary files
+                    try:
+                        os.unlink(cert_path)
+                        os.unlink(key_path)
+                    except Exception:
+                        pass
+                        
+            except Exception as e:
+                print(f"[WARNING] Failed to create TLS server config: {e}", file=sys.stderr)
+                import traceback
+                traceback.print_exc(file=sys.stderr)
+                return None
+        return None
 
     def _get_ip_value(self, addr) -> Optional[str]:
         """Extract IP value from multiaddr (IPv4 or IPv6)."""
@@ -189,6 +285,43 @@ class PingTest:
                 except Exception as e:
                     print(f"Error converting address {addr} to WebSocket: {e}", file=sys.stderr)
             return ws_addrs if ws_addrs else [multiaddr.Multiaddr(f"/ip4/0.0.0.0/tcp/{port}/ws")]
+        
+        elif self.transport == "wss":
+            # Add /wss protocol to TCP addresses
+            wss_addrs = []
+            for addr in base_addrs:
+                try:
+                    protocols = self._get_protocol_names(addr)
+                    if "wss" in protocols:
+                        wss_addrs.append(addr)
+                    elif "ws" in protocols:
+                        # Convert /ws to /wss
+                        p2p_value = None
+                        if "p2p" in protocols:
+                            p2p_value = addr.value_for_protocol("p2p")
+                            if p2p_value:
+                                addr = addr.decapsulate(multiaddr.Multiaddr(f"/p2p/{p2p_value}"))
+                        # Remove /ws and add /wss
+                        if "ws" in protocols:
+                            addr = addr.decapsulate(multiaddr.Multiaddr("/ws"))
+                        wss_addr = addr.encapsulate(multiaddr.Multiaddr("/wss"))
+                        if p2p_value:
+                            wss_addr = wss_addr.encapsulate(multiaddr.Multiaddr(f"/p2p/{p2p_value}"))
+                        wss_addrs.append(wss_addr)
+                    else:
+                        # Preserve /p2p component
+                        p2p_value = None
+                        if "p2p" in protocols:
+                            p2p_value = addr.value_for_protocol("p2p")
+                            if p2p_value:
+                                addr = addr.decapsulate(multiaddr.Multiaddr(f"/p2p/{p2p_value}"))
+                        wss_addr = addr.encapsulate(multiaddr.Multiaddr("/wss"))
+                        if p2p_value:
+                            wss_addr = wss_addr.encapsulate(multiaddr.Multiaddr(f"/p2p/{p2p_value}"))
+                        wss_addrs.append(wss_addr)
+                except Exception as e:
+                    print(f"Error converting address {addr} to WebSocket Secure: {e}", file=sys.stderr)
+            return wss_addrs if wss_addrs else [multiaddr.Multiaddr(f"/ip4/0.0.0.0/tcp/{port}/wss")]
         
         return base_addrs
 
@@ -263,6 +396,8 @@ class PingTest:
             protocols = self._get_protocol_names(addr)
             if self.transport == "ws" and ("ws" in protocols or "wss" in protocols):
                 filtered.append(addr)
+            elif self.transport == "wss" and "wss" in protocols:
+                filtered.append(addr)
             elif self.transport == "quic-v1" and "quic-v1" in protocols:
                 filtered.append(addr)
             elif self.transport == "tcp" and not any(p in protocols for p in ["ws", "wss", "quic-v1"]):
@@ -326,12 +461,20 @@ class PingTest:
         # This converts TCP addresses to QUIC addresses when transport is "quic-v1"
         listen_addrs = self.create_listen_addresses(0)
         
+        # Configure TLS for WSS
+        tls_client_config = self.create_tls_client_config()
+        tls_server_config = self.create_tls_server_config()
+        if tls_client_config or tls_server_config:
+            print(f"[DEBUG] Passing TLS config to new_host: client={tls_client_config is not None}, server={tls_server_config is not None}", file=sys.stderr)
+        
         self.host = new_host(
             key_pair=key_pair,
             sec_opt=sec_opt,
             muxer_opt=muxer_opt,
             listen_addrs=listen_addrs,
-            enable_quic=(self.transport == "quic-v1")
+            enable_quic=(self.transport == "quic-v1"),
+            tls_client_config=tls_client_config,
+            tls_server_config=tls_server_config
         )
         self.host.set_stream_handler(PING_PROTOCOL_ID, self.handle_ping)
         self.log_protocols()
@@ -437,20 +580,51 @@ class PingTest:
             listener_addr = result[1]
             print(f"Got listener address: {listener_addr}", file=sys.stderr)
             
+            # Convert /tls/ws to /wss for WSS transport (Go uses /tls/ws, py-libp2p expects /wss)
+            # This is needed because Go publishes /tls/ws but py-libp2p's WebSocket transport expects /wss
+            # Note: py-libp2p's parser can handle /tls/ws, but we convert to /wss for consistency
+            original_addr = listener_addr
+            if "/tls/ws" in listener_addr:
+                if self.transport == "wss":
+                    listener_addr = listener_addr.replace("/tls/ws", "/wss")
+                    print(f"[DEBUG] Converted listener address from /tls/ws to /wss: {original_addr} -> {listener_addr}", file=sys.stderr)
+                else:
+                    print(f"[WARNING] Found /tls/ws in address but transport is {self.transport}, not converting", file=sys.stderr)
+            
             # Create security and muxer options
             sec_opt, key_pair = self.create_security_options()
             muxer_opt = self.create_muxer_options()
             
-            # WS dialer workaround: need listen addresses to register transport (py-libp2p limitation)
-            dialer_listen_addrs = self.create_listen_addresses(0) if self.transport == "ws" else None
-            if dialer_listen_addrs:
-                print(f"Registering WS transport for dialer with addresses: {[str(addr) for addr in dialer_listen_addrs]}", file=sys.stderr)
+            # WS/WSS dialer workaround: need listen addresses to register transport (py-libp2p limitation)
+            # For WSS dialers, we use WS addresses for transport registration (no TLS needed)
+            # The actual dialing will use the converted WSS address
+            if self.transport == "wss":
+                # Use WS addresses for transport registration (WebSocket transport handles both WS and WSS)
+                # The actual connection will use WSS when dialing the converted address
+                temp_transport = self.transport
+                self.transport = "ws"  # Temporarily set to "ws" to create WS listen addresses
+                dialer_listen_addrs = self.create_listen_addresses(0)
+                self.transport = temp_transport  # Restore original transport
+                if dialer_listen_addrs:
+                    print(f"WSS dialer: registering WebSocket transport with WS addresses for transport registration: {[str(addr) for addr in dialer_listen_addrs]}", file=sys.stderr)
+            else:
+                dialer_listen_addrs = self.create_listen_addresses(0) if self.transport == "ws" else None
+                if dialer_listen_addrs:
+                    print(f"Registering {self.transport.upper()} transport for dialer with addresses: {[str(addr) for addr in dialer_listen_addrs]}", file=sys.stderr)
+            
+            # Configure TLS for WSS dialers
+            tls_client_config = self.create_tls_client_config()
+            tls_server_config = None  # Dialers don't need server config
+            if tls_client_config:
+                print(f"[DEBUG] Passing TLS config to new_host: client=True, server=False", file=sys.stderr)
             
             host_kwargs = {
                 "key_pair": key_pair,
                 "sec_opt": sec_opt,
                 "muxer_opt": muxer_opt,
-                "enable_quic": (self.transport == "quic-v1")
+                "enable_quic": (self.transport == "quic-v1"),
+                "tls_client_config": tls_client_config,
+                "tls_server_config": tls_server_config
             }
             if dialer_listen_addrs:
                 host_kwargs["listen_addrs"] = dialer_listen_addrs
@@ -459,12 +633,37 @@ class PingTest:
             
             async with self.host.run(listen_addrs=dialer_listen_addrs or []):
                 handshake_start = time.time()
+                
+                # Debug: Show the address before creating multiaddr
+                print(f"[DEBUG] Creating multiaddr from address: {listener_addr}", file=sys.stderr)
                 maddr = multiaddr.Multiaddr(listener_addr)
+                protocols = [p.name for p in maddr.protocols()]
+                print(f"[DEBUG] Multiaddr protocols: {protocols}", file=sys.stderr)
+                
+                # Debug: Check if transport can dial this address
+                try:
+                    from libp2p.transport.websocket.multiaddr_utils import is_valid_websocket_multiaddr
+                    can_parse = is_valid_websocket_multiaddr(maddr)
+                    print(f"[DEBUG] WebSocket multiaddr validation: {can_parse}", file=sys.stderr)
+                except Exception as e:
+                    print(f"[DEBUG] Could not validate WebSocket multiaddr: {e}", file=sys.stderr)
+                
                 info = info_from_p2p_addr(maddr)
                 
                 print(f"Connecting to {listener_addr}", file=sys.stderr)
                 print(f"[DEBUG] About to call host.connect() for {info.peer_id}", file=sys.stderr)
-                await self.host.connect(info)
+                print(f"[DEBUG] Peer info addresses: {[str(addr) for addr in info.addrs]}", file=sys.stderr)
+                
+                try:
+                    await self.host.connect(info)
+                except Exception as e:
+                    error_type = type(e).__name__
+                    print(f"[DEBUG] Connection error type: {error_type}", file=sys.stderr)
+                    print(f"[DEBUG] Connection error: {e}", file=sys.stderr)
+                    # Try to get more details about the error
+                    if hasattr(e, '__cause__') and e.__cause__:
+                        print(f"[DEBUG] Connection error cause: {e.__cause__}", file=sys.stderr)
+                    raise
                 print("Connected successfully", file=sys.stderr)
                 print("[DEBUG] host.connect() completed, checking connection state", file=sys.stderr)
                 
