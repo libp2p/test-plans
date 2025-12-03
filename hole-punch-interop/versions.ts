@@ -14,17 +14,17 @@ export type Version = {
 }
 
 function canonicalImagePath(id: string): string {
-    // Split by implementation and version
-    const [impl, version] = id.split("-v")
-    // Drop the patch version
-    const [major, minor, patch] = version.split(".")
-    let versionFolder = `v${major}.${minor}`
-    if (major === "0" && minor === "0") {
-        // We're still in the 0.0.x phase, so we use the patch version
-        versionFolder = `v0.0.${patch}`
-    }
-    // Read the image ID from the JSON file on the filesystem
-    return `./impl/${impl}/${versionFolder}/image.json`
+  // Split by implementation and version
+  const [impl, version] = id.split("-v")
+  // Drop the patch version
+  const [major, minor, patch] = version.split(".")
+  let versionFolder = `v${major}.${minor}`
+  if (major === "0" && minor === "0") {
+    // We're still in the 0.0.x phase, so we use the patch version
+    versionFolder = `v0.0.${patch}`
+  }
+  // Read the image ID from the JSON file on the filesystem
+  return `./impl/${impl}/${versionFolder}/image.json`
 }
 
 // Loads the container image id for the given version id. Expects the form of
