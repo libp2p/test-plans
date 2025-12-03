@@ -65,31 +65,39 @@ cat > "$OUTPUT_FILE" <<EOF
 |------|--------|----------|-----------|--------|----------|
 EOF
 
+# Read test count
+test_count=$(yq eval '.tests | length' "$RESULTS_FILE")
+
 # Declare associative arrays for fast lookups in matrix generation
 declare -A test_status_map
 declare -A test_transport_map
 
-# Export all test data as TSV in one yq call (much faster than individual calls)
-test_data=$(yq eval '.tests[] | [.name, .status, .dialer, .listener, .transport, .duration] | @tsv' "$RESULTS_FILE")
+# Only process tests if there are any
+if [ "$test_count" -gt 0 ]; then
+    # Export all test data as TSV in one yq call (much faster than individual calls)
+    test_data=$(yq eval '.tests[] | [.name, .status, .dialer, .listener, .transport, .duration] | @tsv' "$RESULTS_FILE")
 
-# Process each test and build both the table and hash maps
-while IFS=$'\t' read -r name status dialer listener transport test_duration; do
+    # Process each test and build both the table and hash maps
+    while IFS=$'\t' read -r name status dialer listener transport test_duration; do
 
-    # Store in hash maps for later matrix lookup
-    test_status_map["$name"]="$status"
-    test_transport_map["$name"]="$transport"
+        # Store in hash maps for later matrix lookup
+        test_status_map["$name"]="$status"
+        test_transport_map["$name"]="$transport"
 
-    # Status icon
-    if [ "$status" = "pass" ]; then
-        status_icon="✅"
-    else
-        status_icon="❌"
-    fi
+        # Status icon
+        if [ "$status" = "pass" ]; then
+            status_icon="✅"
+        else
+            status_icon="❌"
+        fi
 
-    echo "| $name | $dialer | $listener | $transport | $status_icon | $test_duration |" >> "$OUTPUT_FILE"
-done <<< "$test_data"
+        echo "| $name | $dialer | $listener | $transport | $status_icon | $test_duration |" >> "$OUTPUT_FILE"
+    done <<< "$test_data"
+fi
 
-cat >> "$OUTPUT_FILE" <<EOF
+# Only generate matrix view if there are tests
+if [ "$test_count" -gt 0 ]; then
+    cat >> "$OUTPUT_FILE" <<EOF
 
 ---
 
@@ -97,10 +105,10 @@ cat >> "$OUTPUT_FILE" <<EOF
 
 EOF
 
-# Generate matrix view (dialer x listener grid)
-# Get unique dialers and listeners
-dialers=$(yq eval '.tests[].dialer' "$RESULTS_FILE" | sort -u)
-listeners=$(yq eval '.tests[].listener' "$RESULTS_FILE" | sort -u)
+    # Generate matrix view (dialer x listener grid)
+    # Get unique dialers and listeners
+    dialers=$(yq eval '.tests[].dialer' "$RESULTS_FILE" | sort -u)
+    listeners=$(yq eval '.tests[].listener' "$RESULTS_FILE" | sort -u)
 
 # Create header row
 echo -n "| Dialer \\ Listener |" >> "$OUTPUT_FILE"
@@ -153,6 +161,7 @@ for dialer in $dialers; do
     done
     echo "" >> "$OUTPUT_FILE"
 done
+fi
 
 cat >> "$OUTPUT_FILE" <<EOF
 

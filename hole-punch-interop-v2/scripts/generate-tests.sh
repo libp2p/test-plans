@@ -210,6 +210,7 @@ echo "→ Found $router_count router types in impls.yaml"
 
 # Declare associative arrays for O(1) lookups
 declare -A impl_transports    # impl_transports[linux]="tcp"
+declare -A impl_dial_only     # impl_dial_only[chromium-rust-v0.54]="webtransport webrtc-direct ws"
 declare -a impl_ids           # impl_ids=(linux ...)
 declare -a relay_ids          # relay_ids=(linux ...)
 declare -a router_ids         # router_ids=(linux ...)
@@ -219,9 +220,11 @@ echo "→ Loading implementation data into memory..."
 for ((i=0; i<impl_count; i++)); do
     id=$(yq eval ".implementations[$i].id" impls.yaml)
     transports=$(yq eval ".implementations[$i].transports | join(\" \")" impls.yaml)
+    dial_only=$(yq eval ".implementations[$i].dialOnly | join(\" \")" impls.yaml 2>/dev/null || echo "")
 
     impl_ids+=("$id")
     impl_transports["$id"]="$transports"
+    impl_dial_only["$id"]="$dial_only"
 done
 
 echo "  ✓ Loaded ${#impl_ids[@]} implementations into memory"
@@ -263,6 +266,21 @@ if [ -n "$TEST_IGNORE" ]; then
     echo "  ✓ Loaded ${#IGNORE_PATTERNS[@]} ignore patterns"
 fi
 
+# Helper function to check if implementation ID matches select patterns
+impl_matches_select() {
+    local impl_id="$1"
+
+    # No select = match all
+    [ ${#SELECT_PATTERNS[@]} -eq 0 ] && return 0
+
+    # Check each select pattern against implementation ID
+    for select in "${SELECT_PATTERNS[@]}"; do
+        [[ "$impl_id" == *"$select"* ]] && return 0
+    done
+
+    return 1
+}
+
 # Helper function to check if test name matches select
 matches_select() {
     local test_name="$1"
@@ -293,6 +311,25 @@ should_ignore() {
     return 1
 }
 
+# Check if an IMPLEMENTATION can be used as listener for a transport
+# Note: Relays and routers do NOT have dialOnly restrictions
+can_be_listener_for_transport() {
+    local impl_id="$1"
+    local transport="$2"
+
+    local dial_only_transports="${impl_dial_only[$impl_id]:-}"
+
+    # If no dialOnly restrictions, can always be listener
+    [ -z "$dial_only_transports" ] && return 0
+
+    # Check if transport is in dialOnly list
+    if [[ " $dial_only_transports " == *" $transport "* ]]; then
+        return 1  # Cannot be listener for this transport
+    fi
+
+    return 0  # Can be listener
+}
+
 # Get common elements between two space-separated lists
 get_common() {
     local list1="$1"
@@ -316,9 +353,15 @@ echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔�
 for relay_id in "${relay_ids[@]}"; do
     for router_id in "${router_ids[@]}"; do
         for dialer_id in "${impl_ids[@]}"; do
+            # Skip if dialer doesn't match select filter
+            impl_matches_select "$dialer_id" || continue
+
             dialer_transports="${impl_transports[$dialer_id]}"
 
             for listener_id in "${impl_ids[@]}"; do
+                # Skip if listener doesn't match select filter
+                impl_matches_select "$listener_id" || continue
+
                 listener_transports="${impl_transports[$listener_id]}"
 
                 # Find common transports (much faster than grep)
@@ -329,6 +372,12 @@ for relay_id in "${relay_ids[@]}"; do
 
                 # Process each common transport
                 for transport in $common_transports; do
+                    # Check if LISTENER IMPLEMENTATION can handle this transport (not in dialOnly list)
+                    # Note: This only applies to implementations, not relays or routers
+                    if ! can_be_listener_for_transport "$listener_id" "$transport"; then
+                        continue  # Skip: listener implementation has this transport in dialOnly
+                    fi
+
                     # Test name format: peer x peer (transport) [dialer-router] - [relay] - [listener-router]
                     test_name="$dialer_id x $listener_id ($transport) [$router_id] - [$relay_id] - [$router_id]"
 
