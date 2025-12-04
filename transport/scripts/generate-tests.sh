@@ -129,7 +129,6 @@ fi
 can_be_listener_for_transport() {
     local impl_id="$1"
     local transport="$2"
-
     local dial_only_transports="${impl_dial_only[$impl_id]:-}"
 
     # If no dialOnly restrictions, can always be listener
