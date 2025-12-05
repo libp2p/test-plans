@@ -42,6 +42,10 @@ inputs:
     description: "Force Docker image rebuilds (bypass cache)"
     required: false
     default: "false"
+  debug:
+    description: "Enable debug mode (sets DEBUG=true in test containers)"
+    required: false
+    default: "false"
 
 runs:
   using: "composite"
@@ -58,7 +62,10 @@ runs:
       shell: bash
       working-directory: hole-punch
       run: |
-        set -euo pipefail
+        set -uo pipefail
+
+        # Capture exit code but don't fail immediately
+        EXIT_CODE=0
 
         SNAPSHOT_FLAG=""
         if [ "${{ inputs.snapshot }}" = "true" ]; then
@@ -75,6 +82,11 @@ runs:
           FORCE_IMAGE_FLAG="--force-image-rebuild"
         fi
 
+        DEBUG_FLAG=""
+        if [ "${{ inputs.debug }}" = "true" ]; then
+          DEBUG_FLAG="--debug"
+        fi
+
         ./run_tests.sh \
           --test-select '${{ inputs.test-select }}' \
           --test-ignore '${{ inputs.test-ignore }}' \
@@ -86,9 +98,14 @@ runs:
           $SNAPSHOT_FLAG \
           $FORCE_MATRIX_FLAG \
           $FORCE_IMAGE_FLAG \
-          -y
+          $DEBUG_FLAG \
+          -y || EXIT_CODE=$?
+
+        # Save exit code for later
+        echo "$EXIT_CODE" > /tmp/test-exit-code.txt
 
     - name: Find test pass directory
+      if: always()
       id: find-test-pass
       shell: bash
       run: |
@@ -117,10 +134,22 @@ runs:
         if-no-files-found: warn
 
     - name: Upload snapshot archive
-      if: inputs.snapshot == 'true'
+      if: always() && inputs.snapshot == 'true'
       uses: actions/upload-artifact@v4
       with:
         name: hole-punch-snapshot-${{ steps.find-test-pass.outputs.test-pass-name }}
         path: |
           ${{ inputs.cache-dir }}/test-runs/${{ steps.find-test-pass.outputs.test-pass-name }}.zip
         if-no-files-found: error
+
+    - name: Fail if tests failed
+      if: always()
+      shell: bash
+      run: |
+        if [ -f /tmp/test-exit-code.txt ]; then
+          EXIT_CODE=$(cat /tmp/test-exit-code.txt)
+          if [ "$EXIT_CODE" -ne 0 ]; then
+            echo "Tests failed with exit code $EXIT_CODE"
+            exit $EXIT_CODE
+          fi
+        fi

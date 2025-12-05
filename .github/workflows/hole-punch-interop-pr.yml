@@ -8,6 +8,52 @@ on:
       - '.github/actions/run-bash-hole-punch-test/**'
       - '.github/workflows/hole-punch-interop-pr.yml'
   workflow_dispatch:
+    inputs:
+      test-select:
+        description: 'Select specific tests (pipe-separated substrings)'
+        required: false
+        default: ''
+        type: string
+      test-ignore:
+        description: 'Ignore specific tests (pipe-separated substrings)'
+        required: false
+        default: '~failing'
+        type: string
+      relay-select:
+        description: 'Select specific relays (pipe-separated substrings)'
+        required: false
+        default: ''
+        type: string
+      relay-ignore:
+        description: 'Ignore specific relays (pipe-separated substrings)'
+        required: false
+        default: ''
+        type: string
+      router-select:
+        description: 'Select specific routers (pipe-separated substrings)'
+        required: false
+        default: ''
+        type: string
+      router-ignore:
+        description: 'Ignore specific routers (pipe-separated substrings)'
+        required: false
+        default: ''
+        type: string
+      force-matrix-rebuild:
+        description: 'Force test matrix regeneration (bypass cache)'
+        required: false
+        default: false
+        type: boolean
+      force-image-rebuild:
+        description: 'Force Docker image rebuilds (bypass cache)'
+        required: false
+        default: false
+        type: boolean
+      debug:
+        description: 'Enable debug mode (sets DEBUG=true in test containers)'
+        required: false
+        default: false
+        type: boolean
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -15,6 +61,7 @@ concurrency:
 
 jobs:
   detect-changes:
+    if: github.event_name != 'workflow_dispatch'
     runs-on: [self-hosted, linux, x64, ephemeral]
     outputs:
       changed-impls: ${{ steps.detect.outputs.changed-impls }}
@@ -35,24 +82,73 @@ jobs:
         with:
           test-type: hole-punch
 
-  run-tests:
+  resolve-parameters:
+    runs-on: [self-hosted, linux, x64, ephemeral]
     needs: detect-changes
-    if: needs.detect-changes.outputs.has-changes == 'true'
+    if: always()
+    outputs:
+      test-select: ${{ steps.resolve.outputs.test-select }}
+      test-ignore: ${{ steps.resolve.outputs.test-ignore }}
+      relay-select: ${{ steps.resolve.outputs.relay-select }}
+      relay-ignore: ${{ steps.resolve.outputs.relay-ignore }}
+      router-select: ${{ steps.resolve.outputs.router-select }}
+      router-ignore: ${{ steps.resolve.outputs.router-ignore }}
+      force-matrix-rebuild: ${{ steps.resolve.outputs.force-matrix-rebuild }}
+      force-image-rebuild: ${{ steps.resolve.outputs.force-image-rebuild }}
+      debug: ${{ steps.resolve.outputs.debug }}
+      should-run-tests: ${{ steps.resolve.outputs.should-run-tests }}
+    steps:
+      - name: Resolve parameters
+        id: resolve
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            # Manual trigger - use workflow inputs
+            echo "test-select=${{ github.event.inputs.test-select }}" >> $GITHUB_OUTPUT
+            echo "test-ignore=${{ github.event.inputs.test-ignore }}" >> $GITHUB_OUTPUT
+            echo "relay-select=${{ github.event.inputs.relay-select }}" >> $GITHUB_OUTPUT
+            echo "relay-ignore=${{ github.event.inputs.relay-ignore }}" >> $GITHUB_OUTPUT
+            echo "router-select=${{ github.event.inputs.router-select }}" >> $GITHUB_OUTPUT
+            echo "router-ignore=${{ github.event.inputs.router-ignore }}" >> $GITHUB_OUTPUT
+            echo "force-matrix-rebuild=${{ github.event.inputs.force-matrix-rebuild }}" >> $GITHUB_OUTPUT
+            echo "force-image-rebuild=${{ github.event.inputs.force-image-rebuild }}" >> $GITHUB_OUTPUT
+            echo "debug=${{ github.event.inputs.debug }}" >> $GITHUB_OUTPUT
+            echo "should-run-tests=true" >> $GITHUB_OUTPUT
+            echo "→ Manual trigger: using workflow inputs"
+          else
+            # Automatic trigger - use change detection outputs
+            echo "test-select=${{ needs.detect-changes.outputs.changed-impls }}" >> $GITHUB_OUTPUT
+            echo "test-ignore=!${{ needs.detect-changes.outputs.changed-impls }}" >> $GITHUB_OUTPUT
+            echo "relay-select=${{ needs.detect-changes.outputs.changed-relays }}" >> $GITHUB_OUTPUT
+            echo "relay-ignore=!${{ needs.detect-changes.outputs.changed-relays }}" >> $GITHUB_OUTPUT
+            echo "router-select=${{ needs.detect-changes.outputs.changed-routers }}" >> $GITHUB_OUTPUT
+            echo "router-ignore=!${{ needs.detect-changes.outputs.changed-routers }}" >> $GITHUB_OUTPUT
+            echo "force-matrix-rebuild=${{ needs.detect-changes.outputs.impls-yaml-changed }}" >> $GITHUB_OUTPUT
+            echo "force-image-rebuild=${{ needs.detect-changes.outputs.impls-folder-changed }}" >> $GITHUB_OUTPUT
+            echo "debug=false" >> $GITHUB_OUTPUT
+            echo "should-run-tests=${{ needs.detect-changes.outputs.has-changes }}" >> $GITHUB_OUTPUT
+            echo "→ Automatic trigger: using change detection outputs"
+          fi
+
+  run-tests:
+    needs: resolve-parameters
+    if: needs.resolve-parameters.outputs.should-run-tests == 'true'
     runs-on: [self-hosted, linux, x64, ephemeral]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Run hole punch interop tests for changed implementations
+      - name: Run hole punch interop tests
         uses: ./.github/actions/run-bash-hole-punch-test
         with:
-          test-select: '${{ needs.detect-changes.outputs.changed-impls }}'
-          test-ignore: '!${{ needs.detect-changes.outputs.changed-impls }}'
-          relay-select: '${{ needs.detect-changes.outputs.changed-relays }}'
-          relay-ignore: '!${{ needs.detect-changes.outputs.changed-relays }}'
-          router-select: '${{ needs.detect-changes.outputs.changed-routers }}'
-          router-ignore: '!${{ needs.detect-changes.outputs.changed-routers }}'
+          test-select: '${{ needs.resolve-parameters.outputs.test-select }}'
+          test-ignore: '${{ needs.resolve-parameters.outputs.test-ignore }}'
+          relay-select: '${{ needs.resolve-parameters.outputs.relay-select }}'
+          relay-ignore: '${{ needs.resolve-parameters.outputs.relay-ignore }}'
+          router-select: '${{ needs.resolve-parameters.outputs.router-select }}'
+          router-ignore: '${{ needs.resolve-parameters.outputs.router-ignore }}'
           cache-dir: /srv/cache
           snapshot: true
-          force-matrix-rebuild: ${{ needs.detect-changes.outputs.impls-yaml-changed }}
-          force-image-rebuild: ${{ needs.detect-changes.outputs.impls-folder-changed }}
+          force-matrix-rebuild: ${{ needs.resolve-parameters.outputs.force-matrix-rebuild }}
+          force-image-rebuild: ${{ needs.resolve-parameters.outputs.force-image-rebuild }}
+          debug: ${{ needs.resolve-parameters.outputs.debug }}
