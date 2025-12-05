@@ -26,6 +26,9 @@ for ((i=0; i<impl_count; i++)); do
     impl_id=$(yq eval ".implementations[$i].id" impls.yaml)
     source_type=$(yq eval ".implementations[$i].source.type" impls.yaml)
 
+    # Construct Docker image name with prefix
+    image_name="transport-interop-${impl_id}"
+
     # Apply filter if specified (substring match on pipe-separated list)
     if [ -n "$FILTER" ]; then
         # Check if impl_id matches any of the pipe-separated filter patterns
@@ -43,18 +46,18 @@ for ((i=0; i<impl_count; i++)); do
     fi
 
     # Check if image already exists
-    if docker image inspect "$impl_id" &> /dev/null; then
+    if docker image inspect "$image_name" &> /dev/null; then
         if [ "$REMOVE" = "true" ]; then
-            echo "  → Forcing rebuild of $impl_id"
-            docker rmi "$impl_id" &> /dev/null || echo "Tried to remove non-existent image"
+            echo "  → Forcing rebuild of $image_name"
+            docker rmi "$image_name" &> /dev/null || echo "Tried to remove non-existent image"
         else
-            echo "  ✓ $impl_id (already built)"
+            echo "  ✓ $image_name (already built)"
             continue
         fi
     fi
 
     echo ""
-    echo "╲ Building: $impl_id"
+    echo "╲ Building: $impl_id ($image_name)"
     echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
     echo "→ Type: $source_type"
 
@@ -114,8 +117,8 @@ for ((i=0; i<impl_count; i++)); do
             fi
 
             # Build Docker image
-            echo "→ Building Docker image: docker build -f $extracted_dir/$dockerfile -t $impl_id $extracted_dir"
-            if ! docker build -f "$extracted_dir/$dockerfile" -t "$impl_id" "$extracted_dir"; then
+            echo "→ Building Docker image: docker build -f $extracted_dir/$dockerfile -t $image_name $extracted_dir"
+            if ! docker build -f "$extracted_dir/$dockerfile" -t "$image_name" "$extracted_dir"; then
                 echo "✗ Docker build failed"
                 exit 1
             fi
@@ -139,7 +142,7 @@ for ((i=0; i<impl_count; i++)); do
             fi
 
             echo "→ Building Docker image from local source..."
-            if ! docker build -f "$local_path/$dockerfile" -t "$impl_id" "$local_path"; then
+            if ! docker build -f "$local_path/$dockerfile" -t "$image_name" "$local_path"; then
                 echo "✗ Docker build failed"
                 exit 1
             fi
@@ -151,19 +154,22 @@ for ((i=0; i<impl_count; i++)); do
             browser=$(yq eval ".implementations[$i].source.browser" impls.yaml)
             dockerfile=$(yq eval ".implementations[$i].source.dockerfile" impls.yaml)
 
-            echo "  Base: $base_image"
+            # Construct base image name with prefix
+            base_image_name="transport-interop-${base_image}"
+
+            echo "  Base: $base_image ($base_image_name)"
             echo "  Browser: $browser"
 
             # Ensure base image exists
-            if ! docker image inspect "$base_image" &> /dev/null; then
-                echo "✗ Base image not found: $base_image"
+            if ! docker image inspect "$base_image_name" &> /dev/null; then
+                echo "✗ Base image not found: $base_image_name"
                 echo "  Please build $base_image first"
                 exit 1
             fi
 
             # Tag base image for browser build
             echo "→ Tagging base image..."
-            docker tag "$base_image" "node-$base_image"
+            docker tag "$base_image_name" "node-$base_image"
 
             # Build browser image
             echo "→ Building browser Docker image..."
@@ -172,7 +178,7 @@ for ((i=0; i<impl_count; i++)); do
                 -f "$dockerfile" \
                 --build-arg BASE_IMAGE="node-$base_image" \
                 --build-arg BROWSER="$browser" \
-                -t "$impl_id" \
+                -t "$image_name" \
                 "$dockerfile_dir"; then
                 echo "✗ Docker build failed"
                 exit 1
@@ -186,8 +192,8 @@ for ((i=0; i<impl_count; i++)); do
     esac
 
     # Get image ID
-    image_id=$(docker image inspect "$impl_id" -f '{{.Id}}' | cut -d':' -f2)
-    echo "✓ Built: $impl_id"
+    image_id=$(docker image inspect "$image_name" -f '{{.Id}}' | cut -d':' -f2)
+    echo "✓ Built: $image_name"
     echo "✓ Image ID: ${image_id:0:12}..."
 done
 

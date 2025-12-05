@@ -1,0 +1,249 @@
+name: Daily Full Interoperability Tests
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # 2 AM UTC daily
+  workflow_dispatch:
+
+jobs:
+  check-transport-changes:
+    runs-on: [self-hosted, linux, x64, ephemeral]
+    outputs:
+      has-changes: ${{ steps.check.outputs.has-changes }}
+      impls-yaml-changed: ${{ steps.check.outputs.impls-yaml-changed }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check transport changes in last 24 hours
+        id: check
+        shell: bash
+        run: |
+          # Check if anything in transport/ changed in last 24 hours
+          CHANGES=$(git log --oneline --since="24 hours ago" -- "transport/**" | wc -l)
+
+          if [ "$CHANGES" -eq 0 ]; then
+            echo "has-changes=false" >> $GITHUB_OUTPUT
+            echo "impls-yaml-changed=false" >> $GITHUB_OUTPUT
+            echo "→ No changes in transport/ in last 24 hours, skipping tests"
+            exit 0
+          fi
+
+          echo "has-changes=true" >> $GITHUB_OUTPUT
+
+          # Check specifically if impls.yaml changed in last 24 hours
+          IMPLS_CHANGES=$(git log --oneline --since="24 hours ago" -- "transport/impls.yaml" | wc -l)
+
+          if [ "$IMPLS_CHANGES" -gt 0 ]; then
+            echo "impls-yaml-changed=true" >> $GITHUB_OUTPUT
+            echo "→ transport/impls.yaml changed in last 24h, will force matrix rebuild"
+          else
+            echo "impls-yaml-changed=false" >> $GITHUB_OUTPUT
+            echo "→ Other transport files changed, using cached matrix if available"
+          fi
+
+  check-hole-punch-changes:
+    runs-on: [self-hosted, linux, x64, ephemeral]
+    outputs:
+      has-changes: ${{ steps.check.outputs.has-changes }}
+      impls-yaml-changed: ${{ steps.check.outputs.impls-yaml-changed }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check hole-punch changes in last 24 hours
+        id: check
+        shell: bash
+        run: |
+          # Check if anything in hole-punch/ changed in last 24 hours
+          CHANGES=$(git log --oneline --since="24 hours ago" -- "hole-punch/**" | wc -l)
+
+          if [ "$CHANGES" -eq 0 ]; then
+            echo "has-changes=false" >> $GITHUB_OUTPUT
+            echo "impls-yaml-changed=false" >> $GITHUB_OUTPUT
+            echo "→ No changes in hole-punch/ in last 24 hours, skipping tests"
+            exit 0
+          fi
+
+          echo "has-changes=true" >> $GITHUB_OUTPUT
+
+          # Check specifically if impls.yaml changed in last 24 hours
+          IMPLS_CHANGES=$(git log --oneline --since="24 hours ago" -- "hole-punch/impls.yaml" | wc -l)
+
+          if [ "$IMPLS_CHANGES" -gt 0 ]; then
+            echo "impls-yaml-changed=true" >> $GITHUB_OUTPUT
+            echo "→ hole-punch/impls.yaml changed in last 24h, will force matrix rebuild"
+          else
+            echo "impls-yaml-changed=false" >> $GITHUB_OUTPUT
+            echo "→ Other hole-punch files changed, using cached matrix if available"
+          fi
+
+  run-transport-full:
+    needs: check-transport-changes
+    if: needs.check-transport-changes.outputs.has-changes == 'true'
+    runs-on: [self-hosted, linux, x64, ephemeral]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run full transport interop tests
+        uses: ./.github/actions/run-bash-transport-test
+        with:
+          test-select: ''
+          test-ignore: '~failing'
+          cache-dir: /srv/cache
+          snapshot: true
+          force-matrix-rebuild: ${{ needs.check-transport-changes.outputs.impls-yaml-changed }}
+
+  run-hole-punch-full:
+    needs: check-hole-punch-changes
+    if: needs.check-hole-punch-changes.outputs.has-changes == 'true'
+    runs-on: [self-hosted, linux, x64, ephemeral]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run full hole punch interop tests
+        uses: ./.github/actions/run-bash-hole-punch-test
+        with:
+          test-select: ''
+          test-ignore: '~failing'
+          relay-select: ''
+          relay-ignore: ''
+          router-select: ''
+          router-ignore: ''
+          cache-dir: /srv/cache
+          snapshot: true
+          force-matrix-rebuild: ${{ needs.check-hole-punch-changes.outputs.impls-yaml-changed }}
+
+  update-readmes:
+    needs: [run-transport-full, run-hole-punch-full]
+    if: |
+      always() &&
+      (needs.run-transport-full.result == 'success' ||
+       needs.run-hole-punch-full.result == 'success')
+    runs-on: [self-hosted, linux, x64, ephemeral]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download transport test results
+        if: needs.run-transport-full.result == 'success'
+        uses: actions/download-artifact@v4
+        with:
+          pattern: transport-test-results-*
+          path: /tmp/transport-results
+          merge-multiple: true
+
+      - name: Download hole-punch test results
+        if: needs.run-hole-punch-full.result == 'success'
+        uses: actions/download-artifact@v4
+        with:
+          pattern: hole-punch-test-results-*
+          path: /tmp/hole-punch-results
+          merge-multiple: true
+
+      - name: Update transport README
+        if: needs.run-transport-full.result == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Find results.md file
+          RESULTS_MD=$(find /tmp/transport-results -name "results.md" | head -1)
+
+          if [ -z "$RESULTS_MD" ]; then
+            echo "Error: Could not find transport results.md"
+            exit 1
+          fi
+
+          echo "→ Found transport results: $RESULTS_MD"
+
+          # Check if README has markers
+          if ! grep -q "<!-- TEST_RESULTS_START -->" transport/README.md; then
+            echo "→ Adding test results section to transport/README.md"
+            cat >> transport/README.md <<'EOF'
+
+## Latest Test Results
+
+<!-- TEST_RESULTS_START -->
+<!-- TEST_RESULTS_END -->
+EOF
+          fi
+
+          # Extract content between markers and replace with new results
+          # Using perl for in-place editing with multiline support
+          perl -i -0pe 's/<!-- TEST_RESULTS_START -->.*?<!-- TEST_RESULTS_END -->/<!-- TEST_RESULTS_START -->\n'"$(cat "$RESULTS_MD" | sed 's/\\/\\\\/g' | sed 's/\//\\\//g' | sed ':a;N;$!ba;s/\n/\\n/g')"'\n<!-- TEST_RESULTS_END -->/s' transport/README.md
+
+          echo "→ Updated transport/README.md"
+
+      - name: Update hole-punch README
+        if: needs.run-hole-punch-full.result == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Find results.md file
+          RESULTS_MD=$(find /tmp/hole-punch-results -name "results.md" | head -1)
+
+          if [ -z "$RESULTS_MD" ]; then
+            echo "Error: Could not find hole-punch results.md"
+            exit 1
+          fi
+
+          echo "→ Found hole-punch results: $RESULTS_MD"
+
+          # Check if README has markers
+          if ! grep -q "<!-- TEST_RESULTS_START -->" hole-punch/README.md; then
+            echo "→ Adding test results section to hole-punch/README.md"
+            cat >> hole-punch/README.md <<'EOF'
+
+## Latest Test Results
+
+<!-- TEST_RESULTS_START -->
+<!-- TEST_RESULTS_END -->
+EOF
+          fi
+
+          # Extract content between markers and replace with new results
+          perl -i -0pe 's/<!-- TEST_RESULTS_START -->.*?<!-- TEST_RESULTS_END -->/<!-- TEST_RESULTS_START -->\n'"$(cat "$RESULTS_MD" | sed 's/\\/\\\\/g' | sed 's/\//\\\//g' | sed ':a;N;$!ba;s/\n/\\n/g')"'\n<!-- TEST_RESULTS_END -->/s' hole-punch/README.md
+
+          echo "→ Updated hole-punch/README.md"
+
+      - name: Commit and push changes
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Check if there are changes
+          if git diff --quiet transport/README.md hole-punch/README.md 2>/dev/null; then
+            echo "→ No changes to commit"
+            exit 0
+          fi
+
+          git add transport/README.md hole-punch/README.md 2>/dev/null || true
+
+          # Only commit if there are staged changes
+          if git diff --cached --quiet 2>/dev/null; then
+            echo "→ No staged changes to commit"
+            exit 0
+          fi
+
+          git commit -m "chore: update test results [skip ci]
+
+Updated test results from daily full interoperability test run.
+
+Co-authored-by: github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
+
+          git push
+
+          echo "→ Changes committed and pushed"

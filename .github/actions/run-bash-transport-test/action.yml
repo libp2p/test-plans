@@ -1,0 +1,106 @@
+name: "Run Transport Interop Tests (Bash)"
+description: "Run the transport interoperability test suite using bash scripts (no npm/node)"
+
+inputs:
+  test-select:
+    description: "Select tests (pipe-separated substrings)"
+    required: false
+    default: ""
+  test-ignore:
+    description: "Ignore tests (pipe-separated substrings)"
+    required: false
+    default: ""
+  cache-dir:
+    description: "Local directory to use for build cache"
+    required: false
+    default: "/srv/cache"
+  snapshot:
+    description: "Create test pass snapshot after completion"
+    required: false
+    default: "false"
+  force-matrix-rebuild:
+    description: "Force test matrix regeneration (bypass cache)"
+    required: false
+    default: "false"
+  force-image-rebuild:
+    description: "Force Docker image rebuilds (bypass cache)"
+    required: false
+    default: "false"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install docker-compose
+      shell: bash
+      run: |
+        mkdir -p $HOME/.docker/cli-plugins
+        wget -q -O- https://github.com/docker/compose/releases/download/v2.21.0/docker-compose-linux-x86_64 > $HOME/.docker/cli-plugins/docker-compose
+        chmod +x $HOME/.docker/cli-plugins/docker-compose
+        docker compose version
+
+    - name: Run transport interop tests
+      shell: bash
+      working-directory: transport
+      run: |
+        set -euo pipefail
+
+        SNAPSHOT_FLAG=""
+        if [ "${{ inputs.snapshot }}" = "true" ]; then
+          SNAPSHOT_FLAG="--snapshot"
+        fi
+
+        FORCE_MATRIX_FLAG=""
+        if [ "${{ inputs.force-matrix-rebuild }}" = "true" ]; then
+          FORCE_MATRIX_FLAG="--force-matrix-rebuild"
+        fi
+
+        FORCE_IMAGE_FLAG=""
+        if [ "${{ inputs.force-image-rebuild }}" = "true" ]; then
+          FORCE_IMAGE_FLAG="--force-image-rebuild"
+        fi
+
+        ./run_tests.sh \
+          --test-select '${{ inputs.test-select }}' \
+          --test-ignore '${{ inputs.test-ignore }}' \
+          --cache-dir '${{ inputs.cache-dir }}' \
+          $SNAPSHOT_FLAG \
+          $FORCE_MATRIX_FLAG \
+          $FORCE_IMAGE_FLAG \
+          -y
+
+    - name: Find test pass directory
+      id: find-test-pass
+      shell: bash
+      run: |
+        # Find the most recent test pass directory
+        TEST_PASS_DIR=$(ls -td ${{ inputs.cache-dir }}/test-runs/transport-interop-* 2>/dev/null | head -1 || echo "")
+
+        if [ -z "$TEST_PASS_DIR" ]; then
+          echo "Error: Could not find test pass directory"
+          exit 1
+        fi
+
+        TEST_PASS_NAME=$(basename "$TEST_PASS_DIR")
+        echo "test-pass-dir=$TEST_PASS_DIR" >> $GITHUB_OUTPUT
+        echo "test-pass-name=$TEST_PASS_NAME" >> $GITHUB_OUTPUT
+        echo "→ Test pass: $TEST_PASS_NAME"
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: transport-test-results-${{ steps.find-test-pass.outputs.test-pass-name }}
+        path: |
+          ${{ steps.find-test-pass.outputs.test-pass-dir }}/results.yaml
+          ${{ steps.find-test-pass.outputs.test-pass-dir }}/results.md
+          ${{ steps.find-test-pass.outputs.test-pass-dir }}/results.html
+        if-no-files-found: warn
+
+    - name: Upload snapshot archive
+      if: inputs.snapshot == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: transport-snapshot-${{ steps.find-test-pass.outputs.test-pass-name }}
+        path: |
+          ${{ inputs.cache-dir }}/test-runs/${{ steps.find-test-pass.outputs.test-pass-name }}.zip
+        if-no-files-found: error

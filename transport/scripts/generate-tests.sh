@@ -9,6 +9,7 @@ CACHE_DIR="${CACHE_DIR:-/srv/cache}"
 CLI_TEST_SELECT="${1:-}"
 CLI_TEST_IGNORE="${2:-}"
 DEBUG="${3:-false}"  # Optional: debug mode flag
+FORCE_MATRIX_REBUILD="${4:-false}"  # Optional: force matrix rebuild
 OUTPUT_DIR="${TEST_PASS_DIR:-.}"  # Use TEST_PASS_DIR if set, otherwise current directory
 
 # Standalone transports (don't require muxer/secureChannel)
@@ -70,11 +71,12 @@ if [ -n "$TEST_IGNORE" ]; then
 fi
 
 # Compute cache key from impls.yaml + select + ignore + debug
-cache_key=$(compute_cache_key "$TEST_SELECT" "$TEST_IGNORE" "$DEBUG")
+# Pass empty strings for relay/router params (not used by transport tests)
+cache_key=$(compute_cache_key "$TEST_SELECT" "$TEST_IGNORE" "" "" "" "" "$DEBUG")
 echo "→ Computed cache key: ${cache_key:0:8}"
 
-# Check cache
-if check_and_load_cache "$cache_key" "$CACHE_DIR" "$OUTPUT_DIR"; then
+# Check cache (with optional force rebuild)
+if check_and_load_cache "$cache_key" "$CACHE_DIR" "$OUTPUT_DIR" "$FORCE_MATRIX_REBUILD"; then
     exit 0
 fi
 
@@ -245,8 +247,24 @@ EOF
 for test in "${tests[@]}"; do
     IFS='|' read -r name dialer listener transport secure muxer <<< "$test"
 
-    dialer_commit=$(yq eval ".implementations[] | select(.id == \"$dialer\") | .source.commit" impls.yaml)
-    listener_commit=$(yq eval ".implementations[] | select(.id == \"$listener\") | .source.commit" impls.yaml)
+    # Get source types and commits (only for github-type implementations)
+    dialer_source_type=$(yq eval ".implementations[] | select(.id == \"$dialer\") | .source.type" impls.yaml)
+    listener_source_type=$(yq eval ".implementations[] | select(.id == \"$listener\") | .source.type" impls.yaml)
+
+    # Only get commits for github-type sources
+    if [ "$dialer_source_type" = "github" ]; then
+        dialer_commit=$(yq eval ".implementations[] | select(.id == \"$dialer\") | .source.commit" impls.yaml)
+        dialer_snapshot="snapshots/$dialer_commit.zip"
+    else
+        dialer_snapshot="null"
+    fi
+
+    if [ "$listener_source_type" = "github" ]; then
+        listener_commit=$(yq eval ".implementations[] | select(.id == \"$listener\") | .source.commit" impls.yaml)
+        listener_snapshot="snapshots/$listener_commit.zip"
+    else
+        listener_snapshot="null"
+    fi
 
     cat >> "$OUTPUT_DIR/test-matrix.yaml" <<EOF
   - name: $name
@@ -255,8 +273,8 @@ for test in "${tests[@]}"; do
     transport: $transport
     secureChannel: $secure
     muxer: $muxer
-    dialerSnapshot: snapshots/$dialer_commit.zip
-    listenerSnapshot: snapshots/$listener_commit.zip
+    dialerSnapshot: $dialer_snapshot
+    listenerSnapshot: $listener_snapshot
 EOF
 done
 
@@ -269,8 +287,24 @@ EOF
 for test in "${ignored_tests[@]}"; do
     IFS='|' read -r name dialer listener transport secure muxer <<< "$test"
 
-    dialer_commit=$(yq eval ".implementations[] | select(.id == \"$dialer\") | .source.commit" impls.yaml)
-    listener_commit=$(yq eval ".implementations[] | select(.id == \"$listener\") | .source.commit" impls.yaml)
+    # Get source types and commits (only for github-type implementations)
+    dialer_source_type=$(yq eval ".implementations[] | select(.id == \"$dialer\") | .source.type" impls.yaml)
+    listener_source_type=$(yq eval ".implementations[] | select(.id == \"$listener\") | .source.type" impls.yaml)
+
+    # Only get commits for github-type sources
+    if [ "$dialer_source_type" = "github" ]; then
+        dialer_commit=$(yq eval ".implementations[] | select(.id == \"$dialer\") | .source.commit" impls.yaml)
+        dialer_snapshot="snapshots/$dialer_commit.zip"
+    else
+        dialer_snapshot="null"
+    fi
+
+    if [ "$listener_source_type" = "github" ]; then
+        listener_commit=$(yq eval ".implementations[] | select(.id == \"$listener\") | .source.commit" impls.yaml)
+        listener_snapshot="snapshots/$listener_commit.zip"
+    else
+        listener_snapshot="null"
+    fi
 
     cat >> "$OUTPUT_DIR/test-matrix.yaml" <<EOF
   - name: $name
@@ -279,8 +313,8 @@ for test in "${ignored_tests[@]}"; do
     transport: $transport
     secureChannel: $secure
     muxer: $muxer
-    dialerSnapshot: snapshots/$dialer_commit.zip
-    listenerSnapshot: snapshots/$listener_commit.zip
+    dialerSnapshot: $dialer_snapshot
+    listenerSnapshot: $listener_snapshot
 EOF
 done
 

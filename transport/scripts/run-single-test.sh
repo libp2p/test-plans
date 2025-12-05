@@ -15,6 +15,10 @@ TRANSPORT="$4"
 SECURE_CHANNEL="${5:-null}"  # Optional for standalone transports
 MUXER="${6:-null}"           # Optional for standalone transports
 
+# Construct Docker image names with transport-interop prefix
+DIALER_IMAGE="transport-interop-${DIALER_ID}"
+LISTENER_IMAGE="transport-interop-${LISTENER_ID}"
+
 # Read debug flag from test-matrix.yaml
 DEBUG=$(yq eval '.metadata.debug' "${TEST_PASS_DIR:-.}/test-matrix.yaml" 2>/dev/null || echo "false")
 
@@ -88,7 +92,7 @@ services:
     command: redis-server --save "" --appendonly no
 
   listener:
-    image: ${LISTENER_ID}
+    image: ${LISTENER_IMAGE}
     container_name: ${TEST_SLUG}_listener
     init: true
     depends_on:
@@ -97,7 +101,7 @@ services:
 $LISTENER_ENV
 
   dialer:
-    image: ${DIALER_ID}
+    image: ${DIALER_IMAGE}
     container_name: ${TEST_SLUG}_dialer
     depends_on:
       - redis

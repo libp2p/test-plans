@@ -2,13 +2,19 @@
 # Common test matrix caching functions
 # Used by both hole-punch and transport test generation
 
-# Compute cache key from impls.yaml + select + ignore + debug
+# Compute cache key from impls.yaml + select + ignore + relay/router filters + debug
+# Supports both transport (3 params) and hole-punch (7 params) usage
 compute_cache_key() {
     local test_select="$1"
     local test_ignore="$2"
-    local debug="$3"
+    local relay_select="${3:-}"      # Optional for hole-punch
+    local relay_ignore="${4:-}"      # Optional for hole-punch
+    local router_select="${5:-}"     # Optional for hole-punch
+    local router_ignore="${6:-}"     # Optional for hole-punch
+    local debug="${7:-false}"        # Defaults to false if not provided
 
-    { cat impls.yaml 2>/dev/null; echo "$test_select||$test_ignore||$debug"; } | sha256sum | cut -d' ' -f1
+    # Include all parameters in hash (empty values are fine)
+    { cat impls.yaml 2>/dev/null; echo "$test_select||$test_ignore||$relay_select||$relay_ignore||$router_select||$router_ignore||$debug"; } | sha256sum | cut -d' ' -f1
 }
 
 # Check if cached test matrix exists and load it
@@ -17,8 +23,16 @@ check_and_load_cache() {
     local cache_key="$1"
     local cache_dir="$2"
     local output_dir="$3"
+    local force_rebuild="${4:-false}"  # Optional: force matrix rebuild
 
     local cache_file="$cache_dir/test-matrix/${cache_key}.yaml"
+
+    # If force rebuild requested, skip cache
+    if [ "$force_rebuild" = true ]; then
+        echo "  → [SKIP] Force matrix rebuild requested"
+        mkdir -p "$cache_dir/test-matrix"
+        return 1
+    fi
 
     if [ -f "$cache_file" ]; then
         echo "  ✓ [HIT] Using cached test matrix: ${cache_key:0:8}.yaml"

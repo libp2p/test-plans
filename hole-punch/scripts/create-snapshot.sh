@@ -42,11 +42,12 @@ for ((i=0; i<test_count; i++)); do
     dialer_snapshot=$(yq eval ".tests[$i].dialerSnapshot" "$SNAPSHOT_DIR/test-matrix.yaml" 2>/dev/null || echo "")
     listener_snapshot=$(yq eval ".tests[$i].listenerSnapshot" "$SNAPSHOT_DIR/test-matrix.yaml" 2>/dev/null || echo "")
 
-    if [ -n "$dialer_snapshot" ] && [ "$dialer_snapshot" != "null" ]; then
+    # Skip null, empty, or invalid snapshot paths
+    if [ -n "$dialer_snapshot" ] && [ "$dialer_snapshot" != "null" ] && [ "$dialer_snapshot" != "snapshots/null.zip" ]; then
         unique_snapshots["$dialer_snapshot"]=1
     fi
 
-    if [ -n "$listener_snapshot" ] && [ "$listener_snapshot" != "null" ]; then
+    if [ -n "$listener_snapshot" ] && [ "$listener_snapshot" != "null" ] && [ "$listener_snapshot" != "snapshots/null.zip" ]; then
         unique_snapshots["$listener_snapshot"]=1
     fi
 done
@@ -57,10 +58,16 @@ for snapshot_path in "${!unique_snapshots[@]}"; do
         snapshot_basename=$(basename "$snapshot_path")
         commit="${snapshot_basename%.zip}"
 
+        # Skip if commit is null or empty (safety check)
+        if [ -z "$commit" ] || [ "$commit" = "null" ]; then
+            echo "  ⚠ Skipping invalid snapshot: $snapshot_basename (no commit)"
+            continue
+        fi
+
         # Find the repo for this commit
         repo=$(yq eval ".implementations[] | select(.source.commit == \"$commit\") | .source.repo" impls.yaml | head -1)
 
-        if [ -n "$repo" ]; then
+        if [ -n "$repo" ] && [ "$repo" != "null" ]; then
             echo "  → Downloading missing snapshot: $snapshot_basename..."
             repo_url="https://github.com/$repo/archive/$commit.zip"
             mkdir -p "$CACHE_DIR/snapshots"
@@ -89,40 +96,9 @@ done
 
 echo "  ✓ All snapshots validated and copied"
 
-# Save Docker images
-echo "→ Saving Docker images..."
-
-# Get unique implementations from test matrix
-yq eval '.tests[].dialer' "$SNAPSHOT_DIR/test-matrix.yaml" | sort -u > /tmp/snapshot-impls.txt
-yq eval '.tests[].listener' "$SNAPSHOT_DIR/test-matrix.yaml" | sort -u >> /tmp/snapshot-impls.txt
-sort -u /tmp/snapshot-impls.txt -o /tmp/snapshot-impls.txt
-
-# Count total images to save
-total_images=$(wc -l < /tmp/snapshot-impls.txt)
-current_image=0
-
-echo "  → Found $total_images images to save"
-echo "  → Note: Each image save may take 1-5 minutes depending on size"
-
-while read -r impl_id; do
-    if docker image inspect "$impl_id" &> /dev/null; then
-        image_file="$SNAPSHOT_DIR/docker-images/${impl_id}.tar.gz"
-        if [ ! -f "$image_file" ]; then
-            current_image=$((current_image + 1))
-            echo "  → [$current_image/$total_images] Saving: $impl_id..."
-            docker save "$impl_id" | gzip > "$image_file"
-            saved_size=$(du -h "$image_file" | cut -f1)
-            echo "    ✓ Saved $saved_size"
-        else
-            echo "  → Skipping $impl_id (already saved)"
-        fi
-    else
-        echo "  ⚠ Image not found: $impl_id (will need to rebuild on re-run)"
-    fi
-done < /tmp/snapshot-impls.txt
-
-rm /tmp/snapshot-impls.txt
-echo "  ✓ All docker images saved"
+# Save Docker images using common library
+source "$(dirname "$0")/../../scripts/lib-snapshot-images.sh"
+save_docker_images_for_tests "$SNAPSHOT_DIR" "hole-punch"
 
 # Create settings.yaml with test configuration
 echo "→ Creating settings.yaml..."
@@ -153,7 +129,7 @@ cat > "$SNAPSHOT_DIR/re-run.sh" <<'EOF'
 
 set -euo pipefail
 
-FORCE_REBUILD=false
+FORCE_IMAGE_REBUILD=false
 
 # Show help
 show_help() {
@@ -163,17 +139,17 @@ Re-run Test Pass Snapshot
 Usage: $0 [options]
 
 Options:
-  --force-rebuild    Force rebuilding of all docker images before re-running
-  --help, -h         Show this help message
+  --force-image-rebuild    Force rebuilding of all docker images before re-running
+  --help, -h               Show this help message
 
 Examples:
-  $0                    # Re-run tests using cached Docker images
-  $0 --force-rebuild    # Rebuild images and re-run tests
+  $0                        # Re-run tests using cached Docker images
+  $0 --force-image-rebuild  # Rebuild images and re-run tests
 
 Description:
   This script re-runs a snapshot of a previous test pass. By default, it will
   use pre-saved Docker images from the snapshot. If the images are not present
-  or --force-rebuild is specified, it will rebuild only the images needed for
+  or --force-image-rebuild is specified, it will rebuild only the images needed for
   the tests in this snapshot based on impls.yaml and test-matrix.yaml.
 
 Dependencies:
@@ -184,7 +160,7 @@ HELP
 # Parse arguments
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --force-rebuild) FORCE_REBUILD=true; shift ;;
+        --force-image-rebuild) FORCE_IMAGE_REBUILD=true; shift ;;
         --help|-h) show_help; exit 0 ;;
         *) echo "Unknown option: $1"; echo ""; show_help; exit 1 ;;
     esac
@@ -256,7 +232,8 @@ for ((i=0; i<test_count; i++)); do
     listener_snapshot=$(yq eval ".tests[$i].listenerSnapshot" test-matrix.yaml 2>/dev/null || echo "")
 
     # Check dialer snapshot (should be in local snapshots/ directory)
-    if [ -n "$dialer_snapshot" ] && [ "$dialer_snapshot" != "null" ]; then
+    # Skip null, empty, or invalid snapshot paths
+    if [ -n "$dialer_snapshot" ] && [ "$dialer_snapshot" != "null" ] && [ "$dialer_snapshot" != "snapshots/null.zip" ]; then
         snapshot_name=$(basename "$dialer_snapshot")
         if [ ! -f "snapshots/$snapshot_name" ]; then
             missing_snapshots+=("$snapshot_name")
@@ -264,7 +241,8 @@ for ((i=0; i<test_count; i++)); do
     fi
 
     # Check listener snapshot (should be in local snapshots/ directory)
-    if [ -n "$listener_snapshot" ] && [ "$listener_snapshot" != "null" ]; then
+    # Skip null, empty, or invalid snapshot paths
+    if [ -n "$listener_snapshot" ] && [ "$listener_snapshot" != "null" ] && [ "$listener_snapshot" != "snapshots/null.zip" ]; then
         snapshot_name=$(basename "$listener_snapshot")
         if [ ! -f "snapshots/$snapshot_name" ]; then
             missing_snapshots+=("$snapshot_name")
@@ -316,8 +294,8 @@ sort -u "$REQUIRED_IMPLS_WITH_DEPS" -o "$REQUIRED_IMPLS_WITH_DEPS"
 
 IMPL_COUNT=$(wc -l < "$REQUIRED_IMPLS_WITH_DEPS")
 
-if [ "$FORCE_REBUILD" = true ]; then
-    echo "  → Force rebuild requested, building $IMPL_COUNT required implementations..."
+if [ "$FORCE_IMAGE_REBUILD" = true ]; then
+    echo "  → Force image rebuild requested, building $IMPL_COUNT required implementations..."
     IMPL_FILTER=$(cat "$REQUIRED_IMPLS_WITH_DEPS" | paste -sd'|' -)
     bash scripts/build-images.sh "$IMPL_FILTER" "true"
     echo "  ✓ All images rebuilt"
@@ -386,7 +364,7 @@ run_test() {
     (
         flock -x 200
         cat >> "$RERUN_DIR/results.yaml.tmp" <<RESULT
-  - name: $name
+  - name: "$name"
     status: $status
     exitCode: $exit_code
     duration: ${duration}s
@@ -572,9 +550,9 @@ snapshot_dir_size=$(du -sh "$test_pass" 2>/dev/null | cut -f1 || echo "unknown")
 echo "  → Snapshot directory size: $snapshot_dir_size"
 echo "  → Compressing..."
 
-tar -czf "${test_pass}.tar.gz" "$test_pass"
+zip -r -q "${test_pass}.zip" "$test_pass"
 
-snapshot_size=$(du -h "${test_pass}.tar.gz" | cut -f1)
+snapshot_size=$(du -h "${test_pass}.zip" | cut -f1)
 echo "  ✓ Archive created: $snapshot_size"
 
 echo ""
@@ -582,10 +560,10 @@ echo "╲ ✓ Snapshot created successfully"
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 echo "→ Snapshot: $test_pass"
 echo "→ Location: $SNAPSHOT_DIR"
-echo "→ Archive: $CACHE_DIR/test-runs/${test_pass}.tar.gz ($snapshot_size)"
+echo "→ Archive: $CACHE_DIR/test-runs/${test_pass}.zip ($snapshot_size)"
 echo ""
 echo "→ To extract and re-run:"
-echo "    tar -xzf $CACHE_DIR/test-runs/${test_pass}.tar.gz"
+echo "    unzip $CACHE_DIR/test-runs/${test_pass}.zip"
 echo "    cd $test_pass"
 echo "    ./re-run.sh"
 
