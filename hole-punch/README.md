@@ -37,23 +37,23 @@ SUBNET_ID_2=$(( (16#${TEST_KEY:2:2} + 32) % 256 ))
 - LAN-Listener: `10.196.222.128/30`
 
 ```
-┌─────────────────── WAN: 10.{S1}.{S2}.64/29 ────────────────────┐
-│                                                                  │
-│   ┌─────────────┐      ┌──────────┐      ┌─────────────┐      │
-│   │ dialer-rtr  │      │  relay   │      │ listener-rtr│      │
-│   │ .66         │◄────►│  .65     │◄────►│ .67         │      │
-│   └──────┬──────┘      └────┬─────┘      └──────┬──────┘      │
-│          │ NAT              │                    │ NAT          │
-└──────────┼──────────────────┼────────────────────┼─────────────┘
+┌─────────────────── WAN: 10.{S1}.{S2}.64/29 ─────────────────┐
+│                                                             │
+│   ┌─────────────┐      ┌──────────┐      ┌──────────────┐   │
+│   │ dialer-rtr  │      │  relay   │      │ listener-rtr │   │
+│   │ .66         │◄────►│  .65     │◄────►│ .67          │   │
+│   └──────┬──────┘      └────┬─────┘      └───────┬──────┘   │
+│          │ NAT              │                    │ NAT      │
+└──────────┼──────────────────┼────────────────────┼──────────┘
            │                  │                    │
            │ LAN-Dialer       │ redis-network      │ LAN-Listener
            │ 10.{S1}.{S2}.92/30                    │ 10.{S1}.{S2}.128/30
            │ GW: .93          │                    │ GW: .129
            │                  │                    │
-    ┌──────▼──────┐     ┌────▼────┐       ┌───────▼──────┐
+    ┌──────▼──────┐      ┌────▼────┐       ┌───────▼──────┐
     │   dialer    ├─────►│  Redis  │◄──────┤   listener   │
-    │   .94       │     │ (Global)│       │   .130       │
-    └─────────────┘     └─────────┘       └──────────────┘
+    │   .94       │      │ (Global)│       │   .130       │
+    └─────────────┘      └─────────┘       └──────────────┘
 ```
 
 **Components:**
@@ -261,3 +261,9 @@ The snapshot includes:
 - All scripts and tooling
 
 The `--force-rebuild` flag forces rebuilding of all Docker images from the captured snapshots, useful when you need to ensure a clean build environment or verify reproducibility from scratch.
+
+## Current Status
+
+<!-- TEST_RESULTS_START -->
+<!-- TEST_RESULTS_END -->
+

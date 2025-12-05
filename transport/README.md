@@ -253,3 +253,9 @@ tests:
    ```bash
    ./run_tests.sh --test-select "go-v0.35" --force-rebuild
    ```
+
+## Current Status
+
+<!-- TEST_RESULTS_START -->
+<!-- TEST_RESULTS_END -->
+
