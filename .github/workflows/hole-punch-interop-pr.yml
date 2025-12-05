@@ -1,0 +1,58 @@
+name: Hole Punch Interoperability Tests (PR)
+
+on:
+  pull_request:
+    paths:
+      - 'hole-punch/**'
+      - '.github/actions/detect-changed-impls/**'
+      - '.github/actions/run-bash-hole-punch-test/**'
+      - '.github/workflows/hole-punch-interop-pr.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  detect-changes:
+    runs-on: [self-hosted, linux, x64, ephemeral]
+    outputs:
+      changed-impls: ${{ steps.detect.outputs.changed-impls }}
+      changed-relays: ${{ steps.detect.outputs.changed-relays }}
+      changed-routers: ${{ steps.detect.outputs.changed-routers }}
+      has-changes: ${{ steps.detect.outputs.has-changes }}
+      impls-yaml-changed: ${{ steps.detect.outputs.impls-yaml-changed }}
+      impls-folder-changed: ${{ steps.detect.outputs.impls-folder-changed }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed implementations/relays/routers
+        id: detect
+        uses: ./.github/actions/detect-changed-impls
+        with:
+          test-type: hole-punch
+
+  run-tests:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.has-changes == 'true'
+    runs-on: [self-hosted, linux, x64, ephemeral]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run hole punch interop tests for changed implementations
+        uses: ./.github/actions/run-bash-hole-punch-test
+        with:
+          test-select: '${{ needs.detect-changes.outputs.changed-impls }}'
+          test-ignore: '!${{ needs.detect-changes.outputs.changed-impls }}'
+          relay-select: '${{ needs.detect-changes.outputs.changed-relays }}'
+          relay-ignore: '!${{ needs.detect-changes.outputs.changed-relays }}'
+          router-select: '${{ needs.detect-changes.outputs.changed-routers }}'
+          router-ignore: '!${{ needs.detect-changes.outputs.changed-routers }}'
+          cache-dir: /srv/cache
+          snapshot: true
+          force-matrix-rebuild: ${{ needs.detect-changes.outputs.impls-yaml-changed }}
+          force-image-rebuild: ${{ needs.detect-changes.outputs.impls-folder-changed }}

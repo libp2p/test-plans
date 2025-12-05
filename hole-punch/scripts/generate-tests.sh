@@ -9,7 +9,12 @@ set -euo pipefail
 CACHE_DIR="${CACHE_DIR:-/srv/cache}"
 CLI_TEST_SELECT="${1:-}"
 CLI_TEST_IGNORE="${2:-}"
-DEBUG="${3:-false}"  # Optional: debug mode flag
+CLI_RELAY_SELECT="${3:-}"
+CLI_RELAY_IGNORE="${4:-}"
+CLI_ROUTER_SELECT="${5:-}"
+CLI_ROUTER_IGNORE="${6:-}"
+DEBUG="${7:-false}"  # Optional: debug mode flag
+FORCE_MATRIX_REBUILD="${8:-false}"  # Optional: force matrix rebuild
 OUTPUT_DIR="${TEST_PASS_DIR:-.}"  # Use TEST_PASS_DIR if set, otherwise current directory
 
 # Standalone transports (don't require muxer/secureChannel)
@@ -33,6 +38,10 @@ load_aliases
 # Use test select and ignore values from CLI arguments
 TEST_SELECT="$CLI_TEST_SELECT"
 TEST_IGNORE="$CLI_TEST_IGNORE"
+RELAY_SELECT="$CLI_RELAY_SELECT"
+RELAY_IGNORE="$CLI_RELAY_IGNORE"
+ROUTER_SELECT="$CLI_ROUTER_SELECT"
+ROUTER_IGNORE="$CLI_ROUTER_IGNORE"
 
 echo ""
 echo "╲ Test Matrix Generation"
@@ -70,12 +79,36 @@ if [ -n "$TEST_IGNORE" ]; then
     fi
 fi
 
-# Compute cache key from impls.yaml + select + ignore + debug
-cache_key=$(compute_cache_key "$TEST_SELECT" "$TEST_IGNORE" "$DEBUG")
+# Display relay selection
+if [ -n "$RELAY_SELECT" ]; then
+    echo "→ Relay select: $RELAY_SELECT"
+else
+    echo "→ No relay-select specified (will include all relays)"
+fi
+
+# Display relay ignore
+if [ -n "$RELAY_IGNORE" ]; then
+    echo "→ Relay ignore: $RELAY_IGNORE"
+fi
+
+# Display router selection
+if [ -n "$ROUTER_SELECT" ]; then
+    echo "→ Router select: $ROUTER_SELECT"
+else
+    echo "→ No router-select specified (will include all routers)"
+fi
+
+# Display router ignore
+if [ -n "$ROUTER_IGNORE" ]; then
+    echo "→ Router ignore: $ROUTER_IGNORE"
+fi
+
+# Compute cache key from impls.yaml + all filters + debug
+cache_key=$(compute_cache_key "$TEST_SELECT" "$TEST_IGNORE" "$RELAY_SELECT" "$RELAY_IGNORE" "$ROUTER_SELECT" "$ROUTER_IGNORE" "$DEBUG")
 echo "→ Computed cache key: ${cache_key:0:8}"
 
-# Check cache
-if check_and_load_cache "$cache_key" "$CACHE_DIR" "$OUTPUT_DIR"; then
+# Check cache (with optional force rebuild)
+if check_and_load_cache "$cache_key" "$CACHE_DIR" "$OUTPUT_DIR" "$FORCE_MATRIX_REBUILD"; then
     exit 0
 fi
 
@@ -146,16 +179,142 @@ test_num=0
 # Always declare arrays (even if empty) to avoid unbound variable errors
 declare -a SELECT_PATTERNS=()
 declare -a IGNORE_PATTERNS=()
+declare -a RELAY_SELECT_PATTERNS=()
+declare -a RELAY_IGNORE_PATTERNS=()
+declare -a ROUTER_SELECT_PATTERNS=()
+declare -a ROUTER_IGNORE_PATTERNS=()
 
 if [ -n "$TEST_SELECT" ]; then
     IFS='|' read -ra SELECT_PATTERNS <<< "$TEST_SELECT"
-    echo "  ✓ Loaded ${#SELECT_PATTERNS[@]} select patterns"
+    echo "  ✓ Loaded ${#SELECT_PATTERNS[@]} test select patterns"
 fi
 
 if [ -n "$TEST_IGNORE" ]; then
     IFS='|' read -ra IGNORE_PATTERNS <<< "$TEST_IGNORE"
-    echo "  ✓ Loaded ${#IGNORE_PATTERNS[@]} ignore patterns"
+    echo "  ✓ Loaded ${#IGNORE_PATTERNS[@]} test ignore patterns"
 fi
+
+if [ -n "$RELAY_SELECT" ]; then
+    IFS='|' read -ra RELAY_SELECT_PATTERNS <<< "$RELAY_SELECT"
+    echo "  ✓ Loaded ${#RELAY_SELECT_PATTERNS[@]} relay select patterns"
+fi
+
+if [ -n "$RELAY_IGNORE" ]; then
+    IFS='|' read -ra RELAY_IGNORE_PATTERNS <<< "$RELAY_IGNORE"
+    echo "  ✓ Loaded ${#RELAY_IGNORE_PATTERNS[@]} relay ignore patterns"
+fi
+
+if [ -n "$ROUTER_SELECT" ]; then
+    IFS='|' read -ra ROUTER_SELECT_PATTERNS <<< "$ROUTER_SELECT"
+    echo "  ✓ Loaded ${#ROUTER_SELECT_PATTERNS[@]} router select patterns"
+fi
+
+if [ -n "$ROUTER_IGNORE" ]; then
+    IFS='|' read -ra ROUTER_IGNORE_PATTERNS <<< "$ROUTER_IGNORE"
+    echo "  ✓ Loaded ${#ROUTER_IGNORE_PATTERNS[@]} router ignore patterns"
+fi
+
+# Relay filtering functions
+relay_matches_select() {
+    local relay_id="$1"
+
+    # If no relay select patterns, include all relays
+    [ ${#RELAY_SELECT_PATTERNS[@]} -eq 0 ] && return 0
+
+    # Check if relay matches any select pattern
+    for pattern in "${RELAY_SELECT_PATTERNS[@]}"; do
+        # Support inverted patterns with '!'
+        if [[ "$pattern" == !* ]]; then
+            inverted_pattern="${pattern:1}"  # Remove '!' prefix
+            if [[ "$relay_id" == *"$inverted_pattern"* ]]; then
+                return 1  # Exclude this relay
+            fi
+        else
+            # Normal pattern - include if matches
+            if [[ "$relay_id" == *"$pattern"* ]]; then
+                return 0  # Include this relay
+            fi
+        fi
+    done
+
+    return 1  # No match, exclude
+}
+
+relay_should_ignore() {
+    local relay_id="$1"
+
+    # If no relay ignore patterns, don't ignore
+    [ ${#RELAY_IGNORE_PATTERNS[@]} -eq 0 ] && return 1
+
+    # Check if relay matches any ignore pattern
+    for pattern in "${RELAY_IGNORE_PATTERNS[@]}"; do
+        # Support inverted patterns with '!'
+        if [[ "$pattern" == !* ]]; then
+            inverted_pattern="${pattern:1}"  # Remove '!' prefix
+            if [[ "$relay_id" != *"$inverted_pattern"* ]]; then
+                return 0  # Ignore (doesn't match inverted pattern)
+            fi
+        else
+            # Normal pattern - ignore if matches
+            if [[ "$relay_id" == *"$pattern"* ]]; then
+                return 0  # Ignore this relay
+            fi
+        fi
+    done
+
+    return 1  # No ignore match
+}
+
+# Router filtering functions
+router_matches_select() {
+    local router_id="$1"
+
+    # If no router select patterns, include all routers
+    [ ${#ROUTER_SELECT_PATTERNS[@]} -eq 0 ] && return 0
+
+    # Check if router matches any select pattern
+    for pattern in "${ROUTER_SELECT_PATTERNS[@]}"; do
+        # Support inverted patterns with '!'
+        if [[ "$pattern" == !* ]]; then
+            inverted_pattern="${pattern:1}"  # Remove '!' prefix
+            if [[ "$router_id" == *"$inverted_pattern"* ]]; then
+                return 1  # Exclude this router
+            fi
+        else
+            # Normal pattern - include if matches
+            if [[ "$router_id" == *"$pattern"* ]]; then
+                return 0  # Include this router
+            fi
+        fi
+    done
+
+    return 1  # No match, exclude
+}
+
+router_should_ignore() {
+    local router_id="$1"
+
+    # If no router ignore patterns, don't ignore
+    [ ${#ROUTER_IGNORE_PATTERNS[@]} -eq 0 ] && return 1
+
+    # Check if router matches any ignore pattern
+    for pattern in "${ROUTER_IGNORE_PATTERNS[@]}"; do
+        # Support inverted patterns with '!'
+        if [[ "$pattern" == !* ]]; then
+            inverted_pattern="${pattern:1}"  # Remove '!' prefix
+            if [[ "$router_id" != *"$inverted_pattern"* ]]; then
+                return 0  # Ignore (doesn't match inverted pattern)
+            fi
+        else
+            # Normal pattern - ignore if matches
+            if [[ "$router_id" == *"$pattern"* ]]; then
+                return 0  # Ignore this router
+            fi
+        fi
+    done
+
+    return 1  # No ignore match
+}
 
 # Check if a transport can be used with an implementation as listener
 # Returns 0 (true) if transport can be used as listener, 1 (false) if dialOnly
@@ -182,8 +341,26 @@ echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔�
 
 # Iterate through all relay, router, and implementation combinations
 for relay_id in "${relay_ids[@]}"; do
+    # Skip if relay doesn't match select filter
+    relay_matches_select "$relay_id" || continue
+    # Track if relay should be ignored (don't skip, just flag for later)
+    relay_is_ignored=false
+    relay_should_ignore "$relay_id" && relay_is_ignored=true
+
     for dialer_router_id in "${router_ids[@]}"; do
+        # Skip if dialer router doesn't match select filter
+        router_matches_select "$dialer_router_id" || continue
+        # Track if dialer router should be ignored
+        dialer_router_is_ignored=false
+        router_should_ignore "$dialer_router_id" && dialer_router_is_ignored=true
+
         for listener_router_id in "${router_ids[@]}"; do
+            # Skip if listener router doesn't match select filter
+            router_matches_select "$listener_router_id" || continue
+            # Track if listener router should be ignored
+            listener_router_is_ignored=false
+            router_should_ignore "$listener_router_id" && listener_router_is_ignored=true
+
             for dialer_id in "${impl_ids[@]}"; do
                 # Skip if dialer doesn't match select filter
                 impl_matches_select "$dialer_id" || continue
@@ -215,11 +392,15 @@ for relay_id in "${relay_ids[@]}"; do
 
                         if is_standalone_transport "$transport"; then
                             # Standalone transport (no secure/muxer needed)
-                            test_name="$dialer_id x $listener_id ($transport) [$dialer_router_id] - [$relay_id] - [$listener_router_id]"
+                            test_name="$dialer_id x $listener_id ($transport) [dr: $dialer_router_id, rly: $relay_id, lr: $listener_router_id]"
 
-                            # Check select/ignore
+                            # Check select/ignore (including component-level ignores)
                             if matches_select "$test_name"; then
-                                if should_ignore "$test_name"; then
+                                # Check if any component is ignored or if test name should be ignored
+                                if [ "$relay_is_ignored" = true ] || \
+                                   [ "$dialer_router_is_ignored" = true ] || \
+                                   [ "$listener_router_is_ignored" = true ] || \
+                                   should_ignore "$test_name"; then
                                     ignored_tests+=("$test_name|$dialer_id|$listener_id|$transport|null|null|$relay_id|$dialer_router_id|$listener_router_id")
                                 else
                                     test_num=$((test_num + 1))
@@ -238,11 +419,15 @@ for relay_id in "${relay_ids[@]}"; do
                             # Generate all valid combinations
                             for secure in $common_secure; do
                                 for muxer in $common_muxers; do
-                                    test_name="$dialer_id x $listener_id ($transport, $secure, $muxer) [$dialer_router_id] - [$relay_id] - [$listener_router_id]"
+                                    test_name="$dialer_id x $listener_id ($transport, $secure, $muxer) [dr: $dialer_router_id, rly: $relay_id, lr: $listener_router_id]"
 
-                                    # Check select/ignore
+                                    # Check select/ignore (including component-level ignores)
                                     if matches_select "$test_name"; then
-                                        if should_ignore "$test_name"; then
+                                        # Check if any component is ignored or if test name should be ignored
+                                        if [ "$relay_is_ignored" = true ] || \
+                                           [ "$dialer_router_is_ignored" = true ] || \
+                                           [ "$listener_router_is_ignored" = true ] || \
+                                           should_ignore "$test_name"; then
                                             ignored_tests+=("$test_name|$dialer_id|$listener_id|$transport|$secure|$muxer|$relay_id|$dialer_router_id|$listener_router_id")
                                         else
                                             test_num=$((test_num + 1))
@@ -269,6 +454,10 @@ metadata:
   generatedAt: $(date -u +%Y-%m-%dT%H:%M:%SZ)
   select: $(echo "$TEST_SELECT" | sed 's/|/, /g')
   ignore: $(echo "$TEST_IGNORE" | sed 's/|/, /g')
+  relaySelect: $(echo "$RELAY_SELECT" | sed 's/|/, /g')
+  relayIgnore: $(echo "$RELAY_IGNORE" | sed 's/|/, /g')
+  routerSelect: $(echo "$ROUTER_SELECT" | sed 's/|/, /g')
+  routerIgnore: $(echo "$ROUTER_IGNORE" | sed 's/|/, /g')
   totalTests: ${#tests[@]}
   ignoredTests: ${#ignored_tests[@]}
   debug: $DEBUG
@@ -279,11 +468,16 @@ EOF
 for test in "${tests[@]}"; do
     IFS='|' read -r name dialer listener transport secure muxer relay_id dialer_router_id listener_router_id <<< "$test"
 
+    # Get commits, treating null/empty as local
     dialer_commit=$(yq eval ".implementations[] | select(.id == \"$dialer\") | .source.commit" impls.yaml 2>/dev/null || echo "local")
     listener_commit=$(yq eval ".implementations[] | select(.id == \"$listener\") | .source.commit" impls.yaml 2>/dev/null || echo "local")
 
+    # Normalize null values to "local"
+    [ "$dialer_commit" = "null" ] && dialer_commit="local"
+    [ "$listener_commit" = "null" ] && listener_commit="local"
+
     cat >> "$OUTPUT_DIR/test-matrix.yaml" <<EOF
-  - name: $name
+  - name: "$name"
     dialer: $dialer
     listener: $listener
     transport: $transport
@@ -312,11 +506,16 @@ EOF
 for test in "${ignored_tests[@]}"; do
     IFS='|' read -r name dialer listener transport secure muxer relay_id dialer_router_id listener_router_id <<< "$test"
 
+    # Get commits, treating null/empty as local
     dialer_commit=$(yq eval ".implementations[] | select(.id == \"$dialer\") | .source.commit" impls.yaml 2>/dev/null || echo "local")
     listener_commit=$(yq eval ".implementations[] | select(.id == \"$listener\") | .source.commit" impls.yaml 2>/dev/null || echo "local")
 
+    # Normalize null values to "local"
+    [ "$dialer_commit" = "null" ] && dialer_commit="local"
+    [ "$listener_commit" = "null" ] && listener_commit="local"
+
     cat >> "$OUTPUT_DIR/test-matrix.yaml" <<EOF
-  - name: $name
+  - name: "$name"
     dialer: $dialer
     listener: $listener
     transport: $transport

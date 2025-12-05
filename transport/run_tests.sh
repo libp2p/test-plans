@@ -14,7 +14,8 @@ LIST_TESTS=false
 CREATE_SNAPSHOT=false
 AUTO_YES=false
 DEBUG=false
-FORCE_REBUILD=false
+FORCE_MATRIX_REBUILD=false
+FORCE_IMAGE_REBUILD=false
 
 # Show help
 show_help() {
@@ -24,28 +25,29 @@ Transport Interoperability Test Runner
 Usage: $0 [options]
 
 Options:
-  --test-select VALUE    Select tests (pipe-separated substrings)
-  --test-ignore VALUE    Ignore tests (pipe-separated substrings)
-  --workers VALUE        Number of parallel workers (default: $(nproc 2>/dev/null || echo 4))
-  --cache-dir VALUE      Cache directory (default: /srv/cache)
-  --snapshot             Create test pass snapshot after completion
-  --debug                Enable debug mode (sets debug=true in test containers)
-  --force-rebuild        Force the rebuilding of all docker images in the test pass
-  -y, --yes              Skip confirmation prompt and run tests immediately
-  --check-deps           Only check dependencies and exit
-  --list-impls           List all implementation IDs and exit
-  --list-tests           List all selected tests and exit
-  --help                 Show this help message
+  --test-select VALUE       Select tests (pipe-separated substrings)
+  --test-ignore VALUE       Ignore tests (pipe-separated substrings)
+  --workers VALUE           Number of parallel workers (default: $(nproc 2>/dev/null || echo 4))
+  --cache-dir VALUE         Cache directory (default: /srv/cache)
+  --snapshot                Create test pass snapshot after completion
+  --debug                   Enable debug mode (sets DEBUG=true in test containers)
+  --force-matrix-rebuild    Force regeneration of test matrix (bypass cache)
+  --force-image-rebuild     Force rebuilding of all docker images (bypass cache)
+  -y, --yes                 Skip confirmation prompt and run tests immediately
+  --check-deps              Only check dependencies and exit
+  --list-impls              List all implementation IDs and exit
+  --list-tests              List all selected tests and exit
+  --help                    Show this help message
 
 Examples:
   $0 --cache-dir /srv/cache --workers 4
   $0 --test-select "rust-v0.53" --workers 8
   $0 --test-ignore "webrtc"
-  $0 --test-select "rust-v0.56"
-  $0 --snapshot --workers 8
+  $0 --test-select "rust-v0.56" --force-matrix-rebuild
+  $0 --snapshot --force-image-rebuild
 
 Dependencies:
-  bash 4.0+, docker 20.10+, yq 4.0+, wget, unzip
+  bash 4.0+, docker 20.10+, yq 4.0+, wget, zip, unzip
   Run with --check-deps to verify installation.
 EOF
 }
@@ -59,7 +61,8 @@ while [[ $# -gt 0 ]]; do
         --cache-dir) CACHE_DIR="$2"; shift 2 ;;
         --snapshot) CREATE_SNAPSHOT=true; shift ;;
         --debug) DEBUG=true; shift ;;
-        --force-rebuild) FORCE_REBUILD=true; shift ;;
+        --force-matrix-rebuild) FORCE_MATRIX_REBUILD=true; shift ;;
+        --force-image-rebuild) FORCE_IMAGE_REBUILD=true; shift ;;
         -y|--yes) AUTO_YES=true; shift ;;
         --check-deps) CHECK_DEPS_ONLY=true; shift ;;
         --list-impls) LIST_IMPLS=true; shift ;;
@@ -107,7 +110,7 @@ if [ "$LIST_TESTS" = true ]; then
     echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
     # Generate test matrix
-    if ! bash scripts/generate-tests.sh "$TEST_SELECT" "$TEST_IGNORE" "$DEBUG" > /dev/null 2>&1; then
+    if ! bash scripts/generate-tests.sh "$TEST_SELECT" "$TEST_IGNORE" "$DEBUG" "$FORCE_MATRIX_REBUILD" > /dev/null 2>&1; then
         echo "Error: Failed to generate test matrix"
         exit 1
     fi
@@ -157,11 +160,12 @@ echo "→ Test Pass: $TEST_PASS_NAME"
 echo "→ Cache Dir: $CACHE_DIR"
 echo "→ Test Pass Dir: $TEST_PASS_DIR"
 echo "→ Workers: $WORKER_COUNT"
-[ -n "$TEST_SELECT" ] && echo "→ Select: $TEST_SELECT"
-[ -n "$TEST_IGNORE" ] && echo "→ Ignore: $TEST_IGNORE"
+[ -n "$TEST_SELECT" ] && echo "→ Test Select: $TEST_SELECT"
+[ -n "$TEST_IGNORE" ] && echo "→ Test Ignore: $TEST_IGNORE"
 echo "→ Create Snapshot: $CREATE_SNAPSHOT"
 echo "→ Debug: $DEBUG"
-echo "→ Force Rebuild: $FORCE_REBUILD"
+echo "→ Force Matrix Rebuild: $FORCE_MATRIX_REBUILD"
+echo "→ Force Image Rebuild: $FORCE_IMAGE_REBUILD"
 echo ""
 
 # Create test pass folder structure
@@ -192,8 +196,8 @@ fi
 echo ""
 echo "╲ Generating test matrix..."
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-echo "→ bash scripts/generate-tests.sh \"$TEST_SELECT\" \"$TEST_IGNORE\" \"$DEBUG\""
-bash scripts/generate-tests.sh "$TEST_SELECT" "$TEST_IGNORE" "$DEBUG"
+echo "→ bash scripts/generate-tests.sh \"$TEST_SELECT\" \"$TEST_IGNORE\" \"$DEBUG\" \"$FORCE_MATRIX_REBUILD\""
+bash scripts/generate-tests.sh "$TEST_SELECT" "$TEST_IGNORE" "$DEBUG" "$FORCE_MATRIX_REBUILD"
 
 # 3. Extract unique implementations from test matrix and build only those
 echo ""
@@ -235,8 +239,8 @@ else
 
     # Build each required implementation using pipe-separated list
     IMPL_FILTER=$(cat "$REQUIRED_IMPLS_WITH_DEPS" | paste -sd'|' -)
-    echo "→ bash scripts/build-images.sh \"$IMPL_FILTER\" \"$FORCE_REBUILD\""
-    bash scripts/build-images.sh "$IMPL_FILTER" "$FORCE_REBUILD"
+    echo "→ bash scripts/build-images.sh \"$IMPL_FILTER\" \"$FORCE_IMAGE_REBUILD\""
+    bash scripts/build-images.sh "$IMPL_FILTER" "$FORCE_IMAGE_REBUILD"
 
     rm -f "$REQUIRED_IMPLS" "$REQUIRED_IMPLS_WITH_DEPS"
 fi

@@ -1,0 +1,52 @@
+name: Transport Interoperability Tests (PR)
+
+on:
+  pull_request:
+    paths:
+      - 'transport/**'
+      - '.github/actions/detect-changed-impls/**'
+      - '.github/actions/run-bash-transport-test/**'
+      - '.github/workflows/transport-interop-pr.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  detect-changes:
+    runs-on: [self-hosted, linux, x64, ephemeral]
+    outputs:
+      changed-impls: ${{ steps.detect.outputs.changed-impls }}
+      has-changes: ${{ steps.detect.outputs.has-changes }}
+      impls-yaml-changed: ${{ steps.detect.outputs.impls-yaml-changed }}
+      impls-folder-changed: ${{ steps.detect.outputs.impls-folder-changed }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed implementations
+        id: detect
+        uses: ./.github/actions/detect-changed-impls
+        with:
+          test-type: transport
+
+  run-tests:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.has-changes == 'true'
+    runs-on: [self-hosted, linux, x64, ephemeral]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run transport interop tests for changed implementations
+        uses: ./.github/actions/run-bash-transport-test
+        with:
+          test-select: '${{ needs.detect-changes.outputs.changed-impls }}'
+          test-ignore: '!${{ needs.detect-changes.outputs.changed-impls }}'
+          cache-dir: /srv/cache
+          snapshot: true
+          force-matrix-rebuild: ${{ needs.detect-changes.outputs.impls-yaml-changed }}
+          force-image-rebuild: ${{ needs.detect-changes.outputs.impls-folder-changed }}

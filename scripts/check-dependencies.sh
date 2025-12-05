@@ -116,6 +116,14 @@ else
     has_error=true
 fi
 
+# Check zip
+if command -v zip &> /dev/null; then
+    echo "✓ zip is installed"
+else
+    echo "✗ zip is not installed"
+    has_error=true
+fi
+
 # Check unzip
 if command -v unzip &> /dev/null; then
     echo "✓ unzip is installed"
