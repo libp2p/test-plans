@@ -165,23 +165,8 @@ jobs:
 
           echo "→ Found transport results: $RESULTS_MD"
 
-          # Check if README has markers
-          if ! grep -q "<!-- TEST_RESULTS_START -->" transport/README.md; then
-            echo "→ Adding test results section to transport/README.md"
-            cat >> transport/README.md <<'EOF'
-
-## Latest Test Results
-
-<!-- TEST_RESULTS_START -->
-<!-- TEST_RESULTS_END -->
-EOF
-          fi
-
-          # Extract content between markers and replace with new results
-          # Using perl for in-place editing with multiline support
-          perl -i -0pe 's/<!-- TEST_RESULTS_START -->.*?<!-- TEST_RESULTS_END -->/<!-- TEST_RESULTS_START -->\n'"$(cat "$RESULTS_MD" | sed 's/\\/\\\\/g' | sed 's/\//\\\//g' | sed ':a;N;$!ba;s/\n/\\n/g')"'\n<!-- TEST_RESULTS_END -->/s' transport/README.md
-
-          echo "→ Updated transport/README.md"
+          # Update README using script
+          bash scripts/update-readme-results.sh transport/README.md "$RESULTS_MD"
 
       - name: Update hole-punch README
         if: needs.run-hole-punch-full.result == 'success'
@@ -199,22 +184,8 @@ EOF
 
           echo "→ Found hole-punch results: $RESULTS_MD"
 
-          # Check if README has markers
-          if ! grep -q "<!-- TEST_RESULTS_START -->" hole-punch/README.md; then
-            echo "→ Adding test results section to hole-punch/README.md"
-            cat >> hole-punch/README.md <<'EOF'
-
-## Latest Test Results
-
-<!-- TEST_RESULTS_START -->
-<!-- TEST_RESULTS_END -->
-EOF
-          fi
-
-          # Extract content between markers and replace with new results
-          perl -i -0pe 's/<!-- TEST_RESULTS_START -->.*?<!-- TEST_RESULTS_END -->/<!-- TEST_RESULTS_START -->\n'"$(cat "$RESULTS_MD" | sed 's/\\/\\\\/g' | sed 's/\//\\\//g' | sed ':a;N;$!ba;s/\n/\\n/g')"'\n<!-- TEST_RESULTS_END -->/s' hole-punch/README.md
-
-          echo "→ Updated hole-punch/README.md"
+          # Update README using script
+          bash scripts/update-readme-results.sh hole-punch/README.md "$RESULTS_MD"
 
       - name: Commit and push changes
         shell: bash
@@ -238,11 +209,9 @@ EOF
             exit 0
           fi
 
-          git commit -m "chore: update test results [skip ci]
-
-Updated test results from daily full interoperability test run.
-
-Co-authored-by: github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
+          git commit -m "chore: update test results [skip ci]" \
+                     -m "Updated test results from daily full interoperability test run." \
+                     -m "Co-authored-by: github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
 
           git push
 
