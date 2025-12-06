@@ -43,5 +43,13 @@
     "transportStacks": [
       "tcp"
     ]
+  },
+  {
+    "id": "v1.0",
+    "implementation": "dotnet-libp2p",
+    "transportStacks": [
+      "tcp",
+      "quic-v1"
+    ]
   }
 ]
