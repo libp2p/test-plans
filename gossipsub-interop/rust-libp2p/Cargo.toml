@@ -4,8 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-libp2p = { version = "0.55.0", features = [
-    "gossipsub",
+libp2p = { version = "0.56.0", features = [
     "dns",
     "tcp",
     "tokio",
@@ -34,3 +33,8 @@ byteorder = "1.4.3"
 hostname = "0.3.1"
 ed25519-dalek = "1.0.1"
 thiserror = "2.0.12"
+
+[dependencies.libp2p-gossipsub]
+git = "https://github.com/jxs/rust-libp2p/"
+branch = "gossipsub-partial-messages"
+features = ["partial_messages"]
