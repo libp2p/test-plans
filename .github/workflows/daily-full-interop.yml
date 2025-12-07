@@ -265,7 +265,7 @@ jobs:
 
   run-transport-full:
     needs: resolve-transport-parameters
-    if: needs.resolve-transport-parameters.outputs.should-run-tests == 'true'
+    if: github.event_name == 'workflow_dispatch' || needs.resolve-transport-parameters.outputs.should-run-tests == 'true'
     runs-on: [self-hosted, linux, x64, ephemeral]
     continue-on-error: true
     steps:
@@ -285,7 +285,7 @@ jobs:
 
   run-hole-punch-full:
     needs: resolve-hole-punch-parameters
-    if: needs.resolve-hole-punch-parameters.outputs.should-run-tests == 'true'
+    if: github.event_name == 'workflow_dispatch' || needs.resolve-hole-punch-parameters.outputs.should-run-tests == 'true'
     runs-on: [self-hosted, linux, x64, ephemeral]
     continue-on-error: true
     steps:
