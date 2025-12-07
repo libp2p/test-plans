@@ -120,8 +120,6 @@ jobs:
 
   resolve-transport-parameters:
     runs-on: [self-hosted, linux, x64, ephemeral]
-    needs: check-transport-changes
-    if: always() && (needs.check-transport-changes.result == 'success' || needs.check-transport-changes.result == 'skipped')
     outputs:
       test-select: ${{ steps.resolve.outputs.test-select }}
       test-ignore: ${{ steps.resolve.outputs.test-ignore }}
@@ -130,6 +128,11 @@ jobs:
       debug: ${{ steps.resolve.outputs.debug }}
       should-run-tests: ${{ steps.resolve.outputs.should-run-tests }}
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Resolve transport parameters
         id: resolve
         shell: bash
@@ -143,25 +146,37 @@ jobs:
             echo "debug=${{ github.event.inputs.transport-debug }}" >> $GITHUB_OUTPUT
             echo "should-run-tests=true" >> $GITHUB_OUTPUT
             echo "→ Manual trigger: using workflow inputs for transport"
-          elif [ "${{ needs.check-transport-changes.result }}" = "success" ]; then
-            # Automatic trigger - use change detection outputs
-            echo "test-select=" >> $GITHUB_OUTPUT
-            echo "test-ignore=~failing" >> $GITHUB_OUTPUT
-            echo "force-matrix-rebuild=${{ needs.check-transport-changes.outputs.impls-yaml-changed }}" >> $GITHUB_OUTPUT
-            echo "force-image-rebuild=false" >> $GITHUB_OUTPUT
-            echo "debug=false" >> $GITHUB_OUTPUT
-            echo "should-run-tests=${{ needs.check-transport-changes.outputs.has-changes }}" >> $GITHUB_OUTPUT
-            echo "→ Automatic trigger: using change detection for transport"
           else
-            # Check job was skipped or failed - don't run tests
+            # Automatic trigger - check for changes in last 24 hours
+            CHANGES=$(git log --oneline --since="24 hours ago" -- "transport/**" | wc -l)
+            IMPLS_CHANGES=$(git log --oneline --since="24 hours ago" -- "transport/impls.yaml" | wc -l)
+
             echo "test-select=" >> $GITHUB_OUTPUT
             echo "test-ignore=~failing" >> $GITHUB_OUTPUT
-            echo "force-matrix-rebuild=false" >> $GITHUB_OUTPUT
             echo "force-image-rebuild=false" >> $GITHUB_OUTPUT
             echo "debug=false" >> $GITHUB_OUTPUT
-            echo "should-run-tests=false" >> $GITHUB_OUTPUT
-            echo "→ Check job skipped/failed: not running tests"
+
+            if [ "$CHANGES" -gt 0 ]; then
+              echo "should-run-tests=true" >> $GITHUB_OUTPUT
+              if [ "$IMPLS_CHANGES" -gt 0 ]; then
+                echo "force-matrix-rebuild=true" >> $GITHUB_OUTPUT
+                echo "→ Automatic trigger: transport changes detected, impls.yaml changed"
+              else
+                echo "force-matrix-rebuild=false" >> $GITHUB_OUTPUT
+                echo "→ Automatic trigger: transport changes detected"
+              fi
+            else
+              echo "should-run-tests=false" >> $GITHUB_OUTPUT
+              echo "force-matrix-rebuild=false" >> $GITHUB_OUTPUT
+              echo "→ Automatic trigger: no transport changes in last 24h"
+            fi
           fi
+
+      - name: Debug outputs
+        shell: bash
+        run: |
+          echo "DEBUG: should-run-tests output = '${{ steps.resolve.outputs.should-run-tests }}'"
+          echo "DEBUG: github.event_name = '${{ github.event_name }}'"
 
   check-hole-punch-changes:
     if: github.event_name != 'workflow_dispatch'
@@ -204,8 +219,6 @@ jobs:
 
   resolve-hole-punch-parameters:
     runs-on: [self-hosted, linux, x64, ephemeral]
-    needs: check-hole-punch-changes
-    if: always() && (needs.check-hole-punch-changes.result == 'success' || needs.check-hole-punch-changes.result == 'skipped')
     outputs:
       test-select: ${{ steps.resolve.outputs.test-select }}
       test-ignore: ${{ steps.resolve.outputs.test-ignore }}
@@ -218,6 +231,11 @@ jobs:
       debug: ${{ steps.resolve.outputs.debug }}
       should-run-tests: ${{ steps.resolve.outputs.should-run-tests }}
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Resolve hole-punch parameters
         id: resolve
         shell: bash
@@ -235,37 +253,39 @@ jobs:
             echo "debug=${{ github.event.inputs.hole-punch-debug }}" >> $GITHUB_OUTPUT
             echo "should-run-tests=true" >> $GITHUB_OUTPUT
             echo "→ Manual trigger: using workflow inputs for hole-punch"
-          elif [ "${{ needs.check-hole-punch-changes.result }}" = "success" ]; then
-            # Automatic trigger - use change detection outputs
-            echo "test-select=" >> $GITHUB_OUTPUT
-            echo "test-ignore=~failing" >> $GITHUB_OUTPUT
-            echo "relay-select=" >> $GITHUB_OUTPUT
-            echo "relay-ignore=" >> $GITHUB_OUTPUT
-            echo "router-select=" >> $GITHUB_OUTPUT
-            echo "router-ignore=" >> $GITHUB_OUTPUT
-            echo "force-matrix-rebuild=${{ needs.check-hole-punch-changes.outputs.impls-yaml-changed }}" >> $GITHUB_OUTPUT
-            echo "force-image-rebuild=false" >> $GITHUB_OUTPUT
-            echo "debug=false" >> $GITHUB_OUTPUT
-            echo "should-run-tests=${{ needs.check-hole-punch-changes.outputs.has-changes }}" >> $GITHUB_OUTPUT
-            echo "→ Automatic trigger: using change detection for hole-punch"
           else
-            # Check job was skipped or failed - don't run tests
+            # Automatic trigger - check for changes in last 24 hours
+            CHANGES=$(git log --oneline --since="24 hours ago" -- "hole-punch/**" | wc -l)
+            IMPLS_CHANGES=$(git log --oneline --since="24 hours ago" -- "hole-punch/impls.yaml" | wc -l)
+
             echo "test-select=" >> $GITHUB_OUTPUT
             echo "test-ignore=~failing" >> $GITHUB_OUTPUT
             echo "relay-select=" >> $GITHUB_OUTPUT
             echo "relay-ignore=" >> $GITHUB_OUTPUT
             echo "router-select=" >> $GITHUB_OUTPUT
             echo "router-ignore=" >> $GITHUB_OUTPUT
-            echo "force-matrix-rebuild=false" >> $GITHUB_OUTPUT
             echo "force-image-rebuild=false" >> $GITHUB_OUTPUT
             echo "debug=false" >> $GITHUB_OUTPUT
-            echo "should-run-tests=false" >> $GITHUB_OUTPUT
-            echo "→ Check job skipped/failed: not running tests"
+
+            if [ "$CHANGES" -gt 0 ]; then
+              echo "should-run-tests=true" >> $GITHUB_OUTPUT
+              if [ "$IMPLS_CHANGES" -gt 0 ]; then
+                echo "force-matrix-rebuild=true" >> $GITHUB_OUTPUT
+                echo "→ Automatic trigger: hole-punch changes detected, impls.yaml changed"
+              else
+                echo "force-matrix-rebuild=false" >> $GITHUB_OUTPUT
+                echo "→ Automatic trigger: hole-punch changes detected"
+              fi
+            else
+              echo "should-run-tests=false" >> $GITHUB_OUTPUT
+              echo "force-matrix-rebuild=false" >> $GITHUB_OUTPUT
+              echo "→ Automatic trigger: no hole-punch changes in last 24h"
+            fi
           fi
 
   run-transport-full:
     needs: resolve-transport-parameters
-    if: github.event_name == 'workflow_dispatch' || needs.resolve-transport-parameters.outputs.should-run-tests
+    if: ${{ !cancelled() && (github.event_name == 'workflow_dispatch' || needs.resolve-transport-parameters.outputs.should-run-tests) }}
     runs-on: [self-hosted, linux, x64, ephemeral]
     continue-on-error: true
     steps:
@@ -285,7 +305,7 @@ jobs:
 
   run-hole-punch-full:
     needs: resolve-hole-punch-parameters
-    if: github.event_name == 'workflow_dispatch' || needs.resolve-hole-punch-parameters.outputs.should-run-tests
+    if: ${{ !cancelled() && (github.event_name == 'workflow_dispatch' || needs.resolve-hole-punch-parameters.outputs.should-run-tests) }}
     runs-on: [self-hosted, linux, x64, ephemeral]
     continue-on-error: true
     steps:
