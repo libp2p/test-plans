@@ -121,7 +121,7 @@ jobs:
   resolve-transport-parameters:
     runs-on: [self-hosted, linux, x64, ephemeral]
     needs: check-transport-changes
-    if: always()
+    if: always() && (needs.check-transport-changes.result == 'success' || needs.check-transport-changes.result == 'skipped')
     outputs:
       test-select: ${{ steps.resolve.outputs.test-select }}
       test-ignore: ${{ steps.resolve.outputs.test-ignore }}
@@ -143,7 +143,7 @@ jobs:
             echo "debug=${{ github.event.inputs.transport-debug }}" >> $GITHUB_OUTPUT
             echo "should-run-tests=true" >> $GITHUB_OUTPUT
             echo "→ Manual trigger: using workflow inputs for transport"
-          else
+          elif [ "${{ needs.check-transport-changes.result }}" = "success" ]; then
             # Automatic trigger - use change detection outputs
             echo "test-select=" >> $GITHUB_OUTPUT
             echo "test-ignore=~failing" >> $GITHUB_OUTPUT
@@ -152,6 +152,15 @@ jobs:
             echo "debug=false" >> $GITHUB_OUTPUT
             echo "should-run-tests=${{ needs.check-transport-changes.outputs.has-changes }}" >> $GITHUB_OUTPUT
             echo "→ Automatic trigger: using change detection for transport"
+          else
+            # Check job was skipped or failed - don't run tests
+            echo "test-select=" >> $GITHUB_OUTPUT
+            echo "test-ignore=~failing" >> $GITHUB_OUTPUT
+            echo "force-matrix-rebuild=false" >> $GITHUB_OUTPUT
+            echo "force-image-rebuild=false" >> $GITHUB_OUTPUT
+            echo "debug=false" >> $GITHUB_OUTPUT
+            echo "should-run-tests=false" >> $GITHUB_OUTPUT
+            echo "→ Check job skipped/failed: not running tests"
           fi
 
   check-hole-punch-changes:
@@ -196,7 +205,7 @@ jobs:
   resolve-hole-punch-parameters:
     runs-on: [self-hosted, linux, x64, ephemeral]
     needs: check-hole-punch-changes
-    if: always()
+    if: always() && (needs.check-hole-punch-changes.result == 'success' || needs.check-hole-punch-changes.result == 'skipped')
     outputs:
       test-select: ${{ steps.resolve.outputs.test-select }}
       test-ignore: ${{ steps.resolve.outputs.test-ignore }}
@@ -226,7 +235,7 @@ jobs:
             echo "debug=${{ github.event.inputs.hole-punch-debug }}" >> $GITHUB_OUTPUT
             echo "should-run-tests=true" >> $GITHUB_OUTPUT
             echo "→ Manual trigger: using workflow inputs for hole-punch"
-          else
+          elif [ "${{ needs.check-hole-punch-changes.result }}" = "success" ]; then
             # Automatic trigger - use change detection outputs
             echo "test-select=" >> $GITHUB_OUTPUT
             echo "test-ignore=~failing" >> $GITHUB_OUTPUT
@@ -239,6 +248,19 @@ jobs:
             echo "debug=false" >> $GITHUB_OUTPUT
             echo "should-run-tests=${{ needs.check-hole-punch-changes.outputs.has-changes }}" >> $GITHUB_OUTPUT
             echo "→ Automatic trigger: using change detection for hole-punch"
+          else
+            # Check job was skipped or failed - don't run tests
+            echo "test-select=" >> $GITHUB_OUTPUT
+            echo "test-ignore=~failing" >> $GITHUB_OUTPUT
+            echo "relay-select=" >> $GITHUB_OUTPUT
+            echo "relay-ignore=" >> $GITHUB_OUTPUT
+            echo "router-select=" >> $GITHUB_OUTPUT
+            echo "router-ignore=" >> $GITHUB_OUTPUT
+            echo "force-matrix-rebuild=false" >> $GITHUB_OUTPUT
+            echo "force-image-rebuild=false" >> $GITHUB_OUTPUT
+            echo "debug=false" >> $GITHUB_OUTPUT
+            echo "should-run-tests=false" >> $GITHUB_OUTPUT
+            echo "→ Check job skipped/failed: not running tests"
           fi
 
   run-transport-full:
