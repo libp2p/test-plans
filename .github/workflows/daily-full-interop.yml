@@ -298,7 +298,7 @@ jobs:
           test-select: '${{ needs.resolve-transport-parameters.outputs.test-select }}'
           test-ignore: '${{ needs.resolve-transport-parameters.outputs.test-ignore }}'
           cache-dir: /srv/cache
-          snapshot: true
+          snapshot: false
           force-matrix-rebuild: ${{ needs.resolve-transport-parameters.outputs.force-matrix-rebuild }}
           force-image-rebuild: ${{ needs.resolve-transport-parameters.outputs.force-image-rebuild }}
           debug: ${{ needs.resolve-transport-parameters.outputs.debug }}
@@ -322,7 +322,7 @@ jobs:
           router-select: '${{ needs.resolve-hole-punch-parameters.outputs.router-select }}'
           router-ignore: '${{ needs.resolve-hole-punch-parameters.outputs.router-ignore }}'
           cache-dir: /srv/cache
-          snapshot: true
+          snapshot: false
           force-matrix-rebuild: ${{ needs.resolve-hole-punch-parameters.outputs.force-matrix-rebuild }}
           force-image-rebuild: ${{ needs.resolve-hole-punch-parameters.outputs.force-image-rebuild }}
           debug: ${{ needs.resolve-hole-punch-parameters.outputs.debug }}
