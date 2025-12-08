@@ -153,7 +153,7 @@ Description:
   the tests in this snapshot based on impls.yaml and test-matrix.yaml.
 
 Dependencies:
-  bash 4.0+, docker 20.10+, yq 4.0+, wget, unzip
+  bash 4.0+, docker 20.10+, yq 4.0+, wget
 HELP
 }
 
@@ -502,7 +502,7 @@ This is a self-contained snapshot of a hole punch interoperability test run.
 
 ## Re-running Tests
 
-To reproduce this test run on any machine with bash, docker, git, yq, wget, and unzip:
+To reproduce this test run on any machine with bash, docker, git, yq, and wget:
 
 \`\`\`bash
 ./re-run.sh [options]
@@ -540,30 +540,20 @@ See \`results.md\` for the full test dashboard from the original run.
 *Created: $(date -u +%Y-%m-%dT%H:%M:%SZ)*
 EOF
 
-# Create archive
-echo "→ Creating archive..."
-echo "  → Note: This may take 5-15 minutes for large snapshots"
-cd "$CACHE_DIR/test-runs"
-
-# Calculate size before archiving
-snapshot_dir_size=$(du -sh "$test_pass" 2>/dev/null | cut -f1 || echo "unknown")
-echo "  → Snapshot directory size: $snapshot_dir_size"
-echo "  → Compressing..."
-
-zip -r -q "${test_pass}.zip" "$test_pass"
-
-snapshot_size=$(du -h "${test_pass}.zip" | cut -f1)
-echo "  ✓ Archive created: $snapshot_size"
+# Calculate snapshot size
+echo "→ Calculating snapshot size..."
+snapshot_dir_size=$(du -sh "$SNAPSHOT_DIR" 2>/dev/null | cut -f1 || echo "unknown")
+echo "  ✓ Snapshot size: $snapshot_dir_size"
 
 echo ""
 echo "╲ ✓ Snapshot created successfully"
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 echo "→ Snapshot: $test_pass"
 echo "→ Location: $SNAPSHOT_DIR"
-echo "→ Archive: $CACHE_DIR/test-runs/${test_pass}.zip ($snapshot_size)"
+echo "→ Size: $snapshot_dir_size"
 echo ""
-echo "→ To extract and re-run:"
-echo "    unzip $CACHE_DIR/test-runs/${test_pass}.zip"
-echo "    cd $test_pass"
+echo "→ To use this snapshot:"
+echo "    cp -r $SNAPSHOT_DIR /path/to/destination"
+echo "    cd /path/to/destination/$(basename $SNAPSHOT_DIR)"
 echo "    ./re-run.sh"
 

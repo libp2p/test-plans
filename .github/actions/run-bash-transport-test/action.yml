@@ -119,7 +119,7 @@ runs:
       with:
         name: transport-snapshot-${{ steps.find-test-pass.outputs.test-pass-name }}
         path: |
-          ${{ inputs.cache-dir }}/test-runs/${{ steps.find-test-pass.outputs.test-pass-name }}.zip
+          ${{ steps.find-test-pass.outputs.test-pass-dir }}
         if-no-files-found: error
 
     - name: Fail if tests failed
