@@ -265,5 +265,57 @@ The `--force-rebuild` flag forces rebuilding of all Docker images from the captu
 ## Current Status
 
 <!-- TEST_RESULTS_START -->
+# Hole Punch Interoperability Test Results
+
+## Test Pass: `hole-punch-234047-07-12-2025`
+
+**Summary:**
+- **Total Tests:** 5
+- **Passed:** ✅ 5
+- **Failed:** ❌ 0
+- **Pass Rate:** 100.0%
+
+**Environment:**
+- **Platform:** x86_64
+- **OS:** Linux
+- **Workers:** 8
+- **Duration:** 17s
+
+**Timestamps:**
+- **Started:** 2025-12-07T23:40:47Z
+- **Completed:** 2025-12-07T23:41:04Z
+
+---
+
+## Test Results
+
+| Test | Dialer | Listener | Transport | Status | Duration |
+|------|--------|----------|-----------|--------|----------|
+| linux x linux (tcp, noise, mplex) [dr: linux, rly: linux, lr: linux] | linux | linux | tcp | ✅ | 12s |
+| linux x linux (tcp, noise, yamux) [dr: linux, rly: linux, lr: linux] | linux | linux | tcp | ✅ | 13s |
+| linux x linux (tcp, tls, yamux) [dr: linux, rly: linux, lr: linux] | linux | linux | tcp | ✅ | 14s |
+| linux x linux (tcp, tls, mplex) [dr: linux, rly: linux, lr: linux] | linux | linux | tcp | ✅ | 15s |
+| linux x linux (quic-v1) [dr: linux, rly: linux, lr: linux] | linux | linux | quic-v1 | ✅ | 16s |
+
+---
+
+## Matrix View
+
+| Dialer \ Listener | linux |
+|---|---|
+| **linux** | - |
+
+---
+
+## Legend
+
+- ✅ Test passed
+- ❌ Test failed
+- **Transport abbreviations**: t=tcp, q=quic, w=ws, W=wss (first letter)
+- Example: ✅t = TCP test passed, ❌q = QUIC test failed
+
+---
+
+*Generated: 2025-12-07T23:41:04Z*
 <!-- TEST_RESULTS_END -->
 
