@@ -54,6 +54,11 @@ on:
         required: false
         default: false
         type: boolean
+      snapshot:
+        description: 'Create and upload test snapshot for debugging'
+        required: false
+        default: false
+        type: boolean
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -84,8 +89,6 @@ jobs:
 
   resolve-parameters:
     runs-on: [self-hosted, linux, x64, ephemeral]
-    needs: detect-changes
-    if: always()
     outputs:
       test-select: ${{ steps.resolve.outputs.test-select }}
       test-ignore: ${{ steps.resolve.outputs.test-ignore }}
@@ -96,8 +99,21 @@ jobs:
       force-matrix-rebuild: ${{ steps.resolve.outputs.force-matrix-rebuild }}
       force-image-rebuild: ${{ steps.resolve.outputs.force-image-rebuild }}
       debug: ${{ steps.resolve.outputs.debug }}
+      snapshot: ${{ steps.resolve.outputs.snapshot }}
       should-run-tests: ${{ steps.resolve.outputs.should-run-tests }}
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed implementations/relays/routers
+        if: github.event_name != 'workflow_dispatch'
+        id: detect
+        uses: ./.github/actions/detect-changed-impls
+        with:
+          test-type: hole-punch
+
       - name: Resolve parameters
         id: resolve
         shell: bash
@@ -113,20 +129,22 @@ jobs:
             echo "force-matrix-rebuild=${{ github.event.inputs.force-matrix-rebuild }}" >> $GITHUB_OUTPUT
             echo "force-image-rebuild=${{ github.event.inputs.force-image-rebuild }}" >> $GITHUB_OUTPUT
             echo "debug=${{ github.event.inputs.debug }}" >> $GITHUB_OUTPUT
+            echo "snapshot=${{ github.event.inputs.snapshot }}" >> $GITHUB_OUTPUT
             echo "should-run-tests=true" >> $GITHUB_OUTPUT
             echo "→ Manual trigger: using workflow inputs"
           else
             # Automatic trigger - use change detection outputs
-            echo "test-select=${{ needs.detect-changes.outputs.changed-impls }}" >> $GITHUB_OUTPUT
-            echo "test-ignore=!${{ needs.detect-changes.outputs.changed-impls }}" >> $GITHUB_OUTPUT
-            echo "relay-select=${{ needs.detect-changes.outputs.changed-relays }}" >> $GITHUB_OUTPUT
-            echo "relay-ignore=!${{ needs.detect-changes.outputs.changed-relays }}" >> $GITHUB_OUTPUT
-            echo "router-select=${{ needs.detect-changes.outputs.changed-routers }}" >> $GITHUB_OUTPUT
-            echo "router-ignore=!${{ needs.detect-changes.outputs.changed-routers }}" >> $GITHUB_OUTPUT
-            echo "force-matrix-rebuild=${{ needs.detect-changes.outputs.impls-yaml-changed }}" >> $GITHUB_OUTPUT
-            echo "force-image-rebuild=${{ needs.detect-changes.outputs.impls-folder-changed }}" >> $GITHUB_OUTPUT
+            echo "test-select=${{ steps.detect.outputs.changed-impls }}" >> $GITHUB_OUTPUT
+            echo "test-ignore=!${{ steps.detect.outputs.changed-impls }}" >> $GITHUB_OUTPUT
+            echo "relay-select=${{ steps.detect.outputs.changed-relays }}" >> $GITHUB_OUTPUT
+            echo "relay-ignore=!${{ steps.detect.outputs.changed-relays }}" >> $GITHUB_OUTPUT
+            echo "router-select=${{ steps.detect.outputs.changed-routers }}" >> $GITHUB_OUTPUT
+            echo "router-ignore=!${{ steps.detect.outputs.changed-routers }}" >> $GITHUB_OUTPUT
+            echo "force-matrix-rebuild=${{ steps.detect.outputs.impls-yaml-changed }}" >> $GITHUB_OUTPUT
+            echo "force-image-rebuild=${{ steps.detect.outputs.impls-folder-changed }}" >> $GITHUB_OUTPUT
             echo "debug=false" >> $GITHUB_OUTPUT
-            echo "should-run-tests=${{ needs.detect-changes.outputs.has-changes }}" >> $GITHUB_OUTPUT
+            echo "snapshot=true" >> $GITHUB_OUTPUT
+            echo "should-run-tests=${{ steps.detect.outputs.has-changes }}" >> $GITHUB_OUTPUT
             echo "→ Automatic trigger: using change detection outputs"
           fi
 
@@ -148,7 +166,7 @@ jobs:
           router-select: '${{ needs.resolve-parameters.outputs.router-select }}'
           router-ignore: '${{ needs.resolve-parameters.outputs.router-ignore }}'
           cache-dir: /srv/cache
-          snapshot: true
+          snapshot: ${{ needs.resolve-parameters.outputs.snapshot }}
           force-matrix-rebuild: ${{ needs.resolve-parameters.outputs.force-matrix-rebuild }}
           force-image-rebuild: ${{ needs.resolve-parameters.outputs.force-image-rebuild }}
           debug: ${{ needs.resolve-parameters.outputs.debug }}
