@@ -161,7 +161,7 @@ implementations:
     source:
       type: github
       repo: libp2p/py-libp2p
-      commit: 2cd567df840f69e8b27abf066af254671eeacf1a
+      commit: 9ea040ff56c4a08a03ceb89189bb12d4f6053ec1
       dockerfile: interop/transport/Dockerfile
     transports: [tcp, quic-v1]
     secureChannels: [noise]
