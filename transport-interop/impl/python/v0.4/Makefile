@@ -1,5 +1,5 @@
 image_name := python-v0.4
-commitSha := 651f54ce43f463bf55512d4a9e4664955372205c
+commitSha := 80f593cfdd95f5250ad21a57583abb275407907d
 
 all: image.json
 
