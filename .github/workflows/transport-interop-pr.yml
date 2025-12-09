@@ -1,0 +1,134 @@
+name: Transport Interoperability Tests (PR)
+
+on:
+  pull_request:
+    paths:
+      - 'transport/**'
+      - '.github/actions/detect-changed-impls/**'
+      - '.github/actions/run-bash-transport-test/**'
+      - '.github/workflows/transport-interop-pr.yml'
+  workflow_dispatch:
+    inputs:
+      test-select:
+        description: 'Select specific tests (pipe-separated substrings, e.g., "go|rust")'
+        required: false
+        default: ''
+        type: string
+      test-ignore:
+        description: 'Ignore specific tests (pipe-separated substrings)'
+        required: false
+        default: '~failing'
+        type: string
+      force-matrix-rebuild:
+        description: 'Force test matrix regeneration (bypass cache)'
+        required: false
+        default: false
+        type: boolean
+      force-image-rebuild:
+        description: 'Force Docker image rebuilds (bypass cache)'
+        required: false
+        default: false
+        type: boolean
+      debug:
+        description: 'Enable debug mode (sets DEBUG=true in test containers)'
+        required: false
+        default: false
+        type: boolean
+      snapshot:
+        description: 'Create and upload test snapshot for debugging'
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  detect-changes:
+    if: github.event_name != 'workflow_dispatch'
+    runs-on: [self-hosted, linux, x64, ephemeral]
+    outputs:
+      changed-impls: ${{ steps.detect.outputs.changed-impls }}
+      has-changes: ${{ steps.detect.outputs.has-changes }}
+      impls-yaml-changed: ${{ steps.detect.outputs.impls-yaml-changed }}
+      impls-folder-changed: ${{ steps.detect.outputs.impls-folder-changed }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed implementations
+        id: detect
+        uses: ./.github/actions/detect-changed-impls
+        with:
+          test-type: transport
+
+  resolve-parameters:
+    runs-on: [self-hosted, linux, x64, ephemeral]
+    outputs:
+      test-select: ${{ steps.resolve.outputs.test-select }}
+      test-ignore: ${{ steps.resolve.outputs.test-ignore }}
+      force-matrix-rebuild: ${{ steps.resolve.outputs.force-matrix-rebuild }}
+      force-image-rebuild: ${{ steps.resolve.outputs.force-image-rebuild }}
+      debug: ${{ steps.resolve.outputs.debug }}
+      snapshot: ${{ steps.resolve.outputs.snapshot }}
+      should-run-tests: ${{ steps.resolve.outputs.should-run-tests }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed implementations
+        if: github.event_name != 'workflow_dispatch'
+        id: detect
+        uses: ./.github/actions/detect-changed-impls
+        with:
+          test-type: transport
+
+      - name: Resolve parameters
+        id: resolve
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            # Manual trigger - use workflow inputs
+            echo "test-select=${{ github.event.inputs.test-select }}" >> $GITHUB_OUTPUT
+            echo "test-ignore=${{ github.event.inputs.test-ignore }}" >> $GITHUB_OUTPUT
+            echo "force-matrix-rebuild=${{ github.event.inputs.force-matrix-rebuild }}" >> $GITHUB_OUTPUT
+            echo "force-image-rebuild=${{ github.event.inputs.force-image-rebuild }}" >> $GITHUB_OUTPUT
+            echo "debug=${{ github.event.inputs.debug }}" >> $GITHUB_OUTPUT
+            echo "snapshot=${{ github.event.inputs.snapshot }}" >> $GITHUB_OUTPUT
+            echo "should-run-tests=true" >> $GITHUB_OUTPUT
+            echo "→ Manual trigger: using workflow inputs"
+          else
+            # Automatic trigger - use change detection outputs
+            echo "test-select=${{ steps.detect.outputs.changed-impls }}" >> $GITHUB_OUTPUT
+            echo "test-ignore=!${{ steps.detect.outputs.changed-impls }}" >> $GITHUB_OUTPUT
+            echo "force-matrix-rebuild=${{ steps.detect.outputs.impls-yaml-changed }}" >> $GITHUB_OUTPUT
+            echo "force-image-rebuild=${{ steps.detect.outputs.impls-folder-changed }}" >> $GITHUB_OUTPUT
+            echo "debug=false" >> $GITHUB_OUTPUT
+            echo "snapshot=true" >> $GITHUB_OUTPUT
+            echo "should-run-tests=${{ steps.detect.outputs.has-changes }}" >> $GITHUB_OUTPUT
+            echo "→ Automatic trigger: using change detection outputs"
+          fi
+
+  run-tests:
+    needs: resolve-parameters
+    if: needs.resolve-parameters.outputs.should-run-tests == 'true'
+    runs-on: [self-hosted, linux, x64, ephemeral]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run transport interop tests
+        uses: ./.github/actions/run-bash-transport-test
+        with:
+          test-select: '${{ needs.resolve-parameters.outputs.test-select }}'
+          test-ignore: '${{ needs.resolve-parameters.outputs.test-ignore }}'
+          cache-dir: /srv/cache
+          snapshot: ${{ needs.resolve-parameters.outputs.snapshot }}
+          force-matrix-rebuild: ${{ needs.resolve-parameters.outputs.force-matrix-rebuild }}
+          force-image-rebuild: ${{ needs.resolve-parameters.outputs.force-image-rebuild }}
+          debug: ${{ needs.resolve-parameters.outputs.debug }}
