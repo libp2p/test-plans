@@ -1,4 +1,7 @@
-use libp2p_gossipsub::{Partial, PartialMessageError};
+use libp2p_gossipsub::{
+    partial::{Metadata, PublishAction},
+    Partial, PartialMessageError,
+};
 
 /// A fixed-size bitmap composed of `TOTAL_FIELDS` fields,
 /// each field storing `FIELD_SIZE` bytes (i.e., `FIELD_SIZE * 8` bits).
@@ -42,72 +45,8 @@ impl Bitmap {
             *p = part;
         }
     }
-}
 
-impl Partial for Bitmap {
-    fn group_id(&self) -> impl AsRef<[u8]> {
-        &self.group_id
-    }
-
-    fn parts_metadata(&self) -> impl AsRef<[u8]> {
-        [self.set; 1]
-    }
-
-    fn partial_message_bytes_from_metadata(
-        &self,
-        metadata: impl AsRef<[u8]>,
-    ) -> Result<(impl AsRef<[u8]>, Option<impl AsRef<[u8]>>), PartialMessageError> {
-        let mut metadata = metadata.as_ref();
-        if metadata.is_empty() {
-            metadata = &[0xff];
-        }
-
-        if metadata.len() != 1 {
-            return Err(PartialMessageError::InvalidFormat);
-        }
-
-        let bitmap = metadata[0];
-        let mut response_bitmap: u8 = 0;
-        let mut remaining = bitmap;
-
-        // Estimate output size: 1 byte header + FIELD_SIZE * num parts + group_id
-        let part_count = bitmap.count_ones() as usize;
-        let mut data = Vec::with_capacity(1 + 1024 * part_count + self.group_id.len());
-
-        data.push(0);
-
-        for (i, field) in self.fields.iter().enumerate() {
-            if (bitmap >> i) & 1 == 0 {
-                continue;
-            }
-            if (self.set >> i) & 1 == 0 {
-                continue; // Not available
-            }
-
-            response_bitmap |= 1 << i;
-            remaining ^= 1 << i;
-
-            data.extend_from_slice(field);
-        }
-
-        if response_bitmap == 0 {
-            return Ok((Vec::<u8>::new(), Some(vec![bitmap])));
-        }
-
-        // Set the correct bitmap in the first byte
-        data[0] = response_bitmap;
-        data.extend_from_slice(&self.group_id);
-
-        let remaining = if remaining == 0 {
-            None
-        } else {
-            Some(vec![remaining])
-        };
-
-        Ok((data, remaining))
-    }
-
-    fn extend_from_encoded_partial_message(
+    pub(crate) fn extend_from_encoded_partial_message(
         &mut self,
         data: &[u8],
     ) -> Result<(), PartialMessageError> {
@@ -148,5 +87,104 @@ impl Partial for Bitmap {
         }
 
         Ok(())
+    }
+}
+
+// type PeerBitmap = [u8; 1];
+#[derive(Debug)]
+struct PeerBitmap {
+    bitmap: [u8; 1],
+}
+
+impl Metadata for PeerBitmap {
+    fn as_slice(&self) -> &[u8] {
+        self.bitmap.as_slice()
+    }
+
+    fn update(&mut self, data: &[u8]) -> Result<bool, PartialMessageError> {
+        if data.len() != 1 {
+            return Err(PartialMessageError::InvalidFormat);
+        }
+
+        let before = self.bitmap[0];
+        self.bitmap[0] |= data[0];
+        Ok(self.bitmap[0] != before)
+    }
+}
+
+impl Partial for Bitmap {
+    fn group_id(&self) -> Vec<u8> {
+        self.group_id.to_vec()
+    }
+
+    fn metadata(&self) -> Vec<u8> {
+        [self.set; 1].to_vec()
+    }
+
+    fn partial_message_bytes_from_metadata(
+        &self,
+        metadata: Option<&[u8]>,
+    ) -> Result<PublishAction, PartialMessageError> {
+        let metadata = match metadata {
+            Some(m) => m,
+            None => {
+                return Ok(PublishAction {
+                    need: false,
+                    send: None,
+                })
+            }
+        };
+
+        if metadata.len() != 1 {
+            return Err(PartialMessageError::InvalidFormat);
+        }
+
+        let bitmap = metadata[0];
+        let mut response_bitmap: u8 = 0;
+
+        // Estimate output size: 1 byte header + FIELD_SIZE * num parts + group_id
+        let part_count = bitmap.count_ones() as usize;
+        let mut data = Vec::with_capacity(1 + 1024 * part_count + self.group_id.len());
+
+        let mut peer_has_useful_data = false;
+        data.push(0);
+
+        for (i, field) in self.fields.iter().enumerate() {
+            if (bitmap >> i) & 1 != 0 {
+                if !peer_has_useful_data && (self.set >> i) & 1 == 0 {
+                    // They have something we don't
+                    peer_has_useful_data = true;
+                }
+
+                // They have this part
+                continue;
+            }
+            if (self.set >> i) & 1 == 0 {
+                continue; // Not available
+            }
+
+            response_bitmap |= 1 << i;
+
+            data.extend_from_slice(field);
+        }
+
+        if response_bitmap == 0 {
+            return Ok(PublishAction {
+                need: peer_has_useful_data,
+                send: None,
+            });
+        }
+
+        // Set the correct bitmap in the first byte
+        data[0] = response_bitmap;
+        data.extend_from_slice(&self.group_id);
+        let bitmap = PeerBitmap {
+            bitmap: [metadata[0] | response_bitmap],
+        };
+
+        Ok(PublishAction {
+            need: peer_has_useful_data,
+            send: Some((data, Box::new(bitmap))),
+        })
     }
 }

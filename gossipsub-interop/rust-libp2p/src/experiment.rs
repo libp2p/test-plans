@@ -182,6 +182,8 @@ impl ScriptedNode {
                                         }
                                     }
                                     SwarmEvent::Behaviour(MyBehaviorEvent::Gossipsub(gossipsub::Event::Partial {group_id, topic_id, propagation_source, message, metadata })) => {
+                                        info!(self.stdout_logger, "Received partial message for topic {topic_id} and group {group_id:?}");
+
                                         let topic_partials = self
                                             .partials
                                             .get_mut(topic_id.as_str())
@@ -190,14 +192,14 @@ impl ScriptedNode {
                                             .get_mut(group_id.as_slice())
                                             .ok_or(format!("GroupId {group_id:?} doesn't exist"))?;
 
-                                        let before_extension = partial.parts_metadata().as_ref().to_vec();
+                                        let before_extension = partial.metadata();
                                         if let Some(message) = message {
                                             if !message.is_empty() {
                                                 info!(self.stderr_logger, "new data len is {}", message.len());
                                                 partial.extend_from_encoded_partial_message(&message)?;
                                             }
                                         }
-                                        let after_extension = partial.parts_metadata().as_ref().to_vec();
+                                        let after_extension = partial.metadata();
 
                                         let mut should_republish = false;
                                         if before_extension != after_extension {
@@ -271,7 +273,7 @@ impl ScriptedNode {
                     .swarm
                     .behaviour_mut()
                     .gossipsub
-                    .subscribe(&topic, partial)
+                    .subscribe(&topic, partial, partial)
                 {
                     Ok(_) => {
                         info!(self.stderr_logger, "Subscribed to topic {}", topic_id);
@@ -315,7 +317,7 @@ impl ScriptedNode {
                     "partial message for group {group_id:?} parts {parts:?}"
                 );
                 partial.fill_parts(parts);
-                let avail = partial.parts_metadata().as_ref().to_vec();
+                let avail = partial.metadata();
                 info!(self.stderr_logger, "available parts: {avail:?}");
                 topic_partials.insert(group_id, partial);
             }
