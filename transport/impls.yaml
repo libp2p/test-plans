@@ -160,8 +160,8 @@ implementations:
   - id: python-v0.4
     source:
       type: github
-      repo: libp2p/py-libp2p
-      commit: 093d4eb37149a202be3274e425ab1771479b44f9
+      repo: sumanjeet0012/py-libp2p
+      commit: 9dcbbebf9c72001f1d6d58aff354684679ca01e5
       dockerfile: interop/transport/Dockerfile
     transports: [tcp, quic-v1]
     secureChannels: [noise]
