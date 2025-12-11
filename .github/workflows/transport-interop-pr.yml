@@ -107,7 +107,13 @@ jobs:
             echo "test-select=${{ steps.detect.outputs.changed-impls }}" >> $GITHUB_OUTPUT
             echo "test-ignore=!${{ steps.detect.outputs.changed-impls }}" >> $GITHUB_OUTPUT
             echo "force-matrix-rebuild=${{ steps.detect.outputs.impls-yaml-changed }}" >> $GITHUB_OUTPUT
-            echo "force-image-rebuild=${{ steps.detect.outputs.impls-folder-changed }}" >> $GITHUB_OUTPUT
+            # Force image rebuild if impls.yaml changed (commit SHA changes require new images)
+            # or if impls folder changed (local implementation files changed)
+            if [ "${{ steps.detect.outputs.impls-yaml-changed }}" = "true" ] || [ "${{ steps.detect.outputs.impls-folder-changed }}" = "true" ]; then
+              echo "force-image-rebuild=true" >> $GITHUB_OUTPUT
+            else
+              echo "force-image-rebuild=false" >> $GITHUB_OUTPUT
+            fi
             echo "debug=false" >> $GITHUB_OUTPUT
             echo "snapshot=true" >> $GITHUB_OUTPUT
             echo "should-run-tests=${{ steps.detect.outputs.has-changes }}" >> $GITHUB_OUTPUT

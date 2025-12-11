@@ -162,8 +162,9 @@ implementations:
       type: github
       repo: sumanjeet0012/py-libp2p
       commit: e0fa2a6a0ca75ca16c3921e795028733ce3c8e89
+
       dockerfile: interop/transport/Dockerfile
-    transports: [tcp, quic-v1]
+    transports: [tcp, ws, wss, quic-v1]
     secureChannels: [noise]
     muxers: [mplex, yamux]
 
