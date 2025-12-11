@@ -125,15 +125,7 @@ impl Partial for Bitmap {
         &self,
         metadata: Option<&[u8]>,
     ) -> Result<PublishAction, PartialMessageError> {
-        let metadata = match metadata {
-            Some(m) => m,
-            None => {
-                return Ok(PublishAction {
-                    need: false,
-                    send: None,
-                })
-            }
-        };
+        let metadata = metadata.unwrap_or(&[0u8]);
 
         if metadata.len() != 1 {
             return Err(PartialMessageError::InvalidFormat);
