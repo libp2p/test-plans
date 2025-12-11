@@ -161,7 +161,7 @@ implementations:
     source:
       type: github
       repo: sumanjeet0012/py-libp2p
-      commit: 5a36bc05e02c59e3f70487bc0dc2e0f87f0eaa6b
+      commit: e0fa2a6a0ca75ca16c3921e795028733ce3c8e89
       dockerfile: interop/transport/Dockerfile
     transports: [tcp, quic-v1]
     secureChannels: [noise]
