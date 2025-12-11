@@ -186,11 +186,15 @@ impl ScriptedNode {
 
                                         let topic_partials = self
                                             .partials
-                                            .get_mut(topic_id.as_str())
-                                            .ok_or(format!("Topic {topic_id} doesn't exist"))?;
+                                            .entry(topic_id.to_string())
+                                            .or_default();
+                                        let group_id_array: [u8; 8] = group_id
+                                            .as_slice()
+                                            .try_into()
+                                            .map_err(|_| "Invalid group_id length")?;
                                         let partial = topic_partials
-                                            .get_mut(group_id.as_slice())
-                                            .ok_or(format!("GroupId {group_id:?} doesn't exist"))?;
+                                            .entry(group_id_array)
+                                            .or_insert_with(|| Bitmap::new(group_id_array));
 
                                         let before_extension = partial.metadata();
                                         if let Some(message) = message {
@@ -319,6 +323,10 @@ impl ScriptedNode {
                 partial.fill_parts(parts);
                 let avail = partial.metadata();
                 info!(self.stderr_logger, "available parts: {avail:?}");
+                if avail == vec![255] {
+                    info!(self.stdout_logger, "All parts received"; 
+                    "group_id" => format!("{:?}", group_id));
+                }
                 topic_partials.insert(group_id, partial);
             }
             ScriptInstruction::PublishPartial {
