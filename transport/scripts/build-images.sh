@@ -68,52 +68,128 @@ for ((i=0; i<impl_count; i++)); do
             commit=$(yq eval ".implementations[$i].source.commit" impls.yaml)
             dockerfile=$(yq eval ".implementations[$i].source.dockerfile" impls.yaml)
             build_context=$(yq eval ".implementations[$i].source.buildContext" impls.yaml)
+            requires_submodules=$(yq eval ".implementations[$i].source.requiresSubmodules // false" impls.yaml)
 
             echo "→ Repo: $repo"
             echo "→ Commit: ${commit:0:8}"
 
-            # Download snapshot if not cached
-            snapshot_file="$CACHE_DIR/snapshots/$commit.zip"
-            if [ ! -f "$snapshot_file" ]; then
-                echo "  → [MISS] Downloading snapshot..."
-                repo_url="https://github.com/$repo/archive/$commit.zip"
-                wget -O "$snapshot_file" "$repo_url" || {
-                    echo "✗ Failed to download snapshot"
-                    exit 1
-                }
-                echo "  ✓ Added to cache: ${commit:0:8}.zip"
-            else
-                echo "  ✓ [HIT] Using cached snapshot: ${commit:0:8}.zip"
-            fi
-
             repo_name=$(basename "$repo")
 
-            # Check if using local build context
-            if [ "$build_context" = "local" ]; then
-                work_dir="impls/${impl_id//-//}"  # Convert python-v0.4 to impls/python/v0.4
+            # Check if submodules are required
+            if [ "$requires_submodules" = "true" ]; then
+                echo "→ Submodules required: using git clone"
 
-                if [ ! -d "$work_dir" ]; then
-                    echo "✗ Working dir not found: $work_dir"
-                    exit 1
+                # Use git clone for repositories with submodules
+                # Cache directory for git clones
+                git_cache_dir="$CACHE_DIR/git-clones"
+                mkdir -p "$git_cache_dir"
+                cached_repo_dir="$git_cache_dir/$repo_name-$commit"
+
+                # Check if cached git clone exists and is at correct commit
+                if [ -d "$cached_repo_dir" ] && [ -d "$cached_repo_dir/.git" ]; then
+                    cd "$cached_repo_dir"
+                    cached_commit=$(git rev-parse HEAD 2>/dev/null || echo "")
+                    cd - > /dev/null
+                    if [ "$cached_commit" = "$commit" ]; then
+                        echo "  ✓ [HIT] Using cached git clone: $repo_name-$commit"
+                        work_dir=$(mktemp -d)
+                        trap "rm -rf $work_dir" EXIT
+                        extracted_dir="$work_dir/$repo_name-$commit"
+                        echo "→ Copying cached repository..."
+                        # Copy the repository, preserving submodules
+                        cp -r "$cached_repo_dir" "$extracted_dir"
+                        # Ensure submodules are properly initialized in the copied location
+                        cd "$extracted_dir"
+                        if [ -f .gitmodules ]; then
+                            git submodule update --init --recursive 2>/dev/null || true
+                        fi
+                        cd - > /dev/null
+                    else
+                        echo "  → [MISS] Cached clone at wrong commit, re-cloning..."
+                        rm -rf "$cached_repo_dir"
+                    fi
                 fi
 
-                # Remove old extracted snapshot if it exists
-                rm -rf "$work_dir/$repo_name-"*
+                # Clone if not using cached version
+                if [ ! -d "$cached_repo_dir" ] || [ ! -d "$cached_repo_dir/.git" ]; then
+                    echo "  → [MISS] Cloning repository with submodules..."
+                    work_dir=$(mktemp -d)
+                    trap "rm -rf $work_dir" EXIT
+                    extracted_dir="$work_dir/$repo_name-$commit"
 
-                extracted_dir="$work_dir"
+                    # Clone repository (shallow clone for efficiency, then fetch full history if needed)
+                    repo_url="https://github.com/$repo.git"
+                    echo "→ Cloning repository..."
+                    if ! git clone "$repo_url" "$extracted_dir"; then
+                        echo "✗ Failed to clone repository"
+                        exit 1
+                    fi
+
+                    # Checkout specific commit
+                    cd "$extracted_dir"
+                    echo "→ Checking out commit ${commit:0:8}..."
+                    if ! git checkout "$commit"; then
+                        echo "✗ Failed to checkout commit $commit"
+                        exit 1
+                    fi
+
+                    # Initialize and update submodules for this commit
+                    echo "→ Initializing submodules..."
+                    if ! git submodule update --init --recursive; then
+                        echo "✗ Failed to initialize submodules"
+                        exit 1
+                    fi
+                    cd - > /dev/null
+
+                    # Cache the cloned repository for future use
+                    echo "→ Caching git clone..."
+                    mkdir -p "$git_cache_dir"
+                    cp -r "$extracted_dir" "$cached_repo_dir"
+                    echo "  ✓ Cached: $repo_name-$commit"
+                fi
             else
-                # Extract snapshot to temporary directory
-                work_dir=$(mktemp -d)
-                trap "rm -rf $work_dir" EXIT
-                extracted_dir="$work_dir/$repo_name-$commit"
-            fi
+                # Use zip download for repositories without submodules
+                # Download snapshot if not cached
+                snapshot_file="$CACHE_DIR/snapshots/$commit.zip"
+                if [ ! -f "$snapshot_file" ]; then
+                    echo "  → [MISS] Downloading snapshot..."
+                    repo_url="https://github.com/$repo/archive/$commit.zip"
+                    wget -O "$snapshot_file" "$repo_url" || {
+                        echo "✗ Failed to download snapshot"
+                        exit 1
+                    }
+                    echo "  ✓ Added to cache: ${commit:0:8}.zip"
+                else
+                    echo "  ✓ [HIT] Using cached snapshot: ${commit:0:8}.zip"
+                fi
 
-            echo "→ Extracting snapshot to: ${work_dir}"
-            unzip -q "$snapshot_file" -d "$work_dir"
+                # Check if using local build context
+                if [ "$build_context" = "local" ]; then
+                    work_dir="impls/${impl_id//-//}"  # Convert python-v0.4 to impls/python/v0.4
 
-            if [ ! -d "$work_dir/$repo_name-$commit" ]; then
-                echo "✗ Expected directory not found: $work_dir/$repo_name-$commit"
-                exit 1
+                    if [ ! -d "$work_dir" ]; then
+                        echo "✗ Working dir not found: $work_dir"
+                        exit 1
+                    fi
+
+                    # Remove old extracted snapshot if it exists
+                    rm -rf "$work_dir/$repo_name-"*
+
+                    extracted_dir="$work_dir"
+                else
+                    # Extract snapshot to temporary directory
+                    work_dir=$(mktemp -d)
+                    trap "rm -rf $work_dir" EXIT
+                    extracted_dir="$work_dir/$repo_name-$commit"
+                fi
+
+                echo "→ Extracting snapshot to: ${work_dir}"
+                unzip -q "$snapshot_file" -d "$work_dir"
+
+                if [ ! -d "$work_dir/$repo_name-$commit" ]; then
+                    echo "✗ Expected directory not found: $work_dir/$repo_name-$commit"
+                    exit 1
+                fi
             fi
 
             # Build Docker image
@@ -123,9 +199,20 @@ for ((i=0; i<impl_count; i++)); do
                 exit 1
             fi
 
-            # Cleanup extracted snapshot
-            echo "→ Cleaning up extracted snapshot..."
-            rm -rf "$work_dir/$repo_name-$commit"
+            # Cleanup extracted snapshot/clone (but keep cached version)
+            if [ "$requires_submodules" = "true" ]; then
+                # For git clones, always clean up temp work_dir (cached version is separate)
+                if [ -n "${work_dir:-}" ] && [ "$work_dir" != "$cached_repo_dir" ]; then
+                    echo "→ Cleaning up temporary files..."
+                    rm -rf "$work_dir"
+                fi
+            else
+                # For zip downloads, clean up if using temp directory
+                if [ "$build_context" != "local" ] && [ -n "${work_dir:-}" ]; then
+                    echo "→ Cleaning up temporary files..."
+                    rm -rf "$work_dir"
+                fi
+            fi
             trap - EXIT
             ;;
 

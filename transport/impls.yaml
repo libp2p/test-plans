@@ -31,7 +31,7 @@ test-aliases:
   - alias: "eth-p2p"
     value: "eth-p2p-z-v0.0.1"
   - alias: "failing"
-    value: "js-v2.x|c-v0.0.1"
+    value: "js-v2.x"
 
 implementations:
   # Rust implementations
