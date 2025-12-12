@@ -29,6 +29,9 @@ outputs:
   impls-folder-changed:
     description: "Boolean indicating if impls/ folder changed"
     value: ${{ steps.detect.outputs.impls-folder-changed }}
+  build-scripts-changed:
+    description: "Boolean indicating if build/test scripts changed"
+    value: ${{ steps.detect.outputs.build-scripts-changed }}
 
 runs:
   using: "composite"
@@ -65,6 +68,7 @@ runs:
         CHANGED_ROUTERS=""
         IMPLS_YAML_CHANGED="false"
         IMPLS_FOLDER_CHANGED="false"
+        BUILD_SCRIPTS_CHANGED="false"
 
         # =================================================================
         # PART 1: Check if impls.yaml itself changed
@@ -224,17 +228,43 @@ runs:
           done <<< "$IMPLS_FOLDER_FILES"
         fi
 
+        # =================================================================
+        # PART 3: Check if build/test scripts changed
+        # =================================================================
+        if [ "$TEST_TYPE" = "transport" ]; then
+          BUILD_SCRIPT_PATTERNS="transport/scripts/|transport/run_tests.sh"
+        elif [ "$TEST_TYPE" = "hole-punch" ]; then
+          BUILD_SCRIPT_PATTERNS="hole-punch/scripts/|hole-punch/run_tests.sh"
+        fi
+
+        BUILD_SCRIPT_FILES=$(echo "$CHANGED_FILES" | grep -E "^($BUILD_SCRIPT_PATTERNS)" || echo "")
+
+        if [ -n "$BUILD_SCRIPT_FILES" ]; then
+          echo "→ Build/test scripts changed - will trigger tests for all implementations"
+          BUILD_SCRIPTS_CHANGED="true"
+          echo "$BUILD_SCRIPT_FILES" | while IFS= read -r changed_file; do
+            [ -z "$changed_file" ] && continue
+            echo "  → Changed script: $changed_file"
+          done
+        fi
+
         # Output all results
         echo "changed-impls=$CHANGED_IMPLS" >> $GITHUB_OUTPUT
         echo "changed-relays=$CHANGED_RELAYS" >> $GITHUB_OUTPUT
         echo "changed-routers=$CHANGED_ROUTERS" >> $GITHUB_OUTPUT
         echo "impls-yaml-changed=$IMPLS_YAML_CHANGED" >> $GITHUB_OUTPUT
         echo "impls-folder-changed=$IMPLS_FOLDER_CHANGED" >> $GITHUB_OUTPUT
+        echo "build-scripts-changed=$BUILD_SCRIPTS_CHANGED" >> $GITHUB_OUTPUT
 
         # Set has-changes
-        if [ -n "$CHANGED_IMPLS" ] || [ -n "$CHANGED_RELAYS" ] || [ -n "$CHANGED_ROUTERS" ]; then
+        # Trigger tests if implementations changed OR if build scripts changed
+        if [ -n "$CHANGED_IMPLS" ] || [ -n "$CHANGED_RELAYS" ] || [ -n "$CHANGED_ROUTERS" ] || [ "$BUILD_SCRIPTS_CHANGED" = "true" ]; then
           echo "has-changes=true" >> $GITHUB_OUTPUT
-          echo "→ Summary: impls=$CHANGED_IMPLS, relays=$CHANGED_RELAYS, routers=$CHANGED_ROUTERS"
+          if [ "$BUILD_SCRIPTS_CHANGED" = "true" ]; then
+            echo "→ Summary: Build scripts changed - will test all implementations"
+          else
+            echo "→ Summary: impls=$CHANGED_IMPLS, relays=$CHANGED_RELAYS, routers=$CHANGED_ROUTERS"
+          fi
         else
           echo "has-changes=false" >> $GITHUB_OUTPUT
           echo "→ No relevant changes detected"

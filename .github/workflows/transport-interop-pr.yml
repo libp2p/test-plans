@@ -53,6 +53,7 @@ jobs:
       has-changes: ${{ steps.detect.outputs.has-changes }}
       impls-yaml-changed: ${{ steps.detect.outputs.impls-yaml-changed }}
       impls-folder-changed: ${{ steps.detect.outputs.impls-folder-changed }}
+      build-scripts-changed: ${{ steps.detect.outputs.build-scripts-changed }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -104,12 +105,23 @@ jobs:
             echo "→ Manual trigger: using workflow inputs"
           else
             # Automatic trigger - use change detection outputs
-            echo "test-select=${{ steps.detect.outputs.changed-impls }}" >> $GITHUB_OUTPUT
-            echo "test-ignore=!${{ steps.detect.outputs.changed-impls }}" >> $GITHUB_OUTPUT
+            BUILD_SCRIPTS_CHANGED="${{ steps.detect.outputs.build-scripts-changed }}"
+            
+            # If build scripts changed, test all implementations (empty test-select means all)
+            if [ "$BUILD_SCRIPTS_CHANGED" = "true" ]; then
+              echo "test-select=" >> $GITHUB_OUTPUT
+              echo "test-ignore=" >> $GITHUB_OUTPUT
+              echo "→ Build scripts changed - will test all implementations"
+            else
+              echo "test-select=${{ steps.detect.outputs.changed-impls }}" >> $GITHUB_OUTPUT
+              echo "test-ignore=!${{ steps.detect.outputs.changed-impls }}" >> $GITHUB_OUTPUT
+            fi
+            
             echo "force-matrix-rebuild=${{ steps.detect.outputs.impls-yaml-changed }}" >> $GITHUB_OUTPUT
             # Force image rebuild if impls.yaml changed (commit SHA changes require new images)
             # or if impls folder changed (local implementation files changed)
-            if [ "${{ steps.detect.outputs.impls-yaml-changed }}" = "true" ] || [ "${{ steps.detect.outputs.impls-folder-changed }}" = "true" ]; then
+            # or if build scripts changed (build process changed, may affect all images)
+            if [ "${{ steps.detect.outputs.impls-yaml-changed }}" = "true" ] || [ "${{ steps.detect.outputs.impls-folder-changed }}" = "true" ] || [ "$BUILD_SCRIPTS_CHANGED" = "true" ]; then
               echo "force-image-rebuild=true" >> $GITHUB_OUTPUT
             else
               echo "force-image-rebuild=false" >> $GITHUB_OUTPUT
