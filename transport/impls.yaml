@@ -161,7 +161,7 @@ implementations:
     source:
       type: github
       repo: sumanjeet0012/py-libp2p
-      commit: 22f5c14cee586798ba24f8cba0f5183c9fc2447d
+      commit: e79b6e9f2d7adf6cd1d089e6696d39f43af12c6f
 
       dockerfile: interop/transport/Dockerfile
     transports: [tcp, ws, wss, quic-v1]
