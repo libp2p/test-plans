@@ -107,11 +107,23 @@ jobs:
             # Automatic trigger - use change detection outputs
             BUILD_SCRIPTS_CHANGED="${{ steps.detect.outputs.build-scripts-changed }}"
             
-            # If build scripts changed, test all implementations (empty test-select means all)
+            # If build scripts changed, test implementations that use github source type
+            # (since build-images.sh affects how github repos are built)
             if [ "$BUILD_SCRIPTS_CHANGED" = "true" ]; then
-              echo "test-select=" >> $GITHUB_OUTPUT
-              echo "test-ignore=" >> $GITHUB_OUTPUT
-              echo "→ Build scripts changed - will test all implementations"
+              # Extract all implementations with github source type
+              cd transport
+              GITHUB_IMPLS=$(yq eval '.implementations[] | select(.source.type == "github") | .id' impls.yaml | paste -sd'|' -)
+              cd - > /dev/null
+              if [ -n "$GITHUB_IMPLS" ]; then
+                echo "test-select=$GITHUB_IMPLS" >> $GITHUB_OUTPUT
+                echo "test-ignore=!$GITHUB_IMPLS" >> $GITHUB_OUTPUT
+                echo "→ Build scripts changed - will test github-based implementations: $GITHUB_IMPLS"
+              else
+                # Fallback: test all if we can't determine github impls
+                echo "test-select=" >> $GITHUB_OUTPUT
+                echo "test-ignore=" >> $GITHUB_OUTPUT
+                echo "→ Build scripts changed - will test all implementations (fallback)"
+              fi
             else
               echo "test-select=${{ steps.detect.outputs.changed-impls }}" >> $GITHUB_OUTPUT
               echo "test-ignore=!${{ steps.detect.outputs.changed-impls }}" >> $GITHUB_OUTPUT
