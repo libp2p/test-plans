@@ -116,7 +116,7 @@ jobs:
               cd - > /dev/null
               if [ -n "$GITHUB_IMPLS" ]; then
                 echo "test-select=$GITHUB_IMPLS" >> $GITHUB_OUTPUT
-                echo "test-ignore=!$GITHUB_IMPLS" >> $GITHUB_OUTPUT
+                echo "test-ignore=" >> $GITHUB_OUTPUT
                 echo "→ Build scripts changed - will test github-based implementations: $GITHUB_IMPLS"
               else
                 # Fallback: test all if we can't determine github impls
@@ -126,7 +126,7 @@ jobs:
               fi
             else
               echo "test-select=${{ steps.detect.outputs.changed-impls }}" >> $GITHUB_OUTPUT
-              echo "test-ignore=!${{ steps.detect.outputs.changed-impls }}" >> $GITHUB_OUTPUT
+              echo "test-ignore=" >> $GITHUB_OUTPUT
             fi
             
             echo "force-matrix-rebuild=${{ steps.detect.outputs.impls-yaml-changed }}" >> $GITHUB_OUTPUT
