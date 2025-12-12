@@ -4,16 +4,18 @@
 # Test Aliases - Define reusable patterns for test selection
 # Usage: --test-select "~libp2p" or --test-ignore "~baseline"
 test-aliases:
-  - alias: "libp2p"
-    value: "go-v0.45|rust-v0.56|js-v3.x"
-  - alias: "baseline"
-    value: "https-baseline|quic-go-baseline"
+  - alias: "impls"
+    value: "go-v0.45|js-v3.x|rust-v0.56"
+  - alias: "baselines"
+    value: "https|quic-go"
   - alias: "go"
-    value: "go-v0.45|quic-go-baseline"
+    value: "go-v0.45"
   - alias: "rust"
     value: "rust-v0.56"
   - alias: "js"
     value: "js-v3.x"
+  - alias: "failing"
+    value: "https|quic-go|go-v0.45|js-v3.x"
 
 # Server configurations - Where perf servers run
 # Supports both local (Docker on same machine) and remote (SSH to another machine)
