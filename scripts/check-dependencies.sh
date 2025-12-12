@@ -132,6 +132,22 @@ else
     has_error=true
 fi
 
+# Check ssh (required for remote builds)
+if command -v ssh &> /dev/null; then
+    echo "✓ ssh is installed"
+else
+    echo "✗ ssh is not installed (required for remote builds)"
+    has_error=true
+fi
+
+# Check scp (required for remote builds)
+if command -v scp &> /dev/null; then
+    echo "✓ scp is installed"
+else
+    echo "✗ scp is not installed (required for remote builds)"
+    has_error=true
+fi
+
 echo ""
 
 if [ "$has_error" = true ]; then
