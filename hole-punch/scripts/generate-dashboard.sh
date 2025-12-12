@@ -12,8 +12,6 @@ if [ ! -f "$RESULTS_FILE" ]; then
     exit 1
 fi
 
-echo "→ Generating results dashboard..."
-
 # Extract metadata
 test_pass=$(yq eval '.metadata.testPass' "$RESULTS_FILE")
 started_at=$(yq eval '.metadata.startedAt' "$RESULTS_FILE")

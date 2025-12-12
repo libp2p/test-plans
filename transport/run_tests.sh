@@ -199,14 +199,59 @@ echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔�
 echo "→ bash scripts/generate-tests.sh \"$TEST_SELECT\" \"$TEST_IGNORE\" \"$DEBUG\" \"$FORCE_MATRIX_REBUILD\""
 bash scripts/generate-tests.sh "$TEST_SELECT" "$TEST_IGNORE" "$DEBUG" "$FORCE_MATRIX_REBUILD"
 
-# 3. Extract unique implementations from test matrix and build only those
+# 3. Display test selection and get confirmation
+echo ""
+echo "╲ Test selection..."
+echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+echo "→ Selected tests:"
+
+# Read test matrix
+test_count=$(yq eval '.metadata.totalTests' "$TEST_PASS_DIR/test-matrix.yaml")
+ignored_count=$(yq eval '.metadata.ignoredTests' "$TEST_PASS_DIR/test-matrix.yaml")
+
+# Display active tests (extract all names in one yq call)
+if [ "$test_count" -gt 0 ]; then
+    yq eval '.tests[].name' "$TEST_PASS_DIR/test-matrix.yaml" | while read -r test_name; do
+        echo "  ✓ $test_name"
+    done
+fi
+
+# Display ignored tests (extract all names in one yq call)
+if [ "$ignored_count" -gt 0 ]; then
+    echo ""
+    echo "→ Ignored tests:"
+    yq eval '.ignoredTests[].name' "$TEST_PASS_DIR/test-matrix.yaml" | while read -r test_name; do
+        echo "  ✗ $test_name [ignored]"
+    done
+fi
+
+echo ""
+echo "→ Total: $test_count tests to execute, $ignored_count ignored"
+
+# Source common test execution utilities
+source ../scripts/lib-test-execution.sh
+
+# Calculate required Docker images
+image_count=$(get_required_image_count "$TEST_PASS_DIR/test-matrix.yaml" "false")
+echo "→ Required Docker images: $image_count"
+
+# Prompt user for confirmation (unless -y flag was set)
+if [ "$AUTO_YES" = false ]; then
+    read -p "Build $image_count Docker images and execute $test_count tests? (Y/n): " response
+    response=${response:-Y}  # Default to Y if user just presses enter
+
+    if [[ ! "$response" =~ ^[Yy]$ ]]; then
+        echo "Test execution cancelled."
+        exit 0
+    fi
+fi
+
+# 4. Extract unique implementations from test matrix and build only those
 echo ""
 echo "╲ Building Docker images..."
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
 # Check if test matrix has any tests
-test_count=$(yq eval '.metadata.totalTests' "$TEST_PASS_DIR/test-matrix.yaml")
-
 if [ "$test_count" -eq 0 ]; then
     echo "→ No tests in matrix, skipping image builds"
 else
@@ -243,46 +288,6 @@ else
     bash scripts/build-images.sh "$IMPL_FILTER" "$FORCE_IMAGE_REBUILD"
 
     rm -f "$REQUIRED_IMPLS" "$REQUIRED_IMPLS_WITH_DEPS"
-fi
-
-# Display test list and prompt for confirmation
-echo ""
-echo "╲ Test selection..."
-echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-echo "→ Selected tests:"
-
-# Read test matrix
-test_count=$(yq eval '.metadata.totalTests' "$TEST_PASS_DIR/test-matrix.yaml")
-ignored_count=$(yq eval '.metadata.ignoredTests' "$TEST_PASS_DIR/test-matrix.yaml")
-
-# Display active tests (extract all names in one yq call)
-if [ "$test_count" -gt 0 ]; then
-    yq eval '.tests[].name' "$TEST_PASS_DIR/test-matrix.yaml" | while read -r test_name; do
-        echo "  ✓ $test_name"
-    done
-fi
-
-# Display ignored tests (extract all names in one yq call)
-if [ "$ignored_count" -gt 0 ]; then
-    echo ""
-    echo "→ Ignored tests:"
-    yq eval '.ignoredTests[].name' "$TEST_PASS_DIR/test-matrix.yaml" | while read -r test_name; do
-        echo "  ✗ $test_name [ignored]"
-    done
-fi
-
-echo ""
-echo "→ Total: $test_count tests to execute, $ignored_count ignored"
-
-# Prompt user for confirmation (unless -y flag was set)
-if [ "$AUTO_YES" = false ]; then
-    read -p "Execute $test_count tests? (Y/n): " response
-    response=${response:-Y}  # Default to Y if user just presses enter
-
-    if [[ ! "$response" =~ ^[Yy]$ ]]; then
-        echo "Test execution cancelled."
-        exit 0
-    fi
 fi
 
 # 4. Run tests in parallel
