@@ -96,14 +96,18 @@ for ((i=0; i<impl_count; i++)); do
                         trap "rm -rf $work_dir" EXIT
                         extracted_dir="$work_dir/$repo_name-$commit"
                         echo "→ Copying cached repository..."
-                        # Copy the repository, preserving submodules
-                        cp -r "$cached_repo_dir" "$extracted_dir"
-                        # Ensure submodules are properly initialized in the copied location
-                        cd "$extracted_dir"
-                        if [ -f .gitmodules ]; then
-                            git submodule update --init --recursive 2>/dev/null || true
-                        fi
-                        cd - > /dev/null
+                        # Copy the repository, preserving submodules (they're already initialized in cache)
+                        # Copy everything except .git (Docker builds don't need git history)
+                        # This avoids issues with absolute paths in .git/modules
+                        mkdir -p "$extracted_dir"
+                        rsync -a --exclude='.git' "$cached_repo_dir/" "$extracted_dir/" 2>/dev/null || {
+                            # Fallback to cp if rsync not available
+                            cp -r "$cached_repo_dir" "$extracted_dir"
+                            # Remove .git to avoid path issues (Docker builds don't need it)
+                            rm -rf "$extracted_dir/.git"
+                        }
+                        # Submodules are already present as directories from the cached copy
+                        # No need to re-initialize - Docker build only needs the source files
                     else
                         echo "  → [MISS] Cached clone at wrong commit, re-cloning..."
                         rm -rf "$cached_repo_dir"
