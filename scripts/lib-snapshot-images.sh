@@ -1,6 +1,6 @@
 #!/bin/bash
 # Common library for saving Docker images in snapshots
-# Used by create-snapshot.sh in both transport and hole-punch
+# Used by create-snapshot.sh in transport, hole-punch, and perf
 
 # Source the image naming library
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -8,7 +8,7 @@ source "$SCRIPT_DIR/lib-image-naming.sh"
 
 # Save all Docker images needed for tests
 # Usage: save_docker_images_for_tests <snapshot_dir> <test_type>
-# test_type: "transport" or "hole-punch"
+# test_type: "transport", "hole-punch", or "perf"
 save_docker_images_for_tests() {
     local snapshot_dir="$1"
     local test_type="$2"

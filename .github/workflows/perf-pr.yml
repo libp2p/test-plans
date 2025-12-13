@@ -1,44 +1,39 @@
-name: Hole Punch Interoperability Tests (PR)
+name: Performance Benchmarks (PR)
 
 on:
   pull_request:
     paths:
-      - 'hole-punch/**'
+      - 'perf/**'
       - '.github/actions/detect-changed-impls/**'
-      - '.github/actions/run-bash-hole-punch-test/**'
-      - '.github/workflows/hole-punch-interop-pr.yml'
+      - '.github/actions/run-bash-perf-test/**'
+      - '.github/workflows/perf-pr.yml'
   workflow_dispatch:
     inputs:
       test-select:
-        description: 'Select specific tests (pipe-separated substrings)'
+        description: 'Select specific implementations to test (pipe-separated substrings, e.g., "go|rust")'
         required: false
         default: ''
         type: string
       test-ignore:
-        description: 'Ignore specific tests (pipe-separated substrings)'
+        description: 'Ignore specific implementations (pipe-separated substrings)'
         required: false
         default: '~failing'
         type: string
-      relay-select:
-        description: 'Select specific relays (pipe-separated substrings)'
+      baseline-select:
+        description: 'Select specific baseline tests (pipe-separated substrings)'
         required: false
         default: ''
         type: string
-      relay-ignore:
-        description: 'Ignore specific relays (pipe-separated substrings)'
+      baseline-ignore:
+        description: 'Ignore specific baseline tests (pipe-separated substrings)'
         required: false
         default: '~failing'
         type: string
-      router-select:
-        description: 'Select specific routers (pipe-separated substrings)'
+      iterations:
+        description: 'Number of iterations per test'
         required: false
-        default: ''
-        type: string
-      router-ignore:
-        description: 'Ignore specific routers (pipe-separated substrings)'
-        required: false
-        default: ''
-        type: string
+        default: 10
+        type: number
       force-matrix-rebuild:
         description: 'Force test matrix regeneration (bypass cache)'
         required: false
@@ -70,8 +65,6 @@ jobs:
     runs-on: [self-hosted, linux, x64, ephemeral]
     outputs:
       changed-impls: ${{ steps.detect.outputs.changed-impls }}
-      changed-relays: ${{ steps.detect.outputs.changed-relays }}
-      changed-routers: ${{ steps.detect.outputs.changed-routers }}
       has-changes: ${{ steps.detect.outputs.has-changes }}
       impls-yaml-changed: ${{ steps.detect.outputs.impls-yaml-changed }}
       impls-folder-changed: ${{ steps.detect.outputs.impls-folder-changed }}
@@ -81,21 +74,20 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Detect changed implementations/relays/routers
+      - name: Detect changed implementations
         id: detect
         uses: ./.github/actions/detect-changed-impls
         with:
-          test-type: hole-punch
+          test-type: perf
 
   resolve-parameters:
     runs-on: [self-hosted, linux, x64, ephemeral]
     outputs:
       test-select: ${{ steps.resolve.outputs.test-select }}
       test-ignore: ${{ steps.resolve.outputs.test-ignore }}
-      relay-select: ${{ steps.resolve.outputs.relay-select }}
-      relay-ignore: ${{ steps.resolve.outputs.relay-ignore }}
-      router-select: ${{ steps.resolve.outputs.router-select }}
-      router-ignore: ${{ steps.resolve.outputs.router-ignore }}
+      baseline-select: ${{ steps.resolve.outputs.baseline-select }}
+      baseline-ignore: ${{ steps.resolve.outputs.baseline-ignore }}
+      iterations: ${{ steps.resolve.outputs.iterations }}
       force-matrix-rebuild: ${{ steps.resolve.outputs.force-matrix-rebuild }}
       force-image-rebuild: ${{ steps.resolve.outputs.force-image-rebuild }}
       debug: ${{ steps.resolve.outputs.debug }}
@@ -107,12 +99,12 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Detect changed implementations/relays/routers
+      - name: Detect changed implementations
         if: github.event_name != 'workflow_dispatch'
         id: detect
         uses: ./.github/actions/detect-changed-impls
         with:
-          test-type: hole-punch
+          test-type: perf
 
       - name: Resolve parameters
         id: resolve
@@ -122,10 +114,9 @@ jobs:
             # Manual trigger - use workflow inputs
             echo "test-select=${{ github.event.inputs.test-select }}" >> $GITHUB_OUTPUT
             echo "test-ignore=${{ github.event.inputs.test-ignore }}" >> $GITHUB_OUTPUT
-            echo "relay-select=${{ github.event.inputs.relay-select }}" >> $GITHUB_OUTPUT
-            echo "relay-ignore=${{ github.event.inputs.relay-ignore }}" >> $GITHUB_OUTPUT
-            echo "router-select=${{ github.event.inputs.router-select }}" >> $GITHUB_OUTPUT
-            echo "router-ignore=${{ github.event.inputs.router-ignore }}" >> $GITHUB_OUTPUT
+            echo "baseline-select=${{ github.event.inputs.baseline-select }}" >> $GITHUB_OUTPUT
+            echo "baseline-ignore=${{ github.event.inputs.baseline-ignore }}" >> $GITHUB_OUTPUT
+            echo "iterations=${{ github.event.inputs.iterations }}" >> $GITHUB_OUTPUT
             echo "force-matrix-rebuild=${{ github.event.inputs.force-matrix-rebuild }}" >> $GITHUB_OUTPUT
             echo "force-image-rebuild=${{ github.event.inputs.force-image-rebuild }}" >> $GITHUB_OUTPUT
             echo "debug=${{ github.event.inputs.debug }}" >> $GITHUB_OUTPUT
@@ -136,12 +127,17 @@ jobs:
             # Automatic trigger - use change detection outputs
             echo "test-select=${{ steps.detect.outputs.changed-impls }}" >> $GITHUB_OUTPUT
             echo "test-ignore=!${{ steps.detect.outputs.changed-impls }}" >> $GITHUB_OUTPUT
-            echo "relay-select=${{ steps.detect.outputs.changed-relays }}" >> $GITHUB_OUTPUT
-            echo "relay-ignore=!${{ steps.detect.outputs.changed-relays }}" >> $GITHUB_OUTPUT
-            echo "router-select=${{ steps.detect.outputs.changed-routers }}" >> $GITHUB_OUTPUT
-            echo "router-ignore=!${{ steps.detect.outputs.changed-routers }}" >> $GITHUB_OUTPUT
+            echo "baseline-select=" >> $GITHUB_OUTPUT
+            echo "baseline-ignore=" >> $GITHUB_OUTPUT
+            echo "iterations=10" >> $GITHUB_OUTPUT
             echo "force-matrix-rebuild=${{ steps.detect.outputs.impls-yaml-changed }}" >> $GITHUB_OUTPUT
-            echo "force-image-rebuild=${{ steps.detect.outputs.impls-folder-changed }}" >> $GITHUB_OUTPUT
+            # Force image rebuild if impls.yaml changed (commit SHA changes require new images)
+            # or if impls folder changed (local implementation files changed)
+            if [ "${{ steps.detect.outputs.impls-yaml-changed }}" = "true" ] || [ "${{ steps.detect.outputs.impls-folder-changed }}" = "true" ]; then
+              echo "force-image-rebuild=true" >> $GITHUB_OUTPUT
+            else
+              echo "force-image-rebuild=false" >> $GITHUB_OUTPUT
+            fi
             echo "debug=false" >> $GITHUB_OUTPUT
             echo "snapshot=true" >> $GITHUB_OUTPUT
             echo "should-run-tests=${{ steps.detect.outputs.has-changes }}" >> $GITHUB_OUTPUT
@@ -156,15 +152,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Run hole punch interop tests
-        uses: ./.github/actions/run-bash-hole-punch-test
+      - name: Run perf benchmarks
+        uses: ./.github/actions/run-bash-perf-test
         with:
           test-select: '${{ needs.resolve-parameters.outputs.test-select }}'
           test-ignore: '${{ needs.resolve-parameters.outputs.test-ignore }}'
-          relay-select: '${{ needs.resolve-parameters.outputs.relay-select }}'
-          relay-ignore: '${{ needs.resolve-parameters.outputs.relay-ignore }}'
-          router-select: '${{ needs.resolve-parameters.outputs.router-select }}'
-          router-ignore: '${{ needs.resolve-parameters.outputs.router-ignore }}'
+          baseline-select: '${{ needs.resolve-parameters.outputs.baseline-select }}'
+          baseline-ignore: '${{ needs.resolve-parameters.outputs.baseline-ignore }}'
+          iterations: '${{ needs.resolve-parameters.outputs.iterations }}'
           cache-dir: /srv/cache
           snapshot: ${{ needs.resolve-parameters.outputs.snapshot }}
           force-matrix-rebuild: ${{ needs.resolve-parameters.outputs.force-matrix-rebuild }}
