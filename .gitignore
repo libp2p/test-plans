@@ -52,5 +52,3 @@ dist
 downloads/
 
 .nvim
-
-target/
