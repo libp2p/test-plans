@@ -163,7 +163,7 @@ implementations:
       repo: libp2p/py-libp2p
       commit: 999b326e168e26ca771a120d2db10e83341802d7
       dockerfile: interop/transport/Dockerfile
-    transports: [tcp, ws, wss, quic-v1]
+    transports: [tcp, ws, wss, quic-v1, webrtc-direct]
     secureChannels: [noise]
     muxers: [mplex, yamux]
 
