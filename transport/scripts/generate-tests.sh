@@ -38,36 +38,26 @@ echo ""
 echo "╲ Test Matrix Generation"
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
-# Display test selection
+# Display and expand test selection
 if [ -n "$TEST_SELECT" ]; then
     echo "→ Test select: $TEST_SELECT"
+    ORIGINAL_SELECT="$TEST_SELECT"
+    TEST_SELECT=$(expand_all_patterns "$TEST_SELECT" "impls.yaml")
+    # Always show final expanded value
+    echo "  → Expanded to: $TEST_SELECT"
 else
     echo "→ No test-select specified (will include all tests)"
 fi
 
-# Expand aliases in TEST_SELECT
-if [ -n "$TEST_SELECT" ]; then
-    ORIGINAL_SELECT="$TEST_SELECT"
-    TEST_SELECT=$(expand_aliases "$TEST_SELECT")
-    if [ "$TEST_SELECT" != "$ORIGINAL_SELECT" ]; then
-        echo "  → Expanded aliases to: $TEST_SELECT"
-    fi
-fi
-
-# Display test ignore
+# Display and expand test ignore
 if [ -n "$TEST_IGNORE" ]; then
     echo "→ Test ignore: $TEST_IGNORE"
+    ORIGINAL_IGNORE="$TEST_IGNORE"
+    TEST_IGNORE=$(expand_all_patterns "$TEST_IGNORE" "impls.yaml")
+    # Always show final expanded value
+    echo "  → Expanded to: $TEST_IGNORE"
 else
     echo "→ No test-ignore specified"
-fi
-
-# Expand aliases in TEST_IGNORE
-if [ -n "$TEST_IGNORE" ]; then
-    ORIGINAL_IGNORE="$TEST_IGNORE"
-    TEST_IGNORE=$(expand_aliases "$TEST_IGNORE")
-    if [ "$TEST_IGNORE" != "$ORIGINAL_IGNORE" ]; then
-        echo "  → Expanded aliases to: $TEST_IGNORE"
-    fi
 fi
 
 # Compute cache key from impls.yaml + select + ignore + debug
@@ -155,16 +145,15 @@ test_num=0
 
 # Iterate through all dialer/listener pairs using pre-loaded data
 for dialer_id in "${impl_ids[@]}"; do
-    # Skip if dialer doesn't match select filter
-    impl_matches_select "$dialer_id" || continue
-
     dialer_transports="${impl_transports[$dialer_id]}"
     dialer_secure="${impl_secure[$dialer_id]}"
     dialer_muxers="${impl_muxers[$dialer_id]}"
 
     for listener_id in "${impl_ids[@]}"; do
-        # Skip if listener doesn't match select filter
-        impl_matches_select "$listener_id" || continue
+        # When TEST_SELECT is specified, include test if EITHER dialer OR listener matches
+        if [ ${#SELECT_PATTERNS[@]} -gt 0 ]; then
+            impl_matches_select "$dialer_id" || impl_matches_select "$listener_id" || continue
+        fi
 
         listener_transports="${impl_transports[$listener_id]}"
         listener_secure="${impl_secure[$listener_id]}"

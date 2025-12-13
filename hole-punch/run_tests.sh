@@ -215,12 +215,7 @@ echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔�
 echo "→ bash scripts/generate-tests.sh \"$TEST_SELECT\" \"$TEST_IGNORE\" \"$RELAY_SELECT\" \"$RELAY_IGNORE\" \"$ROUTER_SELECT\" \"$ROUTER_IGNORE\" \"$DEBUG\" \"$FORCE_MATRIX_REBUILD\""
 bash scripts/generate-tests.sh "$TEST_SELECT" "$TEST_IGNORE" "$RELAY_SELECT" "$RELAY_IGNORE" "$ROUTER_SELECT" "$ROUTER_IGNORE" "$DEBUG" "$FORCE_MATRIX_REBUILD"
 
-# 2. Build images
-echo ""
-echo "╲ Building Docker images..."
-echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-
-# Check if test matrix has any tests
+# 3. Display test selection and get confirmation
 test_count=$(yq eval '.metadata.totalTests' "$TEST_PASS_DIR/test-matrix.yaml")
 
 if [ "$test_count" -eq 0 ]; then
@@ -474,6 +469,14 @@ MINUTES=$(((DURATION % 3600) / 60))
 SECONDS=$((DURATION % 60))
 printf "→ Total time: %02d:%02d:%02d\n" $HOURS $MINUTES $SECONDS
 
+# 6. Generate dashboard
+echo ""
+echo "╲ Generating results dashboard..."
+echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+echo "→ bash scripts/generate-dashboard.sh"
+bash scripts/generate-dashboard.sh
+
+# Final status message
 echo ""
 if [ "$FAILED" -eq 0 ]; then
     echo "╲ ✓ All tests passed!"
@@ -484,13 +487,6 @@ else
     echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
     EXIT_FINAL=1
 fi
-
-# 6. Generate dashboard
-echo ""
-echo "╲ Generating results dashboard..."
-echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-echo "→ bash scripts/generate-dashboard.sh"
-bash scripts/generate-dashboard.sh
 
 # 7. Create snapshot (optional)
 if [ "$CREATE_SNAPSHOT" = true ]; then
