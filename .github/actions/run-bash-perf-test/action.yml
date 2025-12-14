@@ -171,6 +171,7 @@ runs:
           ${{ steps.find-test-pass.outputs.test-pass-dir }}/results.yaml
           ${{ steps.find-test-pass.outputs.test-pass-dir }}/results.md
           ${{ steps.find-test-pass.outputs.test-pass-dir }}/results.html
+          ${{ steps.find-test-pass.outputs.test-pass-dir }}/boxplot-data.json
         if-no-files-found: warn
 
     - name: Upload snapshot archive
