@@ -112,23 +112,56 @@ async fn run_dialer(redis_addr: String, transport: String, secure: Option<String
     println!("# Upload measurement");
     println!("upload:");
     println!("  iterations: {}", upload_iterations);
-    println!("  median: {:.2}", upload_stats.median);
     println!("  min: {:.2}", upload_stats.min);
+    println!("  q1: {:.2}", upload_stats.q1);
+    println!("  median: {:.2}", upload_stats.median);
+    println!("  q3: {:.2}", upload_stats.q3);
     println!("  max: {:.2}", upload_stats.max);
+    if !upload_stats.outliers.is_empty() {
+        println!("  outliers: [{}]", upload_stats.outliers.iter()
+            .map(|v| format!("{:.2}", v))
+            .collect::<Vec<_>>()
+            .join(", "));
+    } else {
+        println!("  outliers: []");
+    }
+    println!("  unit: Gbps");
     println!();
     println!("# Download measurement");
     println!("download:");
     println!("  iterations: {}", download_iterations);
-    println!("  median: {:.2}", download_stats.median);
     println!("  min: {:.2}", download_stats.min);
+    println!("  q1: {:.2}", download_stats.q1);
+    println!("  median: {:.2}", download_stats.median);
+    println!("  q3: {:.2}", download_stats.q3);
     println!("  max: {:.2}", download_stats.max);
+    if !download_stats.outliers.is_empty() {
+        println!("  outliers: [{}]", download_stats.outliers.iter()
+            .map(|v| format!("{:.2}", v))
+            .collect::<Vec<_>>()
+            .join(", "));
+    } else {
+        println!("  outliers: []");
+    }
+    println!("  unit: Gbps");
     println!();
     println!("# Latency measurement");
     println!("latency:");
     println!("  iterations: {}", latency_iterations);
-    println!("  median: {:.6}", latency_stats.median);
     println!("  min: {:.6}", latency_stats.min);
+    println!("  q1: {:.6}", latency_stats.q1);
+    println!("  median: {:.6}", latency_stats.median);
+    println!("  q3: {:.6}", latency_stats.q3);
     println!("  max: {:.6}", latency_stats.max);
+    if !latency_stats.outliers.is_empty() {
+        println!("  outliers: [{}]", latency_stats.outliers.iter()
+            .map(|v| format!("{:.6}", v))
+            .collect::<Vec<_>>()
+            .join(", "));
+    } else {
+        println!("  outliers: []");
+    }
+    println!("  unit: seconds");
 
     eprintln!("All measurements complete!");
 }
@@ -144,9 +177,12 @@ async fn wait_for_listener(con: &mut redis::aio::MultiplexedConnection) -> Strin
 }
 
 struct Stats {
-    median: f64,
     min: f64,
+    q1: f64,
+    median: f64,
+    q3: f64,
     max: f64,
+    outliers: Vec<f64>,
 }
 
 async fn run_measurement(upload_bytes: u64, download_bytes: u64, iterations: u32) -> Stats {
@@ -174,15 +210,42 @@ async fn run_measurement(upload_bytes: u64, download_bytes: u64, iterations: u32
         values.push(value);
     }
 
-    // Calculate statistics
+    // Sort values for percentile calculation
     values.sort_by(|a, b| a.partial_cmp(b).unwrap());
-    let min = *values.first().unwrap_or(&0.0);
-    let max = *values.last().unwrap_or(&0.0);
-    let median = if values.len() % 2 == 0 {
-        (values[values.len() / 2 - 1] + values[values.len() / 2]) / 2.0
-    } else {
-        values[values.len() / 2]
-    };
 
-    Stats { median, min, max }
+    let n = values.len();
+    let min = values[0];
+    let max = values[n - 1];
+
+    // Calculate percentiles
+    let q1 = percentile(&values, 25.0);
+    let median = percentile(&values, 50.0);
+    let q3 = percentile(&values, 75.0);
+
+    // Calculate IQR and identify outliers
+    let iqr = q3 - q1;
+    let lower_fence = q1 - 1.5 * iqr;
+    let upper_fence = q3 + 1.5 * iqr;
+
+    let outliers: Vec<f64> = values.iter()
+        .filter(|&&v| v < lower_fence || v > upper_fence)
+        .copied()
+        .collect();
+
+    Stats { min, q1, median, q3, max, outliers }
+}
+
+// Helper function to calculate percentile
+fn percentile(sorted_values: &[f64], p: f64) -> f64 {
+    let n = sorted_values.len();
+    let index = (p / 100.0) * (n - 1) as f64;
+    let lower = index.floor() as usize;
+    let upper = index.ceil() as usize;
+
+    if lower == upper {
+        sorted_values[lower]
+    } else {
+        let weight = index - lower as f64;
+        sorted_values[lower] * (1.0 - weight) + sorted_values[upper] * weight
+    }
 }

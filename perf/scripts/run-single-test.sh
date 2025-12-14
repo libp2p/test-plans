@@ -140,8 +140,11 @@ fi
 # Dialer outputs YAML to stdout, which appears in docker logs
 DIALER_LOGS=$($DOCKER_COMPOSE_CMD -f "$COMPOSE_FILE" logs dialer 2>/dev/null || echo "")
 
-# Extract only the YAML output (lines that start with # or key:)
-DIALER_YAML=$(echo "$DIALER_LOGS" | grep -E "^(upload:|download:|latency:|  )" | sed 's/^dialer[^|]*| //' || echo "")
+# Extract the measurement YAML (including outliers arrays)
+# Docker compose prefixes each line with: "container_name  | "
+# We need to strip this prefix and keep only the YAML content
+# Match lines containing: upload:, download:, latency:, or indented fields
+DIALER_YAML=$(echo "$DIALER_LOGS" | grep -E "dialer.*\| (upload:|download:|latency:|  )" | sed 's/^.*| //' || echo "")
 
 # Save complete result to individual file
 cat > "$TEST_PASS_DIR/results/${test_name}.yaml" <<EOF
@@ -157,8 +160,13 @@ status: $([ $EXIT_CODE -eq 0 ] && echo "pass" || echo "fail")
 $DIALER_YAML
 EOF
 
-# Append to combined results file (baseline or main)
-cat >> "$RESULTS_FILE" <<EOF
+# Proper indentation for nested YAML (add 4 spaces to measurement lines)
+INDENTED_YAML=$(echo "$DIALER_YAML" | sed 's/^/    /')
+
+# Append to combined results file (baseline or main) with embedded measurements
+(
+    flock -x 200
+    cat >> "$RESULTS_FILE" <<EOF
   - name: $test_name
     dialer: $dialer_id
     listener: $listener_id
@@ -166,7 +174,9 @@ cat >> "$RESULTS_FILE" <<EOF
     secureChannel: $secure
     muxer: $muxer
     status: $([ $EXIT_CODE -eq 0 ] && echo "pass" || echo "fail")
+$INDENTED_YAML
 EOF
+) 200>/tmp/results.lock
 
 # Cleanup
 log_debug "  Cleaning up containers..."

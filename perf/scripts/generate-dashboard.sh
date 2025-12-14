@@ -69,6 +69,72 @@ cat > "$OUTPUT_MD" <<EOF
 - Passed: $tests_passed
 - Failed: $tests_failed
 
+## Box Plot Statistics
+
+### Upload Throughput (Gbps)
+
+| Test | Min | Q1 | Median | Q3 | Max | Outliers |
+|------|-----|-------|--------|-------|-----|----------|
+EOF
+
+# Extract upload stats from each test
+test_count=$(yq eval '.testResults | length' "$RESULTS_FILE" 2>/dev/null || echo "0")
+for ((i=0; i<test_count; i++)); do
+    name=$(yq eval ".testResults[$i].name" "$RESULTS_FILE" 2>/dev/null || echo "N/A")
+    min=$(yq eval ".testResults[$i].upload.min" "$RESULTS_FILE" 2>/dev/null || echo "N/A")
+    q1=$(yq eval ".testResults[$i].upload.q1" "$RESULTS_FILE" 2>/dev/null || echo "N/A")
+    median=$(yq eval ".testResults[$i].upload.median" "$RESULTS_FILE" 2>/dev/null || echo "N/A")
+    q3=$(yq eval ".testResults[$i].upload.q3" "$RESULTS_FILE" 2>/dev/null || echo "N/A")
+    max=$(yq eval ".testResults[$i].upload.max" "$RESULTS_FILE" 2>/dev/null || echo "N/A")
+    outlier_count=$(yq eval ".testResults[$i].upload.outliers | length" "$RESULTS_FILE" 2>/dev/null || echo "0")
+
+    echo "| $name | $min | $q1 | $median | $q3 | $max | $outlier_count |" >> "$OUTPUT_MD"
+done
+
+cat >> "$OUTPUT_MD" <<'EOF'
+
+### Download Throughput (Gbps)
+
+| Test | Min | Q1 | Median | Q3 | Max | Outliers |
+|------|-----|-------|--------|-------|-----|----------|
+EOF
+
+# Extract download stats from each test
+for ((i=0; i<test_count; i++)); do
+    name=$(yq eval ".testResults[$i].name" "$RESULTS_FILE" 2>/dev/null || echo "N/A")
+    min=$(yq eval ".testResults[$i].download.min" "$RESULTS_FILE" 2>/dev/null || echo "N/A")
+    q1=$(yq eval ".testResults[$i].download.q1" "$RESULTS_FILE" 2>/dev/null || echo "N/A")
+    median=$(yq eval ".testResults[$i].download.median" "$RESULTS_FILE" 2>/dev/null || echo "N/A")
+    q3=$(yq eval ".testResults[$i].download.q3" "$RESULTS_FILE" 2>/dev/null || echo "N/A")
+    max=$(yq eval ".testResults[$i].download.max" "$RESULTS_FILE" 2>/dev/null || echo "N/A")
+    outlier_count=$(yq eval ".testResults[$i].download.outliers | length" "$RESULTS_FILE" 2>/dev/null || echo "0")
+
+    echo "| $name | $min | $q1 | $median | $q3 | $max | $outlier_count |" >> "$OUTPUT_MD"
+done
+
+cat >> "$OUTPUT_MD" <<'EOF'
+
+### Latency (seconds)
+
+| Test | Min | Q1 | Median | Q3 | Max | Outliers |
+|------|-----|-------|--------|-------|-----|----------|
+EOF
+
+# Extract latency stats from each test
+for ((i=0; i<test_count; i++)); do
+    name=$(yq eval ".testResults[$i].name" "$RESULTS_FILE" 2>/dev/null || echo "N/A")
+    min=$(yq eval ".testResults[$i].latency.min" "$RESULTS_FILE" 2>/dev/null || echo "N/A")
+    q1=$(yq eval ".testResults[$i].latency.q1" "$RESULTS_FILE" 2>/dev/null || echo "N/A")
+    median=$(yq eval ".testResults[$i].latency.median" "$RESULTS_FILE" 2>/dev/null || echo "N/A")
+    q3=$(yq eval ".testResults[$i].latency.q3" "$RESULTS_FILE" 2>/dev/null || echo "N/A")
+    max=$(yq eval ".testResults[$i].latency.max" "$RESULTS_FILE" 2>/dev/null || echo "N/A")
+    outlier_count=$(yq eval ".testResults[$i].latency.outliers | length" "$RESULTS_FILE" 2>/dev/null || echo "0")
+
+    echo "| $name | $min | $q1 | $median | $q3 | $max | $outlier_count |" >> "$OUTPUT_MD"
+done
+
+cat >> "$OUTPUT_MD" <<'EOF'
+
 ## Test Results
 
 EOF
@@ -105,7 +171,87 @@ cat > "$OUTPUT_HTML" <<EOF
 </html>
 EOF
 
+# Generate box plot JSON data for visualization
+OUTPUT_JSON="${TEST_PASS_DIR}/boxplot-data.json"
+
+cat > "$OUTPUT_JSON" <<'EOF'
+{
+  "upload": [],
+  "download": [],
+  "latency": []
+}
+EOF
+
+for ((i=0; i<test_count; i++)); do
+    name=$(yq eval ".testResults[$i].name" "$RESULTS_FILE" 2>/dev/null)
+
+    # Upload box plot data
+    upload_min=$(yq eval ".testResults[$i].upload.min" "$RESULTS_FILE" 2>/dev/null)
+    upload_q1=$(yq eval ".testResults[$i].upload.q1" "$RESULTS_FILE" 2>/dev/null)
+    upload_median=$(yq eval ".testResults[$i].upload.median" "$RESULTS_FILE" 2>/dev/null)
+    upload_q3=$(yq eval ".testResults[$i].upload.q3" "$RESULTS_FILE" 2>/dev/null)
+    upload_max=$(yq eval ".testResults[$i].upload.max" "$RESULTS_FILE" 2>/dev/null)
+    upload_outliers=$(yq eval ".testResults[$i].upload.outliers" "$RESULTS_FILE" 2>/dev/null)
+
+    if [ "$upload_median" != "null" ] && [ -n "$upload_median" ]; then
+        # Use jq to properly handle JSON array construction
+        tmp_json=$(mktemp)
+        jq ".upload += [{
+            \"test\": \"$name\",
+            \"min\": $upload_min,
+            \"q1\": $upload_q1,
+            \"median\": $upload_median,
+            \"q3\": $upload_q3,
+            \"max\": $upload_max,
+            \"outliers\": $upload_outliers
+        }]" "$OUTPUT_JSON" > "$tmp_json" && mv "$tmp_json" "$OUTPUT_JSON"
+    fi
+
+    # Download box plot data
+    download_min=$(yq eval ".testResults[$i].download.min" "$RESULTS_FILE" 2>/dev/null)
+    download_q1=$(yq eval ".testResults[$i].download.q1" "$RESULTS_FILE" 2>/dev/null)
+    download_median=$(yq eval ".testResults[$i].download.median" "$RESULTS_FILE" 2>/dev/null)
+    download_q3=$(yq eval ".testResults[$i].download.q3" "$RESULTS_FILE" 2>/dev/null)
+    download_max=$(yq eval ".testResults[$i].download.max" "$RESULTS_FILE" 2>/dev/null)
+    download_outliers=$(yq eval ".testResults[$i].download.outliers" "$RESULTS_FILE" 2>/dev/null)
+
+    if [ "$download_median" != "null" ] && [ -n "$download_median" ]; then
+        tmp_json=$(mktemp)
+        jq ".download += [{
+            \"test\": \"$name\",
+            \"min\": $download_min,
+            \"q1\": $download_q1,
+            \"median\": $download_median,
+            \"q3\": $download_q3,
+            \"max\": $download_max,
+            \"outliers\": $download_outliers
+        }]" "$OUTPUT_JSON" > "$tmp_json" && mv "$tmp_json" "$OUTPUT_JSON"
+    fi
+
+    # Latency box plot data
+    latency_min=$(yq eval ".testResults[$i].latency.min" "$RESULTS_FILE" 2>/dev/null)
+    latency_q1=$(yq eval ".testResults[$i].latency.q1" "$RESULTS_FILE" 2>/dev/null)
+    latency_median=$(yq eval ".testResults[$i].latency.median" "$RESULTS_FILE" 2>/dev/null)
+    latency_q3=$(yq eval ".testResults[$i].latency.q3" "$RESULTS_FILE" 2>/dev/null)
+    latency_max=$(yq eval ".testResults[$i].latency.max" "$RESULTS_FILE" 2>/dev/null)
+    latency_outliers=$(yq eval ".testResults[$i].latency.outliers" "$RESULTS_FILE" 2>/dev/null)
+
+    if [ "$latency_median" != "null" ] && [ -n "$latency_median" ]; then
+        tmp_json=$(mktemp)
+        jq ".latency += [{
+            \"test\": \"$name\",
+            \"min\": $latency_min,
+            \"q1\": $latency_q1,
+            \"median\": $latency_median,
+            \"q3\": $latency_q3,
+            \"max\": $latency_max,
+            \"outliers\": $latency_outliers
+        }]" "$OUTPUT_JSON" > "$tmp_json" && mv "$tmp_json" "$OUTPUT_JSON"
+    fi
+done
+
 echo "  ✓ Generated $OUTPUT_MD"
 echo "  ✓ Generated $OUTPUT_HTML"
+echo "  ✓ Generated $OUTPUT_JSON"
 
 exit 0
