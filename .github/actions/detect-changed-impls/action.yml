@@ -3,7 +3,7 @@ description: "Detect which implementations/relays/routers have changed in impls.
 
 inputs:
   test-type:
-    description: "Type of test (transport or hole-punch)"
+    description: "Type of test (transport, hole-punch, or perf)"
     required: true
   base-ref:
     description: "Base branch to compare against"
@@ -52,8 +52,11 @@ runs:
         elif [ "$TEST_TYPE" = "hole-punch" ]; then
           IMPLS_FILE="hole-punch/impls.yaml"
           IMPLS_DIR="hole-punch/impls"
+        elif [ "$TEST_TYPE" = "perf" ]; then
+          IMPLS_FILE="perf/impls.yaml"
+          IMPLS_DIR="perf/impls"
         else
-          echo "Error: Invalid test-type. Must be 'transport' or 'hole-punch'"
+          echo "Error: Invalid test-type. Must be 'transport', 'hole-punch', or 'perf'"
           exit 1
         fi
 
@@ -171,8 +174,10 @@ runs:
                 # Construct full path for comparison
                 if [ "$TEST_TYPE" = "transport" ]; then
                   FULL_SOURCE_PATH="transport/$SOURCE_PATH"
-                else
+                elif [ "$TEST_TYPE" = "hole-punch" ]; then
                   FULL_SOURCE_PATH="hole-punch/$SOURCE_PATH"
+                elif [ "$TEST_TYPE" = "perf" ]; then
+                  FULL_SOURCE_PATH="perf/$SOURCE_PATH"
                 fi
 
                 # Check if changed file is within this source path

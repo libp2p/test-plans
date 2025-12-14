@@ -2,13 +2,114 @@
 
 This project includes the following components:
 
-- `terraform/`: a Terraform scripts to provision infrastructure
+- `terraform/`: Terraform scripts to provision AWS infrastructure
 - `impl/`: implementations of the [libp2p perf protocol](https://github.com/libp2p/specs/blob/master/perf/perf.md) running on top of e.g. go-libp2p, rust-libp2p or Go's std-library https stack
-- `runner/`: a set of scripts building and running the above implementations on the above infrastructure, reporting the results in `benchmark-results.json`
+- `runner/`: Node.js scripts for building and running tests on AWS infrastructure
+- **NEW:** `scripts/`: Bash-based test runner for local/remote hardware (no AWS required)
+- **NEW:** `impls/`: Dockerized implementations following hole-punch/transport patterns
 
 Benchmark results can be visualized with https://observablehq.com/@libp2p-workspace/performance-dashboard.
 
-## Running via GitHub Action
+## Quick Start (Bash-Based Tests - Recommended)
+
+**NEW:** Run performance tests on your own hardware without AWS!
+
+```bash
+# Quick test on single machine
+./run_tests.sh --test-select "go-libp2p" --iterations 3
+
+# See QUICKSTART.md for detailed setup instructions
+```
+
+**Features:**
+- ✅ No AWS account required
+- ✅ Run on local hardware or remote servers
+- ✅ Docker-based implementations
+- ✅ Results in YAML, Markdown, and HTML formats
+- ✅ Compatible with hole-punch/transport test patterns
+
+See **[QUICKSTART.md](QUICKSTART.md)** for complete setup and usage instructions.
+
+---
+
+## Setup for Multi-Machine Testing
+
+### SSH Key-Based Authentication
+
+For remote server testing, setup passwordless SSH authentication between your test runner (Computer 1) and server (Computer 2):
+
+#### 1. Generate SSH Key (Computer 1)
+
+```bash
+# Generate dedicated key for perf testing
+ssh-keygen -t ed25519 -f ~/.ssh/perf_server -N ""
+```
+
+This creates two files:
+- `~/.ssh/perf_server` - Private key (keep secure)
+- `~/.ssh/perf_server.pub` - Public key (copy to server)
+
+#### 2. Copy Public Key to Server (Computer 2)
+
+```bash
+# Replace with your server's username and IP/hostname
+ssh-copy-id -i ~/.ssh/perf_server.pub perfuser@192.168.1.100
+```
+
+You'll be prompted for the password **once**. After this, SSH will use key-based authentication.
+
+#### 3. Test Connection
+
+```bash
+# Should connect without password prompt
+ssh -i ~/.ssh/perf_server perfuser@192.168.1.100 "echo 'Connection successful'"
+```
+
+#### 4. Configure in impls.yaml
+
+Edit `perf/impls.yaml` to add your remote server:
+
+```yaml
+servers:
+  - id: remote-1
+    type: remote
+    hostname: "192.168.1.100"    # Your Computer 2 IP/hostname
+    username: "perfuser"          # SSH username on Computer 2
+    description: "Remote server"
+
+implementations:
+  - id: rust-libp2p-v0.53
+    # ... other configuration ...
+    server: remote-1  # Use remote server for this implementation
+```
+
+#### 5. Server Requirements (Computer 2)
+
+On the remote server, ensure:
+
+- **Docker installed and running:**
+  ```bash
+  curl -fsSL https://get.docker.com | sh
+  sudo usermod -aG docker $USER
+  # Log out and back in
+  ```
+
+- **Port 4001 accessible** (default perf protocol port):
+  ```bash
+  sudo ufw allow 4001/tcp  # If firewall enabled
+  ```
+
+- **User in docker group** (run Docker without sudo):
+  ```bash
+  # Verify
+  docker ps
+  ```
+
+See **[QUICKSTART.md](QUICKSTART.md)** for detailed troubleshooting and setup instructions.
+
+---
+
+## Running via GitHub Action (AWS-Based)
 
 1. Create a pull request with your changes on https://github.com/libp2p/test-plans/.
 2. Trigger GitHub Action for branch on https://github.com/libp2p/test-plans/actions/workflows/perf.yml (see _Run workflow_ button).

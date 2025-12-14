@@ -1,0 +1,15 @@
+{
+  "name": "perf-js",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "libp2p": "^3.0.0",
+    "@libp2p/tcp": "^10.0.0",
+    "@libp2p/webrtc": "^5.0.0",
+    "@libp2p/webtransport": "^5.0.0",
+    "@libp2p/noise": "^16.0.0",
+    "@libp2p/yamux": "^7.0.0",
+    "@libp2p/perf": "^2.0.0",
+    "yargs": "^17.7.2"
+  }
+}

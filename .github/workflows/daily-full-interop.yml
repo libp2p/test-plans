@@ -50,7 +50,7 @@ on:
       hole-punch-relay-ignore:
         description: '[Hole-punch] Ignore specific relays (pipe-separated substrings)'
         required: false
-        default: ''
+        default: '~failing'
         type: string
       hole-punch-router-select:
         description: '[Hole-punch] Select specific routers (pipe-separated substrings)'
@@ -60,7 +60,7 @@ on:
       hole-punch-router-ignore:
         description: '[Hole-punch] Ignore specific routers (pipe-separated substrings)'
         required: false
-        default: ''
+        default: '~failing'
         type: string
       hole-punch-force-matrix-rebuild:
         description: '[Hole-punch] Force test matrix regeneration'
@@ -74,6 +74,47 @@ on:
         type: boolean
       hole-punch-debug:
         description: '[Hole-punch] Enable debug mode'
+        required: false
+        default: false
+        type: boolean
+      # Perf parameters
+      perf-test-select:
+        description: '[Perf] Select specific implementations to test (pipe-separated substrings)'
+        required: false
+        default: ''
+        type: string
+      perf-test-ignore:
+        description: '[Perf] Ignore specific implementations (pipe-separated substrings)'
+        required: false
+        default: '~failing'
+        type: string
+      perf-baseline-select:
+        description: '[Perf] Select specific baseline tests (pipe-separated substrings)'
+        required: false
+        default: ''
+        type: string
+      perf-baseline-ignore:
+        description: '[Perf] Ignore specific baseline tests (pipe-separated substrings)'
+        required: false
+        default: '~failing'
+        type: string
+      perf-iterations:
+        description: '[Perf] Number of iterations per test'
+        required: false
+        default: 10
+        type: number
+      perf-force-matrix-rebuild:
+        description: '[Perf] Force test matrix regeneration'
+        required: false
+        default: false
+        type: boolean
+      perf-force-image-rebuild:
+        description: '[Perf] Force Docker image rebuilds'
+        required: false
+        default: false
+        type: boolean
+      perf-debug:
+        description: '[Perf] Enable debug mode'
         required: false
         default: false
         type: boolean
@@ -283,6 +324,108 @@ jobs:
             fi
           fi
 
+  check-perf-changes:
+    if: github.event_name != 'workflow_dispatch'
+    runs-on: [self-hosted, linux, x64, ephemeral]
+    outputs:
+      has-changes: ${{ steps.check.outputs.has-changes }}
+      impls-yaml-changed: ${{ steps.check.outputs.impls-yaml-changed }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check perf changes in last 24 hours
+        id: check
+        shell: bash
+        run: |
+          # Check if anything in perf/ changed in last 24 hours
+          CHANGES=$(git log --oneline --since="24 hours ago" -- "perf/**" | wc -l)
+
+          if [ "$CHANGES" -eq 0 ]; then
+            echo "has-changes=false" >> $GITHUB_OUTPUT
+            echo "impls-yaml-changed=false" >> $GITHUB_OUTPUT
+            echo "→ No changes in perf/ in last 24 hours, skipping tests"
+            exit 0
+          fi
+
+          echo "has-changes=true" >> $GITHUB_OUTPUT
+
+          # Check specifically if impls.yaml changed in last 24 hours
+          IMPLS_CHANGES=$(git log --oneline --since="24 hours ago" -- "perf/impls.yaml" | wc -l)
+
+          if [ "$IMPLS_CHANGES" -gt 0 ]; then
+            echo "impls-yaml-changed=true" >> $GITHUB_OUTPUT
+            echo "→ perf/impls.yaml changed in last 24h, will force matrix rebuild"
+          else
+            echo "impls-yaml-changed=false" >> $GITHUB_OUTPUT
+            echo "→ Other perf files changed, using cached matrix if available"
+          fi
+
+  resolve-perf-parameters:
+    runs-on: [self-hosted, linux, x64, ephemeral]
+    outputs:
+      test-select: ${{ steps.resolve.outputs.test-select }}
+      test-ignore: ${{ steps.resolve.outputs.test-ignore }}
+      baseline-select: ${{ steps.resolve.outputs.baseline-select }}
+      baseline-ignore: ${{ steps.resolve.outputs.baseline-ignore }}
+      iterations: ${{ steps.resolve.outputs.iterations }}
+      force-matrix-rebuild: ${{ steps.resolve.outputs.force-matrix-rebuild }}
+      force-image-rebuild: ${{ steps.resolve.outputs.force-image-rebuild }}
+      debug: ${{ steps.resolve.outputs.debug }}
+      should-run-tests: ${{ steps.resolve.outputs.should-run-tests }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve perf parameters
+        id: resolve
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            # Manual trigger - use workflow inputs
+            echo "test-select=${{ github.event.inputs.perf-test-select }}" >> $GITHUB_OUTPUT
+            echo "test-ignore=${{ github.event.inputs.perf-test-ignore }}" >> $GITHUB_OUTPUT
+            echo "baseline-select=${{ github.event.inputs.perf-baseline-select }}" >> $GITHUB_OUTPUT
+            echo "baseline-ignore=${{ github.event.inputs.perf-baseline-ignore }}" >> $GITHUB_OUTPUT
+            echo "iterations=${{ github.event.inputs.perf-iterations }}" >> $GITHUB_OUTPUT
+            echo "force-matrix-rebuild=${{ github.event.inputs.perf-force-matrix-rebuild }}" >> $GITHUB_OUTPUT
+            echo "force-image-rebuild=${{ github.event.inputs.perf-force-image-rebuild }}" >> $GITHUB_OUTPUT
+            echo "debug=${{ github.event.inputs.perf-debug }}" >> $GITHUB_OUTPUT
+            echo "should-run-tests=true" >> $GITHUB_OUTPUT
+            echo "→ Manual trigger: using workflow inputs for perf"
+          else
+            # Automatic trigger - check for changes in last 24 hours
+            CHANGES=$(git log --oneline --since="24 hours ago" -- "perf/**" | wc -l)
+            IMPLS_CHANGES=$(git log --oneline --since="24 hours ago" -- "perf/impls.yaml" | wc -l)
+
+            echo "test-select=" >> $GITHUB_OUTPUT
+            echo "test-ignore=~failing" >> $GITHUB_OUTPUT
+            echo "baseline-select=" >> $GITHUB_OUTPUT
+            echo "baseline-ignore=~failing" >> $GITHUB_OUTPUT
+            echo "iterations=10" >> $GITHUB_OUTPUT
+            echo "force-image-rebuild=false" >> $GITHUB_OUTPUT
+            echo "debug=false" >> $GITHUB_OUTPUT
+
+            if [ "$CHANGES" -gt 0 ]; then
+              echo "should-run-tests=true" >> $GITHUB_OUTPUT
+              if [ "$IMPLS_CHANGES" -gt 0 ]; then
+                echo "force-matrix-rebuild=true" >> $GITHUB_OUTPUT
+                echo "→ Automatic trigger: perf changes detected, impls.yaml changed"
+              else
+                echo "force-matrix-rebuild=false" >> $GITHUB_OUTPUT
+                echo "→ Automatic trigger: perf changes detected"
+              fi
+            else
+              echo "should-run-tests=false" >> $GITHUB_OUTPUT
+              echo "force-matrix-rebuild=false" >> $GITHUB_OUTPUT
+              echo "→ Automatic trigger: no perf changes in last 24h"
+            fi
+          fi
+
   run-transport-full:
     needs: resolve-transport-parameters
     if: ${{ !cancelled() && (github.event_name == 'workflow_dispatch' || needs.resolve-transport-parameters.outputs.should-run-tests) }}
@@ -327,12 +470,36 @@ jobs:
           force-image-rebuild: ${{ needs.resolve-hole-punch-parameters.outputs.force-image-rebuild }}
           debug: ${{ needs.resolve-hole-punch-parameters.outputs.debug }}
 
+  run-perf-full:
+    needs: resolve-perf-parameters
+    if: ${{ !cancelled() && (github.event_name == 'workflow_dispatch' || needs.resolve-perf-parameters.outputs.should-run-tests) }}
+    runs-on: [self-hosted, linux, x64, ephemeral]
+    continue-on-error: true
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run full perf benchmarks
+        uses: ./.github/actions/run-bash-perf-test
+        with:
+          test-select: '${{ needs.resolve-perf-parameters.outputs.test-select }}'
+          test-ignore: '${{ needs.resolve-perf-parameters.outputs.test-ignore }}'
+          baseline-select: '${{ needs.resolve-perf-parameters.outputs.baseline-select }}'
+          baseline-ignore: '${{ needs.resolve-perf-parameters.outputs.baseline-ignore }}'
+          iterations: '${{ needs.resolve-perf-parameters.outputs.iterations }}'
+          cache-dir: /srv/cache
+          snapshot: false
+          force-matrix-rebuild: ${{ needs.resolve-perf-parameters.outputs.force-matrix-rebuild }}
+          force-image-rebuild: ${{ needs.resolve-perf-parameters.outputs.force-image-rebuild }}
+          debug: ${{ needs.resolve-perf-parameters.outputs.debug }}
+
   update-readmes:
-    needs: [run-transport-full, run-hole-punch-full]
+    needs: [run-transport-full, run-hole-punch-full, run-perf-full]
     if: |
       always() &&
       (needs.run-transport-full.result != 'skipped' ||
-       needs.run-hole-punch-full.result != 'skipped')
+       needs.run-hole-punch-full.result != 'skipped' ||
+       needs.run-perf-full.result != 'skipped')
     runs-on: [self-hosted, linux, x64, ephemeral]
     steps:
       - name: Checkout code
@@ -354,6 +521,14 @@ jobs:
         with:
           pattern: hole-punch-test-results-*
           path: /tmp/hole-punch-results
+          merge-multiple: true
+
+      - name: Download perf test results
+        if: needs.run-perf-full.result != 'skipped'
+        uses: actions/download-artifact@v4
+        with:
+          pattern: perf-test-results-*
+          path: /tmp/perf-results
           merge-multiple: true
 
       - name: Update transport README
@@ -394,6 +569,25 @@ jobs:
           # Update README using script
           bash scripts/update-readme-results.sh hole-punch/README.md "$RESULTS_MD"
 
+      - name: Update perf README
+        if: needs.run-perf-full.result != 'skipped'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Find results.md file
+          RESULTS_MD=$(find /tmp/perf-results -name "results.md" | head -1)
+
+          if [ -z "$RESULTS_MD" ]; then
+            echo "Error: Could not find perf results.md"
+            exit 1
+          fi
+
+          echo "→ Found perf results: $RESULTS_MD"
+
+          # Update README using script
+          bash scripts/update-readme-results.sh perf/README.md "$RESULTS_MD"
+
       - name: Commit and push changes
         shell: bash
         run: |
@@ -403,12 +597,12 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           # Check if there are changes
-          if git diff --quiet transport/README.md hole-punch/README.md 2>/dev/null; then
+          if git diff --quiet transport/README.md hole-punch/README.md perf/README.md 2>/dev/null; then
             echo "→ No changes to commit"
             exit 0
           fi
 
-          git add transport/README.md hole-punch/README.md 2>/dev/null || true
+          git add transport/README.md hole-punch/README.md perf/README.md 2>/dev/null || true
 
           # Only commit if there are staged changes
           if git diff --cached --quiet 2>/dev/null; then
