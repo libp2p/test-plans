@@ -30,6 +30,7 @@ sourceType=$(yq eval '.sourceType' "$YAML_FILE")
 forceRebuild=$(yq eval '.forceRebuild' "$YAML_FILE")
 outputStyle=$(yq eval '.outputStyle' "$YAML_FILE")
 cacheDir=$(yq eval '.cacheDir' "$YAML_FILE")
+requiresSubmodules=$(yq eval '.requiresSubmodules // false' "$YAML_FILE")
 
 # Validate required parameters
 if [ -z "$imageName" ] || [ "$imageName" = "null" ]; then
@@ -62,7 +63,13 @@ OUTPUT_FILTER=$(get_output_filter "$outputStyle")
 # Build based on source type
 case "$sourceType" in
     github)
-        build_from_github "$YAML_FILE" "$OUTPUT_FILTER" || exit 1
+        # Check if submodules are required
+        if [ "$requiresSubmodules" = "true" ]; then
+            echo "→ Submodules: required"
+            build_from_github_with_submodules "$YAML_FILE" "$OUTPUT_FILTER" || exit 1
+        else
+            build_from_github "$YAML_FILE" "$OUTPUT_FILTER" || exit 1
+        fi
         ;;
     local)
         build_from_local "$YAML_FILE" "$OUTPUT_FILTER" || exit 1
