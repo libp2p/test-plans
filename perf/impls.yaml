@@ -14,6 +14,8 @@ test-aliases:
     value: "rust-v0.56"
   - alias: "js"
     value: "js-v3.x"
+  - alias: "dotnet"
+    value: "dotnet-v1.0"
   - alias: "failing"
     value: "https|quic-go|go-v0.45|js-v3.x"
 
@@ -173,5 +175,32 @@ implementations:
       language: javascript
       version: v3.0.0
       repo: libp2p/js-libp2p
+
+  # dotnet-libp2p
+  - id: dotnet-v1.0
+    name: "dotnet-libp2p v1.0"
+    source:
+      type: local
+      path: impls/dotnet/v1.0
+      dockerfile: Dockerfile
+    server: local
+    transports:
+      - tcp
+      - quic-v1
+    secureChannels:
+      - noise
+      - tls
+    muxers:
+      - yamux
+      - mplex
+    protocols:
+      - perf
+    capabilities:
+      - upload
+      - download
+    metadata:
+      language: dotnet
+      version: v1.0
+      repo: NethermindEth/dotnet-libp2p
 
 

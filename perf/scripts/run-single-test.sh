@@ -54,10 +54,14 @@ LOG_FILE="$TEST_PASS_DIR/logs/${TEST_SLUG}.log"
 # Generate docker-compose file
 COMPOSE_FILE="$TEST_PASS_DIR/docker-compose/${TEST_SLUG}-compose.yaml"
 
+# Assign static IP to listener
+LISTENER_IP="10.5.0.10"
+
 # Build environment variables for listener
 LISTENER_ENV="      - IS_DIALER=false
       - REDIS_ADDR=redis:6379
-      - TRANSPORT=$transport"
+      - TRANSPORT=$transport
+      - LISTENER_IP=$LISTENER_IP"
 
 if [ "$secure" != "null" ]; then
     LISTENER_ENV="$LISTENER_ENV
@@ -95,14 +99,19 @@ cat > "$COMPOSE_FILE" <<EOF
 name: ${TEST_SLUG}
 
 networks:
-  default:
+  perf-net:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 10.5.0.0/24
 
 services:
   redis:
     image: redis:7-alpine
     container_name: ${TEST_SLUG}_redis
     command: redis-server --save "" --appendonly no --loglevel warning
+    networks:
+      - perf-net
 
   listener:
     image: ${LISTENER_IMAGE}
@@ -110,6 +119,9 @@ services:
     init: true
     depends_on:
       - redis
+    networks:
+      perf-net:
+        ipv4_address: ${LISTENER_IP}
     environment:
 $LISTENER_ENV
 
@@ -119,6 +131,8 @@ $LISTENER_ENV
     depends_on:
       - redis
       - listener
+    networks:
+      - perf-net
     environment:
 $DIALER_ENV
 EOF
@@ -127,13 +141,25 @@ EOF
 log_debug "  Starting containers..."
 echo "Running: $test_name" > "$LOG_FILE"
 
-# Start containers and wait for dialer to exit
-if $DOCKER_COMPOSE_CMD -f "$COMPOSE_FILE" up --exit-code-from dialer --abort-on-container-exit >> "$LOG_FILE" 2>&1; then
+# Set timeout (30 seconds)
+TEST_TIMEOUT=30
+
+# Start containers and wait for dialer to exit (with timeout)
+if timeout $TEST_TIMEOUT $DOCKER_COMPOSE_CMD -f "$COMPOSE_FILE" up --exit-code-from dialer --abort-on-container-exit >> "$LOG_FILE" 2>&1; then
     EXIT_CODE=0
     log_info "  ✓ Test complete"
 else
-    EXIT_CODE=1
-    log_error "  ✗ Test failed"
+    TEST_EXIT=$?
+    # Check if it was a timeout (exit code 124)
+    if [ $TEST_EXIT -eq 124 ]; then
+        EXIT_CODE=1
+        log_error "  ✗ Test timed out after ${TEST_TIMEOUT}s"
+        echo "" >> "$LOG_FILE"
+        echo "ERROR: Test timed out after ${TEST_TIMEOUT} seconds" >> "$LOG_FILE"
+    else
+        EXIT_CODE=1
+        log_error "  ✗ Test failed"
+    fi
 fi
 
 # Extract results from dialer container logs
@@ -143,8 +169,8 @@ DIALER_LOGS=$($DOCKER_COMPOSE_CMD -f "$COMPOSE_FILE" logs dialer 2>/dev/null || 
 # Extract the measurement YAML (including outliers arrays)
 # Docker compose prefixes each line with: "container_name  | "
 # We need to strip this prefix and keep only the YAML content
-# Match lines containing: upload:, download:, latency:, or indented fields
-DIALER_YAML=$(echo "$DIALER_LOGS" | grep -E "dialer.*\| (upload:|download:|latency:|  )" | sed 's/^.*| //' || echo "")
+# Match only measurement sections and their fields (not logging output)
+DIALER_YAML=$(echo "$DIALER_LOGS" | grep -E "dialer.*\| (upload:|download:|latency:|  (iterations|min|q1|median|q3|max|outliers|unit):)" | sed 's/^.*| //' || echo "")
 
 # Save complete result to individual file
 cat > "$TEST_PASS_DIR/results/${test_name}.yaml" <<EOF
