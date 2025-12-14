@@ -1,0 +1,196 @@
+name: "Run Perf Benchmarks (Bash)"
+description: "Run the performance benchmark test suite using bash scripts (no npm/node)"
+
+inputs:
+  test-select:
+    description: "Select implementations to test (pipe-separated substrings)"
+    required: false
+    default: ""
+  test-ignore:
+    description: "Ignore implementations (pipe-separated substrings)"
+    required: false
+    default: ""
+  baseline-select:
+    description: "Select baseline tests (pipe-separated substrings)"
+    required: false
+    default: ""
+  baseline-ignore:
+    description: "Ignore baseline tests (pipe-separated substrings)"
+    required: false
+    default: ""
+  iterations:
+    description: "Number of iterations per test"
+    required: false
+    default: "10"
+  upload-bytes:
+    description: "Bytes to upload per test"
+    required: false
+    default: ""
+  download-bytes:
+    description: "Bytes to download per test"
+    required: false
+    default: ""
+  duration:
+    description: "Duration per iteration for throughput"
+    required: false
+    default: ""
+  latency-iterations:
+    description: "Iterations for latency test"
+    required: false
+    default: ""
+  cache-dir:
+    description: "Local directory to use for build cache"
+    required: false
+    default: "/srv/cache"
+  snapshot:
+    description: "Create test pass snapshot after completion"
+    required: false
+    default: "false"
+  force-matrix-rebuild:
+    description: "Force test matrix regeneration (bypass cache)"
+    required: false
+    default: "false"
+  force-image-rebuild:
+    description: "Force Docker image rebuilds (bypass cache)"
+    required: false
+    default: "false"
+  debug:
+    description: "Enable debug mode (sets DEBUG=true in test containers)"
+    required: false
+    default: "false"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install docker-compose
+      shell: bash
+      run: |
+        mkdir -p $HOME/.docker/cli-plugins
+        wget -q -O- https://github.com/docker/compose/releases/download/v2.21.0/docker-compose-linux-x86_64 > $HOME/.docker/cli-plugins/docker-compose
+        chmod +x $HOME/.docker/cli-plugins/docker-compose
+        docker compose version
+
+    - name: Run perf benchmarks
+      shell: bash
+      working-directory: perf
+      run: |
+        set -uo pipefail
+
+        # Capture exit code but don't fail immediately
+        EXIT_CODE=0
+
+        SNAPSHOT_FLAG=""
+        if [ "${{ inputs.snapshot }}" = "true" ]; then
+          SNAPSHOT_FLAG="--snapshot"
+        fi
+
+        FORCE_MATRIX_FLAG=""
+        if [ "${{ inputs.force-matrix-rebuild }}" = "true" ]; then
+          FORCE_MATRIX_FLAG="--force-matrix-rebuild"
+        fi
+
+        FORCE_IMAGE_FLAG=""
+        if [ "${{ inputs.force-image-rebuild }}" = "true" ]; then
+          FORCE_IMAGE_FLAG="--force-image-rebuild"
+        fi
+
+        DEBUG_FLAG=""
+        if [ "${{ inputs.debug }}" = "true" ]; then
+          DEBUG_FLAG="--debug"
+        fi
+
+        ITERATIONS_FLAG=""
+        if [ -n "${{ inputs.iterations }}" ]; then
+          ITERATIONS_FLAG="--iterations ${{ inputs.iterations }}"
+        fi
+
+        UPLOAD_BYTES_FLAG=""
+        if [ -n "${{ inputs.upload-bytes }}" ]; then
+          UPLOAD_BYTES_FLAG="--upload-bytes ${{ inputs.upload-bytes }}"
+        fi
+
+        DOWNLOAD_BYTES_FLAG=""
+        if [ -n "${{ inputs.download-bytes }}" ]; then
+          DOWNLOAD_BYTES_FLAG="--download-bytes ${{ inputs.download-bytes }}"
+        fi
+
+        DURATION_FLAG=""
+        if [ -n "${{ inputs.duration }}" ]; then
+          DURATION_FLAG="--duration ${{ inputs.duration }}"
+        fi
+
+        LATENCY_ITERATIONS_FLAG=""
+        if [ -n "${{ inputs.latency-iterations }}" ]; then
+          LATENCY_ITERATIONS_FLAG="--latency-iterations ${{ inputs.latency-iterations }}"
+        fi
+
+        ./run_tests.sh \
+          --test-select '${{ inputs.test-select }}' \
+          --test-ignore '${{ inputs.test-ignore }}' \
+          --baseline-select '${{ inputs.baseline-select }}' \
+          --baseline-ignore '${{ inputs.baseline-ignore }}' \
+          --cache-dir '${{ inputs.cache-dir }}' \
+          $ITERATIONS_FLAG \
+          $UPLOAD_BYTES_FLAG \
+          $DOWNLOAD_BYTES_FLAG \
+          $DURATION_FLAG \
+          $LATENCY_ITERATIONS_FLAG \
+          $SNAPSHOT_FLAG \
+          $FORCE_MATRIX_FLAG \
+          $FORCE_IMAGE_FLAG \
+          $DEBUG_FLAG \
+          -y || EXIT_CODE=$?
+
+        # Save exit code for later
+        echo "$EXIT_CODE" > /tmp/test-exit-code.txt
+
+    - name: Find test pass directory
+      if: always()
+      id: find-test-pass
+      shell: bash
+      run: |
+        # Find the most recent test pass directory
+        TEST_PASS_DIR=$(ls -td ${{ inputs.cache-dir }}/test-runs/perf-* 2>/dev/null | grep -v '\.zip$' | head -1 || echo "")
+
+        if [ -z "$TEST_PASS_DIR" ]; then
+          echo "Error: Could not find test pass directory"
+          exit 1
+        fi
+
+        TEST_PASS_NAME=$(basename "$TEST_PASS_DIR")
+        echo "test-pass-dir=$TEST_PASS_DIR" >> $GITHUB_OUTPUT
+        echo "test-pass-name=$TEST_PASS_NAME" >> $GITHUB_OUTPUT
+        echo "→ Test pass: $TEST_PASS_NAME"
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: perf-test-results-${{ steps.find-test-pass.outputs.test-pass-name }}
+        path: |
+          ${{ steps.find-test-pass.outputs.test-pass-dir }}/results.yaml
+          ${{ steps.find-test-pass.outputs.test-pass-dir }}/results.md
+          ${{ steps.find-test-pass.outputs.test-pass-dir }}/results.html
+          ${{ steps.find-test-pass.outputs.test-pass-dir }}/boxplot-data.json
+        if-no-files-found: warn
+
+    - name: Upload snapshot archive
+      if: always() && inputs.snapshot == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: perf-snapshot-${{ steps.find-test-pass.outputs.test-pass-name }}
+        path: |
+          ${{ steps.find-test-pass.outputs.test-pass-dir }}
+        if-no-files-found: error
+
+    - name: Fail if tests failed
+      if: always()
+      shell: bash
+      run: |
+        if [ -f /tmp/test-exit-code.txt ]; then
+          EXIT_CODE=$(cat /tmp/test-exit-code.txt)
+          if [ "$EXIT_CODE" -ne 0 ]; then
+            echo "Tests failed with exit code $EXIT_CODE"
+            exit $EXIT_CODE
+          fi
+        fi

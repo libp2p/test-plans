@@ -27,7 +27,7 @@ on:
       relay-ignore:
         description: 'Ignore specific relays (pipe-separated substrings)'
         required: false
-        default: ''
+        default: '~failing'
         type: string
       router-select:
         description: 'Select specific routers (pipe-separated substrings)'

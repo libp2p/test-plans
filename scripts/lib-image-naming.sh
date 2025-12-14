@@ -4,7 +4,7 @@
 
 # Get the Docker image name for an implementation
 # Usage: get_impl_image_name <impl_id> <test_type>
-# test_type: "transport" or "hole-punch"
+# test_type: "transport", "hole-punch", or "perf"
 get_impl_image_name() {
     local impl_id="$1"
     local test_type="$2"
@@ -15,6 +15,9 @@ get_impl_image_name() {
             ;;
         hole-punch)
             echo "hole-punch-peer-${impl_id}"
+            ;;
+        perf)
+            echo "perf-${impl_id}"
             ;;
         *)
             echo "Error: Unknown test type: $test_type" >&2
@@ -58,7 +61,7 @@ get_router_image_name() {
 }
 
 # Detect test type from current directory
-# Returns "transport" or "hole-punch"
+# Returns "transport", "hole-punch", or "perf"
 detect_test_type() {
     local pwd_basename=$(basename "$(pwd)")
 
@@ -66,12 +69,16 @@ detect_test_type() {
         echo "transport"
     elif [ "$pwd_basename" = "hole-punch" ]; then
         echo "hole-punch"
+    elif [ "$pwd_basename" = "perf" ]; then
+        echo "perf"
     else
         # Try to detect from parent directory structure
         if [ -f "impls.yaml" ] && grep -q "hole-punch" impls.yaml 2>/dev/null; then
             echo "hole-punch"
         elif [ -f "impls.yaml" ] && grep -q "transport" impls.yaml 2>/dev/null; then
             echo "transport"
+        elif [ -f "impls.yaml" ] && grep -q "perf" impls.yaml 2>/dev/null; then
+            echo "perf"
         else
             echo "Error: Could not detect test type from directory" >&2
             return 1
