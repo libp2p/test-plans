@@ -210,3 +210,81 @@ Given you have provisioned your infrastructure, you can now build and run the li
                ```
 2. For a new implementation, in [`impl/Makefile` include your implementation in the `all` target.](./impl/Makefile#L7)
 3. For a new version, reference version in [`runner/src/versions.ts`](./runner/src/versions.ts#L7-L43).
+
+## Latest Test Results
+
+<!-- TEST_RESULTS_START -->
+# Performance Test Results
+
+**Test Pass:** perf-024636-14-12-2025
+**Started:** 2025-12-14T02:46:37Z
+**Completed:** 2025-12-14T02:49:01Z
+**Duration:** 144s
+**Platform:** x86_64 (Linux)
+
+## Summary
+
+- **Total Tests:** 5 (0 baseline + 5 main)
+- **Passed:** 5 (100.0%)
+- **Failed:** 0
+
+### Baseline Results
+- Total: 0
+- Passed: 0
+- Failed: 0
+
+### Main Test Results
+- Total: 5
+- Passed: 5
+- Failed: 0
+
+## Box Plot Statistics
+
+### Upload Throughput (Gbps)
+
+| Test | Min | Q1 | Median | Q3 | Max | Outliers |
+|------|-----|-------|--------|-------|-----|----------|
+| rust-v0.56 x rust-v0.56 (tcp, noise, yamux) | 746.68 | 756.64 | 757.50 | 759.42 | 763.50 | 2 |
+| rust-v0.56 x rust-v0.56 (tcp, noise, mplex) | 745.01 | 756.81 | 756.97 | 759.00 | 763.95 | 3 |
+| rust-v0.56 x rust-v0.56 (tcp, tls, yamux) | 745.39 | 756.04 | 758.62 | 761.97 | 829.56 | 2 |
+| rust-v0.56 x rust-v0.56 (tcp, tls, mplex) | 745.26 | 756.37 | 757.62 | 759.86 | 761.86 | 2 |
+| rust-v0.56 x rust-v0.56 (quic-v1) | 747.87 | 755.26 | 756.71 | 758.00 | 762.76 | 3 |
+
+### Download Throughput (Gbps)
+
+| Test | Min | Q1 | Median | Q3 | Max | Outliers |
+|------|-----|-------|--------|-------|-----|----------|
+| rust-v0.56 x rust-v0.56 (tcp, noise, yamux) | 743.86 | 756.53 | 756.62 | 756.98 | 840.41 | 3 |
+| rust-v0.56 x rust-v0.56 (tcp, noise, mplex) | 747.77 | 756.87 | 756.99 | 757.08 | 831.41 | 3 |
+| rust-v0.56 x rust-v0.56 (tcp, tls, yamux) | 745.15 | 756.67 | 757.85 | 764.00 | 832.09 | 2 |
+| rust-v0.56 x rust-v0.56 (tcp, tls, mplex) | 746.58 | 757.13 | 757.23 | 762.16 | 829.74 | 3 |
+| rust-v0.56 x rust-v0.56 (quic-v1) | 749.24 | 759.31 | 761.35 | 761.64 | 834.87 | 2 |
+
+### Latency (seconds)
+
+| Test | Min | Q1 | Median | Q3 | Max | Outliers |
+|------|-----|-------|--------|-------|-----|----------|
+| rust-v0.56 x rust-v0.56 (tcp, noise, yamux) | 0.010345 | 0.011281 | 0.011346 | 0.011353 | 0.011536 | 18 |
+| rust-v0.56 x rust-v0.56 (tcp, noise, mplex) | 0.010293 | 0.011313 | 0.011346 | 0.011351 | 0.011532 | 24 |
+| rust-v0.56 x rust-v0.56 (tcp, tls, yamux) | 0.010244 | 0.011301 | 0.011341 | 0.011353 | 0.011585 | 17 |
+| rust-v0.56 x rust-v0.56 (tcp, tls, mplex) | 0.010285 | 0.011317 | 0.011347 | 0.011352 | 0.011547 | 21 |
+| rust-v0.56 x rust-v0.56 (quic-v1) | 0.010305 | 0.011273 | 0.011290 | 0.011352 | 0.011540 | 10 |
+
+## Test Results
+
+### rust-v0.56 x rust-v0.56 (tcp, noise, yamux)
+- Status: pass
+
+### rust-v0.56 x rust-v0.56 (tcp, noise, mplex)
+- Status: pass
+
+### rust-v0.56 x rust-v0.56 (tcp, tls, yamux)
+- Status: pass
+
+### rust-v0.56 x rust-v0.56 (tcp, tls, mplex)
+- Status: pass
+
+### rust-v0.56 x rust-v0.56 (quic-v1)
+- Status: pass
+
+<!-- TEST_RESULTS_END -->
