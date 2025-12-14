@@ -85,6 +85,7 @@ EOF
             commit=$(yq eval ".implementations[$i].source.commit" impls.yaml)
             dockerfile=$(yq eval ".implementations[$i].source.dockerfile" impls.yaml)
             build_context=$(yq eval ".implementations[$i].source.buildContext // \".\"" impls.yaml)
+            requires_submodules=$(yq eval ".implementations[$i].source.requiresSubmodules // false" impls.yaml)
 
             cat >> "$yaml_file" <<EOF
 
@@ -93,6 +94,8 @@ github:
   commit: $commit
   dockerfile: $dockerfile
   buildContext: $build_context
+
+requiresSubmodules: $requires_submodules
 EOF
             ;;
 
