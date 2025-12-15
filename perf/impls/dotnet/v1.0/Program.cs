@@ -244,21 +244,21 @@ class Program
             Console.WriteLine("# Latency measurement");
             Console.WriteLine("latency:");
             Console.WriteLine($"  iterations: {latencyIterations}");
-            Console.WriteLine($"  min: {latencyStats.Min:F6}");
-            Console.WriteLine($"  q1: {latencyStats.Q1:F6}");
-            Console.WriteLine($"  median: {latencyStats.Median:F6}");
-            Console.WriteLine($"  q3: {latencyStats.Q3:F6}");
-            Console.WriteLine($"  max: {latencyStats.Max:F6}");
+            Console.WriteLine($"  min: {latencyStats.Min:F3}");
+            Console.WriteLine($"  q1: {latencyStats.Q1:F3}");
+            Console.WriteLine($"  median: {latencyStats.Median:F3}");
+            Console.WriteLine($"  q3: {latencyStats.Q3:F3}");
+            Console.WriteLine($"  max: {latencyStats.Max:F3}");
             if (latencyStats.Outliers.Any())
             {
-                var outliers = string.Join(", ", latencyStats.Outliers.Select(v => v.ToString("F6")));
+                var outliers = string.Join(", ", latencyStats.Outliers.Select(v => v.ToString("F3")));
                 Console.WriteLine($"  outliers: [{outliers}]");
             }
             else
             {
                 Console.WriteLine("  outliers: []");
             }
-            Console.WriteLine("  unit: seconds");
+            Console.WriteLine("  unit: ms");
 
             logger.LogInformation("Results output complete");
         }
@@ -376,7 +376,7 @@ class Program
             else
             {
                 // Latency test
-                value = elapsed;  // Seconds
+                value = elapsed * 1000;  // Milliseconds
             }
 
             values.Add(value);

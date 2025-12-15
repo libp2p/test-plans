@@ -106,13 +106,13 @@ async function runClient() {
     console.log('# Latency measurement')
     console.log('latency:')
     console.log(`  iterations: ${argv['latency-iterations']}`)
-    console.log(`  min: ${latencyStats.min.toFixed(6)}`)
-    console.log(`  q1: ${latencyStats.q1.toFixed(6)}`)
-    console.log(`  median: ${latencyStats.median.toFixed(6)}`)
-    console.log(`  q3: ${latencyStats.q3.toFixed(6)}`)
-    console.log(`  max: ${latencyStats.max.toFixed(6)}`)
-    printOutliers(latencyStats.outliers, 6)
-    console.log('  unit: seconds')
+    console.log(`  min: ${latencyStats.min.toFixed(3)}`)
+    console.log(`  q1: ${latencyStats.q1.toFixed(3)}`)
+    console.log(`  median: ${latencyStats.median.toFixed(3)}`)
+    console.log(`  q3: ${latencyStats.q3.toFixed(3)}`)
+    console.log(`  max: ${latencyStats.max.toFixed(3)}`)
+    printOutliers(latencyStats.outliers, 3)
+    console.log('  unit: ms')
 
     console.error('All measurements complete!')
   } catch (err) {
@@ -142,8 +142,8 @@ async function runMeasurement(uploadBytes, downloadBytes, iterations) {
       const bytes = Math.max(uploadBytes, downloadBytes)
       value = (bytes * 8) / elapsed / 1_000_000_000
     } else {
-      // Latency in seconds
-      value = elapsed
+      // Latency in milliseconds
+      value = elapsed * 1000
     }
 
     values.push(value)

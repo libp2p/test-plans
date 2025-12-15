@@ -4,8 +4,35 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-# Minimal dependencies for a working perf implementation
+# Async runtime
 tokio = { version = "1", features = ["rt-multi-thread", "net", "io-util", "macros", "time", "signal"] }
+
+# Command-line parsing
 clap = { version = "4", features = ["derive"] }
+
+# YAML output
 serde_yaml = "0.9"
+
+# Redis coordination
 redis = { version = "0.27", features = ["tokio-comp"] }
+
+# libp2p core and transports
+libp2p = { version = "0.56", features = [
+    "tcp",
+    "quic",
+    "noise",
+    "tls",
+    "yamux",
+    "tokio",
+    "request-response",
+    "macros",
+] }
+
+# Futures utilities
+futures = "0.3"
+
+# Async traits
+async-trait = "0.1"
+
+# Efficient byte buffers
+bytes = "1.5"

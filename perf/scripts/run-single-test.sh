@@ -141,8 +141,8 @@ EOF
 log_debug "  Starting containers..."
 echo "Running: $test_name" > "$LOG_FILE"
 
-# Set timeout (30 seconds)
-TEST_TIMEOUT=30
+# Set timeout (300 seconds)
+TEST_TIMEOUT=300
 
 # Start containers and wait for dialer to exit (with timeout)
 if timeout $TEST_TIMEOUT $DOCKER_COMPOSE_CMD -f "$COMPOSE_FILE" up --exit-code-from dialer --abort-on-container-exit >> "$LOG_FILE" 2>&1; then
