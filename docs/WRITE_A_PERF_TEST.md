@@ -206,7 +206,7 @@ async fn wait_for_listener(con: &mut redis::aio::MultiplexedConnection) -> Strin
 
 Each measurement:
 1. Runs multiple iterations
-2. Measures throughput (Gbps) or latency (seconds)
+2. Measures throughput (Gbps) or latency (milliseconds)
 3. Calculates box plot statistics: min, Q1, median, Q3, max, outliers
 
 **Example:**
@@ -225,12 +225,12 @@ async fn run_measurement(upload_bytes: u64, download_bytes: u64, iterations: u32
 
         let elapsed = start.elapsed().as_secs_f64();
 
-        // Calculate throughput (Gbps) or latency (seconds)
+        // Calculate throughput (Gbps) or latency (milliseconds)
         let value = if upload_bytes > 100 || download_bytes > 100 {
             let bytes = upload_bytes.max(download_bytes) as f64;
             (bytes * 8.0) / elapsed / 1_000_000_000.0  // Gbps
         } else {
-            elapsed  // Latency in seconds
+            elapsed * 1000.0  // Latency in milliseconds
         };
 
         values.push(value);
@@ -324,13 +324,13 @@ download:
 # Latency measurement
 latency:
   iterations: 100
-  min: 0.011234
-  q1: 0.011897
-  median: 0.012456
-  q3: 0.013012
-  max: 0.015678
-  outliers: [0.010123, 0.018456]
-  unit: seconds
+  min: 11.234
+  q1: 11.897
+  median: 12.456
+  q3: 13.012
+  max: 15.678
+  outliers: [10.123, 18.456]
+  unit: ms
 ```
 
 **Rust Example:**
@@ -383,7 +383,7 @@ Console.WriteLine();
 
 **Precision Requirements:**
 - Throughput (upload/download): 2 decimal places (e.g., `8.45`)
-- Latency: 6 decimal places (e.g., `0.012456`)
+- Latency: 3 decimal places (e.g., `12.456`)
 
 ## Complete Implementation Checklist
 

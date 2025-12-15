@@ -147,13 +147,13 @@ func runClientMode() {
 	fmt.Println("# Latency measurement")
 	fmt.Println("latency:")
 	fmt.Printf("  iterations: %d\n", *latencyIters)
-	fmt.Printf("  min: %.6f\n", latencyStats.Min)
-	fmt.Printf("  q1: %.6f\n", latencyStats.Q1)
-	fmt.Printf("  median: %.6f\n", latencyStats.Median)
-	fmt.Printf("  q3: %.6f\n", latencyStats.Q3)
-	fmt.Printf("  max: %.6f\n", latencyStats.Max)
-	printOutliers(latencyStats.Outliers, 6)
-	fmt.Println("  unit: seconds")
+	fmt.Printf("  min: %.3f\n", latencyStats.Min)
+	fmt.Printf("  q1: %.3f\n", latencyStats.Q1)
+	fmt.Printf("  median: %.3f\n", latencyStats.Median)
+	fmt.Printf("  q3: %.3f\n", latencyStats.Q3)
+	fmt.Printf("  max: %.3f\n", latencyStats.Max)
+	printOutliers(latencyStats.Outliers, 3)
+	fmt.Println("  unit: ms")
 
 	log.Println("All measurements complete!")
 }
@@ -177,8 +177,8 @@ func runMeasurement(ctx context.Context, h peer.ID, peerID peer.ID, uploadBytes,
 			bytes := float64(max(uploadBytes, downloadBytes))
 			value = (bytes * 8.0) / elapsed / 1_000_000_000.0
 		} else {
-			// Latency in seconds
-			value = elapsed
+			// Latency in milliseconds
+			value = elapsed * 1000.0
 		}
 
 		values = append(values, value)
