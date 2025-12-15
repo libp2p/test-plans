@@ -168,13 +168,20 @@ if [ "$LIST_TESTS" = true ]; then
     test_count=$(yq eval '.tests | length' "$TEMP_DIR/test-matrix.yaml")
 
     echo ""
-    echo "╲ Selected Tests ($test_count tests)"
+    echo "╲ Selected Tests ($baseline_count baseline + $test_count main = $((baseline_count + test_count)) total)"
     echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
+    if [ "$baseline_count" -gt 0 ]; then
+        echo "→ Baseline tests:"
+        yq eval '.baselines[].name' "$TEMP_DIR/test-matrix.yaml" | sed 's/^/  → /'
+        echo ""
+    fi
+
     if [ "$test_count" -gt 0 ]; then
-        yq eval '.tests[].name' "$TEMP_DIR/test-matrix.yaml" | sed 's/^/→ /'
+        echo "→ Main tests:"
+        yq eval '.tests[].name' "$TEMP_DIR/test-matrix.yaml" | sed 's/^/  → /'
     else
-        echo "→ No tests selected"
+        echo "→ No main tests selected"
     fi
 
     echo ""
