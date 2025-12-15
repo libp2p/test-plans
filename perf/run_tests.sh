@@ -489,6 +489,22 @@ bash scripts/generate-dashboard.sh || {
   log_error "Dashboard generation failed"
 }
 
+# Generate box plots (optional - requires gnuplot)
+echo ""
+echo "╲ Generating box plots..."
+echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+
+# Check if gnuplot is available
+if command -v gnuplot &> /dev/null; then
+    echo "→ bash scripts/generate-boxplot.sh"
+    bash scripts/generate-boxplot.sh "$TEST_PASS_DIR/results.yaml" "$TEST_PASS_DIR" || {
+        echo "  ✗ Box plot generation failed"
+    }
+else
+    echo "  ✗ gnuplot not found - skipping box plot generation"
+    echo "  Install: apt-get install gnuplot"
+fi
+
 # Final status message
 echo ""
 if [ "$TOTAL_FAILED" -eq 0 ]; then
