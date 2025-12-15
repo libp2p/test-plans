@@ -8,6 +8,7 @@ RUN apt-get update && \
         bc \
         jq \
         procps \
+        iputils-ping \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy run script

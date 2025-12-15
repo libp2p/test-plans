@@ -364,7 +364,9 @@ async fn run_measurement(
             (bytes * 8.0) / elapsed / 1_000_000_000.0
         } else {
             // Latency in milliseconds
-            elapsed * 1000.0
+            let converted = elapsed * 1000.0;
+            eprintln!("DEBUG: Latency - elapsed={:.6}s, converted={:.3}ms", elapsed, converted);
+            converted
         };
 
         values.push(value);

@@ -163,19 +163,27 @@ run_latency_measurement() {
 
     local values=()
 
+    log "  Using ping for latency measurement (true RTT)"
+
     for i in $(seq 1 $iterations); do
-        # Measure time for minimal transfer
-        local start=$(date +%s.%N)
-        iperf3 -c "$server_ip" -p "$server_port" -n 1 >/dev/null 2>&1 || true
-        local end=$(date +%s.%N)
+        # Use ping for true round-trip latency (no connection setup overhead)
+        # -c 1 = 1 ping, -W 1 = 1 second timeout
+        local result=$(ping -c 1 -W 1 "$server_ip" 2>/dev/null || echo "")
 
-        # Calculate latency in milliseconds
-        local latency_ms=$(echo "($end - $start) * 1000" | bc)
+        if [ -z "$result" ]; then
+            log "  Iteration $i/$iterations failed"
+            continue
+        fi
 
-        values+=("$latency_ms")
+        # Extract RTT from ping output (format: "time=0.123 ms")
+        local latency_ms=$(echo "$result" | grep "time=" | sed 's/.*time=\([0-9.]*\).*/\1/')
+
+        if [ -n "$latency_ms" ]; then
+            values+=("$latency_ms")
+        fi
     done
 
-    log "  Completed $iterations latency measurements"
+    log "  Completed ${#values[@]} latency measurements"
 
     # Calculate and return statistics
     calculate_stats "${values[@]}"
