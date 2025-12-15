@@ -39,10 +39,12 @@ def iter_stdout_logs(hosts_dir: Path):
 
 def count_occurrences(path: Path, needle: str) -> int:
     """Count how many times the string appears inside the file."""
+    if not needle:
+        return 0
+    total = 0
     with path.open("r", encoding="utf-8", errors="replace") as handle:
-        total = 0
-        for chunk in iter(lambda: handle.read(4096), ""):
-            total += chunk.count(needle)
+        for line in handle:
+            total += line.count(needle)
     return total
 
 
@@ -80,7 +82,10 @@ def main() -> int:
                 f"  - {rel_path}: found {occurrences} occurrences (expected >= {args.count})",
                 file=sys.stderr,
             )
-        print(f"{len(missing)} / {len(stdout_logs)} logs missing the message.", file=sys.stderr)
+        print(
+            f"{len(missing)} / {len(stdout_logs)} logs missing the message.",
+            file=sys.stderr,
+        )
         return 1
 
     print(
