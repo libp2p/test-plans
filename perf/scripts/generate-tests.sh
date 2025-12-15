@@ -152,14 +152,20 @@ for ((i=0; i<baseline_count; i++)); do
 done
 
 echo "  ✓ Loaded ${#baseline_ids[@]} baselines into memory"
-echo "  DEBUG: Baseline IDs: ${baseline_ids[*]}" >&2
+if [ "${DEBUG:-false}" = "true" ]; then
+    echo "  DEBUG: Baseline IDs: ${baseline_ids[*]}" >&2
+fi
 if [ ${#BASELINE_SELECT_PATTERNS[@]} -gt 0 ]; then
     echo "  ✓ Loaded ${#BASELINE_SELECT_PATTERNS[@]} baseline select patterns"
-    echo "  DEBUG: BASELINE_SELECT_PATTERNS: ${BASELINE_SELECT_PATTERNS[*]}" >&2
+    if [ "${DEBUG:-false}" = "true" ]; then
+        echo "  DEBUG: BASELINE_SELECT_PATTERNS: ${BASELINE_SELECT_PATTERNS[*]}" >&2
+    fi
 fi
 if [ ${#BASELINE_IGNORE_PATTERNS[@]} -gt 0 ]; then
     echo "  ✓ Loaded ${#BASELINE_IGNORE_PATTERNS[@]} baseline ignore patterns"
-    echo "  DEBUG: BASELINE_IGNORE_PATTERNS: ${BASELINE_IGNORE_PATTERNS[*]}" >&2
+    if [ "${DEBUG:-false}" = "true" ]; then
+        echo "  DEBUG: BASELINE_IGNORE_PATTERNS: ${BASELINE_IGNORE_PATTERNS[*]}" >&2
+    fi
 fi
 
 # Load main implementation data
@@ -319,12 +325,14 @@ EOF
 
                 # Allow raw transport if both have empty security/muxing (baseline case)
                 # Debug logging
-                if [ "$dialer_id" = "iperf-v3.0" ] || [ "$listener_id" = "iperf-v3.0" ]; then
-                    echo "DEBUG: Processing iperf baseline" >&2
-                    echo "  dialer=$dialer_id, listener=$listener_id, transport=$transport" >&2
-                    echo "  common_secure='$common_secure', common_muxers='$common_muxers'" >&2
-                    echo "  dialer_secure='$dialer_secure', dialer_muxers='$dialer_muxers'" >&2
-                    echo "  listener_secure='$listener_secure', listener_muxers='$listener_muxers'" >&2
+                if [ "${DEBUG:-false}" = "true" ]; then
+                    if [ "$dialer_id" = "iperf-v3.0" ] || [ "$listener_id" = "iperf-v3.0" ]; then
+                        echo "DEBUG: Processing iperf baseline" >&2
+                        echo "  dialer=$dialer_id, listener=$listener_id, transport=$transport" >&2
+                        echo "  common_secure='$common_secure', common_muxers='$common_muxers'" >&2
+                        echo "  dialer_secure='$dialer_secure', dialer_muxers='$dialer_muxers'" >&2
+                        echo "  listener_secure='$listener_secure', listener_muxers='$listener_muxers'" >&2
+                    fi
                 fi
 
                 if [ -z "$common_secure" ] && [ -z "$common_muxers" ] && \
@@ -333,10 +341,14 @@ EOF
                     # Raw transport baseline (no security or muxing)
                     test_name="$dialer_id x $listener_id ($transport)"
 
-                    echo "DEBUG: Creating raw transport baseline: $test_name" >&2
+                    if [ "${DEBUG:-false}" = "true" ]; then
+                        echo "DEBUG: Creating raw transport baseline: $test_name" >&2
+                    fi
 
                     baseline_should_ignore "$test_name" && {
-                        echo "DEBUG: Ignoring $test_name" >&2
+                        if [ "${DEBUG:-false}" = "true" ]; then
+                            echo "DEBUG: Ignoring $test_name" >&2
+                        fi
                         continue
                     }
 

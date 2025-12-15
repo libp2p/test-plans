@@ -11,7 +11,7 @@ use tokio::time::Duration;
 use libp2p::{
     futures::StreamExt,
     swarm::{SwarmEvent, NetworkBehaviour},
-    request_response::{self, OutboundRequestId, ProtocolSupport},
+    request_response::{self, ProtocolSupport},
     Swarm, SwarmBuilder, Multiaddr, PeerId,
 };
 
@@ -77,19 +77,16 @@ async fn run_listener(redis_addr: String, transport: String, secure: Option<Stri
 
     // Wait for listener to be ready and publish multiaddr
     loop {
-        match swarm.next().await {
-            Some(SwarmEvent::NewListenAddr { address, .. }) => {
-                let full_multiaddr = format!("{}/p2p/{}", address, peer_id);
-                eprintln!("Listening on: {}", full_multiaddr);
+        if let Some(SwarmEvent::NewListenAddr { address, .. }) = swarm.next().await {
+            let full_multiaddr = format!("{}/p2p/{}", address, peer_id);
+            eprintln!("Listening on: {}", full_multiaddr);
 
-                // Publish to Redis
-                let _: () = con.set("listener_multiaddr", full_multiaddr.clone()).await
-                    .expect("Failed to publish multiaddr to Redis");
+            // Publish to Redis
+            let _: () = con.set("listener_multiaddr", full_multiaddr.clone()).await
+                .expect("Failed to publish multiaddr to Redis");
 
-                eprintln!("Published multiaddr to Redis: {}", full_multiaddr);
-                break;
-            }
-            _ => {}
+            eprintln!("Published multiaddr to Redis: {}", full_multiaddr);
+            break;
         }
     }
 
@@ -121,7 +118,7 @@ async fn run_listener(redis_addr: String, transport: String, secure: Option<Stri
                     // Respond with the requested bytes
                     let response = PerfResponse {
                         bytes_sent: request.recv_bytes,  // Send what client wants to receive
-                        bytes_received: request.send_bytes,  // Track what we received
+                        _bytes_received: request.send_bytes,  // Track what we received
                     };
 
                     swarm.behaviour_mut()
