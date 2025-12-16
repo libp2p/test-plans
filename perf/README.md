@@ -2,13 +2,114 @@
 
 This project includes the following components:
 
-- `terraform/`: a Terraform scripts to provision infrastructure
+- `terraform/`: Terraform scripts to provision AWS infrastructure
 - `impl/`: implementations of the [libp2p perf protocol](https://github.com/libp2p/specs/blob/master/perf/perf.md) running on top of e.g. go-libp2p, rust-libp2p or Go's std-library https stack
-- `runner/`: a set of scripts building and running the above implementations on the above infrastructure, reporting the results in `benchmark-results.json`
+- `runner/`: Node.js scripts for building and running tests on AWS infrastructure
+- **NEW:** `scripts/`: Bash-based test runner for local/remote hardware (no AWS required)
+- **NEW:** `impls/`: Dockerized implementations following hole-punch/transport patterns
 
 Benchmark results can be visualized with https://observablehq.com/@libp2p-workspace/performance-dashboard.
 
-## Running via GitHub Action
+## Quick Start (Bash-Based Tests - Recommended)
+
+**NEW:** Run performance tests on your own hardware without AWS!
+
+```bash
+# Quick test on single machine
+./run_tests.sh --test-select "go-libp2p" --iterations 3
+
+# See QUICKSTART.md for detailed setup instructions
+```
+
+**Features:**
+- ✅ No AWS account required
+- ✅ Run on local hardware or remote servers
+- ✅ Docker-based implementations
+- ✅ Results in YAML, Markdown, and HTML formats
+- ✅ Compatible with hole-punch/transport test patterns
+
+See **[QUICKSTART.md](QUICKSTART.md)** for complete setup and usage instructions.
+
+---
+
+## Setup for Multi-Machine Testing
+
+### SSH Key-Based Authentication
+
+For remote server testing, setup passwordless SSH authentication between your test runner (Computer 1) and server (Computer 2):
+
+#### 1. Generate SSH Key (Computer 1)
+
+```bash
+# Generate dedicated key for perf testing
+ssh-keygen -t ed25519 -f ~/.ssh/perf_server -N ""
+```
+
+This creates two files:
+- `~/.ssh/perf_server` - Private key (keep secure)
+- `~/.ssh/perf_server.pub` - Public key (copy to server)
+
+#### 2. Copy Public Key to Server (Computer 2)
+
+```bash
+# Replace with your server's username and IP/hostname
+ssh-copy-id -i ~/.ssh/perf_server.pub perfuser@192.168.1.100
+```
+
+You'll be prompted for the password **once**. After this, SSH will use key-based authentication.
+
+#### 3. Test Connection
+
+```bash
+# Should connect without password prompt
+ssh -i ~/.ssh/perf_server perfuser@192.168.1.100 "echo 'Connection successful'"
+```
+
+#### 4. Configure in impls.yaml
+
+Edit `perf/impls.yaml` to add your remote server:
+
+```yaml
+servers:
+  - id: remote-1
+    type: remote
+    hostname: "192.168.1.100"    # Your Computer 2 IP/hostname
+    username: "perfuser"          # SSH username on Computer 2
+    description: "Remote server"
+
+implementations:
+  - id: rust-libp2p-v0.53
+    # ... other configuration ...
+    server: remote-1  # Use remote server for this implementation
+```
+
+#### 5. Server Requirements (Computer 2)
+
+On the remote server, ensure:
+
+- **Docker installed and running:**
+  ```bash
+  curl -fsSL https://get.docker.com | sh
+  sudo usermod -aG docker $USER
+  # Log out and back in
+  ```
+
+- **Port 4001 accessible** (default perf protocol port):
+  ```bash
+  sudo ufw allow 4001/tcp  # If firewall enabled
+  ```
+
+- **User in docker group** (run Docker without sudo):
+  ```bash
+  # Verify
+  docker ps
+  ```
+
+See **[QUICKSTART.md](QUICKSTART.md)** for detailed troubleshooting and setup instructions.
+
+---
+
+## Running via GitHub Action (AWS-Based)
 
 1. Create a pull request with your changes on https://github.com/libp2p/test-plans/.
 2. Trigger GitHub Action for branch on https://github.com/libp2p/test-plans/actions/workflows/perf.yml (see _Run workflow_ button).
@@ -109,3 +210,81 @@ Given you have provisioned your infrastructure, you can now build and run the li
                ```
 2. For a new implementation, in [`impl/Makefile` include your implementation in the `all` target.](./impl/Makefile#L7)
 3. For a new version, reference version in [`runner/src/versions.ts`](./runner/src/versions.ts#L7-L43).
+
+## Latest Test Results
+
+<!-- TEST_RESULTS_START -->
+# Performance Test Results
+
+**Test Pass:** perf-024636-14-12-2025
+**Started:** 2025-12-14T02:46:37Z
+**Completed:** 2025-12-14T02:49:01Z
+**Duration:** 144s
+**Platform:** x86_64 (Linux)
+
+## Summary
+
+- **Total Tests:** 5 (0 baseline + 5 main)
+- **Passed:** 5 (100.0%)
+- **Failed:** 0
+
+### Baseline Results
+- Total: 0
+- Passed: 0
+- Failed: 0
+
+### Main Test Results
+- Total: 5
+- Passed: 5
+- Failed: 0
+
+## Box Plot Statistics
+
+### Upload Throughput (Gbps)
+
+| Test | Min | Q1 | Median | Q3 | Max | Outliers |
+|------|-----|-------|--------|-------|-----|----------|
+| rust-v0.56 x rust-v0.56 (tcp, noise, yamux) | 746.68 | 756.64 | 757.50 | 759.42 | 763.50 | 2 |
+| rust-v0.56 x rust-v0.56 (tcp, noise, mplex) | 745.01 | 756.81 | 756.97 | 759.00 | 763.95 | 3 |
+| rust-v0.56 x rust-v0.56 (tcp, tls, yamux) | 745.39 | 756.04 | 758.62 | 761.97 | 829.56 | 2 |
+| rust-v0.56 x rust-v0.56 (tcp, tls, mplex) | 745.26 | 756.37 | 757.62 | 759.86 | 761.86 | 2 |
+| rust-v0.56 x rust-v0.56 (quic-v1) | 747.87 | 755.26 | 756.71 | 758.00 | 762.76 | 3 |
+
+### Download Throughput (Gbps)
+
+| Test | Min | Q1 | Median | Q3 | Max | Outliers |
+|------|-----|-------|--------|-------|-----|----------|
+| rust-v0.56 x rust-v0.56 (tcp, noise, yamux) | 743.86 | 756.53 | 756.62 | 756.98 | 840.41 | 3 |
+| rust-v0.56 x rust-v0.56 (tcp, noise, mplex) | 747.77 | 756.87 | 756.99 | 757.08 | 831.41 | 3 |
+| rust-v0.56 x rust-v0.56 (tcp, tls, yamux) | 745.15 | 756.67 | 757.85 | 764.00 | 832.09 | 2 |
+| rust-v0.56 x rust-v0.56 (tcp, tls, mplex) | 746.58 | 757.13 | 757.23 | 762.16 | 829.74 | 3 |
+| rust-v0.56 x rust-v0.56 (quic-v1) | 749.24 | 759.31 | 761.35 | 761.64 | 834.87 | 2 |
+
+### Latency (seconds)
+
+| Test | Min | Q1 | Median | Q3 | Max | Outliers |
+|------|-----|-------|--------|-------|-----|----------|
+| rust-v0.56 x rust-v0.56 (tcp, noise, yamux) | 0.010345 | 0.011281 | 0.011346 | 0.011353 | 0.011536 | 18 |
+| rust-v0.56 x rust-v0.56 (tcp, noise, mplex) | 0.010293 | 0.011313 | 0.011346 | 0.011351 | 0.011532 | 24 |
+| rust-v0.56 x rust-v0.56 (tcp, tls, yamux) | 0.010244 | 0.011301 | 0.011341 | 0.011353 | 0.011585 | 17 |
+| rust-v0.56 x rust-v0.56 (tcp, tls, mplex) | 0.010285 | 0.011317 | 0.011347 | 0.011352 | 0.011547 | 21 |
+| rust-v0.56 x rust-v0.56 (quic-v1) | 0.010305 | 0.011273 | 0.011290 | 0.011352 | 0.011540 | 10 |
+
+## Test Results
+
+### rust-v0.56 x rust-v0.56 (tcp, noise, yamux)
+- Status: pass
+
+### rust-v0.56 x rust-v0.56 (tcp, noise, mplex)
+- Status: pass
+
+### rust-v0.56 x rust-v0.56 (tcp, tls, yamux)
+- Status: pass
+
+### rust-v0.56 x rust-v0.56 (tcp, tls, mplex)
+- Status: pass
+
+### rust-v0.56 x rust-v0.56 (quic-v1)
+- Status: pass
+
+<!-- TEST_RESULTS_END -->

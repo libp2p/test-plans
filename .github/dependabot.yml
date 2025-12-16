@@ -1,0 +1,17 @@
+version: 2
+updates:
+- package-ecosystem: npm
+  # this should point to the latest js-libp2p major in order to automate
+  # updating deps automatically after a release
+  directory: "/transport-interop/impl/js/v2.x"
+  schedule:
+    interval: daily
+    time: "10:00"
+  open-pull-requests-limit: 20
+  commit-message:
+    prefix: "deps"
+    prefix-development: "deps(dev)"
+  groups:
+    libp2p-deps: # update all deps together
+      patterns:
+        - "*"

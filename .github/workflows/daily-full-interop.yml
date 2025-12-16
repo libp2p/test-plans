@@ -1,0 +1,502 @@
+name: Daily Full Interoperability Tests
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # 2 AM UTC daily
+  workflow_dispatch:
+    inputs:
+      # Transport parameters
+      transport-test-select:
+        description: '[Transport] Select specific tests (pipe-separated substrings)'
+        required: false
+        default: ''
+        type: string
+      transport-test-ignore:
+        description: '[Transport] Ignore specific tests (pipe-separated substrings)'
+        required: false
+        default: '~failing'
+        type: string
+      transport-force-matrix-rebuild:
+        description: '[Transport] Force test matrix regeneration'
+        required: false
+        default: false
+        type: boolean
+      transport-force-image-rebuild:
+        description: '[Transport] Force Docker image rebuilds'
+        required: false
+        default: false
+        type: boolean
+      transport-debug:
+        description: '[Transport] Enable debug mode'
+        required: false
+        default: false
+        type: boolean
+      # Hole-punch parameters
+      hole-punch-test-select:
+        description: '[Hole-punch] Select specific tests (pipe-separated substrings)'
+        required: false
+        default: ''
+        type: string
+      hole-punch-test-ignore:
+        description: '[Hole-punch] Ignore specific tests (pipe-separated substrings)'
+        required: false
+        default: '~failing'
+        type: string
+      hole-punch-relay-select:
+        description: '[Hole-punch] Select specific relays (pipe-separated substrings)'
+        required: false
+        default: ''
+        type: string
+      hole-punch-relay-ignore:
+        description: '[Hole-punch] Ignore specific relays (pipe-separated substrings)'
+        required: false
+        default: '~failing'
+        type: string
+      hole-punch-router-select:
+        description: '[Hole-punch] Select specific routers (pipe-separated substrings)'
+        required: false
+        default: ''
+        type: string
+      hole-punch-router-ignore:
+        description: '[Hole-punch] Ignore specific routers (pipe-separated substrings)'
+        required: false
+        default: '~failing'
+        type: string
+      hole-punch-force-matrix-rebuild:
+        description: '[Hole-punch] Force test matrix regeneration'
+        required: false
+        default: false
+        type: boolean
+      hole-punch-force-image-rebuild:
+        description: '[Hole-punch] Force Docker image rebuilds'
+        required: false
+        default: false
+        type: boolean
+      hole-punch-debug:
+        description: '[Hole-punch] Enable debug mode'
+        required: false
+        default: false
+        type: boolean
+      # Perf parameters
+      perf-test-select:
+        description: '[Perf] Select specific implementations to test (pipe-separated substrings)'
+        required: false
+        default: ''
+        type: string
+      perf-test-ignore:
+        description: '[Perf] Ignore specific implementations (pipe-separated substrings)'
+        required: false
+        default: '~failing'
+        type: string
+      perf-baseline-select:
+        description: '[Perf] Select specific baseline tests (pipe-separated substrings)'
+        required: false
+        default: ''
+        type: string
+      perf-baseline-ignore:
+        description: '[Perf] Ignore specific baseline tests (pipe-separated substrings)'
+        required: false
+        default: '~failing'
+        type: string
+      perf-iterations:
+        description: '[Perf] Number of iterations per test'
+        required: false
+        default: 10
+        type: number
+      perf-force-matrix-rebuild:
+        description: '[Perf] Force test matrix regeneration'
+        required: false
+        default: false
+        type: boolean
+      perf-force-image-rebuild:
+        description: '[Perf] Force Docker image rebuilds'
+        required: false
+        default: false
+        type: boolean
+      perf-debug:
+        description: '[Perf] Enable debug mode'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  resolve-transport-parameters:
+    runs-on: [self-hosted, linux, x64, ephemeral]
+    outputs:
+      test-select: ${{ steps.resolve.outputs.test-select }}
+      test-ignore: ${{ steps.resolve.outputs.test-ignore }}
+      force-matrix-rebuild: ${{ steps.resolve.outputs.force-matrix-rebuild }}
+      force-image-rebuild: ${{ steps.resolve.outputs.force-image-rebuild }}
+      debug: ${{ steps.resolve.outputs.debug }}
+      should-run-tests: ${{ steps.resolve.outputs.should-run-tests }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve transport parameters
+        id: resolve
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            # Manual trigger - use workflow inputs
+            echo "test-select=${{ github.event.inputs.transport-test-select }}" >> $GITHUB_OUTPUT
+            echo "test-ignore=${{ github.event.inputs.transport-test-ignore }}" >> $GITHUB_OUTPUT
+            echo "force-matrix-rebuild=${{ github.event.inputs.transport-force-matrix-rebuild }}" >> $GITHUB_OUTPUT
+            echo "force-image-rebuild=${{ github.event.inputs.transport-force-image-rebuild }}" >> $GITHUB_OUTPUT
+            echo "debug=${{ github.event.inputs.transport-debug }}" >> $GITHUB_OUTPUT
+            echo "should-run-tests=true" >> $GITHUB_OUTPUT
+            echo "→ Manual trigger: using workflow inputs for transport"
+          else
+            # Automatic trigger - check for changes in last 24 hours
+            CHANGES=$(git log --oneline --since="24 hours ago" -- "transport/**" | wc -l)
+            IMPLS_CHANGES=$(git log --oneline --since="24 hours ago" -- "transport/impls.yaml" | wc -l)
+
+            echo "test-select=" >> $GITHUB_OUTPUT
+            echo "test-ignore=~failing" >> $GITHUB_OUTPUT
+            echo "force-image-rebuild=false" >> $GITHUB_OUTPUT
+            echo "debug=false" >> $GITHUB_OUTPUT
+
+            if [ "$CHANGES" -gt 0 ]; then
+              echo "should-run-tests=true" >> $GITHUB_OUTPUT
+              if [ "$IMPLS_CHANGES" -gt 0 ]; then
+                echo "force-matrix-rebuild=true" >> $GITHUB_OUTPUT
+                echo "→ Automatic trigger: transport changes detected, impls.yaml changed"
+              else
+                echo "force-matrix-rebuild=false" >> $GITHUB_OUTPUT
+                echo "→ Automatic trigger: transport changes detected"
+              fi
+            else
+              echo "should-run-tests=false" >> $GITHUB_OUTPUT
+              echo "force-matrix-rebuild=false" >> $GITHUB_OUTPUT
+              echo "→ Automatic trigger: no transport changes in last 24h"
+            fi
+          fi
+
+      - name: Debug outputs
+        shell: bash
+        run: |
+          echo "DEBUG: should-run-tests output = '${{ steps.resolve.outputs.should-run-tests }}'"
+          echo "DEBUG: github.event_name = '${{ github.event_name }}'"
+
+  resolve-hole-punch-parameters:
+    runs-on: [self-hosted, linux, x64, ephemeral]
+    outputs:
+      test-select: ${{ steps.resolve.outputs.test-select }}
+      test-ignore: ${{ steps.resolve.outputs.test-ignore }}
+      relay-select: ${{ steps.resolve.outputs.relay-select }}
+      relay-ignore: ${{ steps.resolve.outputs.relay-ignore }}
+      router-select: ${{ steps.resolve.outputs.router-select }}
+      router-ignore: ${{ steps.resolve.outputs.router-ignore }}
+      force-matrix-rebuild: ${{ steps.resolve.outputs.force-matrix-rebuild }}
+      force-image-rebuild: ${{ steps.resolve.outputs.force-image-rebuild }}
+      debug: ${{ steps.resolve.outputs.debug }}
+      should-run-tests: ${{ steps.resolve.outputs.should-run-tests }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve hole-punch parameters
+        id: resolve
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            # Manual trigger - use workflow inputs
+            echo "test-select=${{ github.event.inputs.hole-punch-test-select }}" >> $GITHUB_OUTPUT
+            echo "test-ignore=${{ github.event.inputs.hole-punch-test-ignore }}" >> $GITHUB_OUTPUT
+            echo "relay-select=${{ github.event.inputs.hole-punch-relay-select }}" >> $GITHUB_OUTPUT
+            echo "relay-ignore=${{ github.event.inputs.hole-punch-relay-ignore }}" >> $GITHUB_OUTPUT
+            echo "router-select=${{ github.event.inputs.hole-punch-router-select }}" >> $GITHUB_OUTPUT
+            echo "router-ignore=${{ github.event.inputs.hole-punch-router-ignore }}" >> $GITHUB_OUTPUT
+            echo "force-matrix-rebuild=${{ github.event.inputs.hole-punch-force-matrix-rebuild }}" >> $GITHUB_OUTPUT
+            echo "force-image-rebuild=${{ github.event.inputs.hole-punch-force-image-rebuild }}" >> $GITHUB_OUTPUT
+            echo "debug=${{ github.event.inputs.hole-punch-debug }}" >> $GITHUB_OUTPUT
+            echo "should-run-tests=true" >> $GITHUB_OUTPUT
+            echo "→ Manual trigger: using workflow inputs for hole-punch"
+          else
+            # Automatic trigger - check for changes in last 24 hours
+            CHANGES=$(git log --oneline --since="24 hours ago" -- "hole-punch/**" | wc -l)
+            IMPLS_CHANGES=$(git log --oneline --since="24 hours ago" -- "hole-punch/impls.yaml" | wc -l)
+
+            echo "test-select=" >> $GITHUB_OUTPUT
+            echo "test-ignore=~failing" >> $GITHUB_OUTPUT
+            echo "relay-select=" >> $GITHUB_OUTPUT
+            echo "relay-ignore=" >> $GITHUB_OUTPUT
+            echo "router-select=" >> $GITHUB_OUTPUT
+            echo "router-ignore=" >> $GITHUB_OUTPUT
+            echo "force-image-rebuild=false" >> $GITHUB_OUTPUT
+            echo "debug=false" >> $GITHUB_OUTPUT
+
+            if [ "$CHANGES" -gt 0 ]; then
+              echo "should-run-tests=true" >> $GITHUB_OUTPUT
+              if [ "$IMPLS_CHANGES" -gt 0 ]; then
+                echo "force-matrix-rebuild=true" >> $GITHUB_OUTPUT
+                echo "→ Automatic trigger: hole-punch changes detected, impls.yaml changed"
+              else
+                echo "force-matrix-rebuild=false" >> $GITHUB_OUTPUT
+                echo "→ Automatic trigger: hole-punch changes detected"
+              fi
+            else
+              echo "should-run-tests=false" >> $GITHUB_OUTPUT
+              echo "force-matrix-rebuild=false" >> $GITHUB_OUTPUT
+              echo "→ Automatic trigger: no hole-punch changes in last 24h"
+            fi
+          fi
+
+  resolve-perf-parameters:
+    runs-on: [self-hosted, linux, x64, ephemeral]
+    outputs:
+      test-select: ${{ steps.resolve.outputs.test-select }}
+      test-ignore: ${{ steps.resolve.outputs.test-ignore }}
+      baseline-select: ${{ steps.resolve.outputs.baseline-select }}
+      baseline-ignore: ${{ steps.resolve.outputs.baseline-ignore }}
+      iterations: ${{ steps.resolve.outputs.iterations }}
+      force-matrix-rebuild: ${{ steps.resolve.outputs.force-matrix-rebuild }}
+      force-image-rebuild: ${{ steps.resolve.outputs.force-image-rebuild }}
+      debug: ${{ steps.resolve.outputs.debug }}
+      should-run-tests: ${{ steps.resolve.outputs.should-run-tests }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve perf parameters
+        id: resolve
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            # Manual trigger - use workflow inputs
+            echo "test-select=${{ github.event.inputs.perf-test-select }}" >> $GITHUB_OUTPUT
+            echo "test-ignore=${{ github.event.inputs.perf-test-ignore }}" >> $GITHUB_OUTPUT
+            echo "baseline-select=${{ github.event.inputs.perf-baseline-select }}" >> $GITHUB_OUTPUT
+            echo "baseline-ignore=${{ github.event.inputs.perf-baseline-ignore }}" >> $GITHUB_OUTPUT
+            echo "iterations=${{ github.event.inputs.perf-iterations }}" >> $GITHUB_OUTPUT
+            echo "force-matrix-rebuild=${{ github.event.inputs.perf-force-matrix-rebuild }}" >> $GITHUB_OUTPUT
+            echo "force-image-rebuild=${{ github.event.inputs.perf-force-image-rebuild }}" >> $GITHUB_OUTPUT
+            echo "debug=${{ github.event.inputs.perf-debug }}" >> $GITHUB_OUTPUT
+            echo "should-run-tests=true" >> $GITHUB_OUTPUT
+            echo "→ Manual trigger: using workflow inputs for perf"
+          else
+            # Automatic trigger - check for changes in last 24 hours
+            CHANGES=$(git log --oneline --since="24 hours ago" -- "perf/**" | wc -l)
+            IMPLS_CHANGES=$(git log --oneline --since="24 hours ago" -- "perf/impls.yaml" | wc -l)
+
+            echo "test-select=" >> $GITHUB_OUTPUT
+            echo "test-ignore=~failing" >> $GITHUB_OUTPUT
+            echo "baseline-select=" >> $GITHUB_OUTPUT
+            echo "baseline-ignore=~failing" >> $GITHUB_OUTPUT
+            echo "iterations=10" >> $GITHUB_OUTPUT
+            echo "force-image-rebuild=false" >> $GITHUB_OUTPUT
+            echo "debug=false" >> $GITHUB_OUTPUT
+
+            if [ "$CHANGES" -gt 0 ]; then
+              echo "should-run-tests=true" >> $GITHUB_OUTPUT
+              if [ "$IMPLS_CHANGES" -gt 0 ]; then
+                echo "force-matrix-rebuild=true" >> $GITHUB_OUTPUT
+                echo "→ Automatic trigger: perf changes detected, impls.yaml changed"
+              else
+                echo "force-matrix-rebuild=false" >> $GITHUB_OUTPUT
+                echo "→ Automatic trigger: perf changes detected"
+              fi
+            else
+              echo "should-run-tests=false" >> $GITHUB_OUTPUT
+              echo "force-matrix-rebuild=false" >> $GITHUB_OUTPUT
+              echo "→ Automatic trigger: no perf changes in last 24h"
+            fi
+          fi
+
+  run-transport-full:
+    needs: resolve-transport-parameters
+    if: ${{ !cancelled() && (github.event_name == 'workflow_dispatch' || needs.resolve-transport-parameters.outputs.should-run-tests) }}
+    runs-on: [self-hosted, linux, x64, ephemeral]
+    continue-on-error: true
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run full transport interop tests
+        uses: ./.github/actions/run-bash-transport-test
+        with:
+          test-select: '${{ needs.resolve-transport-parameters.outputs.test-select }}'
+          test-ignore: '${{ needs.resolve-transport-parameters.outputs.test-ignore }}'
+          cache-dir: /srv/cache
+          snapshot: false
+          force-matrix-rebuild: ${{ needs.resolve-transport-parameters.outputs.force-matrix-rebuild }}
+          force-image-rebuild: ${{ needs.resolve-transport-parameters.outputs.force-image-rebuild }}
+          debug: ${{ needs.resolve-transport-parameters.outputs.debug }}
+
+  run-hole-punch-full:
+    needs: resolve-hole-punch-parameters
+    if: ${{ !cancelled() && (github.event_name == 'workflow_dispatch' || needs.resolve-hole-punch-parameters.outputs.should-run-tests) }}
+    runs-on: [self-hosted, linux, x64, ephemeral]
+    continue-on-error: true
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run full hole punch interop tests
+        uses: ./.github/actions/run-bash-hole-punch-test
+        with:
+          test-select: '${{ needs.resolve-hole-punch-parameters.outputs.test-select }}'
+          test-ignore: '${{ needs.resolve-hole-punch-parameters.outputs.test-ignore }}'
+          relay-select: '${{ needs.resolve-hole-punch-parameters.outputs.relay-select }}'
+          relay-ignore: '${{ needs.resolve-hole-punch-parameters.outputs.relay-ignore }}'
+          router-select: '${{ needs.resolve-hole-punch-parameters.outputs.router-select }}'
+          router-ignore: '${{ needs.resolve-hole-punch-parameters.outputs.router-ignore }}'
+          cache-dir: /srv/cache
+          snapshot: false
+          force-matrix-rebuild: ${{ needs.resolve-hole-punch-parameters.outputs.force-matrix-rebuild }}
+          force-image-rebuild: ${{ needs.resolve-hole-punch-parameters.outputs.force-image-rebuild }}
+          debug: ${{ needs.resolve-hole-punch-parameters.outputs.debug }}
+
+  run-perf-full:
+    needs: resolve-perf-parameters
+    if: ${{ !cancelled() && (github.event_name == 'workflow_dispatch' || needs.resolve-perf-parameters.outputs.should-run-tests) }}
+    runs-on: [self-hosted, linux, x64, ephemeral]
+    continue-on-error: true
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run full perf benchmarks
+        uses: ./.github/actions/run-bash-perf-test
+        with:
+          test-select: '${{ needs.resolve-perf-parameters.outputs.test-select }}'
+          test-ignore: '${{ needs.resolve-perf-parameters.outputs.test-ignore }}'
+          baseline-select: '${{ needs.resolve-perf-parameters.outputs.baseline-select }}'
+          baseline-ignore: '${{ needs.resolve-perf-parameters.outputs.baseline-ignore }}'
+          iterations: '${{ needs.resolve-perf-parameters.outputs.iterations }}'
+          cache-dir: /srv/cache
+          snapshot: false
+          force-matrix-rebuild: ${{ needs.resolve-perf-parameters.outputs.force-matrix-rebuild }}
+          force-image-rebuild: ${{ needs.resolve-perf-parameters.outputs.force-image-rebuild }}
+          debug: ${{ needs.resolve-perf-parameters.outputs.debug }}
+
+  update-readmes:
+    needs: [run-transport-full, run-hole-punch-full, run-perf-full]
+    if: |
+      always() &&
+      (needs.run-transport-full.result != 'skipped' ||
+       needs.run-hole-punch-full.result != 'skipped' ||
+       needs.run-perf-full.result != 'skipped')
+    runs-on: [self-hosted, linux, x64, ephemeral]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download transport test results
+        if: needs.run-transport-full.result != 'skipped'
+        uses: actions/download-artifact@v4
+        with:
+          pattern: transport-test-results-*
+          path: /tmp/transport-results
+          merge-multiple: true
+
+      - name: Download hole-punch test results
+        if: needs.run-hole-punch-full.result != 'skipped'
+        uses: actions/download-artifact@v4
+        with:
+          pattern: hole-punch-test-results-*
+          path: /tmp/hole-punch-results
+          merge-multiple: true
+
+      - name: Download perf test results
+        if: needs.run-perf-full.result != 'skipped'
+        uses: actions/download-artifact@v4
+        with:
+          pattern: perf-test-results-*
+          path: /tmp/perf-results
+          merge-multiple: true
+
+      - name: Update transport README
+        if: needs.run-transport-full.result != 'skipped'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Find results.md file
+          RESULTS_MD=$(find /tmp/transport-results -name "results.md" | head -1)
+
+          if [ -z "$RESULTS_MD" ]; then
+            echo "Error: Could not find transport results.md"
+            exit 1
+          fi
+
+          echo "→ Found transport results: $RESULTS_MD"
+
+          # Update README using script
+          bash scripts/update-readme-results.sh transport/README.md "$RESULTS_MD"
+
+      - name: Update hole-punch README
+        if: needs.run-hole-punch-full.result != 'skipped'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Find results.md file
+          RESULTS_MD=$(find /tmp/hole-punch-results -name "results.md" | head -1)
+
+          if [ -z "$RESULTS_MD" ]; then
+            echo "Error: Could not find hole-punch results.md"
+            exit 1
+          fi
+
+          echo "→ Found hole-punch results: $RESULTS_MD"
+
+          # Update README using script
+          bash scripts/update-readme-results.sh hole-punch/README.md "$RESULTS_MD"
+
+      - name: Update perf README
+        if: needs.run-perf-full.result != 'skipped'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Find results.md file
+          RESULTS_MD=$(find /tmp/perf-results -name "results.md" | head -1)
+
+          if [ -z "$RESULTS_MD" ]; then
+            echo "Error: Could not find perf results.md"
+            exit 1
+          fi
+
+          echo "→ Found perf results: $RESULTS_MD"
+
+          # Update README using script
+          bash scripts/update-readme-results.sh perf/README.md "$RESULTS_MD"
+
+      - name: Commit and push changes
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Check if there are changes
+          if git diff --quiet transport/README.md hole-punch/README.md perf/README.md 2>/dev/null; then
+            echo "→ No changes to commit"
+            exit 0
+          fi
+
+          git add transport/README.md hole-punch/README.md perf/README.md 2>/dev/null || true
+
+          # Only commit if there are staged changes
+          if git diff --cached --quiet 2>/dev/null; then
+            echo "→ No staged changes to commit"
+            exit 0
+          fi
+
+          git commit -m "chore: update test results [skip ci]" \
+                     -m "Updated test results from daily full interoperability test run." \
+                     -m "Co-authored-by: github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
+
+          git push
+
+          echo "→ Changes committed and pushed"
