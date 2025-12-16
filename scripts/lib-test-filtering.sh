@@ -2,68 +2,9 @@
 # Common test filtering functions
 # Used by both hole-punch and transport test generation
 
-# Expand negation patterns to their logical set inversion
-# e.g., !rust-v0.56 → go-v0.45|js-v3.x|... (all impls that don't match rust-v0.56)
-expand_negations() {
-    local pattern_string="$1"  # e.g., "!rust-v0.56|go-v0.45"
-    local impls_yaml="${2:-impls.yaml}"
-
-    # If no pattern, return empty
-    [ -z "$pattern_string" ] && return 0
-
-    # Get all implementation IDs
-    local all_impls=$(yq eval '.implementations[].id' "$impls_yaml" | paste -sd'|')
-
-    # Split pattern string by |
-    IFS='|' read -ra patterns <<< "$pattern_string"
-
-    local result=""
-
-    for pattern in "${patterns[@]}"; do
-        if [[ "$pattern" == !* ]] || [[ "$pattern" == \\!* ]]; then
-            # Negation: expand to all impls that DON'T match
-            local neg_pattern="${pattern#!}"
-            neg_pattern="${neg_pattern#\\!}"
-
-            # Get all impls that don't match this pattern
-            IFS='|' read -ra all_impls_array <<< "$all_impls"
-            for impl in "${all_impls_array[@]}"; do
-                if [[ "$impl" != *"$neg_pattern"* ]]; then
-                    result="$result|$impl"
-                fi
-            done
-        else
-            # Regular pattern: keep as-is
-            result="$result|$pattern"
-        fi
-    done
-
-    # Remove leading |
-    result="${result#|}"
-
-    # Deduplicate and sort
-    result=$(echo "$result" | tr '|' '\n' | sort -u | paste -sd'|')
-
-    echo "$result"
-}
-
-# Expand both aliases and negations, with deduplication
-# This is the main expansion function that should be called
-expand_all_patterns() {
-    local pattern_string="$1"
-    local impls_yaml="${2:-impls.yaml}"
-
-    # If empty, return empty
-    [ -z "$pattern_string" ] && return 0
-
-    # First expand aliases (from lib-test-aliases.sh)
-    local expanded=$(expand_aliases "$pattern_string")
-
-    # Then expand negations
-    expanded=$(expand_negations "$expanded" "$impls_yaml")
-
-    echo "$expanded"
-}
+# NOTE: Legacy expand_negations() and expand_all_patterns() functions have been
+# removed and replaced by expand_filter_string() from lib-filter-engine.sh which
+# provides recursive alias expansion, loop detection, and correct inversion handling.
 
 # Helper function to check if implementation ID matches select patterns
 impl_matches_select() {
@@ -143,23 +84,6 @@ get_common() {
     done
 
     echo "$result"
-}
-
-# =============================================================================
-# DEPRECATED FUNCTIONS - Kept for backward compatibility
-# New code should use functions from lib-filter-engine.sh
-# =============================================================================
-
-# DEPRECATED: Use expand_filter_string() from lib-filter-engine.sh instead
-# This wrapper is kept for backward compatibility
-expand_negations_v1() {
-    expand_negations "$@"
-}
-
-# DEPRECATED: Use expand_filter_string() from lib-filter-engine.sh instead
-# This wrapper is kept for backward compatibility
-expand_all_patterns_v1() {
-    expand_all_patterns "$@"
 }
 
 # NOTE: The functions impl_matches_select(), matches_select(), and should_ignore()

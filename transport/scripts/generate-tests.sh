@@ -45,7 +45,6 @@ echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔�
 # Display and expand test selection
 if [ -n "$TEST_SELECT" ]; then
     echo "→ Test select: $TEST_SELECT"
-    ORIGINAL_SELECT="$TEST_SELECT"
     TEST_SELECT=$(expand_filter_string "$TEST_SELECT" all_impl_ids)
     # Always show final expanded value
     echo "  → Expanded to: $TEST_SELECT"
@@ -56,7 +55,6 @@ fi
 # Display and expand test ignore
 if [ -n "$TEST_IGNORE" ]; then
     echo "→ Test ignore: $TEST_IGNORE"
-    ORIGINAL_IGNORE="$TEST_IGNORE"
     TEST_IGNORE=$(expand_filter_string "$TEST_IGNORE" all_impl_ids)
     # Always show final expanded value
     echo "  → Expanded to: $TEST_IGNORE"

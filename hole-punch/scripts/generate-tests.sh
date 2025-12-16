@@ -56,7 +56,6 @@ echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔�
 # Display and expand test selection (aliases + negations)
 if [ -n "$TEST_SELECT" ]; then
     echo "→ Test select: $TEST_SELECT"
-    ORIGINAL_SELECT="$TEST_SELECT"
     TEST_SELECT=$(expand_filter_string "$TEST_SELECT" all_impl_ids)
     echo "  → Expanded to: $TEST_SELECT"
 else
@@ -66,7 +65,6 @@ fi
 # Display and expand test ignore (aliases + negations)
 if [ -n "$TEST_IGNORE" ]; then
     echo "→ Test ignore: $TEST_IGNORE"
-    ORIGINAL_IGNORE="$TEST_IGNORE"
     TEST_IGNORE=$(expand_filter_string "$TEST_IGNORE" all_impl_ids)
     echo "  → Expanded to: $TEST_IGNORE"
 else
@@ -76,7 +74,6 @@ fi
 # Display and expand relay selection (aliases + negations)
 if [ -n "$RELAY_SELECT" ]; then
     echo "→ Relay select: $RELAY_SELECT"
-    ORIGINAL_RELAY_SELECT="$RELAY_SELECT"
     RELAY_SELECT=$(expand_filter_string "$RELAY_SELECT" all_relay_ids)
     echo "  → Expanded to: $RELAY_SELECT"
 else
@@ -86,7 +83,6 @@ fi
 # Display and expand relay ignore (aliases + negations)
 if [ -n "$RELAY_IGNORE" ]; then
     echo "→ Relay ignore: $RELAY_IGNORE"
-    ORIGINAL_RELAY_IGNORE="$RELAY_IGNORE"
     RELAY_IGNORE=$(expand_filter_string "$RELAY_IGNORE" all_relay_ids)
     echo "  → Expanded to: $RELAY_IGNORE"
 fi
@@ -94,7 +90,6 @@ fi
 # Display and expand router selection (aliases + negations)
 if [ -n "$ROUTER_SELECT" ]; then
     echo "→ Router select: $ROUTER_SELECT"
-    ORIGINAL_ROUTER_SELECT="$ROUTER_SELECT"
     ROUTER_SELECT=$(expand_filter_string "$ROUTER_SELECT" all_router_ids)
     echo "  → Expanded to: $ROUTER_SELECT"
 else
@@ -104,7 +99,6 @@ fi
 # Display and expand router ignore (aliases + negations)
 if [ -n "$ROUTER_IGNORE" ]; then
     echo "→ Router ignore: $ROUTER_IGNORE"
-    ORIGINAL_ROUTER_IGNORE="$ROUTER_IGNORE"
     ROUTER_IGNORE=$(expand_filter_string "$ROUTER_IGNORE" all_router_ids)
     echo "  → Expanded to: $ROUTER_IGNORE"
 fi
@@ -182,13 +176,9 @@ tests=()
 ignored_tests=()
 test_num=0
 
-# Always declare arrays (even if empty) to avoid unbound variable errors
+# Declare pattern arrays for implementation filtering (still used by common functions)
 declare -a SELECT_PATTERNS=()
 declare -a IGNORE_PATTERNS=()
-declare -a RELAY_SELECT_PATTERNS=()
-declare -a RELAY_IGNORE_PATTERNS=()
-declare -a ROUTER_SELECT_PATTERNS=()
-declare -a ROUTER_IGNORE_PATTERNS=()
 
 if [ -n "$TEST_SELECT" ]; then
     IFS='|' read -ra SELECT_PATTERNS <<< "$TEST_SELECT"
@@ -198,26 +188,6 @@ fi
 if [ -n "$TEST_IGNORE" ]; then
     IFS='|' read -ra IGNORE_PATTERNS <<< "$TEST_IGNORE"
     echo "  ✓ Loaded ${#IGNORE_PATTERNS[@]} test ignore patterns"
-fi
-
-if [ -n "$RELAY_SELECT" ]; then
-    IFS='|' read -ra RELAY_SELECT_PATTERNS <<< "$RELAY_SELECT"
-    echo "  ✓ Loaded ${#RELAY_SELECT_PATTERNS[@]} relay select patterns"
-fi
-
-if [ -n "$RELAY_IGNORE" ]; then
-    IFS='|' read -ra RELAY_IGNORE_PATTERNS <<< "$RELAY_IGNORE"
-    echo "  ✓ Loaded ${#RELAY_IGNORE_PATTERNS[@]} relay ignore patterns"
-fi
-
-if [ -n "$ROUTER_SELECT" ]; then
-    IFS='|' read -ra ROUTER_SELECT_PATTERNS <<< "$ROUTER_SELECT"
-    echo "  ✓ Loaded ${#ROUTER_SELECT_PATTERNS[@]} router select patterns"
-fi
-
-if [ -n "$ROUTER_IGNORE" ]; then
-    IFS='|' read -ra ROUTER_IGNORE_PATTERNS <<< "$ROUTER_IGNORE"
-    echo "  ✓ Loaded ${#ROUTER_IGNORE_PATTERNS[@]} router ignore patterns"
 fi
 
 # Note: Relay and router filtering now uses generic filter_matches() from lib-filter-engine.sh

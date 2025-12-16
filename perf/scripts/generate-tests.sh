@@ -64,11 +64,10 @@ if [ -n "$BASELINE_IGNORE" ]; then
     BASELINE_IGNORE=$(expand_filter_string "$BASELINE_IGNORE" all_baseline_ids)
 fi
 
-# Pre-parse select and ignore patterns
+# Pre-parse select and ignore patterns for implementation filtering
+# (Still used by common impl_matches_select and should_ignore functions)
 declare -a SELECT_PATTERNS=()
 declare -a IGNORE_PATTERNS=()
-declare -a BASELINE_SELECT_PATTERNS=()
-declare -a BASELINE_IGNORE_PATTERNS=()
 
 if [ -n "$TEST_SELECT" ]; then
     IFS='|' read -ra SELECT_PATTERNS <<< "$TEST_SELECT"
@@ -76,14 +75,6 @@ fi
 
 if [ -n "$TEST_IGNORE" ]; then
     IFS='|' read -ra IGNORE_PATTERNS <<< "$TEST_IGNORE"
-fi
-
-if [ -n "$BASELINE_SELECT" ]; then
-    IFS='|' read -ra BASELINE_SELECT_PATTERNS <<< "$BASELINE_SELECT"
-fi
-
-if [ -n "$BASELINE_IGNORE" ]; then
-    IFS='|' read -ra BASELINE_IGNORE_PATTERNS <<< "$BASELINE_IGNORE"
 fi
 
 # Output section header
@@ -159,18 +150,6 @@ done
 echo "  ✓ Loaded ${#baseline_ids[@]} baselines into memory"
 if [ "${DEBUG:-false}" = "true" ]; then
     echo "  DEBUG: Baseline IDs: ${baseline_ids[*]}" >&2
-fi
-if [ ${#BASELINE_SELECT_PATTERNS[@]} -gt 0 ]; then
-    echo "  ✓ Loaded ${#BASELINE_SELECT_PATTERNS[@]} baseline select patterns"
-    if [ "${DEBUG:-false}" = "true" ]; then
-        echo "  DEBUG: BASELINE_SELECT_PATTERNS: ${BASELINE_SELECT_PATTERNS[*]}" >&2
-    fi
-fi
-if [ ${#BASELINE_IGNORE_PATTERNS[@]} -gt 0 ]; then
-    echo "  ✓ Loaded ${#BASELINE_IGNORE_PATTERNS[@]} baseline ignore patterns"
-    if [ "${DEBUG:-false}" = "true" ]; then
-        echo "  DEBUG: BASELINE_IGNORE_PATTERNS: ${BASELINE_IGNORE_PATTERNS[*]}" >&2
-    fi
 fi
 
 # Load main implementation data
