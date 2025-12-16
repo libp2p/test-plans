@@ -121,8 +121,6 @@ def partial_message_chain_scenario(
     # Each node connects to both previous and next (except first and last)
     for i in range(node_count):
         connections = []
-        if i > 0:
-            connections.append(i - 1)  # Connect to previous
         if i < node_count - 1:
             connections.append(i + 1)  # Connect to next
 
