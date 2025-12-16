@@ -144,3 +144,37 @@ get_common() {
 
     echo "$result"
 }
+
+# =============================================================================
+# DEPRECATED FUNCTIONS - Kept for backward compatibility
+# New code should use functions from lib-filter-engine.sh
+# =============================================================================
+
+# DEPRECATED: Use expand_filter_string() from lib-filter-engine.sh instead
+# This wrapper is kept for backward compatibility
+expand_negations_v1() {
+    expand_negations "$@"
+}
+
+# DEPRECATED: Use expand_filter_string() from lib-filter-engine.sh instead
+# This wrapper is kept for backward compatibility
+expand_all_patterns_v1() {
+    expand_all_patterns "$@"
+}
+
+# NOTE: The functions impl_matches_select(), matches_select(), and should_ignore()
+# still work with the new filter engine. They expect pre-expanded filter strings.
+#
+# For new code, it's recommended to:
+# 1. Source lib-filter-engine.sh
+# 2. Use expand_filter_string() for expansion (handles recursion, loops, inversions)
+# 3. Use filter_names() for complete two-step select/ignore filtering
+# 4. Use filter_matches() as a generic replacement for entity-specific matching
+#
+# Migration example:
+#   OLD: TEST_SELECT=$(expand_aliases "$TEST_SELECT")
+#        impl_matches_select "$impl_id"
+#
+#   NEW: all_impls=($(yq eval '.implementations[].id' impls.yaml))
+#        TEST_SELECT=$(expand_filter_string "$TEST_SELECT" all_impls)
+#        filter_matches "$impl_id" "$TEST_SELECT"

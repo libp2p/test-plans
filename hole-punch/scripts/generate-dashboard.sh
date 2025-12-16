@@ -6,6 +6,7 @@ set -euo pipefail
 # Use TEST_PASS_DIR if set, otherwise current directory
 RESULTS_FILE="${TEST_PASS_DIR:-.}/results.yaml"
 OUTPUT_FILE="${TEST_PASS_DIR:-.}/results.md"
+LATEST_RESULTS_FILE="${TEST_PASS_DIR:-.}/LATEST_TEST_RESULTS.md"
 
 if [ ! -f "$RESULTS_FILE" ]; then
     echo "✗ Error: $RESULTS_FILE not found"
@@ -33,8 +34,8 @@ else
     pass_rate="0.0"
 fi
 
-# Generate markdown
-cat > "$OUTPUT_FILE" <<EOF
+# Generate LATEST_TEST_RESULTS.md (detailed results)
+cat > "$LATEST_RESULTS_FILE" <<EOF
 # Hole Punch Interoperability Test Results
 
 ## Test Pass: \`$test_pass\`
@@ -89,13 +90,56 @@ if [ "$test_count" -gt 0 ]; then
             status_icon="❌"
         fi
 
-        echo "| $name | $dialer | $listener | $transport | $status_icon | $test_duration |" >> "$OUTPUT_FILE"
+        echo "| $name | $dialer | $listener | $transport | $status_icon | $test_duration |" >> "$LATEST_RESULTS_FILE"
     done <<< "$test_data"
 fi
 
-# Only generate matrix view if there are tests
-if [ "$test_count" -gt 0 ]; then
-    cat >> "$OUTPUT_FILE" <<EOF
+# Add footer to LATEST_TEST_RESULTS.md
+cat >> "$LATEST_RESULTS_FILE" <<EOF
+
+---
+
+*Generated: $(date -u +%Y-%m-%dT%H:%M:%SZ)*
+EOF
+
+echo "  ✓ Generated $LATEST_RESULTS_FILE"
+
+# Generate main results.md (with matrix)
+cat > "$OUTPUT_FILE" <<EOF
+# Hole Punch Interoperability Test Results
+
+## Test Pass: \`$test_pass\`
+
+**Summary:**
+- **Total Tests:** $total
+- **Passed:** ✅ $passed
+- **Failed:** ❌ $failed
+- **Pass Rate:** ${pass_rate}%
+
+**Environment:**
+- **Platform:** $platform
+- **OS:** $os_name
+- **Workers:** $worker_count
+- **Duration:** $duration
+
+**Timestamps:**
+- **Started:** $started_at
+- **Completed:** $completed_at
+
+---
+
+## Latest Test Results
+
+See [Latest Test Results](LATEST_TEST_RESULTS.md) for detailed results table.
+
+---
+
+## Legend
+
+- ✅ Test passed
+- ❌ Test failed
+- **Transport abbreviations**: t=tcp, q=quic, w=ws, W=wss (first letter)
+- Example: ✅t = TCP test passed, ❌q = QUIC test failed
 
 ---
 
@@ -103,6 +147,8 @@ if [ "$test_count" -gt 0 ]; then
 
 EOF
 
+# Only generate matrix view if there are tests
+if [ "$test_count" -gt 0 ]; then
     # Generate matrix view (dialer x listener grid)
     # Get unique dialers and listeners
     dialers=$(yq eval '.tests[].dialer' "$RESULTS_FILE" | sort -u)
@@ -162,15 +208,6 @@ done
 fi
 
 cat >> "$OUTPUT_FILE" <<EOF
-
----
-
-## Legend
-
-- ✅ Test passed
-- ❌ Test failed
-- **Transport abbreviations**: t=tcp, q=quic, w=ws, W=wss (first letter)
-- Example: ✅t = TCP test passed, ❌q = QUIC test failed
 
 ---
 

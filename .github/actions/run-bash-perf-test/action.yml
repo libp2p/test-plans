@@ -171,6 +171,7 @@ runs:
           ${{ steps.find-test-pass.outputs.test-pass-dir }}/results.yaml
           ${{ steps.find-test-pass.outputs.test-pass-dir }}/results.md
           ${{ steps.find-test-pass.outputs.test-pass-dir }}/results.html
+          ${{ steps.find-test-pass.outputs.test-pass-dir }}/LATEST_TEST_RESULTS.md
         if-no-files-found: warn
 
     - name: Upload box plot images

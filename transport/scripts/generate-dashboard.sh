@@ -6,6 +6,7 @@ set -euo pipefail
 # Use TEST_PASS_DIR if set, otherwise use current directory
 RESULTS_FILE="${TEST_PASS_DIR:-.}/results.yaml"
 OUTPUT_FILE="${TEST_PASS_DIR:-.}/results.md"
+LATEST_RESULTS_FILE="${TEST_PASS_DIR:-.}/LATEST_TEST_RESULTS.md"
 
 if [ ! -f "$RESULTS_FILE" ]; then
     echo "✗ Error: $RESULTS_FILE not found"
@@ -33,8 +34,8 @@ else
     pass_rate="0.0"
 fi
 
-# Generate markdown
-cat > "$OUTPUT_FILE" <<EOF
+# Generate LATEST_TEST_RESULTS.md (detailed results)
+cat > "$LATEST_RESULTS_FILE" <<EOF
 # Transport Interoperability Test Results
 
 ## Test Pass: \`$test_pass\`
@@ -99,13 +100,47 @@ if [ "$test_count" -gt 0 ]; then
     [ "$handshake_ms" = "null" ] || [ -z "$handshake_ms" ] && handshake_ms="-"
     [ "$ping_ms" = "null" ] || [ -z "$ping_ms" ] && ping_ms="-"
 
-    echo "| $name | $dialer | $listener | $transport | $secure | $muxer | $status_icon | $test_duration | $handshake_ms | $ping_ms |" >> "$OUTPUT_FILE"
+    echo "| $name | $dialer | $listener | $transport | $secure | $muxer | $status_icon | $test_duration | $handshake_ms | $ping_ms |" >> "$LATEST_RESULTS_FILE"
 done <<< "$test_data"
 fi
 
-# Only generate matrix view if there are tests
-if [ "$test_count" -gt 0 ]; then
-    cat >> "$OUTPUT_FILE" <<EOF
+# Add footer to LATEST_TEST_RESULTS.md
+cat >> "$LATEST_RESULTS_FILE" <<EOF
+
+---
+
+*Generated: $(date -u +%Y-%m-%dT%H:%M:%SZ)*
+EOF
+
+echo "  ✓ Generated $LATEST_RESULTS_FILE"
+
+# Generate main results.md (with matrices)
+cat > "$OUTPUT_FILE" <<EOF
+# Transport Interoperability Test Results
+
+## Test Pass: \`$test_pass\`
+
+**Summary:**
+- **Total Tests:** $total
+- **Passed:** ✅ $passed
+- **Failed:** ❌ $failed
+- **Pass Rate:** ${pass_rate}%
+
+**Environment:**
+- **Platform:** $platform
+- **OS:** $os_name
+- **Workers:** $worker_count
+- **Duration:** $duration
+
+**Timestamps:**
+- **Started:** $started_at
+- **Completed:** $completed_at
+
+---
+
+## Latest Test Results
+
+See [Latest Test Results](LATEST_TEST_RESULTS.md) for detailed results table.
 
 ---
 
@@ -113,6 +148,8 @@ if [ "$test_count" -gt 0 ]; then
 
 EOF
 
+# Only generate matrix view if there are tests
+if [ "$test_count" -gt 0 ]; then
     # Generate matrix view grouped by transport + secure channel + muxer combination
     # Get all unique combinations (transport|secureChannel|muxer)
     combinations=$(yq eval '.tests[] | .transport + "|" + (.secureChannel // "null") + "|" + (.muxer // "null")' "$RESULTS_FILE" | sort -u)
@@ -199,7 +236,7 @@ cat >> "$OUTPUT_FILE" <<EOF
 *Generated: $(date -u +%Y-%m-%dT%H:%M:%SZ)*
 EOF
 
-echo "  ✓ Generated "$OUTPUT_FILE""
+echo "  ✓ Generated $OUTPUT_FILE"
 
 # Generate HTML if pandoc is available
 if command -v pandoc &> /dev/null; then

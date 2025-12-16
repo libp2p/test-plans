@@ -1,259 +1,170 @@
-# Transport Interoperability Tests v2
+# Transport Interoperability Tests
 
-Simplified, pure-bash implementation of transport interoperability tests for libp2p.
+Pure-bash implementation of transport interoperability tests for libp2p implementations.
 
-## Overview
+## What This Test Does
 
-This is the v2 implementation following the same simplification approach as hole-punch:
-- **Pure bash** orchestration (no Node.js/npm/TypeScript)
-- **YAML** for all configuration and data files
-- **Content-addressed caching** under `/srv/cache/`
-- **No Makefiles or make dependency**
-- **Self-contained snapshots** for reproducibility
+Transport interoperability tests verify that different libp2p implementations can successfully communicate with each other across various combinations of:
+- **Transports**: tcp, ws (WebSocket), wss (WebSocket Secure)
+- **Secure Channels**: noise, tls
+- **Muxers**: yamux, mplex
 
-## Key Differences from Hole Punch Tests
+Additionally, tests cover standalone protocols that provide transport, security, and multiplexing in one:
+- quic-v1, webrtc-direct, webtransport
 
-### Test Matrix Structure
+## What It Measures
 
-Transport interop tests cover **3 dimensions**:
-1. **Transport**: tcp, ws, wss,
-2. **Secure Channel**: noise, tls
-3. **Muxer**: yamux, mplex
+- **Compatibility**: Can dialer and listener establish connections?
+- **Protocol Support**: Which transport/secure/muxer combinations work?
+- **Handshake Performance**: Connection establishment time
+- **Ping Latency**: Round-trip time after connection
 
-libp2p also supports protocols that provide transport, a secure channel, and muxing all in one:
+## When Tests Run
 
-- quic-v1
-- webrtc-direct
-- webtransport
+- **On Pull Requests**: Tests implementations changed in the PR
+- **Daily Full Run**: Complete test matrix (all implementations)
+- **Manual Trigger**: Via GitHub Actions workflow dispatch
 
-### Test Combinations
+## How to Run Tests
 
-Tests are generated as: `dialer x listener x transport x secure-channel x muxer`
+### Prerequisites
 
-Example: `rust-v0.53 x go-v0.35 (tcp, noise, yamux)`
+Check dependencies:
+```bash
+./run_tests.sh --check-deps
+```
 
-Valid combinations of `transport`, `secure-channel`, and `muxer` are:
+Required: bash 4.0+, docker 20.10+, yq 4.0+, wget, unzip
 
-- tcp, noise, mplex
-- tcp, noise, yamux
-- tcp, tls, mplex
-- tcp, tls, yamux
-- ws, noise, mplex
-- ws, noise, yamux
-- ws, tls, mplex
-- ws, tls, yamux
-- wss, noise, mplex
-- wss, noise, yamux
-- wss, tls, mplex
-- wss, tls, yamux
-- quic-v1
-- webrtc
-- webrtc-direct 
-- webtransport
-
-### No Global Services
-
-Unlike hole-punch tests, transport tests don't need:
-- Redis coordination (tests are simpler)
-- Relay service (direct connections)
-
-Each test runs with just 2 containers: `dialer` and `listener`.
-
-## Quick Start
+### Basic Usage
 
 ```bash
-# Check dependencies (bash, git, docker, yq, wget, unzip)
-./run_tests.sh --check-deps
-
 # Run all tests
 ./run_tests.sh --cache-dir /srv/cache --workers 8
 
-# Run only rust tests
-./run_tests.sh --test-select "rust" --workers 4
+# Run specific implementation
+./run_tests.sh --test-select "rust-v0.56" --workers 4
 
-# Skip quic tests
+# Skip specific tests
 ./run_tests.sh --test-ignore "quic" --workers 4
 
-# Enable debug output
+# Enable debug logging
 ./run_tests.sh --debug --workers 4
 ```
 
-## Architecture
+## Test Filtering
 
-### Configuration Files
+### Basic Filtering
 
-**impls.yaml**:
-Defines all implementations with their source repositories and supported protocols.
-
-Each implementation can use one of two source types:
-- **github**: Automatically fetches and builds from a GitHub repository
-- **local**: Builds from a local directory clone for debugging
-
-```yaml
-implementations:
-  # GitHub source (production)
-  - id: rust-v0.53
-    source:
-      type: github
-      repo: libp2p/rust-libp2p
-      commit: b7914e407da34c99fb76dcc300b3d44b9af97fac
-      dockerfile: interop-tests/Dockerfile.native
-    transports: [tcp, ws, quic-v1]
-    secureChannels: [noise, tls]
-    muxers: [yamux, mplex]
-
-  # Local source (debugging)
-  - id: rust-v0.56
-    source:
-      type: local
-      path: /home/user/rust-libp2p  # Local clone
-      commit: b7914e40  # Still tracked for documentation
-      dockerfile: interop-tests/Dockerfile.native
-    transports: [tcp, ws, quic-v1]
-    secureChannels: [noise, tls]
-    muxers: [yamux, mplex]
-```
-
-Switching to `local` type makes debugging easy:
-- Make local code changes without committing
-- Test modifications immediately
-- Use your IDE and debugging tools
-- Switch back to `github` when done
-
-### Test Matrix Generation
-
-The script generates all valid combinations:
-```
-FOR each dialer in implementations:
-  FOR each listener in implementations:
-    FOR each transport in (dialer.transports ∩ listener.transports):
-      FOR each secureChannel in (dialer.secureChannels ∩ listener.secureChannels):
-        FOR each muxer in (dialer.muxers ∩ listener.muxers):
-          IF transport NOT IN standalone_transports:
-            CREATE TEST: dialer x listener (transport, secureChannel, muxer)
-          ELSE:
-            CREATE TEST: dialer x listener (transport)
-```
-
-**Standalone transports** (no muxer/secure channel): quic-v1, webtransport, webrtc, webrtc-direct
-
-### Scripts
-
-```
-scripts/
-├── build-images.sh           # Build all Docker images from impls.yaml
-├── check-dependencies.sh     # Verify system requirements
-├── generate-tests.sh         # Generate test matrix (3D combinations)
-├── run-single-test.sh        # Execute one test (2 containers)
-├── generate-dashboard.sh     # Create results.md
-└── create-snapshot.sh        # Create test snapshot
-```
-
-### Content-Addressed Caching
-
-```
-/srv/cache/
-├── snapshots/<commit-sha>.zip       # Source code archives
-├── test-matrix/<sha256>.yaml        # Generated test matrices
-└── test-runs/<timestamp>.tar.gz   # Test snapshots
-```
-
-## Dependencies
-
-- bash 4.0+
-- docker 20.10+
-- yq 4.0+
-- wget
-- unzip
-
-**No Node.js, git, npm, TypeScript, or make required!**
-
-## Test Execution
-
-### Single Test
+Use pipe-separated patterns:
 
 ```bash
-# Start containers
-docker run dialer-image
-docker run listener-image
+# Select multiple implementations
+./run_tests.sh --test-select "rust-v0.56|go-v0.45"
 
-# Both connect and run interop test
-# Exit codes determine pass/fail
+# Ignore specific protocols
+./run_tests.sh --test-ignore "quic|webrtc"
+
+# Combine select and ignore
+./run_tests.sh --test-select "rust" --test-ignore "quic"
 ```
 
-### Parallel Execution
+### Alias Expansion
+
+Use `~alias` syntax for convenient test selection:
 
 ```bash
-# Uses xargs for parallel job control
-seq 0 $((test_count - 1)) | xargs -P $WORKERS bash -c 'run_test {}'
+# Expand to all rust versions
+./run_tests.sh --test-select "~rust"
+
+# Exclude all rust versions
+./run_tests.sh --test-ignore "~rust"
+
+# Select everything EXCEPT rust
+./run_tests.sh --test-select "!~rust"
 ```
 
-### Results
+**Available aliases** are defined in `impls.yaml` under `test-aliases`.
 
-**results.yaml**:
-```yaml
-metadata:
-  testPass: transport-interop-full-143022-08-11-2025
-  startedAt: 2025-11-09T14:30:22Z
-  duration: 1234s
+### Best Practice: Limit to Specific Alias
 
-summary:
-  total: 450
-  passed: 445
-  failed: 5
+To test ONLY implementations in an alias (not just tests containing the alias pattern):
 
-tests:
-  - name: rust-v0.53 x go-v0.35 (tcp, noise, yamux)
-    status: pass
-    exitCode: 0
-    duration: 8s
-    dialer: rust-v0.53
-    listener: go-v0.35
-    transport: tcp
-    secureChannel: noise
-    muxer: yamux
+```bash
+# Test ONLY rust implementations
+./run_tests.sh --test-select '~rust' --test-ignore '!~rust'
+
+# Test ONLY go implementations
+./run_tests.sh --test-select '~go' --test-ignore '!~go'
 ```
 
-**results.md**: Markdown dashboard with matrix view
+**How it works**:
+1. `--test-select '~rust'` includes all rust implementations
+2. `--test-ignore '!~rust'` ignores everything that is NOT rust
+3. The intersection gives you exactly the rust tests
 
-## Adding Implementations
+## Snapshot Generation
 
-1. Add entry to `impls.yaml`:
-   ```yaml
-   - id: go-v0.35
-     source:
-       type: github
-       repo: libp2p/go-libp2p
-       commit: <full-commit-sha>
-       dockerfile: interop-tests/Dockerfile
-     transports: [tcp, quic-v1]
-     secureChannels: [noise, tls]
-     muxers: [yamux, mplex]
-   ```
+### Creating Snapshots
 
-2. Run tests:
-   ```bash
-   ./run_tests.sh --test-select "go-v0.35"
-   ```
+Generate a self-contained, reproducible test snapshot:
 
-3. For debugging, switch to local source:
-   ```yaml
-   - id: go-v0.35
-     source:
-       type: local
-       path: /home/user/go-libp2p
-       commit: <commit-sha>
-       dockerfile: interop-tests/Dockerfile
-     transports: [tcp, quic-v1]
-     secureChannels: [noise, tls]
-     muxers: [yamux, mplex]
-   ```
+```bash
+./run_tests.sh --snapshot
+```
 
-   Then test with local changes:
-   ```bash
-   ./run_tests.sh --test-select "go-v0.35" --force-rebuild
-   ```
+This creates a snapshot directory in `/srv/cache/test-runs/transport-HHMMSS-DD-MM-YYYY/` containing:
+- Complete test configuration (impls.yaml, test-matrix.yaml)
+- All test results (results.yaml, results.md)
+- All source code snapshots
+- All Docker images (saved as tar.gz)
+- All test scripts
+- Re-run script for exact reproduction
 
+### Reproducing from Snapshot
+
+```bash
+cd /srv/cache/test-runs/transport-HHMMSS-DD-MM-YYYY/
+./re-run.sh
+
+# Force rebuild images from snapshots
+./re-run.sh --force-rebuild
+```
+
+## Downloading Snapshots
+
+Snapshots are available as GitHub Actions artifacts:
+
+1. Go to [Actions tab](https://github.com/libp2p/test-plans/actions)
+2. Select the workflow run
+3. Download artifacts from the "Artifacts" section
+4. Extract and run `./re-run.sh`
+
+## Script Documentation
+
+For detailed information about the scripts used in this test suite, see:
+- **[docs/SCRIPTS_DESIGN.md](../docs/SCRIPTS_DESIGN.md)** - Comprehensive script documentation
+
+## Additional Options
+
+```bash
+# List all available implementations
+./run_tests.sh --list-impls
+
+# List tests that would be run (without running them)
+./run_tests.sh --test-select "rust-v0.56" --list-tests
+
+# Force rebuild all Docker images
+./run_tests.sh --force-image-rebuild
+
+# Force regenerate test matrix (bypass cache)
+./run_tests.sh --force-matrix-rebuild
+
+# Check dependencies only
+./run_tests.sh --check-deps
+```
+
+## 
 ## Current Status
 
 <!-- TEST_RESULTS_START -->

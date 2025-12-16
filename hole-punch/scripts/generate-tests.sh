@@ -31,9 +31,15 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../../scripts/lib-test-aliases.sh"
 source "$SCRIPT_DIR/../../scripts/lib-test-filtering.sh"
 source "$SCRIPT_DIR/../../scripts/lib-test-caching.sh"
+source "$SCRIPT_DIR/../../scripts/lib-filter-engine.sh"
 
 # Load test aliases from impls.yaml
 load_aliases
+
+# Get all entity IDs for negation expansion
+all_impl_ids=($(yq eval '.implementations[].id' impls.yaml))
+all_relay_ids=($(yq eval '.relays[].id' impls.yaml))
+all_router_ids=($(yq eval '.routers[].id' impls.yaml))
 
 # Use test select and ignore values from CLI arguments
 TEST_SELECT="$CLI_TEST_SELECT"
@@ -51,7 +57,7 @@ echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔�
 if [ -n "$TEST_SELECT" ]; then
     echo "→ Test select: $TEST_SELECT"
     ORIGINAL_SELECT="$TEST_SELECT"
-    TEST_SELECT=$(expand_all_patterns "$TEST_SELECT" "impls.yaml")
+    TEST_SELECT=$(expand_filter_string "$TEST_SELECT" all_impl_ids)
     echo "  → Expanded to: $TEST_SELECT"
 else
     echo "→ No test-select specified (will include all tests)"
@@ -61,7 +67,7 @@ fi
 if [ -n "$TEST_IGNORE" ]; then
     echo "→ Test ignore: $TEST_IGNORE"
     ORIGINAL_IGNORE="$TEST_IGNORE"
-    TEST_IGNORE=$(expand_all_patterns "$TEST_IGNORE" "impls.yaml")
+    TEST_IGNORE=$(expand_filter_string "$TEST_IGNORE" all_impl_ids)
     echo "  → Expanded to: $TEST_IGNORE"
 else
     echo "→ No test-ignore specified"
@@ -71,7 +77,7 @@ fi
 if [ -n "$RELAY_SELECT" ]; then
     echo "→ Relay select: $RELAY_SELECT"
     ORIGINAL_RELAY_SELECT="$RELAY_SELECT"
-    RELAY_SELECT=$(expand_all_patterns "$RELAY_SELECT" "impls.yaml")
+    RELAY_SELECT=$(expand_filter_string "$RELAY_SELECT" all_relay_ids)
     echo "  → Expanded to: $RELAY_SELECT"
 else
     echo "→ No relay-select specified (will include all relays)"
@@ -81,7 +87,7 @@ fi
 if [ -n "$RELAY_IGNORE" ]; then
     echo "→ Relay ignore: $RELAY_IGNORE"
     ORIGINAL_RELAY_IGNORE="$RELAY_IGNORE"
-    RELAY_IGNORE=$(expand_all_patterns "$RELAY_IGNORE" "impls.yaml")
+    RELAY_IGNORE=$(expand_filter_string "$RELAY_IGNORE" all_relay_ids)
     echo "  → Expanded to: $RELAY_IGNORE"
 fi
 
@@ -89,7 +95,7 @@ fi
 if [ -n "$ROUTER_SELECT" ]; then
     echo "→ Router select: $ROUTER_SELECT"
     ORIGINAL_ROUTER_SELECT="$ROUTER_SELECT"
-    ROUTER_SELECT=$(expand_all_patterns "$ROUTER_SELECT" "impls.yaml")
+    ROUTER_SELECT=$(expand_filter_string "$ROUTER_SELECT" all_router_ids)
     echo "  → Expanded to: $ROUTER_SELECT"
 else
     echo "→ No router-select specified (will include all routers)"
@@ -99,7 +105,7 @@ fi
 if [ -n "$ROUTER_IGNORE" ]; then
     echo "→ Router ignore: $ROUTER_IGNORE"
     ORIGINAL_ROUTER_IGNORE="$ROUTER_IGNORE"
-    ROUTER_IGNORE=$(expand_all_patterns "$ROUTER_IGNORE" "impls.yaml")
+    ROUTER_IGNORE=$(expand_filter_string "$ROUTER_IGNORE" all_router_ids)
     echo "  → Expanded to: $ROUTER_IGNORE"
 fi
 
@@ -214,107 +220,9 @@ if [ -n "$ROUTER_IGNORE" ]; then
     echo "  ✓ Loaded ${#ROUTER_IGNORE_PATTERNS[@]} router ignore patterns"
 fi
 
-# Relay filtering functions
-relay_matches_select() {
-    local relay_id="$1"
-
-    # If no relay select patterns, include all relays
-    [ ${#RELAY_SELECT_PATTERNS[@]} -eq 0 ] && return 0
-
-    # Check if relay matches any select pattern
-    for pattern in "${RELAY_SELECT_PATTERNS[@]}"; do
-        # Support inverted patterns with '!'
-        if [[ "$pattern" == !* ]]; then
-            inverted_pattern="${pattern:1}"  # Remove '!' prefix
-            if [[ "$relay_id" == *"$inverted_pattern"* ]]; then
-                return 1  # Exclude this relay
-            fi
-        else
-            # Normal pattern - include if matches
-            if [[ "$relay_id" == *"$pattern"* ]]; then
-                return 0  # Include this relay
-            fi
-        fi
-    done
-
-    return 1  # No match, exclude
-}
-
-relay_should_ignore() {
-    local relay_id="$1"
-
-    # If no relay ignore patterns, don't ignore
-    [ ${#RELAY_IGNORE_PATTERNS[@]} -eq 0 ] && return 1
-
-    # Check if relay matches any ignore pattern
-    for pattern in "${RELAY_IGNORE_PATTERNS[@]}"; do
-        # Support inverted patterns with '!'
-        if [[ "$pattern" == !* ]]; then
-            inverted_pattern="${pattern:1}"  # Remove '!' prefix
-            if [[ "$relay_id" != *"$inverted_pattern"* ]]; then
-                return 0  # Ignore (doesn't match inverted pattern)
-            fi
-        else
-            # Normal pattern - ignore if matches
-            if [[ "$relay_id" == *"$pattern"* ]]; then
-                return 0  # Ignore this relay
-            fi
-        fi
-    done
-
-    return 1  # No ignore match
-}
-
-# Router filtering functions
-router_matches_select() {
-    local router_id="$1"
-
-    # If no router select patterns, include all routers
-    [ ${#ROUTER_SELECT_PATTERNS[@]} -eq 0 ] && return 0
-
-    # Check if router matches any select pattern
-    for pattern in "${ROUTER_SELECT_PATTERNS[@]}"; do
-        # Support inverted patterns with '!'
-        if [[ "$pattern" == !* ]]; then
-            inverted_pattern="${pattern:1}"  # Remove '!' prefix
-            if [[ "$router_id" == *"$inverted_pattern"* ]]; then
-                return 1  # Exclude this router
-            fi
-        else
-            # Normal pattern - include if matches
-            if [[ "$router_id" == *"$pattern"* ]]; then
-                return 0  # Include this router
-            fi
-        fi
-    done
-
-    return 1  # No match, exclude
-}
-
-router_should_ignore() {
-    local router_id="$1"
-
-    # If no router ignore patterns, don't ignore
-    [ ${#ROUTER_IGNORE_PATTERNS[@]} -eq 0 ] && return 1
-
-    # Check if router matches any ignore pattern
-    for pattern in "${ROUTER_IGNORE_PATTERNS[@]}"; do
-        # Support inverted patterns with '!'
-        if [[ "$pattern" == !* ]]; then
-            inverted_pattern="${pattern:1}"  # Remove '!' prefix
-            if [[ "$router_id" != *"$inverted_pattern"* ]]; then
-                return 0  # Ignore (doesn't match inverted pattern)
-            fi
-        else
-            # Normal pattern - ignore if matches
-            if [[ "$router_id" == *"$pattern"* ]]; then
-                return 0  # Ignore this router
-            fi
-        fi
-    done
-
-    return 1  # No ignore match
-}
+# Note: Relay and router filtering now uses generic filter_matches() from lib-filter-engine.sh
+# The duplicate relay_matches_select(), relay_should_ignore(), router_matches_select(),
+# and router_should_ignore() functions have been removed.
 
 # Check if a transport can be used with an implementation as listener
 # Returns 0 (true) if transport can be used as listener, 1 (false) if dialOnly
@@ -342,24 +250,36 @@ echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔�
 # Iterate through all relay, router, and implementation combinations
 for relay_id in "${relay_ids[@]}"; do
     # Skip if relay doesn't match select filter
-    relay_matches_select "$relay_id" || continue
+    if [ -n "$RELAY_SELECT" ] && ! filter_matches "$relay_id" "$RELAY_SELECT"; then
+        continue
+    fi
     # Track if relay should be ignored (don't skip, just flag for later)
     relay_is_ignored=false
-    relay_should_ignore "$relay_id" && relay_is_ignored=true
+    if [ -n "$RELAY_IGNORE" ] && filter_matches "$relay_id" "$RELAY_IGNORE"; then
+        relay_is_ignored=true
+    fi
 
     for dialer_router_id in "${router_ids[@]}"; do
         # Skip if dialer router doesn't match select filter
-        router_matches_select "$dialer_router_id" || continue
+        if [ -n "$ROUTER_SELECT" ] && ! filter_matches "$dialer_router_id" "$ROUTER_SELECT"; then
+            continue
+        fi
         # Track if dialer router should be ignored
         dialer_router_is_ignored=false
-        router_should_ignore "$dialer_router_id" && dialer_router_is_ignored=true
+        if [ -n "$ROUTER_IGNORE" ] && filter_matches "$dialer_router_id" "$ROUTER_IGNORE"; then
+            dialer_router_is_ignored=true
+        fi
 
         for listener_router_id in "${router_ids[@]}"; do
             # Skip if listener router doesn't match select filter
-            router_matches_select "$listener_router_id" || continue
+            if [ -n "$ROUTER_SELECT" ] && ! filter_matches "$listener_router_id" "$ROUTER_SELECT"; then
+                continue
+            fi
             # Track if listener router should be ignored
             listener_router_is_ignored=false
-            router_should_ignore "$listener_router_id" && listener_router_is_ignored=true
+            if [ -n "$ROUTER_IGNORE" ] && filter_matches "$listener_router_id" "$ROUTER_IGNORE"; then
+                listener_router_is_ignored=true
+            fi
 
             for dialer_id in "${impl_ids[@]}"; do
                 # Skip if dialer doesn't match select filter

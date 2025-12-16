@@ -182,6 +182,7 @@ if [ "$LIST_TESTS" = true ]; then
 
     # Extract and display test count
     test_count=$(yq eval '.tests | length' "$TEMP_DIR/test-matrix.yaml")
+    baseline_count=$(yq eval '.baselines | length' "$TEMP_DIR/test-matrix.yaml")
 
     echo ""
     echo "╲ Selected Tests ($baseline_count baseline + $test_count main = $((baseline_count + test_count)) total)"

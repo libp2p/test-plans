@@ -21,10 +21,15 @@ is_standalone_transport() {
 source "../scripts/lib-test-filtering.sh"
 source "../scripts/lib-test-aliases.sh"
 source "../scripts/lib-test-caching.sh"
+source "../scripts/lib-filter-engine.sh"
 source "scripts/lib-perf.sh"
 
 # Load test aliases
 load_aliases
+
+# Get all entity IDs for negation expansion
+all_impl_ids=($(yq eval '.implementations[].id' impls.yaml))
+all_baseline_ids=($(yq eval '.baselines[].id' impls.yaml))
 
 # Get parameters from environment
 TEST_SELECT="${TEST_SELECT:-}"
@@ -44,19 +49,19 @@ ORIGINAL_BASELINE_SELECT="$BASELINE_SELECT"
 ORIGINAL_BASELINE_IGNORE="$BASELINE_IGNORE"
 
 if [ -n "$TEST_SELECT" ]; then
-    TEST_SELECT=$(expand_all_patterns "$TEST_SELECT" "impls.yaml")
+    TEST_SELECT=$(expand_filter_string "$TEST_SELECT" all_impl_ids)
 fi
 
 if [ -n "$TEST_IGNORE" ]; then
-    TEST_IGNORE=$(expand_all_patterns "$TEST_IGNORE" "impls.yaml")
+    TEST_IGNORE=$(expand_filter_string "$TEST_IGNORE" all_impl_ids)
 fi
 
 if [ -n "$BASELINE_SELECT" ]; then
-    BASELINE_SELECT=$(expand_all_patterns "$BASELINE_SELECT" "impls.yaml")
+    BASELINE_SELECT=$(expand_filter_string "$BASELINE_SELECT" all_baseline_ids)
 fi
 
 if [ -n "$BASELINE_IGNORE" ]; then
-    BASELINE_IGNORE=$(expand_all_patterns "$BASELINE_IGNORE" "impls.yaml")
+    BASELINE_IGNORE=$(expand_filter_string "$BASELINE_IGNORE" all_baseline_ids)
 fi
 
 # Pre-parse select and ignore patterns
@@ -202,37 +207,9 @@ if [ ${#IGNORE_PATTERNS[@]} -gt 0 ]; then
 fi
 echo ""
 
-# Helper functions for baseline filtering
-baseline_matches_select() {
-    local baseline_id="$1"
-    [ ${#BASELINE_SELECT_PATTERNS[@]} -eq 0 ] && return 0
-    for select in "${BASELINE_SELECT_PATTERNS[@]}"; do
-        [[ "$baseline_id" == *"$select"* ]] && return 0
-    done
-    return 1
-}
-
-baseline_should_ignore() {
-    local test_name="$1"
-    [ ${#BASELINE_IGNORE_PATTERNS[@]} -eq 0 ] && return 1
-
-    for ignore in "${BASELINE_IGNORE_PATTERNS[@]}"; do
-        if [[ "$ignore" == !* ]] || [[ "$ignore" == \\!* ]]; then
-            local pattern="${ignore#!}"
-            pattern="${pattern#\\!}"
-            local dialer=$(echo "$test_name" | sed 's/ x .*//')
-            local listener=$(echo "$test_name" | sed 's/.* x //' | sed 's/ (.*//')
-            if [[ "$dialer" != *"$pattern"* ]] || [[ "$listener" != *"$pattern"* ]]; then
-                return 0
-            fi
-        else
-            if [[ "$test_name" == *"$ignore"* ]]; then
-                return 0
-            fi
-        fi
-    done
-    return 1
-}
+# Note: Baseline filtering now uses generic filter_matches() from lib-filter-engine.sh
+# The duplicate baseline_matches_select() and baseline_should_ignore() functions
+# have been removed.
 
 # Initialize counters
 test_num=0
@@ -266,8 +243,8 @@ EOF
 # Generate baseline tests (baseline x baseline combinations)
 for dialer_id in "${baseline_ids[@]}"; do
     # Apply baseline select filter
-    if [ ${#BASELINE_SELECT_PATTERNS[@]} -gt 0 ]; then
-        baseline_matches_select "$dialer_id" || continue
+    if [ -n "$BASELINE_SELECT" ] && ! filter_matches "$dialer_id" "$BASELINE_SELECT"; then
+        continue
     fi
 
     dialer_transports="${baseline_transports[$dialer_id]}"
@@ -276,9 +253,11 @@ for dialer_id in "${baseline_ids[@]}"; do
     dialer_server="${baseline_server[$dialer_id]}"
 
     for listener_id in "${baseline_ids[@]}"; do
-        # Apply baseline select filter
-        if [ ${#BASELINE_SELECT_PATTERNS[@]} -gt 0 ]; then
-            baseline_matches_select "$dialer_id" || baseline_matches_select "$listener_id" || continue
+        # Apply baseline select filter (match if EITHER dialer OR listener matches)
+        if [ -n "$BASELINE_SELECT" ]; then
+            if ! filter_matches "$dialer_id" "$BASELINE_SELECT" && ! filter_matches "$listener_id" "$BASELINE_SELECT"; then
+                continue
+            fi
         fi
 
         listener_transports="${baseline_transports[$listener_id]}"
@@ -297,7 +276,9 @@ for dialer_id in "${baseline_ids[@]}"; do
                 test_name="$dialer_id x $listener_id ($transport)"
 
                 # Check ignore
-                baseline_should_ignore "$test_name" && continue
+                if [ -n "$BASELINE_IGNORE" ] && filter_matches "$test_name" "$BASELINE_IGNORE"; then
+                    continue
+                fi
 
                 # Add baseline test
                 cat >> "$TEST_PASS_DIR/test-matrix.yaml" <<EOF
@@ -345,12 +326,12 @@ EOF
                         echo "DEBUG: Creating raw transport baseline: $test_name" >&2
                     fi
 
-                    baseline_should_ignore "$test_name" && {
+                    if [ -n "$BASELINE_IGNORE" ] && filter_matches "$test_name" "$BASELINE_IGNORE"; then
                         if [ "${DEBUG:-false}" = "true" ]; then
                             echo "DEBUG: Ignoring $test_name" >&2
                         fi
                         continue
-                    }
+                    fi
 
                     cat >> "$TEST_PASS_DIR/test-matrix.yaml" <<EOF
   - id: baseline-$baseline_num
@@ -378,7 +359,9 @@ EOF
                     for secure in $common_secure; do
                         for muxer in $common_muxers; do
                             test_name="$dialer_id x $listener_id ($transport, $secure, $muxer)"
-                            baseline_should_ignore "$test_name" && continue
+                            if [ -n "$BASELINE_IGNORE" ] && filter_matches "$test_name" "$BASELINE_IGNORE"; then
+                                continue
+                            fi
 
                             cat >> "$TEST_PASS_DIR/test-matrix.yaml" <<EOF
   - id: baseline-$baseline_num

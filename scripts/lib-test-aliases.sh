@@ -122,3 +122,30 @@ expand_aliases() {
 
     echo "$result"
 }
+
+# =============================================================================
+# DEPRECATED FUNCTIONS - Kept for backward compatibility
+# New code should use functions from lib-filter-engine.sh
+# =============================================================================
+
+# DEPRECATED: Use expand_filter_string() from lib-filter-engine.sh instead
+# This wrapper is kept for backward compatibility
+expand_aliases_v1() {
+    expand_aliases "$@"
+}
+
+# DEPRECATED: Use expand_filter_string() with !~alias syntax from lib-filter-engine.sh instead
+# This wrapper is kept for backward compatibility
+expand_negated_alias_v1() {
+    expand_negated_alias "$@"
+}
+
+# NOTE: The above functions (expand_aliases, expand_negated_alias) are now legacy.
+# They have known limitations:
+# - Not fully recursive (can't handle nested aliases beyond 1 level)
+# - No loop detection
+# - Inverted aliases don't work correctly
+#
+# For new code, source lib-filter-engine.sh and use:
+# - expand_filter_string() for full expansion with recursion and loop detection
+# - filter_names() for complete select/ignore filtering

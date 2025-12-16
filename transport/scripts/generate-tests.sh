@@ -26,9 +26,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../../scripts/lib-test-aliases.sh"
 source "$SCRIPT_DIR/../../scripts/lib-test-filtering.sh"
 source "$SCRIPT_DIR/../../scripts/lib-test-caching.sh"
+source "$SCRIPT_DIR/../../scripts/lib-filter-engine.sh"
 
 # Load test aliases from impls.yaml
 load_aliases
+
+# Get all implementation IDs for negation expansion
+all_impl_ids=($(yq eval '.implementations[].id' impls.yaml))
 
 # Use test select and ignore values from CLI arguments
 TEST_SELECT="$CLI_TEST_SELECT"
@@ -42,7 +46,7 @@ echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔�
 if [ -n "$TEST_SELECT" ]; then
     echo "→ Test select: $TEST_SELECT"
     ORIGINAL_SELECT="$TEST_SELECT"
-    TEST_SELECT=$(expand_all_patterns "$TEST_SELECT" "impls.yaml")
+    TEST_SELECT=$(expand_filter_string "$TEST_SELECT" all_impl_ids)
     # Always show final expanded value
     echo "  → Expanded to: $TEST_SELECT"
 else
@@ -53,7 +57,7 @@ fi
 if [ -n "$TEST_IGNORE" ]; then
     echo "→ Test ignore: $TEST_IGNORE"
     ORIGINAL_IGNORE="$TEST_IGNORE"
-    TEST_IGNORE=$(expand_all_patterns "$TEST_IGNORE" "impls.yaml")
+    TEST_IGNORE=$(expand_filter_string "$TEST_IGNORE" all_impl_ids)
     # Always show final expanded value
     echo "  → Expanded to: $TEST_IGNORE"
 else

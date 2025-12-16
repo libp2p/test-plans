@@ -481,12 +481,12 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           # Check if there are changes
-          if git diff --quiet transport/README.md hole-punch/README.md perf/README.md 2>/dev/null; then
+          if git diff --quiet transport/README.md transport/LATEST_TEST_RESULTS.md hole-punch/README.md hole-punch/LATEST_TEST_RESULTS.md perf/README.md perf/LATEST_TEST_RESULTS.md perf/upload_boxplot.png perf/download_boxplot.png perf/latency_boxplot.png 2>/dev/null; then
             echo "→ No changes to commit"
             exit 0
           fi
 
-          git add transport/README.md hole-punch/README.md perf/README.md 2>/dev/null || true
+          git add transport/README.md transport/LATEST_TEST_RESULTS.md hole-punch/README.md hole-punch/LATEST_TEST_RESULTS.md perf/README.md perf/LATEST_TEST_RESULTS.md perf/upload_boxplot.png perf/download_boxplot.png perf/latency_boxplot.png 2>/dev/null || true
 
           # Only commit if there are staged changes
           if git diff --cached --quiet 2>/dev/null; then
@@ -529,12 +529,18 @@ jobs:
               else
                 echo "✗ Rebase conflict detected, resolving..."
 
-                # For README files, prefer our changes (fresh test results)
+                # For README and results files, prefer our changes (fresh test results)
                 git checkout --ours transport/README.md 2>/dev/null || true
+                git checkout --ours transport/LATEST_TEST_RESULTS.md 2>/dev/null || true
                 git checkout --ours hole-punch/README.md 2>/dev/null || true
+                git checkout --ours hole-punch/LATEST_TEST_RESULTS.md 2>/dev/null || true
                 git checkout --ours perf/README.md 2>/dev/null || true
+                git checkout --ours perf/LATEST_TEST_RESULTS.md 2>/dev/null || true
+                git checkout --ours perf/upload_boxplot.png 2>/dev/null || true
+                git checkout --ours perf/download_boxplot.png 2>/dev/null || true
+                git checkout --ours perf/latency_boxplot.png 2>/dev/null || true
 
-                git add transport/README.md hole-punch/README.md perf/README.md 2>/dev/null || true
+                git add transport/README.md transport/LATEST_TEST_RESULTS.md hole-punch/README.md hole-punch/LATEST_TEST_RESULTS.md perf/README.md perf/LATEST_TEST_RESULTS.md perf/upload_boxplot.png perf/download_boxplot.png perf/latency_boxplot.png 2>/dev/null || true
                 git rebase --continue || {
                   echo "✗ Failed to resolve rebase conflict"
                   git rebase --abort

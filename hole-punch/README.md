@@ -1,268 +1,183 @@
-# Hole Punch Interoperability Tests v2
+# Hole Punch Interoperability Tests
 
-Simplified, pure-bash implementation of hole punching interoperability tests for libp2p.
+Pure-bash implementation of NAT hole punching interoperability tests for libp2p implementations using the DCUtR (Direct Connection Upgrade through Relay) protocol.
 
-## Architecture
+## What This Test Does
 
-This test suite uses:
-- **Pure bash** orchestration (no Node.js/npm)
-- **YAML** for all configuration and data files
-- **Content-addressed caching** under `/srv/cache/`
-- **Hybrid architecture**: Global Redis + per-test relay/NAT/router containers
-- **Two-octet subnet isolation**: Each test uses unique 10.x.x.x subnets (65,536 combinations)
-- **Self-contained snapshots** for reproducibility
+Hole punch tests verify that libp2p implementations can establish direct peer-to-peer connections through NAT using:
+- **Initial relay connection**: Peers connect through a relay server
+- **DCUtR protocol**: Peers coordinate to establish direct connection
+- **NAT traversal**: Peers simultaneously open connections through their respective NATs
+- **Connection upgrade**: Traffic switches from relay to direct connection
 
-### Network Topology
+## What It Measures
 
-Each test creates an **isolated three-tier network** with **unique subnets** derived from the test name hash:
+- **Compatibility**: Can dialer and listener establish direct connections through NAT?
+- **Protocol Support**: Which transport/secure/muxer combinations support hole punching?
+- **Success Rate**: Percentage of successful hole punch attempts
+- **Connection Time**: Time to establish direct connection
 
-**Subnet Derivation:**
+## Network Topology
+
+Each test creates an isolated network with:
+- **WAN Network**: Relay server and two NAT routers
+- **Two LAN Networks**: Dialer and listener behind their respective NATs
+- **Redis Coordination**: Shared service for multiaddr exchange
+
+Simulated network delays:
+- Relay: 25ms latency
+- NAT Routers: 100ms latency each
+
+## When Tests Run
+
+- **On Pull Requests**: Tests implementations changed in the PR
+- **Daily Full Run**: Complete test matrix (all implementations)
+- **Manual Trigger**: Via GitHub Actions workflow dispatch
+
+## How to Run Tests
+
+### Prerequisites
+
+Check dependencies:
 ```bash
-TEST_KEY=$(echo -n "$TEST_NAME" | sha256sum | cut -c1-10)
-SUBNET_ID_1=$(( (16#${TEST_KEY:0:2} + 32) % 256 ))
-SUBNET_ID_2=$(( (16#${TEST_KEY:2:2} + 32) % 256 ))
+./run_tests.sh --check-deps
 ```
 
-**Network Allocation:**
-- WAN: `10.${SUBNET_ID_1}.${SUBNET_ID_2}.64/29` (6 usable IPs)
-- LAN-Dialer: `10.${SUBNET_ID_1}.${SUBNET_ID_2}.92/30` (2 usable IPs)
-- LAN-Listener: `10.${SUBNET_ID_1}.${SUBNET_ID_2}.128/30` (2 usable IPs)
+Required: bash 4.0+, docker 20.10+, yq 4.0+, wget, unzip
 
-**Example:** Test "rust-v0.53 x rust-v0.53 (tcp)"
-- TEST_KEY: `a4be363ecc`
-- Hex: `a4` (164) + 32 = 196, `be` (190) + 32 = 222
-- SUBNET_IDs: 196, 222
-- WAN: `10.196.222.64/29`
-- LAN-Dialer: `10.196.222.92/30`
-- LAN-Listener: `10.196.222.128/30`
-
-```
-┌─────────────────── WAN: 10.{S1}.{S2}.64/29 ─────────────────┐
-│                                                             │
-│   ┌─────────────┐      ┌──────────┐      ┌──────────────┐   │
-│   │ dialer-rtr  │      │  relay   │      │ listener-rtr │   │
-│   │ .66         │◄────►│  .65     │◄────►│ .67          │   │
-│   └──────┬──────┘      └────┬─────┘      └───────┬──────┘   │
-│          │ NAT              │                    │ NAT      │
-└──────────┼──────────────────┼────────────────────┼──────────┘
-           │                  │                    │
-           │ LAN-Dialer       │ redis-network      │ LAN-Listener
-           │ 10.{S1}.{S2}.92/30                    │ 10.{S1}.{S2}.128/30
-           │ GW: .93          │                    │ GW: .129
-           │                  │                    │
-    ┌──────▼──────┐      ┌────▼────┐       ┌───────▼──────┐
-    │   dialer    ├─────►│  Redis  │◄──────┤   listener   │
-    │   .94       │      │ (Global)│       │   .130       │
-    └─────────────┘      └─────────┘       └──────────────┘
-```
-
-**Components:**
-- **Relay**: Per-test libp2p relay on WAN (10.x.x.65, 25ms delay)
-  - Publishes multiaddr to Redis: `relay:{TEST_KEY}`
-- **NAT Routers**: Dual-homed gateways performing SNAT (100ms delay each)
-  - Dialer Router: WAN .66 ↔ LAN .93
-  - Listener Router: WAN .67 ↔ LAN .129
-- **Redis**: Global coordination with per-test key namespacing
-  - TEST_KEY: First 10 hex chars of SHA-256(test_name)
-- **Dialer/Listener**: Test implementations behind NAT (.94 and .130)
-
-**Collision Probability:**
-- 65,536 unique subnet sets (256² combinations)
-- Offset +32 avoids common 10.0.x.x and 10.10.x.x ranges
-- For 16 parallel tests: 0.02% collision chance
-- For 100 parallel tests: 0.76% collision chance
-
-## Quick Start
+### Basic Usage
 
 ```bash
-# Install dependencies (Ubuntu/Debian)
-sudo apt-get install docker.io git wget unzip
-
-# Install yq
-sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
-sudo chmod +x /usr/local/bin/yq
-
 # Run all tests
 ./run_tests.sh --cache-dir /srv/cache --workers 4
 
-# Run specific tests
-./run_tests.sh --test-select "rust-v0.56" --workers 8
+# Run specific implementation
+./run_tests.sh --test-select "linux" --workers 4
 
-# Run with debug output
-./run_tests.sh --test-select "rust-v0.56" --debug
+# Skip specific tests
+./run_tests.sh --test-ignore "quic" --workers 2
 
-# Force rebuild all images
-./run_tests.sh --force-rebuild --yes
+# Enable debug logging
+./run_tests.sh --debug --workers 2
 ```
 
-## Directory Structure
+## Test Filtering
 
-```
-hole-punch/
-├── impls/                     # Implementation directories
-│   ├── rust/
-│   │   ├── v0.53/            # Contains Dockerfile (if custom build needed)
-│   │   └── README.md
-│   └── go/
-│       └── README.md
-├── scripts/                   # Bash scripts
-│   ├── build-images.sh       # Reads impls.yaml, builds all images
-│   ├── generate-tests.sh     # Generates test matrix with optimizations
-│   ├── start-global-services.sh
-│   ├── stop-global-services.sh
-│   ├── run-single-test.sh
-│   ├── create-snapshot.sh
-│   ├── generate-dashboard.sh
-│   └── check-dependencies.sh
-├── impls.yaml                 # Implementation definitions (source of truth)
-├── run_tests.sh              # Main orchestrator
-└── README.md                  # This file
-```
+### Basic Filtering
 
-## Test Pass Directory Structure
-
-Each test run creates a unique test pass directory with all results:
-
-```
-/srv/cache/test-runs/hole-punch-HHMMSS-DD-MM-YYYY/
-├── impls.yaml                 # Captured configuration
-├── test-matrix.yaml          # Generated test matrix
-├── results.yaml              # Structured test results
-├── results.md                # Markdown dashboard
-├── settings.yaml             # Snapshot metadata
-├── scripts/                  # All test scripts
-├── snapshots/                # Source code snapshots
-├── docker-images/            # Saved Docker images
-├── docker-compose/           # Generated compose files
-├── logs/                     # Test execution logs
-├── re-run.sh                 # Reproducibility script (supports --force-rebuild)
-└── README.md                 # Snapshot documentation
-```
-
-## Configuration Files
-
-### impls.yaml
-Defines all implementations to test with their source repositories and supported transports.
-
-Each implementation can use one of two source types:
-- **github**: Automatically fetches and builds from a GitHub repository (specified by `repo` and `commit`)
-- **local**: Builds from a local directory clone (specified by `path`)
-
-Switching an implementation from `github` to `local` type makes debugging easy:
-```yaml
-implementations:
-  - id: rust-v0.56
-    source:
-      type: local
-      path: /home/user/rust-libp2p  # Local clone for debugging
-      commit: b7914e40  # Still tracked for documentation
-    transports: [tcp, quic]
-```
-
-This allows you to:
-- Make local code changes without committing
-- Test modifications immediately without rebuilding from GitHub
-- Debug issues with your IDE and local tooling
-- Switch back to `github` type when done debugging
-
-## Command-Line Options
-
-```
-Usage: ./run_tests.sh [options]
-
-Options:
-  --test-select VALUE    Filter tests (pipe-separated substrings)
-  --test-ignore VALUE    Ignore tests (pipe-separated substrings)
-  --workers VALUE        Number of parallel workers (default: nproc)
-  --cache-dir VALUE      Cache directory (default: /srv/cache)
-  --snapshot             Create test pass snapshot after completion
-  --debug                Enable debug mode (sets debug=true in test containers)
-  --force-rebuild        Force rebuilding of all docker images in the test pass
-  -y, --yes              Skip confirmation prompt and run tests immediately
-  --check-deps           Only check dependencies and exit
-  --help                 Show help message
-
-Examples:
-  ./run_tests.sh --cache-dir /srv/cache --workers 4
-  ./run_tests.sh --test-select "rust-v0.56" --workers 8
-  ./run_tests.sh --test-ignore "tcp"
-  ./run_tests.sh --test-select "rust-v0.56" --debug
-  ./run_tests.sh --snapshot --workers 8
-```
-
-## Test Selection
-
-Test selection uses pipe-separated substring matching:
-- `--test-select "rust-v0.53|go-v0.43"` - Select tests matching either pattern
-- `--test-ignore "tcp"` - Exclude tests containing "tcp"
-
-Without CLI arguments, all tests are run. Use `--test-select` and `--test-ignore` to filter tests as needed.
-
-## Content-Addressed Caching
-
-All artifacts cached under `/srv/cache/`:
-- `snapshots/<commitSha>.zip` - GitHub repository snapshots (git SHA-1)
-- `test-matrix/<sha256>.yaml` - Test matrices (cached by filter+ignore+debug)
-- `test-runs/hole-punch-<timestamp>/` - Complete test pass directories
-
-Cache keys use double-pipe `||` delimiter to prevent ambiguous collisions:
-```bash
-cache_key=$(echo "$TEST_FILTER||$TEST_IGNORE||$DEBUG" | sha256sum | cut -d' ' -f1)
-```
-
-## Hash Functions
-
-- **Git snapshots**: SHA-1 (40 hex chars, from Git)
-- **Docker images**: SHA-256 (64 hex chars, `sha256:` prefix stripped)
-- **Content cache**: SHA-256 (64 hex chars)
-
-All hash algorithm prefixes are omitted from identifiers for simplicity.
-
-## Dependencies
-
-- bash 4.0+
-- git 2.0+
-- docker 20.10+
-- yq 4.0+
-- wget, unzip
-
-**Note:** No Node.js, npm, or make required!
-
-## Performance Characteristics
-
-**Optimizations:**
-- Pre-loaded associative arrays (O(1) lookups instead of O(n) searches)
-- Bulk TSV extraction (single yq call instead of 100s)
-- Content-addressed caching with double-pipe delimiter
-- Parallel test execution with configurable workers
-
-**Performance:**
-- `generate-tests.sh`: 10-30x faster (~20 yq calls vs 400+)
-- `generate-dashboard.sh`: 30-80x faster (1 yq call vs 40,600+)
-- Test orchestration: 10-40x faster overall
-- Typical full test run: 5-15 minutes (4 workers, 20-50 tests)
-
-## Reproducibility
-
-Each test pass is fully self-contained and reproducible:
+Use pipe-separated patterns:
 
 ```bash
-cd /srv/cache/test-runs/hole-punch-HHMMSS-DD-MM-YYYY
+# Select multiple implementations
+./run_tests.sh --test-select "linux|chromium"
+
+# Ignore specific protocols
+./run_tests.sh --test-ignore "quic|tcp"
+
+# Combine select and ignore
+./run_tests.sh --test-select "linux" --test-ignore "quic"
+```
+
+### Alias Expansion
+
+Use `~alias` syntax for convenient test selection:
+
+```bash
+# Expand to all rust versions
+./run_tests.sh --test-select "~rust"
+
+# Exclude all rust versions
+./run_tests.sh --test-ignore "~rust"
+
+# Select everything EXCEPT rust
+./run_tests.sh --test-select "!~rust"
+```
+
+**Available aliases** are defined in `impls.yaml` under `test-aliases`.
+
+### Best Practice: Limit to Specific Alias
+
+To test ONLY implementations in an alias (not just tests containing the alias pattern):
+
+```bash
+# Test ONLY rust implementations
+./run_tests.sh --test-select '~rust' --test-ignore '!~rust'
+
+# Test ONLY linux implementations
+./run_tests.sh --test-select '~linux' --test-ignore '!~linux'
+```
+
+**How it works**:
+1. `--test-select '~rust'` includes all rust implementations
+2. `--test-ignore '!~rust'` ignores everything that is NOT rust
+3. The intersection gives you exactly the rust tests
+
+## Snapshot Generation
+
+### Creating Snapshots
+
+Generate a self-contained, reproducible test snapshot:
+
+```bash
+./run_tests.sh --snapshot
+```
+
+This creates a snapshot directory in `/srv/cache/test-runs/hole-punch-HHMMSS-DD-MM-YYYY/` containing:
+- Complete test configuration (impls.yaml, test-matrix.yaml)
+- All test results (results.yaml, results.md)
+- All source code snapshots
+- All Docker images (saved as tar.gz)
+- All test scripts and network configurations
+- Re-run script for exact reproduction
+
+### Reproducing from Snapshot
+
+```bash
+cd /srv/cache/test-runs/hole-punch-HHMMSS-DD-MM-YYYY/
 ./re-run.sh
 
-# Force rebuild all images before re-running
+# Force rebuild images from snapshots
 ./re-run.sh --force-rebuild
 ```
 
-The snapshot includes:
-- All source code snapshots
-- All Docker images (saved as tar.gz)
-- Complete configuration
-- All scripts and tooling
+## Downloading Snapshots
 
-The `--force-rebuild` flag forces rebuilding of all Docker images from the captured snapshots, useful when you need to ensure a clean build environment or verify reproducibility from scratch.
+Snapshots are available as GitHub Actions artifacts:
 
-## Current Status
+1. Go to [Actions tab](https://github.com/libp2p/test-plans/actions)
+2. Select the workflow run
+3. Download artifacts from the "Artifacts" section
+4. Extract and run `./re-run.sh`
+
+## Script Documentation
+
+For detailed information about the scripts used in this test suite, see:
+- **[docs/SCRIPTS_DESIGN.md](../docs/SCRIPTS_DESIGN.md)** - Comprehensive script documentation
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Network topology and design details
+
+## Additional Options
+
+```bash
+# List all available implementations
+./run_tests.sh --list-impls
+
+# List tests that would be run (without running them)
+./run_tests.sh --test-select "linux" --list-tests
+
+# Force rebuild all Docker images
+./run_tests.sh --force-image-rebuild
+
+# Force regenerate test matrix (bypass cache)
+./run_tests.sh --force-matrix-rebuild
+
+# Check dependencies only
+./run_tests.sh --check-deps
+
+# Skip confirmation prompt
+./run_tests.sh -y
+```
+
+## 
 
 <!-- TEST_RESULTS_START -->
 # Hole Punch Interoperability Test Results

@@ -1,216 +1,255 @@
-# libp2p performance benchmarking
+# libp2p Performance Benchmarking
 
-This project includes the following components:
+Pure-bash implementation of performance benchmarking for libp2p implementations using the [libp2p perf protocol](https://github.com/libp2p/specs/blob/master/perf/perf.md).
 
-- `terraform/`: Terraform scripts to provision AWS infrastructure
-- `impl/`: implementations of the [libp2p perf protocol](https://github.com/libp2p/specs/blob/master/perf/perf.md) running on top of e.g. go-libp2p, rust-libp2p or Go's std-library https stack
-- `runner/`: Node.js scripts for building and running tests on AWS infrastructure
-- **NEW:** `scripts/`: Bash-based test runner for local/remote hardware (no AWS required)
-- **NEW:** `impls/`: Dockerized implementations following hole-punch/transport patterns
+## What This Test Does
 
-Benchmark results can be visualized with https://observablehq.com/@libp2p-workspace/performance-dashboard.
+Performance tests measure the throughput and latency of libp2p implementations:
+- **Upload Throughput**: Data transfer rate from client to server (Gbps)
+- **Download Throughput**: Data transfer rate from server to client (Gbps)
+- **Latency**: Round-trip time for requests (seconds)
 
-## Quick Start (Bash-Based Tests - Recommended)
+Tests compare libp2p implementations against baseline reference implementations (iperf, HTTPS, QUIC).
 
-**NEW:** Run performance tests on your own hardware without AWS!
+## What It Measures
 
+- **Throughput Performance**: Upload and download speeds
+- **Latency**: Connection establishment and request latency
+- **Protocol Overhead**: Comparison with baseline implementations
+- **Statistical Reliability**: Multiple iterations for confidence intervals
+
+## Baseline vs Main Tests
+
+- **Baseline Tests**: Reference implementations (iperf, https, quic-go) for performance ceiling
+- **Main Tests**: libp2p implementations across transport/secure/muxer combinations
+
+## When Tests Run
+
+- **On Pull Requests**: Tests implementations changed in the PR
+- **Scheduled Runs**: Nightly or weekly performance tracking
+- **Manual Trigger**: Via GitHub Actions workflow dispatch
+
+## How to Run Tests
+
+### Prerequisites
+
+Check dependencies:
 ```bash
-# Quick test on single machine
-./run_tests.sh --test-select "go-libp2p" --iterations 3
-
-# See QUICKSTART.md for detailed setup instructions
+./run_tests.sh --check-deps
 ```
 
-**Features:**
-- ✅ No AWS account required
-- ✅ Run on local hardware or remote servers
-- ✅ Docker-based implementations
-- ✅ Results in YAML, Markdown, and HTML formats
-- ✅ Compatible with hole-punch/transport test patterns
+Required: bash 4.0+, docker 20.10+, yq 4.0+, wget, unzip, python3 (for box plots)
 
-See **[QUICKSTART.md](QUICKSTART.md)** for complete setup and usage instructions.
-
----
-
-## Setup for Multi-Machine Testing
-
-### SSH Key-Based Authentication
-
-For remote server testing, setup passwordless SSH authentication between your test runner (Computer 1) and server (Computer 2):
-
-#### 1. Generate SSH Key (Computer 1)
+### Basic Usage
 
 ```bash
-# Generate dedicated key for perf testing
-ssh-keygen -t ed25519 -f ~/.ssh/perf_server -N ""
+# Run all tests with 3 iterations
+./run_tests.sh --iterations 3
+
+# Run specific implementation
+./run_tests.sh --test-select "rust-v0.56" --iterations 5
+
+# Run with baseline comparison
+./run_tests.sh --test-select "rust-v0.56" --baseline-select "iperf" --iterations 3
+
+# Enable debug logging
+./run_tests.sh --debug --iterations 1
 ```
 
-This creates two files:
-- `~/.ssh/perf_server` - Private key (keep secure)
-- `~/.ssh/perf_server.pub` - Public key (copy to server)
+## Test Filtering
 
-#### 2. Copy Public Key to Server (Computer 2)
+### Main Test Filtering
+
+Control which libp2p implementations to test:
 
 ```bash
-# Replace with your server's username and IP/hostname
-ssh-copy-id -i ~/.ssh/perf_server.pub perfuser@192.168.1.100
+# Select specific implementations
+./run_tests.sh --test-select "rust-v0.56|go-v0.45" --iterations 3
+
+# Ignore specific implementations
+./run_tests.sh --test-ignore "experimental" --iterations 3
+
+# Use aliases
+./run_tests.sh --test-select "~rust" --iterations 3
 ```
 
-You'll be prompted for the password **once**. After this, SSH will use key-based authentication.
+### Baseline Test Filtering
 
-#### 3. Test Connection
+Control which baseline tests to run:
 
 ```bash
-# Should connect without password prompt
-ssh -i ~/.ssh/perf_server perfuser@192.168.1.100 "echo 'Connection successful'"
+# Select specific baseline tests
+./run_tests.sh --baseline-select "iperf" --iterations 3
+
+# Select multiple baselines
+./run_tests.sh --baseline-select "iperf|https" --iterations 3
+
+# Ignore specific baselines
+./run_tests.sh --baseline-ignore "quic-go" --iterations 3
+
+# Use aliases for baselines
+./run_tests.sh --baseline-select "~go" --iterations 3
 ```
 
-#### 4. Configure in impls.yaml
+### Alias Expansion
 
-Edit `perf/impls.yaml` to add your remote server:
+Use `~alias` syntax for convenient test selection:
+
+```bash
+# Expand to all rust versions
+./run_tests.sh --test-select "~rust"
+
+# Exclude all rust versions
+./run_tests.sh --test-ignore "~rust"
+
+# Select everything EXCEPT rust
+./run_tests.sh --test-select "!~rust"
+```
+
+**Available aliases** are defined in `impls.yaml` under `test-aliases`.
+
+### Best Practice: Limit to Specific Alias
+
+To test ONLY implementations in an alias (not just tests containing the alias pattern):
+
+```bash
+# Test ONLY rust implementations with go baseline
+./run_tests.sh \
+    --test-select '~rust' --test-ignore '!~rust' \
+    --baseline-select '~go' --baseline-ignore '!~go' \
+    --iterations 5
+
+# Test ONLY go implementations with iperf baseline
+./run_tests.sh \
+    --test-select '~go' --test-ignore '!~go' \
+    --baseline-select 'iperf' \
+    --iterations 5
+```
+
+**How it works**:
+1. `--test-select '~rust'` includes all rust implementations
+2. `--test-ignore '!~rust'` ignores everything that is NOT rust
+3. `--baseline-select '~go'` includes all go baseline implementations
+4. `--baseline-ignore '!~go'` ignores everything that is NOT go
+5. The intersection gives you exactly the rust tests with go baselines
+
+### Combined Filtering Examples
+
+```bash
+# Test rust against go baseline only
+./run_tests.sh \
+    --test-select "rust-v0.56" \
+    --baseline-select "go-v0.45" \
+    --iterations 5
+
+# Test all rust versions, no baseline
+./run_tests.sh \
+    --test-select "~rust" \
+    --baseline-ignore ".*" \
+    --iterations 3
+
+# Test specific implementation, all baselines
+./run_tests.sh \
+    --test-select "rust-v0.56" \
+    --test-ignore "!rust-v0.56" \
+    --iterations 5
+```
+
+## Multi-Machine Testing
+
+Perf tests support running server and client on different machines for true network testing.
+
+### Setup Remote Server
+
+See **[QUICKSTART.md](QUICKSTART.md)** for detailed remote server setup instructions.
+
+Quick setup:
+1. Generate SSH key: `ssh-keygen -t ed25519 -f ~/.ssh/perf_server`
+2. Copy to server: `ssh-copy-id -i ~/.ssh/perf_server.pub user@192.168.1.100`
+3. Configure in `impls.yaml`:
 
 ```yaml
 servers:
   - id: remote-1
     type: remote
-    hostname: "192.168.1.100"    # Your Computer 2 IP/hostname
-    username: "perfuser"          # SSH username on Computer 2
-    description: "Remote server"
+    hostname: "192.168.1.100"
+    username: "perfuser"
 
 implementations:
-  - id: rust-libp2p-v0.53
-    # ... other configuration ...
-    server: remote-1  # Use remote server for this implementation
+  - id: rust-v0.56
+    server: remote-1  # Run on remote machine
 ```
 
-#### 5. Server Requirements (Computer 2)
+4. Run tests: `./run_tests.sh --test-select "rust-v0.56" --iterations 3`
 
-On the remote server, ensure:
+## Snapshot Generation
 
-- **Docker installed and running:**
-  ```bash
-  curl -fsSL https://get.docker.com | sh
-  sudo usermod -aG docker $USER
-  # Log out and back in
-  ```
+### Creating Snapshots
 
-- **Port 4001 accessible** (default perf protocol port):
-  ```bash
-  sudo ufw allow 4001/tcp  # If firewall enabled
-  ```
+Generate a self-contained, reproducible test snapshot:
 
-- **User in docker group** (run Docker without sudo):
-  ```bash
-  # Verify
-  docker ps
-  ```
+```bash
+./run_tests.sh --snapshot --iterations 5
+```
 
-See **[QUICKSTART.md](QUICKSTART.md)** for detailed troubleshooting and setup instructions.
+This creates a snapshot directory in `/srv/cache/test-runs/perf-HHMMSS-DD-MM-YYYY/` containing:
+- Complete test configuration (impls.yaml, test-matrix.yaml)
+- All test results (results.yaml, results.md, results.html)
+- Box plot images (upload_boxplot.png, download_boxplot.png, latency_boxplot.png)
+- All source code snapshots
+- All Docker images (saved as tar.gz)
+- All test scripts
+- Re-run script for exact reproduction
 
----
+### Reproducing from Snapshot
 
-## Running via GitHub Action (AWS-Based)
+```bash
+cd /srv/cache/test-runs/perf-HHMMSS-DD-MM-YYYY/
+./re-run.sh
 
-1. Create a pull request with your changes on https://github.com/libp2p/test-plans/.
-2. Trigger GitHub Action for branch on https://github.com/libp2p/test-plans/actions/workflows/perf.yml (see _Run workflow_ button).
-3. Wait for action run to finish and to push a commit to your branch.
-4. Visualize results on https://observablehq.com/@libp2p-workspace/performance-dashboard.
+# Force rebuild images from snapshots
+./re-run.sh --force-rebuild
+```
 
-## Running manually
+## Downloading Snapshots
 
-### Prerequisites
+Snapshots are available as GitHub Actions artifacts:
 
-- Terraform 1.5.4 or later
-- Node.js 18 or later
-- [an AWS IAM user](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users.html)
+1. Go to [Actions tab](https://github.com/libp2p/test-plans/actions)
+2. Select the workflow run
+3. Download artifacts from the "Artifacts" section
+4. Extract and run `./re-run.sh`
 
+## Script Documentation
 
-### Provision infrastructure
+For detailed information about the scripts used in this test suite, see:
+- **[docs/SCRIPTS_DESIGN.md](../docs/SCRIPTS_DESIGN.md)** - Comprehensive script documentation
+- **[QUICKSTART.md](QUICKSTART.md)** - Quick start guide with remote setup
+- **[README.md (AWS-based)](README.md#running-manually)** - Legacy AWS-based testing
 
-1. Save your public SSH key as the file `./terraform/modules/short_lived/files/perf.pub`; or generate a new key pair with `make ssh-keygen` and add it to your SSH agent with `make ssh-add`.
-2. `cd terraform/configs/local`
-3. `terraform init`
-4. `terraform apply`
-5. `CLIENT_IP=$(terraform output -raw client_ip)`
-6. `SERVER_IP=$(terraform output -raw server_ip)`
+## Additional Options
 
-**Notes**
-- While running terraform you may encounter the following error:
-  ```bash
-    Error: collecting instance settings: reading EC2 Launch Template versions: couldn't find resource
-    │
-    │   with module.short_lived_server[0].aws_instance.perf,
-    │   on ../../modules/short_lived/main.tf line 15, in resource "aws_instance" "perf":
-    │   15: resource "aws_instance" "perf" {
-  ```
-- This implies that you haven't deployed the long-lived infrastructure on your AWS account. To do so along with each short-lived deployment, you can set *TF_VAR* [`long_lived_enabled`](./terraform/configs/local/terraform.tf#L42) env variable to default to `true`. Terraform should then spin up the long-lived resources that are required for the short-lived resources to be created.
+```bash
+# List all available implementations
+./run_tests.sh --list-impls
 
-- It's best to destroy the infrastructure after you're done with your testing, you can do that by running `terraform destroy`.
+# List tests that would be run (without running them)
+./run_tests.sh --test-select "rust-v0.56" --list-tests
 
-### Build and run libp2p implementations
+# Set number of iterations (default: 10)
+./run_tests.sh --iterations 20
 
-Given you have provisioned your infrastructure, you can now build and run the libp2p implementations on the AWS instances.
+# Force rebuild all Docker images
+./run_tests.sh --force-image-rebuild
 
-1. `cd runner`
-2. `npm ci`
-3. `npm run start -- --client-public-ip $CLIENT_IP --server-public-ip $SERVER_IP`
-   * Note: The default number of iterations that perf will run is 10; desired iterations can be set with the  `--iterations <value>` option.
+# Force regenerate test matrix (bypass cache)
+./run_tests.sh --force-matrix-rebuild
 
-### Deprovision infrastructure
+# Check dependencies only
+./run_tests.sh --check-deps
+```
 
-1. `cd terraform/configs/local`
-2. `terraform destroy`
-
-## Adding a new implementation or a new version
-
-1. Add the implementation to new subdirectory in [`impl/*`](./impl/).
-    - For a new implementation, create a folder `impl/<your-implementation-name>/` e.g. `go-libp2p`
-    - For a new version of an existing implementation, create a folder `impl/<your-implementation-name>/<your-implementation-version>`.
-    - In that folder include a `Makefile` that builds an executable and stores it next to the `Makefile` under the name `perf`.
-    - Requirements for the executable:
-      - Running as a libp2p-perf server:
-        - The perf server must not exit as it will be closed by the test runner.
-        - The executable must accept the command flag `--run-server` which indicates it's running as server.
-      - Running as a libp2p-perf client
-        - Given that perf is a client driven set of benchmarks, the performance will be measured by the client.
-          - Input via command line
-            - `--server-address`
-            - `--transport` (see [`runner/versions.ts`](./runner/src/versions.ts#L7-L43) for possible variants)
-            - `--upload-bytes` number of bytes to upload per stream in 64KiB chunks.
-            - `--download-bytes` number of bytes to download per stream in 64KiB chunks.
-          - Output
-            - Logging MUST go to `stderr`.
-            - Measurement output is printed to `stdout` as JSON.
-            - The output schema is:
-               ``` typescript
-               interface Data {
-                 type: "intermediary" | "final";
-                 timeSeconds: number;
-                 uploadBytes: number;
-                 downloadBytes: number;
-               }
-               ```
-            - Every second the client must print the current progress to stdout. See example below. Note the `type: "intermediary"`.
-               ``` json
-               {
-                 "type": "intermediary",
-                 "timeSeconds": 1.004957645,
-                 "uploadBytes": 73039872,
-                 "downloadBytes": 0
-               },
-               ```
-            - Before terminating the client must print a final summary. See example below. Note the `type: "final"`. Also note that the measurement includes the time to (1) establish the connection, (2) upload the bytes and (3) download the bytes.
-               ``` json
-               {
-                 "type": "final",
-                 "timeSeconds": 60.127230659,
-                 "uploadBytes": 4382392320,
-                 "downloadBytes": 0
-               }
-               ```
-2. For a new implementation, in [`impl/Makefile` include your implementation in the `all` target.](./impl/Makefile#L7)
-3. For a new version, reference version in [`runner/src/versions.ts`](./runner/src/versions.ts#L7-L43).
-
+## 
 ## Latest Test Results
 
 <!-- TEST_RESULTS_START -->

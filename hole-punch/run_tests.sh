@@ -14,6 +14,8 @@ ROUTER_IGNORE="${ROUTER_IGNORE:-}"
 WORKER_COUNT="${WORKER_COUNT:-$(nproc 2>/dev/null || echo 4)}"
 CHECK_DEPS_ONLY=false
 LIST_IMPLS=false
+LIST_RELAYS=false
+LIST_ROUTERS=false
 LIST_TESTS=false
 CREATE_SNAPSHOT=false
 AUTO_YES=false
@@ -44,6 +46,8 @@ Options:
   -y, --yes                  Skip confirmation prompt and run tests immediately
   --check-deps               Only check dependencies and exit
   --list-impls               List all implementation IDs and exit
+  --list-relays              List all relay IDs and exit
+  --list-routers             List all router IDs and exit
   --list-tests               List all selected tests and exit
   --help                     Show this help message
 
@@ -78,6 +82,8 @@ while [[ $# -gt 0 ]]; do
         -y|--yes) AUTO_YES=true; shift ;;
         --check-deps) CHECK_DEPS_ONLY=true; shift ;;
         --list-impls) LIST_IMPLS=true; shift ;;
+        --list-relays) LIST_RELAYS=true; shift ;;
+        --list-routers) LIST_ROUTERS=true; shift ;;
         --list-tests) LIST_TESTS=true; shift ;;
         --help|-h) show_help; exit 0 ;;
         *) echo "Unknown option: $1"; echo ""; show_help; exit 1 ;;
@@ -104,6 +110,32 @@ if [ "$LIST_IMPLS" = true ]; then
     echo "╲ Available Implementations"
     echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
     yq eval '.implementations[].id' impls.yaml | sed 's/^/→ /'
+    echo ""
+    exit 0
+fi
+
+# List relays
+if [ "$LIST_RELAYS" = true ]; then
+    if [ ! -f "impls.yaml" ]; then
+        echo "Error: impls.yaml not found"
+        exit 1
+    fi
+    echo "╲ Available Relays"
+    echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+    yq eval '.relays[].id' impls.yaml | sed 's/^/→ /'
+    echo ""
+    exit 0
+fi
+
+# List routers
+if [ "$LIST_ROUTERS" = true ]; then
+    if [ ! -f "impls.yaml" ]; then
+        echo "Error: impls.yaml not found"
+        exit 1
+    fi
+    echo "╲ Available Routers"
+    echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+    yq eval '.routers[].id' impls.yaml | sed 's/^/→ /'
     echo ""
     exit 0
 fi
