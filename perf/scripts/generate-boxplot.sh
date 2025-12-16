@@ -1,13 +1,6 @@
 #!/bin/bash
-# Generate box plot visualizations from perf test results.yaml using gnuplot
-#
-# This script reads the results.yaml file and creates box plots for:
-# - Upload throughput
-# - Download throughput
-# - Latency
-#
-# The box plots show the distribution of measurements across all tests,
-# using the min, q1, median, q3, and max values from each test.
+# Generate box plot visualizations from perf test results.yaml using yq and gnuplot
+# Based on the user's plot.sh script format
 
 set -euo pipefail
 
@@ -28,165 +21,218 @@ mkdir -p "$OUTPUT_DIR"
 
 echo "→ Generating box plots..."
 
-# Extract data for each metric and create gnuplot data files
-extract_metric_data() {
-    local metric="$1"  # upload, download, or latency
-    local output_file="$2"
-    local test_type="$3"  # baseline or main
+# Get counts dynamically from both arrays
+BASELINE_COUNT=$(yq '.baselineResults | length' "$RESULTS_FILE" 2>/dev/null || echo "0")
+TEST_COUNT=$(yq '.testResults | length' "$RESULTS_FILE" 2>/dev/null || echo "0")
 
-    # Determine which section to read from
-    local section="testResults"
-    if [ "$test_type" = "baseline" ]; then
-        section="baselineResults"
+echo "  → Found $BASELINE_COUNT baseline results and $TEST_COUNT test results"
+
+# Data files
+UPLOAD_BOX="$OUTPUT_DIR/upload_box.dat"
+UPLOAD_OUT="$OUTPUT_DIR/upload_out.dat"
+DOWNLOAD_BOX="$OUTPUT_DIR/download_box.dat"
+DOWNLOAD_OUT="$OUTPUT_DIR/download_out.dat"
+LATENCY_BOX="$OUTPUT_DIR/latency_box.dat"
+LATENCY_OUT="$OUTPUT_DIR/latency_out.dat"
+
+# Initialize data files with headers
+cat > "$UPLOAD_BOX" <<'EOF'
+# idx	label	min	q1	median	q3	max
+EOF
+cat > "$UPLOAD_OUT" <<'EOF'
+# idx	outlier_value
+EOF
+cat > "$DOWNLOAD_BOX" <<'EOF'
+# idx	label	min	q1	median	q3	max
+EOF
+cat > "$DOWNLOAD_OUT" <<'EOF'
+# idx	outlier_value
+EOF
+cat > "$LATENCY_BOX" <<'EOF'
+# idx	label	min	q1	median	q3	max
+EOF
+cat > "$LATENCY_OUT" <<'EOF'
+# idx	outlier_value
+EOF
+
+# Function to add box data for a metric
+add_box_data() {
+    local array_path="$1"
+    local array_idx="$2"
+    local metric="$3"
+    local boxfile="$4"
+    local idx="$5"
+
+    # Get name and stats
+    local name min q1 med q3 max
+    name=$(yq -r "${array_path}[${array_idx}].name" "$RESULTS_FILE")
+    # Insert newline before '(' to create two-line labels
+    name="${name/ (/\\n(}"
+    read -r min q1 med q3 max <<< $(yq -r "${array_path}[${array_idx}].${metric} | [.min, .q1, .median, .q3, .max] | @tsv" "$RESULTS_FILE")
+
+    # Only add if we have valid data
+    if [ "$med" != "null" ] && [ -n "$med" ]; then
+        printf "%d\t\"%s\"\t%s\t%s\t%s\t%s\t%s\n" "$idx" "$name" "$min" "$q1" "$med" "$q3" "$max" >> "$boxfile"
     fi
-
-    # Count tests in this section
-    local count=$(yq eval ".$section | length" "$RESULTS_FILE" 2>/dev/null || echo "0")
-
-    if [ "$count" -eq 0 ]; then
-        return 0
-    fi
-
-    # Extract each test's statistics
-    for ((i=0; i<count; i++)); do
-        local status=$(yq eval ".$section[$i].status" "$RESULTS_FILE" 2>/dev/null || echo "")
-
-        # Only process passed tests
-        if [ "$status" != "pass" ]; then
-            continue
-        fi
-
-        # Check if this metric exists for this test
-        local has_metric=$(yq eval ".$section[$i] | has(\"$metric\")" "$RESULTS_FILE" 2>/dev/null || echo "false")
-
-        if [ "$has_metric" != "true" ]; then
-            continue
-        fi
-
-        local name=$(yq eval ".$section[$i].name" "$RESULTS_FILE" 2>/dev/null || echo "unknown")
-        local min=$(yq eval ".$section[$i].$metric.min" "$RESULTS_FILE" 2>/dev/null || echo "0")
-        local q1=$(yq eval ".$section[$i].$metric.q1" "$RESULTS_FILE" 2>/dev/null || echo "0")
-        local median=$(yq eval ".$section[$i].$metric.median" "$RESULTS_FILE" 2>/dev/null || echo "0")
-        local q3=$(yq eval ".$section[$i].$metric.q3" "$RESULTS_FILE" 2>/dev/null || echo "0")
-        local max=$(yq eval ".$section[$i].$metric.max" "$RESULTS_FILE" 2>/dev/null || echo "0")
-
-        # Gnuplot box plot format: x_pos min q1 median q3 max label
-        echo "$name|$min|$q1|$median|$q3|$max|$test_type" >> "$output_file"
-    done
 }
 
-# Generate box plot for a specific metric
-generate_boxplot() {
-    local metric="$1"
-    local metric_title="$2"
-    local unit="$3"
-    local data_file="$OUTPUT_DIR/${metric}_data.tmp"
-    local output_file="$OUTPUT_DIR/boxplot-${metric}.png"
+# Function to add outlier data for a metric
+add_outlier_data() {
+    local array_path="$1"
+    local array_idx="$2"
+    local metric="$3"
+    local outfile="$4"
+    local idx="$5"
 
-    # Remove old data file
-    rm -f "$data_file"
-
-    # Extract data from both baseline and main test results
-    extract_metric_data "$metric" "$data_file" "baseline"
-    extract_metric_data "$metric" "$data_file" "main"
-
-    # Check if we have any data
-    if [ ! -f "$data_file" ] || [ ! -s "$data_file" ]; then
-        echo "  ✗ No data for $metric, skipping"
-        return 0
+    # Get outliers and prepend idx to each line
+    local outlier_count
+    outlier_count=$(yq "${array_path}[${array_idx}].${metric}.outliers | length" "$RESULTS_FILE" 2>/dev/null || echo "0")
+    if [ "$outlier_count" -gt 0 ]; then
+        yq -r "${array_path}[${array_idx}].${metric}.outliers[]" "$RESULTS_FILE" | while read -r outlier; do
+            [ -n "$outlier" ] && printf "%d\t%s\n" "$idx" "$outlier" >> "$outfile"
+        done
     fi
+}
 
-    # Count number of data points
-    local num_tests=$(wc -l < "$data_file")
+# =============== UPLOAD ===============
+echo "  → Extracting upload data..."
+idx=1
 
-    # Create gnuplot script
-    cat > "$OUTPUT_DIR/${metric}_plot.gnuplot" <<'GNUPLOT_SCRIPT'
-# Set terminal to PNG with good resolution
-set terminal pngcairo size 1200,800 enhanced font 'Arial,10'
-set output OUTPUT_FILE
+# Iterate over baselineResults
+for i in $(seq 0 $((BASELINE_COUNT-1))); do
+    add_box_data ".baselineResults" "$i" "upload" "$UPLOAD_BOX" "$idx"
+    add_outlier_data ".baselineResults" "$i" "upload" "$UPLOAD_OUT" "$idx"
+    ((idx++))
+done
 
-# Set title and labels
-set title PLOT_TITLE font 'Arial,14'
-set ylabel Y_LABEL font 'Arial,12'
-set xlabel "Tests" font 'Arial,12'
+# Iterate over testResults
+for i in $(seq 0 $((TEST_COUNT-1))); do
+    add_box_data ".testResults" "$i" "upload" "$UPLOAD_BOX" "$idx"
+    add_outlier_data ".testResults" "$i" "upload" "$UPLOAD_OUT" "$idx"
+    ((idx++))
+done
 
-# Grid
+# =============== DOWNLOAD ===============
+echo "  → Extracting download data..."
+idx=1
+
+# Iterate over baselineResults
+for i in $(seq 0 $((BASELINE_COUNT-1))); do
+    add_box_data ".baselineResults" "$i" "download" "$DOWNLOAD_BOX" "$idx"
+    add_outlier_data ".baselineResults" "$i" "download" "$DOWNLOAD_OUT" "$idx"
+    ((idx++))
+done
+
+# Iterate over testResults
+for i in $(seq 0 $((TEST_COUNT-1))); do
+    add_box_data ".testResults" "$i" "download" "$DOWNLOAD_BOX" "$idx"
+    add_outlier_data ".testResults" "$i" "download" "$DOWNLOAD_OUT" "$idx"
+    ((idx++))
+done
+
+# =============== LATENCY ===============
+echo "  → Extracting latency data..."
+idx=1
+
+# Iterate over baselineResults
+for i in $(seq 0 $((BASELINE_COUNT-1))); do
+    add_box_data ".baselineResults" "$i" "latency" "$LATENCY_BOX" "$idx"
+    add_outlier_data ".baselineResults" "$i" "latency" "$LATENCY_OUT" "$idx"
+    ((idx++))
+done
+
+# Iterate over testResults
+for i in $(seq 0 $((TEST_COUNT-1))); do
+    add_box_data ".testResults" "$i" "latency" "$LATENCY_BOX" "$idx"
+    add_outlier_data ".testResults" "$i" "latency" "$LATENCY_OUT" "$idx"
+    ((idx++))
+done
+
+# =============== GNUPlot scripts using candlesticks ===============
+# Candlesticks format: x:box_min:whisker_min:whisker_max:box_max
+# Columns: 1=idx, 2=label, 3=min, 4=q1, 5=median, 6=q3, 7=max
+# Using: 1:4:3:7:6 maps to x:q1:min:max:q3
+
+# Calculate xrange based on number of tests
+TOTAL_TESTS=$((BASELINE_COUNT + TEST_COUNT))
+XMAX=$(echo "$TOTAL_TESTS + 1.2" | bc -l)
+
+cat > "$OUTPUT_DIR/upload.gp" <<EOF
+set terminal pngcairo size 1400,1400 enhanced font 'Arial,14'
+set output '$OUTPUT_DIR/boxplot-upload.png'
+set title 'Upload Throughput Comparison'
+set ylabel 'Throughput (Gbps)'
+set yrange [0:*]
 set grid y
-
-# Box plot styling
-set style fill solid 0.5 border -1
-set style data boxplot
 set boxwidth 0.5
+set style fill solid 0.25 border lc rgb 'black'
+set xtics center font ',11'
+set bmargin 5
+set rmargin 8
+set xrange [0.3:$XMAX]
 
-# X-axis configuration
-set xtics rotate by -45
-set xtics scale 0
+# Box from q1 to q3, whiskers from min to max, median as line, median labels on right
+plot '$UPLOAD_BOX' using 1:4:3:7:6:xticlabels(2) notitle with candlesticks lc rgb 'blue' lw 2 whiskerbars 0.5, '$UPLOAD_BOX' using 1:5:5:5:5 notitle with candlesticks lc rgb 'black' lw 2, '$UPLOAD_OUT' using 1:2 with points pt 7 ps 1.5 lc rgb 'red' title 'outliers', '$UPLOAD_BOX' using (\$1+0.35):5:5 with labels font ',11' notitle
+EOF
 
-# Auto-scale y-axis
-set autoscale y
+cat > "$OUTPUT_DIR/download.gp" <<EOF
+set terminal pngcairo size 1400,1400 enhanced font 'Arial,14'
+set output '$OUTPUT_DIR/boxplot-download.png'
+set title 'Download Throughput Comparison'
+set ylabel 'Throughput (Gbps)'
+set yrange [0:*]
+set grid y
+set boxwidth 0.5
+set style fill solid 0.25 border lc rgb 'black'
+set xtics center font ',11'
+set bmargin 5
+set rmargin 8
+set xrange [0.3:$XMAX]
 
-# Color definitions
-baseline_color = "#4CAF50"  # Green
-main_color = "#2196F3"      # Blue
+# Box from q1 to q3, whiskers from min to max, median as line, median labels on right
+plot '$DOWNLOAD_BOX' using 1:4:3:7:6:xticlabels(2) notitle with candlesticks lc rgb 'blue' lw 2 whiskerbars 0.5, '$DOWNLOAD_BOX' using 1:5:5:5:5 notitle with candlesticks lc rgb 'black' lw 2, '$DOWNLOAD_OUT' using 1:2 with points pt 7 ps 1.5 lc rgb 'red' title 'outliers', '$DOWNLOAD_BOX' using (\$1+0.35):5:5 with labels font ',11' notitle
+EOF
 
-# Read data and plot
-set datafile separator "|"
+cat > "$OUTPUT_DIR/latency.gp" <<EOF
+set terminal pngcairo size 1400,1400 enhanced font 'Arial,14'
+set output '$OUTPUT_DIR/boxplot-latency.png'
+set title 'Latency Comparison'
+set ylabel 'Latency (ms)'
+set yrange [0:*]
+set grid y
+set boxwidth 0.5
+set style fill solid 0.25 border lc rgb 'black'
+set xtics center font ',11'
+set bmargin 5
+set rmargin 8
+set xrange [0.3:$XMAX]
 
-# Plot boxes manually using candlesticks
-plot DATA_FILE using 0:2:3:4:5:6:(stringcolumn(7) eq "baseline" ? baseline_color : main_color):xtic(1) \
-    with candlesticks lc rgb variable linewidth 1.5 notitle whiskerbars, \
-    '' using 0:4:4:4:4:(stringcolumn(7) eq "baseline" ? baseline_color : main_color) \
-    with candlesticks lc rgb variable linewidth 2 notitle
+# Box from q1 to q3, whiskers from min to max, median as line, median labels on right
+plot '$LATENCY_BOX' using 1:4:3:7:6:xticlabels(2) notitle with candlesticks lc rgb 'blue' lw 2 whiskerbars 0.5, '$LATENCY_BOX' using 1:5:5:5:5 notitle with candlesticks lc rgb 'black' lw 2, '$LATENCY_OUT' using 1:2 with points pt 7 ps 1.5 lc rgb 'red' title 'outliers', '$LATENCY_BOX' using (\$1+0.35):5:5 with labels font ',11' notitle
+EOF
 
-# Legend
-set key outside right top
-set style rectangle fillcolor rgb "white" fillstyle solid 1.0 border -1
-GNUPLOT_SCRIPT
+# =============== Generate plots ===============
+echo "  → Generating plots with gnuplot..."
 
-    # Replace placeholders in gnuplot script
-    sed -i "s|OUTPUT_FILE|'$output_file'|g" "$OUTPUT_DIR/${metric}_plot.gnuplot"
-    sed -i "s|PLOT_TITLE|'Performance Test Results - $metric_title'|g" "$OUTPUT_DIR/${metric}_plot.gnuplot"
-    sed -i "s|Y_LABEL|'$metric_title ($unit)'|g" "$OUTPUT_DIR/${metric}_plot.gnuplot"
-    sed -i "s|DATA_FILE|'$data_file'|g" "$OUTPUT_DIR/${metric}_plot.gnuplot"
+if gnuplot "$OUTPUT_DIR/upload.gp" 2>/dev/null; then
+    echo "  ✓ Generated boxplot-upload.png"
+else
+    echo "  ✗ Failed to generate upload box plot"
+fi
 
-    # Run gnuplot
-    if gnuplot "$OUTPUT_DIR/${metric}_plot.gnuplot" 2>/dev/null; then
-        echo "  ✓ Generated $output_file"
-        # Clean up temporary files
-        rm -f "$data_file" "$OUTPUT_DIR/${metric}_plot.gnuplot"
-    else
-        echo "  ✗ Failed to generate $metric box plot"
-        return 1
-    fi
-}
+if gnuplot "$OUTPUT_DIR/download.gp" 2>/dev/null; then
+    echo "  ✓ Generated boxplot-download.png"
+else
+    echo "  ✗ Failed to generate download box plot"
+fi
 
-# Get units from first test result
-get_unit() {
-    local metric="$1"
+if gnuplot "$OUTPUT_DIR/latency.gp" 2>/dev/null; then
+    echo "  ✓ Generated boxplot-latency.png"
+else
+    echo "  ✗ Failed to generate latency box plot"
+fi
 
-    # Try baseline results first
-    local unit=$(yq eval ".baselineResults[0].$metric.unit" "$RESULTS_FILE" 2>/dev/null || echo "")
-
-    # If not found, try main results
-    if [ -z "$unit" ] || [ "$unit" = "null" ]; then
-        unit=$(yq eval ".testResults[0].$metric.unit" "$RESULTS_FILE" 2>/dev/null || echo "")
-    fi
-
-    # Default units
-    case "$metric" in
-        upload|download) echo "${unit:-Mbps}" ;;
-        latency) echo "${unit:-ms}" ;;
-        *) echo "" ;;
-    esac
-}
-
-# Generate box plots for each metric
-upload_unit=$(get_unit "upload")
-download_unit=$(get_unit "download")
-latency_unit=$(get_unit "latency")
-
-generate_boxplot "upload" "Upload" "$upload_unit"
-generate_boxplot "download" "Download" "$download_unit"
-generate_boxplot "latency" "Latency" "$latency_unit"
+# Clean up temporary files
+rm -f "$OUTPUT_DIR"/*.gp "$OUTPUT_DIR"/*.dat
 
 echo "✓ Box plot generation complete"

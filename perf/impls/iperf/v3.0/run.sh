@@ -198,17 +198,13 @@ calculate_stats() {
     local count=${#values[@]}
 
     if [ $count -eq 0 ]; then
-        echo '{"min":0,"q1":0,"median":0,"q3":0,"max":0,"outliers":[]}'
+        echo '{"min":0,"q1":0,"median":0,"q3":0,"max":0,"outliers":[],"samples":[]}'
         return
     fi
 
     # Sort values numerically
     IFS=$'\n' sorted=($(printf '%s\n' "${values[@]}" | sort -n))
     unset IFS
-
-    # Min and max
-    local min=${sorted[0]}
-    local max=${sorted[$((count-1))]}
 
     # Calculate percentile indices
     local q1_idx=$(echo "($count - 1) * 0.25" | bc -l)
@@ -225,7 +221,9 @@ calculate_stats() {
     local lower_fence=$(echo "$q1 - 1.5 * $iqr" | bc -l)
     local upper_fence=$(echo "$q3 + 1.5 * $iqr" | bc -l)
 
+    # Separate outliers from non-outliers
     local outliers=()
+    local non_outliers=()
     for val in "${sorted[@]}"; do
         local is_outlier=0
         if (( $(echo "$val < $lower_fence" | bc -l) )); then
@@ -236,8 +234,21 @@ calculate_stats() {
 
         if [ $is_outlier -eq 1 ]; then
             outliers+=("$val")
+        else
+            non_outliers+=("$val")
         fi
     done
+
+    # Calculate min/max from non-outliers (if any exist)
+    local min max
+    if [ ${#non_outliers[@]} -gt 0 ]; then
+        min=${non_outliers[0]}
+        max=${non_outliers[$((${#non_outliers[@]}-1))]}
+    else
+        # Fallback if all values are outliers
+        min=${sorted[0]}
+        max=${sorted[$((count-1))]}
+    fi
 
     # Build outliers array string
     local outliers_str=""
@@ -245,8 +256,11 @@ calculate_stats() {
         outliers_str=$(IFS=,; echo "${outliers[*]}")
     fi
 
+    # Build samples array string (all values)
+    local samples_str=$(IFS=,; echo "${sorted[*]}")
+
     # Return as JSON
-    echo "{\"min\":$min,\"q1\":$q1,\"median\":$median,\"q3\":$q3,\"max\":$max,\"outliers\":[$outliers_str]}"
+    echo "{\"min\":$min,\"q1\":$q1,\"median\":$median,\"q3\":$q3,\"max\":$max,\"outliers\":[$outliers_str],\"samples\":[$samples_str]}"
 }
 
 percentile_value() {
@@ -289,6 +303,7 @@ output_yaml() {
     local upload_q3=$(echo "$upload_stats" | jq -r '.q3')
     local upload_max=$(echo "$upload_stats" | jq -r '.max')
     local upload_outliers=$(echo "$upload_stats" | jq -r '.outliers | join(", ")')
+    local upload_samples=$(echo "$upload_stats" | jq -r '.samples | join(", ")')
 
     # Parse download stats
     local download_min=$(echo "$download_stats" | jq -r '.min')
@@ -297,6 +312,7 @@ output_yaml() {
     local download_q3=$(echo "$download_stats" | jq -r '.q3')
     local download_max=$(echo "$download_stats" | jq -r '.max')
     local download_outliers=$(echo "$download_stats" | jq -r '.outliers | join(", ")')
+    local download_samples=$(echo "$download_stats" | jq -r '.samples | join(", ")')
 
     # Parse latency stats
     local latency_min=$(echo "$latency_stats" | jq -r '.min')
@@ -305,6 +321,7 @@ output_yaml() {
     local latency_q3=$(echo "$latency_stats" | jq -r '.q3')
     local latency_max=$(echo "$latency_stats" | jq -r '.max')
     local latency_outliers=$(echo "$latency_stats" | jq -r '.outliers | join(", ")')
+    local latency_samples=$(echo "$latency_stats" | jq -r '.samples | join(", ")')
 
     # Output YAML to stdout
     cat <<EOF
@@ -317,6 +334,7 @@ upload:
   q3: $(printf "%.2f" "$upload_q3")
   max: $(printf "%.2f" "$upload_max")
   outliers: [$upload_outliers]
+  samples: [$upload_samples]
   unit: Gbps
 
 # Download measurement
@@ -328,6 +346,7 @@ download:
   q3: $(printf "%.2f" "$download_q3")
   max: $(printf "%.2f" "$download_max")
   outliers: [$download_outliers]
+  samples: [$download_samples]
   unit: Gbps
 
 # Latency measurement
@@ -339,6 +358,7 @@ latency:
   q3: $(printf "%.3f" "$latency_q3")
   max: $(printf "%.3f" "$latency_max")
   outliers: [$latency_outliers]
+  samples: [$latency_samples]
   unit: ms
 EOF
 }

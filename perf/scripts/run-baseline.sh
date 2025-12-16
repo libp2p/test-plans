@@ -23,6 +23,7 @@ if [ "$baseline_count" -eq 0 ]; then
     exit 0
 fi
 
+echo ""
 echo "╲ Running baseline tests... (1 worker)"
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
@@ -43,5 +44,4 @@ for ((i=0; i<baseline_count; i++)); do
 done
 
 echo ""
-log_info "Baseline tests complete"
 exit 0

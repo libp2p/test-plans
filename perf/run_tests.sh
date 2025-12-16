@@ -22,6 +22,7 @@ DEBUG=false
 AUTO_APPROVE=false
 CHECK_DEPS_ONLY=false
 LIST_IMPLS=false
+LIST_BASELINES=false
 LIST_TESTS=false
 
 # Show help
@@ -49,6 +50,7 @@ Options:
   -y, --yes                     Skip confirmation prompts
   --check-deps                  Only check dependencies and exit
   --list-impls                  List all implementation IDs and exit
+  --list-baselines              List all baseline IDs and exit
   --list-tests                  List all selected tests and exit
   --help, -h                    Show this help message
 
@@ -94,6 +96,7 @@ while [[ $# -gt 0 ]]; do
         -y|--yes) AUTO_APPROVE=true; shift ;;
         --check-deps) CHECK_DEPS_ONLY=true; shift ;;
         --list-impls) LIST_IMPLS=true; shift ;;
+        --list-baselines) LIST_BASELINES=true; shift ;;
         --list-tests) LIST_TESTS=true; shift ;;
         --help|-h) show_help; exit 0 ;;
         *)
@@ -131,6 +134,19 @@ if [ "$LIST_IMPLS" = true ]; then
     echo "╲ Available Implementations"
     echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
     yq eval '.implementations[].id' impls.yaml | sed 's/^/→ /'
+    echo ""
+    exit 0
+fi
+
+# List baselines
+if [ "$LIST_BASELINES" = true ]; then
+    if [ ! -f "impls.yaml" ]; then
+        echo "Error: impls.yaml not found"
+        exit 1
+    fi
+    echo "╲ Available Baselines"
+    echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+    yq eval '.baselines[].id' impls.yaml | sed 's/^/→ /'
     echo ""
     exit 0
 fi

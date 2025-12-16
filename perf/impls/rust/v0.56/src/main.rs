@@ -236,6 +236,14 @@ async fn run_dialer(redis_addr: String, transport: String, secure: Option<String
     } else {
         println!("  outliers: []");
     }
+    if !upload_stats.samples.is_empty() {
+        println!("  samples: [{}]", upload_stats.samples.iter()
+            .map(|v| format!("{:.2}", v))
+            .collect::<Vec<_>>()
+            .join(", "));
+    } else {
+        println!("  samples: []");
+    }
     println!("  unit: Gbps");
     println!();
     println!("# Download measurement");
@@ -254,6 +262,14 @@ async fn run_dialer(redis_addr: String, transport: String, secure: Option<String
     } else {
         println!("  outliers: []");
     }
+    if !download_stats.samples.is_empty() {
+        println!("  samples: [{}]", download_stats.samples.iter()
+            .map(|v| format!("{:.2}", v))
+            .collect::<Vec<_>>()
+            .join(", "));
+    } else {
+        println!("  samples: []");
+    }
     println!("  unit: Gbps");
     println!();
     println!("# Latency measurement");
@@ -271,6 +287,14 @@ async fn run_dialer(redis_addr: String, transport: String, secure: Option<String
             .join(", "));
     } else {
         println!("  outliers: []");
+    }
+    if !latency_stats.samples.is_empty() {
+        println!("  samples: [{}]", latency_stats.samples.iter()
+            .map(|v| format!("{:.3}", v))
+            .collect::<Vec<_>>()
+            .join(", "));
+    } else {
+        println!("  samples: []");
     }
     println!("  unit: ms");
 
@@ -294,6 +318,7 @@ struct Stats {
     q3: f64,
     max: f64,
     outliers: Vec<f64>,
+    samples: Vec<f64>,
 }
 
 async fn run_measurement(
@@ -378,8 +403,6 @@ async fn run_measurement(
     values.sort_by(|a, b| a.partial_cmp(b).unwrap());
 
     let n = values.len();
-    let min = values[0];
-    let max = values[n - 1];
 
     // Calculate percentiles
     let q1 = percentile(&values, 25.0);
@@ -391,12 +414,19 @@ async fn run_measurement(
     let lower_fence = q1 - 1.5 * iqr;
     let upper_fence = q3 + 1.5 * iqr;
 
-    let outliers: Vec<f64> = values.iter()
-        .filter(|&&v| v < lower_fence || v > upper_fence)
-        .copied()
-        .collect();
+    // Separate outliers from non-outliers
+    let (outliers, non_outliers): (Vec<f64>, Vec<f64>) = values.iter()
+        .partition(|&&v| v < lower_fence || v > upper_fence);
 
-    Stats { min, q1, median, q3, max, outliers }
+    // Calculate min/max from non-outliers (if any exist)
+    let (min, max) = if !non_outliers.is_empty() {
+        (non_outliers[0], non_outliers[non_outliers.len() - 1])
+    } else {
+        // Fallback if all values are outliers
+        (values[0], values[n - 1])
+    };
+
+    Stats { min, q1, median, q3, max, outliers, samples: values }
 }
 
 // Helper function to calculate percentile
