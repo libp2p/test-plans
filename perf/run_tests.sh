@@ -22,6 +22,7 @@ DEBUG=false
 AUTO_APPROVE=false
 CHECK_DEPS_ONLY=false
 LIST_IMPLS=false
+LIST_BASELINES=false
 LIST_TESTS=false
 
 # Show help
@@ -49,6 +50,7 @@ Options:
   -y, --yes                     Skip confirmation prompts
   --check-deps                  Only check dependencies and exit
   --list-impls                  List all implementation IDs and exit
+  --list-baselines              List all baseline IDs and exit
   --list-tests                  List all selected tests and exit
   --help, -h                    Show this help message
 
@@ -94,6 +96,7 @@ while [[ $# -gt 0 ]]; do
         -y|--yes) AUTO_APPROVE=true; shift ;;
         --check-deps) CHECK_DEPS_ONLY=true; shift ;;
         --list-impls) LIST_IMPLS=true; shift ;;
+        --list-baselines) LIST_BASELINES=true; shift ;;
         --list-tests) LIST_TESTS=true; shift ;;
         --help|-h) show_help; exit 0 ;;
         *)
@@ -135,6 +138,19 @@ if [ "$LIST_IMPLS" = true ]; then
     exit 0
 fi
 
+# List baselines
+if [ "$LIST_BASELINES" = true ]; then
+    if [ ! -f "impls.yaml" ]; then
+        echo "Error: impls.yaml not found"
+        exit 1
+    fi
+    echo "╲ Available Baselines"
+    echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+    yq eval '.baselines[].id' impls.yaml | sed 's/^/→ /'
+    echo ""
+    exit 0
+fi
+
 # List tests
 if [ "$LIST_TESTS" = true ]; then
     # Create temporary directory for test matrix generation
@@ -168,13 +184,20 @@ if [ "$LIST_TESTS" = true ]; then
     test_count=$(yq eval '.tests | length' "$TEMP_DIR/test-matrix.yaml")
 
     echo ""
-    echo "╲ Selected Tests ($test_count tests)"
+    echo "╲ Selected Tests ($baseline_count baseline + $test_count main = $((baseline_count + test_count)) total)"
     echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
+    if [ "$baseline_count" -gt 0 ]; then
+        echo "→ Baseline tests:"
+        yq eval '.baselines[].name' "$TEMP_DIR/test-matrix.yaml" | sed 's/^/  → /'
+        echo ""
+    fi
+
     if [ "$test_count" -gt 0 ]; then
-        yq eval '.tests[].name' "$TEMP_DIR/test-matrix.yaml" | sed 's/^/→ /'
+        echo "→ Main tests:"
+        yq eval '.tests[].name' "$TEMP_DIR/test-matrix.yaml" | sed 's/^/  → /'
     else
-        echo "→ No tests selected"
+        echo "→ No main tests selected"
     fi
 
     echo ""
@@ -481,6 +504,22 @@ echo "→ bash scripts/generate-dashboard.sh"
 bash scripts/generate-dashboard.sh || {
   log_error "Dashboard generation failed"
 }
+
+# Generate box plots (optional - requires gnuplot)
+echo ""
+echo "╲ Generating box plots..."
+echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+
+# Check if gnuplot is available
+if command -v gnuplot &> /dev/null; then
+    echo "→ bash scripts/generate-boxplot.sh"
+    bash scripts/generate-boxplot.sh "$TEST_PASS_DIR/results.yaml" "$TEST_PASS_DIR" || {
+        echo "  ✗ Box plot generation failed"
+    }
+else
+    echo "  ✗ gnuplot not found - skipping box plot generation"
+    echo "  Install: apt-get install gnuplot"
+fi
 
 # Final status message
 echo ""

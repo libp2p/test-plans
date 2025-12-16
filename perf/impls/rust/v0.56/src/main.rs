@@ -11,7 +11,7 @@ use tokio::time::Duration;
 use libp2p::{
     futures::StreamExt,
     swarm::{SwarmEvent, NetworkBehaviour},
-    request_response::{self, OutboundRequestId, ProtocolSupport},
+    request_response::{self, ProtocolSupport},
     Swarm, SwarmBuilder, Multiaddr, PeerId,
 };
 
@@ -77,19 +77,16 @@ async fn run_listener(redis_addr: String, transport: String, secure: Option<Stri
 
     // Wait for listener to be ready and publish multiaddr
     loop {
-        match swarm.next().await {
-            Some(SwarmEvent::NewListenAddr { address, .. }) => {
-                let full_multiaddr = format!("{}/p2p/{}", address, peer_id);
-                eprintln!("Listening on: {}", full_multiaddr);
+        if let Some(SwarmEvent::NewListenAddr { address, .. }) = swarm.next().await {
+            let full_multiaddr = format!("{}/p2p/{}", address, peer_id);
+            eprintln!("Listening on: {}", full_multiaddr);
 
-                // Publish to Redis
-                let _: () = con.set("listener_multiaddr", full_multiaddr.clone()).await
-                    .expect("Failed to publish multiaddr to Redis");
+            // Publish to Redis
+            let _: () = con.set("listener_multiaddr", full_multiaddr.clone()).await
+                .expect("Failed to publish multiaddr to Redis");
 
-                eprintln!("Published multiaddr to Redis: {}", full_multiaddr);
-                break;
-            }
-            _ => {}
+            eprintln!("Published multiaddr to Redis: {}", full_multiaddr);
+            break;
         }
     }
 
@@ -121,7 +118,7 @@ async fn run_listener(redis_addr: String, transport: String, secure: Option<Stri
                     // Respond with the requested bytes
                     let response = PerfResponse {
                         bytes_sent: request.recv_bytes,  // Send what client wants to receive
-                        bytes_received: request.send_bytes,  // Track what we received
+                        _bytes_received: request.send_bytes,  // Track what we received
                     };
 
                     swarm.behaviour_mut()
@@ -239,6 +236,14 @@ async fn run_dialer(redis_addr: String, transport: String, secure: Option<String
     } else {
         println!("  outliers: []");
     }
+    if !upload_stats.samples.is_empty() {
+        println!("  samples: [{}]", upload_stats.samples.iter()
+            .map(|v| format!("{:.2}", v))
+            .collect::<Vec<_>>()
+            .join(", "));
+    } else {
+        println!("  samples: []");
+    }
     println!("  unit: Gbps");
     println!();
     println!("# Download measurement");
@@ -257,6 +262,14 @@ async fn run_dialer(redis_addr: String, transport: String, secure: Option<String
     } else {
         println!("  outliers: []");
     }
+    if !download_stats.samples.is_empty() {
+        println!("  samples: [{}]", download_stats.samples.iter()
+            .map(|v| format!("{:.2}", v))
+            .collect::<Vec<_>>()
+            .join(", "));
+    } else {
+        println!("  samples: []");
+    }
     println!("  unit: Gbps");
     println!();
     println!("# Latency measurement");
@@ -274,6 +287,14 @@ async fn run_dialer(redis_addr: String, transport: String, secure: Option<String
             .join(", "));
     } else {
         println!("  outliers: []");
+    }
+    if !latency_stats.samples.is_empty() {
+        println!("  samples: [{}]", latency_stats.samples.iter()
+            .map(|v| format!("{:.3}", v))
+            .collect::<Vec<_>>()
+            .join(", "));
+    } else {
+        println!("  samples: []");
     }
     println!("  unit: ms");
 
@@ -297,6 +318,7 @@ struct Stats {
     q3: f64,
     max: f64,
     outliers: Vec<f64>,
+    samples: Vec<f64>,
 }
 
 async fn run_measurement(
@@ -364,7 +386,9 @@ async fn run_measurement(
             (bytes * 8.0) / elapsed / 1_000_000_000.0
         } else {
             // Latency in milliseconds
-            elapsed * 1000.0
+            let converted = elapsed * 1000.0;
+            eprintln!("DEBUG: Latency - elapsed={:.6}s, converted={:.3}ms", elapsed, converted);
+            converted
         };
 
         values.push(value);
@@ -379,8 +403,6 @@ async fn run_measurement(
     values.sort_by(|a, b| a.partial_cmp(b).unwrap());
 
     let n = values.len();
-    let min = values[0];
-    let max = values[n - 1];
 
     // Calculate percentiles
     let q1 = percentile(&values, 25.0);
@@ -392,12 +414,19 @@ async fn run_measurement(
     let lower_fence = q1 - 1.5 * iqr;
     let upper_fence = q3 + 1.5 * iqr;
 
-    let outliers: Vec<f64> = values.iter()
-        .filter(|&&v| v < lower_fence || v > upper_fence)
-        .copied()
-        .collect();
+    // Separate outliers from non-outliers
+    let (outliers, non_outliers): (Vec<f64>, Vec<f64>) = values.iter()
+        .partition(|&&v| v < lower_fence || v > upper_fence);
 
-    Stats { min, q1, median, q3, max, outliers }
+    // Calculate min/max from non-outliers (if any exist)
+    let (min, max) = if !non_outliers.is_empty() {
+        (non_outliers[0], non_outliers[non_outliers.len() - 1])
+    } else {
+        // Fallback if all values are outliers
+        (values[0], values[n - 1])
+    };
+
+    Stats { min, q1, median, q3, max, outliers, samples: values }
 }
 
 // Helper function to calculate percentile

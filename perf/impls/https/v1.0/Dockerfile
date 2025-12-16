@@ -4,7 +4,7 @@ WORKDIR /workspace
 
 COPY main.go go.mod go.sum* ./
 
-RUN go mod download
+RUN go mod tidy
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o perf-https .
 
 FROM alpine:latest

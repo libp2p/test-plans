@@ -18,7 +18,7 @@ pub struct PerfRequest {
 #[derive(Debug, Clone)]
 pub struct PerfResponse {
     pub bytes_sent: u64,     // Bytes server sent back
-    pub bytes_received: u64, // Bytes server received from client
+    pub _bytes_received: u64, // Bytes server received from client
 }
 
 // Perf protocol codec
@@ -84,7 +84,7 @@ impl libp2p::request_response::Codec for PerfCodec {
 
         Ok(PerfResponse {
             bytes_sent: 0,
-            bytes_received: total,
+            _bytes_received: total,
         })
     }
 

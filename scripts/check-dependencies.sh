@@ -149,6 +149,18 @@ else
 fi
 
 echo ""
+echo "Optional dependencies (for enhanced features):"
+
+# Check gnuplot (optional - for box plot generation)
+if command -v gnuplot &> /dev/null; then
+    gnuplot_version=$(gnuplot --version 2>&1 | grep -oE '[0-9]+\.[0-9]+' | head -1)
+    echo "✓ gnuplot $gnuplot_version (for box plot generation)"
+else
+    echo "✗ gnuplot not found (box plots will be skipped)"
+    echo "  Install: apt-get install gnuplot"
+fi
+
+echo ""
 
 if [ "$has_error" = true ]; then
     echo "╲ ✗ Some dependencies are missing or outdated"

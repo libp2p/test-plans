@@ -60,26 +60,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  detect-changes:
-    if: github.event_name != 'workflow_dispatch'
-    runs-on: [self-hosted, linux, x64, ephemeral]
-    outputs:
-      changed-impls: ${{ steps.detect.outputs.changed-impls }}
-      has-changes: ${{ steps.detect.outputs.has-changes }}
-      impls-yaml-changed: ${{ steps.detect.outputs.impls-yaml-changed }}
-      impls-folder-changed: ${{ steps.detect.outputs.impls-folder-changed }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Detect changed implementations
-        id: detect
-        uses: ./.github/actions/detect-changed-impls
-        with:
-          test-type: perf
-
   resolve-parameters:
     runs-on: [self-hosted, linux, x64, ephemeral]
     outputs:
@@ -127,8 +107,8 @@ jobs:
             # Automatic trigger - use change detection outputs
             echo "test-select=${{ steps.detect.outputs.changed-impls }}" >> $GITHUB_OUTPUT
             echo "test-ignore=!${{ steps.detect.outputs.changed-impls }}" >> $GITHUB_OUTPUT
-            echo "baseline-select=" >> $GITHUB_OUTPUT
-            echo "baseline-ignore=" >> $GITHUB_OUTPUT
+            echo "baseline-select=${{ steps.detect.outputs.changed-baselines }}" >> $GITHUB_OUTPUT
+            echo "baseline-ignore=!${{ steps.detect.outputs.changed-baselines }}" >> $GITHUB_OUTPUT
             echo "iterations=10" >> $GITHUB_OUTPUT
             echo "force-matrix-rebuild=${{ steps.detect.outputs.impls-yaml-changed }}" >> $GITHUB_OUTPUT
             # Force image rebuild if impls.yaml changed (commit SHA changes require new images)

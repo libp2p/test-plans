@@ -34,6 +34,7 @@ type Stats struct {
 	Q3       float64
 	Max      float64
 	Outliers []float64
+	Samples  []float64
 }
 
 func main() {
@@ -129,6 +130,7 @@ func runClientMode() {
 	fmt.Printf("  q3: %.2f\n", uploadStats.Q3)
 	fmt.Printf("  max: %.2f\n", uploadStats.Max)
 	printOutliers(uploadStats.Outliers, 2)
+	printSamples(uploadStats.Samples, 2)
 	fmt.Println("  unit: Gbps")
 	fmt.Println()
 
@@ -141,6 +143,7 @@ func runClientMode() {
 	fmt.Printf("  q3: %.2f\n", downloadStats.Q3)
 	fmt.Printf("  max: %.2f\n", downloadStats.Max)
 	printOutliers(downloadStats.Outliers, 2)
+	printSamples(downloadStats.Samples, 2)
 	fmt.Println("  unit: Gbps")
 	fmt.Println()
 
@@ -153,6 +156,7 @@ func runClientMode() {
 	fmt.Printf("  q3: %.3f\n", latencyStats.Q3)
 	fmt.Printf("  max: %.3f\n", latencyStats.Max)
 	printOutliers(latencyStats.Outliers, 3)
+	printSamples(latencyStats.Samples, 3)
 	fmt.Println("  unit: ms")
 
 	log.Println("All measurements complete!")
@@ -191,8 +195,6 @@ func calculateStats(values []float64) Stats {
 	sort.Float64s(values)
 
 	n := len(values)
-	min := values[0]
-	max := values[n-1]
 
 	// Calculate percentiles
 	q1 := percentile(values, 25.0)
@@ -204,11 +206,26 @@ func calculateStats(values []float64) Stats {
 	lowerFence := q1 - 1.5*iqr
 	upperFence := q3 + 1.5*iqr
 
+	// Separate outliers from non-outliers
 	var outliers []float64
+	var nonOutliers []float64
 	for _, v := range values {
 		if v < lowerFence || v > upperFence {
 			outliers = append(outliers, v)
+		} else {
+			nonOutliers = append(nonOutliers, v)
 		}
+	}
+
+	// Calculate min/max from non-outliers (if any exist)
+	var min, max float64
+	if len(nonOutliers) > 0 {
+		min = nonOutliers[0]
+		max = nonOutliers[len(nonOutliers)-1]
+	} else {
+		// Fallback if all values are outliers
+		min = values[0]
+		max = values[n-1]
 	}
 
 	return Stats{
@@ -218,6 +235,7 @@ func calculateStats(values []float64) Stats {
 		Q3:       q3,
 		Max:      max,
 		Outliers: outliers,
+		Samples:  values,
 	}
 }
 
@@ -243,6 +261,22 @@ func printOutliers(outliers []float64, decimals int) {
 
 	fmt.Print("  outliers: [")
 	for i, v := range outliers {
+		if i > 0 {
+			fmt.Print(", ")
+		}
+		fmt.Printf("%.*f", decimals, v)
+	}
+	fmt.Println("]")
+}
+
+func printSamples(samples []float64, decimals int) {
+	if len(samples) == 0 {
+		fmt.Println("  samples: []")
+		return
+	}
+
+	fmt.Print("  samples: [")
+	for i, v := range samples {
 		if i > 0 {
 			fmt.Print(", ")
 		}

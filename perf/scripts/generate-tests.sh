@@ -152,11 +152,20 @@ for ((i=0; i<baseline_count; i++)); do
 done
 
 echo "  ✓ Loaded ${#baseline_ids[@]} baselines into memory"
+if [ "${DEBUG:-false}" = "true" ]; then
+    echo "  DEBUG: Baseline IDs: ${baseline_ids[*]}" >&2
+fi
 if [ ${#BASELINE_SELECT_PATTERNS[@]} -gt 0 ]; then
     echo "  ✓ Loaded ${#BASELINE_SELECT_PATTERNS[@]} baseline select patterns"
+    if [ "${DEBUG:-false}" = "true" ]; then
+        echo "  DEBUG: BASELINE_SELECT_PATTERNS: ${BASELINE_SELECT_PATTERNS[*]}" >&2
+    fi
 fi
 if [ ${#BASELINE_IGNORE_PATTERNS[@]} -gt 0 ]; then
     echo "  ✓ Loaded ${#BASELINE_IGNORE_PATTERNS[@]} baseline ignore patterns"
+    if [ "${DEBUG:-false}" = "true" ]; then
+        echo "  DEBUG: BASELINE_IGNORE_PATTERNS: ${BASELINE_IGNORE_PATTERNS[*]}" >&2
+    fi
 fi
 
 # Load main implementation data
@@ -258,7 +267,7 @@ EOF
 for dialer_id in "${baseline_ids[@]}"; do
     # Apply baseline select filter
     if [ ${#BASELINE_SELECT_PATTERNS[@]} -gt 0 ]; then
-        baseline_matches_select "$dialer_id" || baseline_matches_select "$dialer_id" || continue
+        baseline_matches_select "$dialer_id" || continue
     fi
 
     dialer_transports="${baseline_transports[$dialer_id]}"
@@ -313,15 +322,65 @@ EOF
                 # Regular transport - needs secureChannel × muxer
                 common_secure=$(get_common "$dialer_secure" "$listener_secure")
                 common_muxers=$(get_common "$dialer_muxers" "$listener_muxers")
-                [ -z "$common_secure" ] && continue
-                [ -z "$common_muxers" ] && continue
 
-                for secure in $common_secure; do
-                    for muxer in $common_muxers; do
-                        test_name="$dialer_id x $listener_id ($transport, $secure, $muxer)"
-                        baseline_should_ignore "$test_name" && continue
+                # Allow raw transport if both have empty security/muxing (baseline case)
+                # Debug logging
+                if [ "${DEBUG:-false}" = "true" ]; then
+                    if [ "$dialer_id" = "iperf-v3.0" ] || [ "$listener_id" = "iperf-v3.0" ]; then
+                        echo "DEBUG: Processing iperf baseline" >&2
+                        echo "  dialer=$dialer_id, listener=$listener_id, transport=$transport" >&2
+                        echo "  common_secure='$common_secure', common_muxers='$common_muxers'" >&2
+                        echo "  dialer_secure='$dialer_secure', dialer_muxers='$dialer_muxers'" >&2
+                        echo "  listener_secure='$listener_secure', listener_muxers='$listener_muxers'" >&2
+                    fi
+                fi
 
-                        cat >> "$TEST_PASS_DIR/test-matrix.yaml" <<EOF
+                if [ -z "$common_secure" ] && [ -z "$common_muxers" ] && \
+                   [ -z "$dialer_secure" ] && [ -z "$dialer_muxers" ] && \
+                   [ -z "$listener_secure" ] && [ -z "$listener_muxers" ]; then
+                    # Raw transport baseline (no security or muxing)
+                    test_name="$dialer_id x $listener_id ($transport)"
+
+                    if [ "${DEBUG:-false}" = "true" ]; then
+                        echo "DEBUG: Creating raw transport baseline: $test_name" >&2
+                    fi
+
+                    baseline_should_ignore "$test_name" && {
+                        if [ "${DEBUG:-false}" = "true" ]; then
+                            echo "DEBUG: Ignoring $test_name" >&2
+                        fi
+                        continue
+                    }
+
+                    cat >> "$TEST_PASS_DIR/test-matrix.yaml" <<EOF
+  - id: baseline-$baseline_num
+    name: "$test_name"
+    dialer: $dialer_id
+    listener: $listener_id
+    dialerServer: $dialer_server
+    listenerServer: $listener_server
+    transport: $transport
+    secureChannel: null
+    muxer: null
+    uploadBytes: $UPLOAD_BYTES
+    downloadBytes: $DOWNLOAD_BYTES
+    uploadIterations: $ITERATIONS
+    downloadIterations: $ITERATIONS
+    latencyIterations: $LATENCY_ITERATIONS
+    durationPerIteration: $DURATION_PER_ITERATION
+EOF
+                    ((baseline_num++))
+                else
+                    # Regular transport with security and muxing
+                    [ -z "$common_secure" ] && continue
+                    [ -z "$common_muxers" ] && continue
+
+                    for secure in $common_secure; do
+                        for muxer in $common_muxers; do
+                            test_name="$dialer_id x $listener_id ($transport, $secure, $muxer)"
+                            baseline_should_ignore "$test_name" && continue
+
+                            cat >> "$TEST_PASS_DIR/test-matrix.yaml" <<EOF
   - id: baseline-$baseline_num
     name: "$test_name"
     dialer: $dialer_id
@@ -338,9 +397,10 @@ EOF
     latencyIterations: $LATENCY_ITERATIONS
     durationPerIteration: $DURATION_PER_ITERATION
 EOF
-                        ((baseline_num++))
+                            ((baseline_num++))
+                        done
                     done
-                done
+                fi
             fi
         done
     done

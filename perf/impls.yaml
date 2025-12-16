@@ -5,9 +5,9 @@
 # Usage: --test-select "~libp2p" or --test-ignore "~baseline"
 test-aliases:
   - alias: "impls"
-    value: "go-v0.45|js-v3.x|rust-v0.56"
+    value: "dotnet-v1.0|go-v0.45|js-v3.x|rust-v0.56"
   - alias: "baselines"
-    value: "https|quic-go"
+    value: "https|quic-go|iperf"
   - alias: "go"
     value: "go-v0.45"
   - alias: "rust"
@@ -17,7 +17,7 @@ test-aliases:
   - alias: "dotnet"
     value: "dotnet-v1.0"
   - alias: "failing"
-    value: "https|quic-go|go-v0.45|js-v3.x"
+    value: "go-v0.45|js-v3.x"
 
 # Server configurations - Where perf servers run
 # Supports both local (Docker on same machine) and remote (SSH to another machine)
@@ -88,8 +88,32 @@ baselines:
     metadata:
       language: go
       version: v0.40.0
-      baseline: true # Implementation definitions
+      baseline: true
 
+  # iperf3 baseline (raw TCP performance)
+  - id: iperf
+    name: "iperf3 TCP Baseline"
+    source:
+      type: local
+      path: impls/iperf/v3.0
+      dockerfile: Dockerfile
+    server: local
+    transports:
+      - tcp
+    secureChannels: []  # Raw TCP, no encryption
+    muxers: []          # No muxing
+    protocols:
+      - iperf3
+    capabilities:
+      - upload
+      - download
+      - latency
+    metadata:
+      language: bash
+      version: "3.0"
+      baseline: true
+
+# Implementation definitions
 # Docker image naming: perf-<id>
 implementations:
   # go-libp2p

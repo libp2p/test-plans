@@ -141,7 +141,7 @@ EOF
 log_debug "  Starting containers..."
 echo "Running: $test_name" > "$LOG_FILE"
 
-# Set timeout (300 seconds)
+# Set timeout (300 seconds / 5 minutes)
 TEST_TIMEOUT=300
 
 # Start containers and wait for dialer to exit (with timeout)
@@ -166,11 +166,11 @@ fi
 # Dialer outputs YAML to stdout, which appears in docker logs
 DIALER_LOGS=$($DOCKER_COMPOSE_CMD -f "$COMPOSE_FILE" logs dialer 2>/dev/null || echo "")
 
-# Extract the measurement YAML (including outliers arrays)
+# Extract the measurement YAML (including outliers and samples arrays)
 # Docker compose prefixes each line with: "container_name  | "
 # We need to strip this prefix and keep only the YAML content
 # Match only measurement sections and their fields (not logging output)
-DIALER_YAML=$(echo "$DIALER_LOGS" | grep -E "dialer.*\| (upload:|download:|latency:|  (iterations|min|q1|median|q3|max|outliers|unit):)" | sed 's/^.*| //' || echo "")
+DIALER_YAML=$(echo "$DIALER_LOGS" | grep -E "dialer.*\| (upload:|download:|latency:|  (iterations|min|q1|median|q3|max|outliers|samples|unit):)" | sed 's/^.*| //' || echo "")
 
 # Save complete result to individual file
 cat > "$TEST_PASS_DIR/results/${test_name}.yaml" <<EOF

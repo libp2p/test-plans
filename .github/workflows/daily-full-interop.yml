@@ -120,45 +120,6 @@ on:
         type: boolean
 
 jobs:
-  check-transport-changes:
-    if: github.event_name != 'workflow_dispatch'
-    runs-on: [self-hosted, linux, x64, ephemeral]
-    outputs:
-      has-changes: ${{ steps.check.outputs.has-changes }}
-      impls-yaml-changed: ${{ steps.check.outputs.impls-yaml-changed }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Check transport changes in last 24 hours
-        id: check
-        shell: bash
-        run: |
-          # Check if anything in transport/ changed in last 24 hours
-          CHANGES=$(git log --oneline --since="24 hours ago" -- "transport/**" | wc -l)
-
-          if [ "$CHANGES" -eq 0 ]; then
-            echo "has-changes=false" >> $GITHUB_OUTPUT
-            echo "impls-yaml-changed=false" >> $GITHUB_OUTPUT
-            echo "→ No changes in transport/ in last 24 hours, skipping tests"
-            exit 0
-          fi
-
-          echo "has-changes=true" >> $GITHUB_OUTPUT
-
-          # Check specifically if impls.yaml changed in last 24 hours
-          IMPLS_CHANGES=$(git log --oneline --since="24 hours ago" -- "transport/impls.yaml" | wc -l)
-
-          if [ "$IMPLS_CHANGES" -gt 0 ]; then
-            echo "impls-yaml-changed=true" >> $GITHUB_OUTPUT
-            echo "→ transport/impls.yaml changed in last 24h, will force matrix rebuild"
-          else
-            echo "impls-yaml-changed=false" >> $GITHUB_OUTPUT
-            echo "→ Other transport files changed, using cached matrix if available"
-          fi
-
   resolve-transport-parameters:
     runs-on: [self-hosted, linux, x64, ephemeral]
     outputs:
@@ -218,45 +179,6 @@ jobs:
         run: |
           echo "DEBUG: should-run-tests output = '${{ steps.resolve.outputs.should-run-tests }}'"
           echo "DEBUG: github.event_name = '${{ github.event_name }}'"
-
-  check-hole-punch-changes:
-    if: github.event_name != 'workflow_dispatch'
-    runs-on: [self-hosted, linux, x64, ephemeral]
-    outputs:
-      has-changes: ${{ steps.check.outputs.has-changes }}
-      impls-yaml-changed: ${{ steps.check.outputs.impls-yaml-changed }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Check hole-punch changes in last 24 hours
-        id: check
-        shell: bash
-        run: |
-          # Check if anything in hole-punch/ changed in last 24 hours
-          CHANGES=$(git log --oneline --since="24 hours ago" -- "hole-punch/**" | wc -l)
-
-          if [ "$CHANGES" -eq 0 ]; then
-            echo "has-changes=false" >> $GITHUB_OUTPUT
-            echo "impls-yaml-changed=false" >> $GITHUB_OUTPUT
-            echo "→ No changes in hole-punch/ in last 24 hours, skipping tests"
-            exit 0
-          fi
-
-          echo "has-changes=true" >> $GITHUB_OUTPUT
-
-          # Check specifically if impls.yaml changed in last 24 hours
-          IMPLS_CHANGES=$(git log --oneline --since="24 hours ago" -- "hole-punch/impls.yaml" | wc -l)
-
-          if [ "$IMPLS_CHANGES" -gt 0 ]; then
-            echo "impls-yaml-changed=true" >> $GITHUB_OUTPUT
-            echo "→ hole-punch/impls.yaml changed in last 24h, will force matrix rebuild"
-          else
-            echo "impls-yaml-changed=false" >> $GITHUB_OUTPUT
-            echo "→ Other hole-punch files changed, using cached matrix if available"
-          fi
 
   resolve-hole-punch-parameters:
     runs-on: [self-hosted, linux, x64, ephemeral]
@@ -322,45 +244,6 @@ jobs:
               echo "force-matrix-rebuild=false" >> $GITHUB_OUTPUT
               echo "→ Automatic trigger: no hole-punch changes in last 24h"
             fi
-          fi
-
-  check-perf-changes:
-    if: github.event_name != 'workflow_dispatch'
-    runs-on: [self-hosted, linux, x64, ephemeral]
-    outputs:
-      has-changes: ${{ steps.check.outputs.has-changes }}
-      impls-yaml-changed: ${{ steps.check.outputs.impls-yaml-changed }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Check perf changes in last 24 hours
-        id: check
-        shell: bash
-        run: |
-          # Check if anything in perf/ changed in last 24 hours
-          CHANGES=$(git log --oneline --since="24 hours ago" -- "perf/**" | wc -l)
-
-          if [ "$CHANGES" -eq 0 ]; then
-            echo "has-changes=false" >> $GITHUB_OUTPUT
-            echo "impls-yaml-changed=false" >> $GITHUB_OUTPUT
-            echo "→ No changes in perf/ in last 24 hours, skipping tests"
-            exit 0
-          fi
-
-          echo "has-changes=true" >> $GITHUB_OUTPUT
-
-          # Check specifically if impls.yaml changed in last 24 hours
-          IMPLS_CHANGES=$(git log --oneline --since="24 hours ago" -- "perf/impls.yaml" | wc -l)
-
-          if [ "$IMPLS_CHANGES" -gt 0 ]; then
-            echo "impls-yaml-changed=true" >> $GITHUB_OUTPUT
-            echo "→ perf/impls.yaml changed in last 24h, will force matrix rebuild"
-          else
-            echo "impls-yaml-changed=false" >> $GITHUB_OUTPUT
-            echo "→ Other perf files changed, using cached matrix if available"
           fi
 
   resolve-perf-parameters:
