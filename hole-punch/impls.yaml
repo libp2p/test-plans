@@ -1,0 +1,48 @@
+# Hole Punch Interop - Implementation Definitions
+# This file defines all implementations to test for hole punching interoperability
+
+# Test Aliases - Define reusable patterns for test selection
+# Usage: --test-select "~linux" or --test-ignore "!~linux"
+test-aliases:
+  - alias: "linux"
+    value: "linux"
+  - alias: "failing"
+    value: ""
+
+# Relay configurations - Multiple relay types for testing different implementations
+# Docker image naming: hole-punch-relay-<id>
+relays:
+  - id: linux
+    source:
+      type: local
+      path: impls/linux/relay
+      dockerfile: Dockerfile
+    delayMs: 25
+
+# Router configurations - Multiple router types for testing different NAT implementations
+# Docker image naming: hole-punch-router-<id>
+routers:
+  - id: linux
+    source:
+      type: local
+      path: impls/linux/router
+      dockerfile: Dockerfile
+    delayMs: 100
+
+# Implementation definitions
+# Docker image naming: hole-punch-peer-<id>
+implementations:
+  - id: linux
+    source:
+      type: local
+      path: impls/linux/peer
+      dockerfile: Dockerfile
+    transports:
+      - tcp
+      - quic-v1
+    secureChannels:
+      - noise
+      - tls
+    muxers:
+      - yamux
+      - mplex

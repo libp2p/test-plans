@@ -2,13 +2,114 @@
 
 This project includes the following components:
 
-- `terraform/`: a Terraform scripts to provision infrastructure
+- `terraform/`: Terraform scripts to provision AWS infrastructure
 - `impl/`: implementations of the [libp2p perf protocol](https://github.com/libp2p/specs/blob/master/perf/perf.md) running on top of e.g. go-libp2p, rust-libp2p or Go's std-library https stack
-- `runner/`: a set of scripts building and running the above implementations on the above infrastructure, reporting the results in `benchmark-results.json`
+- `runner/`: Node.js scripts for building and running tests on AWS infrastructure
+- **NEW:** `scripts/`: Bash-based test runner for local/remote hardware (no AWS required)
+- **NEW:** `impls/`: Dockerized implementations following hole-punch/transport patterns
 
 Benchmark results can be visualized with https://observablehq.com/@libp2p-workspace/performance-dashboard.
 
-## Running via GitHub Action
+## Quick Start (Bash-Based Tests - Recommended)
+
+**NEW:** Run performance tests on your own hardware without AWS!
+
+```bash
+# Quick test on single machine
+./run_tests.sh --test-select "go-libp2p" --iterations 3
+
+# See QUICKSTART.md for detailed setup instructions
+```
+
+**Features:**
+- ✅ No AWS account required
+- ✅ Run on local hardware or remote servers
+- ✅ Docker-based implementations
+- ✅ Results in YAML, Markdown, and HTML formats
+- ✅ Compatible with hole-punch/transport test patterns
+
+See **[QUICKSTART.md](QUICKSTART.md)** for complete setup and usage instructions.
+
+---
+
+## Setup for Multi-Machine Testing
+
+### SSH Key-Based Authentication
+
+For remote server testing, setup passwordless SSH authentication between your test runner (Computer 1) and server (Computer 2):
+
+#### 1. Generate SSH Key (Computer 1)
+
+```bash
+# Generate dedicated key for perf testing
+ssh-keygen -t ed25519 -f ~/.ssh/perf_server -N ""
+```
+
+This creates two files:
+- `~/.ssh/perf_server` - Private key (keep secure)
+- `~/.ssh/perf_server.pub` - Public key (copy to server)
+
+#### 2. Copy Public Key to Server (Computer 2)
+
+```bash
+# Replace with your server's username and IP/hostname
+ssh-copy-id -i ~/.ssh/perf_server.pub perfuser@192.168.1.100
+```
+
+You'll be prompted for the password **once**. After this, SSH will use key-based authentication.
+
+#### 3. Test Connection
+
+```bash
+# Should connect without password prompt
+ssh -i ~/.ssh/perf_server perfuser@192.168.1.100 "echo 'Connection successful'"
+```
+
+#### 4. Configure in impls.yaml
+
+Edit `perf/impls.yaml` to add your remote server:
+
+```yaml
+servers:
+  - id: remote-1
+    type: remote
+    hostname: "192.168.1.100"    # Your Computer 2 IP/hostname
+    username: "perfuser"          # SSH username on Computer 2
+    description: "Remote server"
+
+implementations:
+  - id: rust-libp2p-v0.53
+    # ... other configuration ...
+    server: remote-1  # Use remote server for this implementation
+```
+
+#### 5. Server Requirements (Computer 2)
+
+On the remote server, ensure:
+
+- **Docker installed and running:**
+  ```bash
+  curl -fsSL https://get.docker.com | sh
+  sudo usermod -aG docker $USER
+  # Log out and back in
+  ```
+
+- **Port 4001 accessible** (default perf protocol port):
+  ```bash
+  sudo ufw allow 4001/tcp  # If firewall enabled
+  ```
+
+- **User in docker group** (run Docker without sudo):
+  ```bash
+  # Verify
+  docker ps
+  ```
+
+See **[QUICKSTART.md](QUICKSTART.md)** for detailed troubleshooting and setup instructions.
+
+---
+
+## Running via GitHub Action (AWS-Based)
 
 1. Create a pull request with your changes on https://github.com/libp2p/test-plans/.
 2. Trigger GitHub Action for branch on https://github.com/libp2p/test-plans/actions/workflows/perf.yml (see _Run workflow_ button).
@@ -75,8 +176,8 @@ Given you have provisioned your infrastructure, you can now build and run the li
           - Input via command line
             - `--server-address`
             - `--transport` (see [`runner/versions.ts`](./runner/src/versions.ts#L7-L43) for possible variants)
-            - `--upload-bytes` number of bytes to upload per stream.
-            - `--download-bytes` number of bytes to download per stream.
+            - `--upload-bytes` number of bytes to upload per stream in 64KiB chunks.
+            - `--download-bytes` number of bytes to download per stream in 64KiB chunks.
           - Output
             - Logging MUST go to `stderr`.
             - Measurement output is printed to `stdout` as JSON.
@@ -109,3 +210,180 @@ Given you have provisioned your infrastructure, you can now build and run the li
                ```
 2. For a new implementation, in [`impl/Makefile` include your implementation in the `all` target.](./impl/Makefile#L7)
 3. For a new version, reference version in [`runner/src/versions.ts`](./runner/src/versions.ts#L7-L43).
+
+## Latest Test Results
+
+<!-- TEST_RESULTS_START -->
+# Performance Test Results
+
+**Test Pass:** perf-023904-17-12-2025
+**Started:** 2025-12-17T02:39:04Z
+**Completed:** 2025-12-17T02:50:19Z
+**Duration:** 675s
+**Platform:** x86_64 (Linux)
+
+## Summary
+
+- **Total Tests:** 23 (3 baseline + 20 main)
+- **Passed:** 5 (21.7%)
+- **Failed:** 18
+
+### Baseline Results
+- Total: 3
+- Passed: 0
+- Failed: 3
+
+### Main Test Results
+- Total: 20
+- Passed: 5
+- Failed: 15
+
+## Box Plot Statistics
+
+### Upload Throughput (Gbps)
+
+| Test | Min | Q1 | Median | Q3 | Max | Outliers |
+|------|-----|-------|--------|-------|-----|----------|
+| rust-v0.56 x rust-v0.56 (tcp, noise, yamux) | null | null | null | null | null | 0 |
+| rust-v0.56 x rust-v0.56 (tcp, noise, mplex) | null | null | null | null | null | 0 |
+| rust-v0.56 x rust-v0.56 (tcp, tls, yamux) | null | null | null | null | null | 0 |
+| rust-v0.56 x rust-v0.56 (tcp, tls, mplex) | null | null | null | null | null | 0 |
+| rust-v0.56 x rust-v0.56 (quic-v1) | 1.04 | 1.26 | 1.57 | 1.93 | 2.29 | 0 |
+| rust-v0.56 x dotnet-v1.0 (tcp, noise, yamux) | 0.93 | 0.93 | 0.94 | 0.97 | 1.01 | 0 |
+| rust-v0.56 x dotnet-v1.0 (tcp, noise, mplex) | 0.96 | 0.96 | 0.96 | 0.96 | 0.96 | 0 |
+| rust-v0.56 x dotnet-v1.0 (tcp, tls, yamux) | 0.87 | 0.89 | 0.92 | 0.94 | 0.96 | 0 |
+| rust-v0.56 x dotnet-v1.0 (tcp, tls, mplex) | 0.86 | 0.89 | 0.93 | 0.96 | 1.00 | 0 |
+| rust-v0.56 x dotnet-v1.0 (quic-v1) | null | null | null | null | null | 0 |
+| dotnet-v1.0 x rust-v0.56 (tcp, noise, yamux) | null | null | null | null | null | 0 |
+| dotnet-v1.0 x rust-v0.56 (tcp, noise, mplex) | null | null | null | null | null | 0 |
+| dotnet-v1.0 x rust-v0.56 (tcp, tls, yamux) | null | null | null | null | null | 0 |
+| dotnet-v1.0 x rust-v0.56 (tcp, tls, mplex) | null | null | null | null | null | 0 |
+| dotnet-v1.0 x rust-v0.56 (quic-v1) | null | null | null | null | null | 0 |
+| dotnet-v1.0 x dotnet-v1.0 (tcp, noise, yamux) | null | null | null | null | null | 0 |
+| dotnet-v1.0 x dotnet-v1.0 (tcp, noise, mplex) | null | null | null | null | null | 0 |
+| dotnet-v1.0 x dotnet-v1.0 (tcp, tls, yamux) | null | null | null | null | null | 0 |
+| dotnet-v1.0 x dotnet-v1.0 (tcp, tls, mplex) | null | null | null | null | null | 0 |
+| dotnet-v1.0 x dotnet-v1.0 (quic-v1) | null | null | null | null | null | 0 |
+
+### Download Throughput (Gbps)
+
+| Test | Min | Q1 | Median | Q3 | Max | Outliers |
+|------|-----|-------|--------|-------|-----|----------|
+| rust-v0.56 x rust-v0.56 (tcp, noise, yamux) | null | null | null | null | null | 0 |
+| rust-v0.56 x rust-v0.56 (tcp, noise, mplex) | null | null | null | null | null | 0 |
+| rust-v0.56 x rust-v0.56 (tcp, tls, yamux) | null | null | null | null | null | 0 |
+| rust-v0.56 x rust-v0.56 (tcp, tls, mplex) | null | null | null | null | null | 0 |
+| rust-v0.56 x rust-v0.56 (quic-v1) | 2.08 | 2.10 | 2.14 | 2.17 | 2.19 | 1 |
+| rust-v0.56 x dotnet-v1.0 (tcp, noise, yamux) | 189.22 | 191.03 | 195.64 | 196.93 | 199.59 | 1 |
+| rust-v0.56 x dotnet-v1.0 (tcp, noise, mplex) | 186.29 | 190.54 | 194.65 | 198.27 | 199.14 | 1 |
+| rust-v0.56 x dotnet-v1.0 (tcp, tls, yamux) | 193.10 | 193.21 | 194.70 | 195.77 | 199.22 | 2 |
+| rust-v0.56 x dotnet-v1.0 (tcp, tls, mplex) | 190.38 | 191.81 | 194.15 | 195.63 | 201.23 | 1 |
+| rust-v0.56 x dotnet-v1.0 (quic-v1) | null | null | null | null | null | 0 |
+| dotnet-v1.0 x rust-v0.56 (tcp, noise, yamux) | null | null | null | null | null | 0 |
+| dotnet-v1.0 x rust-v0.56 (tcp, noise, mplex) | null | null | null | null | null | 0 |
+| dotnet-v1.0 x rust-v0.56 (tcp, tls, yamux) | null | null | null | null | null | 0 |
+| dotnet-v1.0 x rust-v0.56 (tcp, tls, mplex) | null | null | null | null | null | 0 |
+| dotnet-v1.0 x rust-v0.56 (quic-v1) | null | null | null | null | null | 0 |
+| dotnet-v1.0 x dotnet-v1.0 (tcp, noise, yamux) | null | null | null | null | null | 0 |
+| dotnet-v1.0 x dotnet-v1.0 (tcp, noise, mplex) | null | null | null | null | null | 0 |
+| dotnet-v1.0 x dotnet-v1.0 (tcp, tls, yamux) | null | null | null | null | null | 0 |
+| dotnet-v1.0 x dotnet-v1.0 (tcp, tls, mplex) | null | null | null | null | null | 0 |
+| dotnet-v1.0 x dotnet-v1.0 (quic-v1) | null | null | null | null | null | 0 |
+
+### Latency (seconds)
+
+| Test | Min | Q1 | Median | Q3 | Max | Outliers |
+|------|-----|-------|--------|-------|-----|----------|
+| rust-v0.56 x rust-v0.56 (tcp, noise, yamux) | null | null | null | null | null | 0 |
+| rust-v0.56 x rust-v0.56 (tcp, noise, mplex) | null | null | null | null | null | 0 |
+| rust-v0.56 x rust-v0.56 (tcp, tls, yamux) | null | null | null | null | null | 0 |
+| rust-v0.56 x rust-v0.56 (tcp, tls, mplex) | null | null | null | null | null | 0 |
+| rust-v0.56 x rust-v0.56 (quic-v1) | 0.358 | 0.372 | 0.380 | 0.390 | 0.410 | 5 |
+| rust-v0.56 x dotnet-v1.0 (tcp, noise, yamux) | 87.808 | 87.914 | 87.960 | 88.027 | 88.174 | 14 |
+| rust-v0.56 x dotnet-v1.0 (tcp, noise, mplex) | 87.756 | 87.908 | 87.950 | 88.036 | 88.162 | 12 |
+| rust-v0.56 x dotnet-v1.0 (tcp, tls, yamux) | 87.784 | 87.905 | 87.947 | 88.024 | 88.166 | 17 |
+| rust-v0.56 x dotnet-v1.0 (tcp, tls, mplex) | 87.729 | 87.889 | 87.954 | 88.019 | 88.212 | 12 |
+| rust-v0.56 x dotnet-v1.0 (quic-v1) | null | null | null | null | null | 0 |
+| dotnet-v1.0 x rust-v0.56 (tcp, noise, yamux) | null | null | null | null | null | 0 |
+| dotnet-v1.0 x rust-v0.56 (tcp, noise, mplex) | null | null | null | null | null | 0 |
+| dotnet-v1.0 x rust-v0.56 (tcp, tls, yamux) | null | null | null | null | null | 0 |
+| dotnet-v1.0 x rust-v0.56 (tcp, tls, mplex) | null | null | null | null | null | 0 |
+| dotnet-v1.0 x rust-v0.56 (quic-v1) | null | null | null | null | null | 0 |
+| dotnet-v1.0 x dotnet-v1.0 (tcp, noise, yamux) | null | null | null | null | null | 0 |
+| dotnet-v1.0 x dotnet-v1.0 (tcp, noise, mplex) | null | null | null | null | null | 0 |
+| dotnet-v1.0 x dotnet-v1.0 (tcp, tls, yamux) | null | null | null | null | null | 0 |
+| dotnet-v1.0 x dotnet-v1.0 (tcp, tls, mplex) | null | null | null | null | null | 0 |
+| dotnet-v1.0 x dotnet-v1.0 (quic-v1) | null | null | null | null | null | 0 |
+
+## Test Results
+
+### https x https (https)
+- Status: fail
+
+### quic-go x quic-go (quic)
+- Status: fail
+
+### iperf x iperf (tcp)
+- Status: fail
+
+### rust-v0.56 x rust-v0.56 (tcp, noise, yamux)
+- Status: fail
+
+### rust-v0.56 x rust-v0.56 (tcp, noise, mplex)
+- Status: fail
+
+### rust-v0.56 x rust-v0.56 (tcp, tls, yamux)
+- Status: fail
+
+### rust-v0.56 x rust-v0.56 (tcp, tls, mplex)
+- Status: fail
+
+### rust-v0.56 x rust-v0.56 (quic-v1)
+- Status: pass
+
+### rust-v0.56 x dotnet-v1.0 (tcp, noise, yamux)
+- Status: pass
+
+### rust-v0.56 x dotnet-v1.0 (tcp, noise, mplex)
+- Status: pass
+
+### rust-v0.56 x dotnet-v1.0 (tcp, tls, yamux)
+- Status: pass
+
+### rust-v0.56 x dotnet-v1.0 (tcp, tls, mplex)
+- Status: pass
+
+### rust-v0.56 x dotnet-v1.0 (quic-v1)
+- Status: fail
+
+### dotnet-v1.0 x rust-v0.56 (tcp, noise, yamux)
+- Status: fail
+
+### dotnet-v1.0 x rust-v0.56 (tcp, noise, mplex)
+- Status: fail
+
+### dotnet-v1.0 x rust-v0.56 (tcp, tls, yamux)
+- Status: fail
+
+### dotnet-v1.0 x rust-v0.56 (tcp, tls, mplex)
+- Status: fail
+
+### dotnet-v1.0 x rust-v0.56 (quic-v1)
+- Status: fail
+
+### dotnet-v1.0 x dotnet-v1.0 (tcp, noise, yamux)
+- Status: fail
+
+### dotnet-v1.0 x dotnet-v1.0 (tcp, noise, mplex)
+- Status: fail
+
+### dotnet-v1.0 x dotnet-v1.0 (tcp, tls, yamux)
+- Status: fail
+
+### dotnet-v1.0 x dotnet-v1.0 (tcp, tls, mplex)
+- Status: fail
+
+### dotnet-v1.0 x dotnet-v1.0 (quic-v1)
+- Status: fail
+
+<!-- TEST_RESULTS_END -->
