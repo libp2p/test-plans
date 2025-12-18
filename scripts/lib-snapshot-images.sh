@@ -18,13 +18,23 @@ save_docker_images_for_tests() {
     # Collect all unique image names needed
     declare -A unique_images
 
-    # Get unique implementations (dialers and listeners)
+    # Get unique implementations (all test types use .dialer and .listener)
     while read -r impl_id; do
-        if [ -n "$impl_id" ]; then
+        if [ -n "$impl_id" ] && [ "$impl_id" != "null" ]; then
             local img_name=$(get_impl_image_name "$impl_id" "$test_type")
             unique_images["$img_name"]=1
         fi
     done < <(yq eval '.tests[] | [.dialer, .listener][]' "$snapshot_dir/test-matrix.yaml" | sort -u)
+
+    # For perf, also get baseline implementations
+    if [ "$test_type" = "perf" ]; then
+        while read -r impl_id; do
+            if [ -n "$impl_id" ] && [ "$impl_id" != "null" ]; then
+                local img_name=$(get_impl_image_name "$impl_id" "$test_type")
+                unique_images["$img_name"]=1
+            fi
+        done < <(yq eval '.baselines[] | [.dialer, .listener][]' "$snapshot_dir/test-matrix.yaml" 2>/dev/null | sort -u)
+    fi
 
     # For hole-punch tests, also collect relays and routers
     if [ "$test_type" = "hole-punch" ]; then

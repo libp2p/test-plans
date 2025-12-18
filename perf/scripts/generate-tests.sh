@@ -148,9 +148,6 @@ for ((i=0; i<baseline_count; i++)); do
 done
 
 echo "  ✓ Loaded ${#baseline_ids[@]} baselines into memory"
-if [ "${DEBUG:-false}" = "true" ]; then
-    echo "  DEBUG: Baseline IDs: ${baseline_ids[*]}" >&2
-fi
 
 # Load main implementation data
 impl_count=$(yq eval '.implementations | length' impls.yaml)
@@ -200,7 +197,7 @@ echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔�
 # Create test matrix header
 cat > "$TEST_PASS_DIR/test-matrix.yaml" <<EOF
 metadata:
-  testPass: $TEST_PASS_NAME
+  testPass: ${TEST_PASS_NAME:-perf-$(date +%H%M%S-%d-%m-%Y)}
   startedAt: $(date -u +%Y-%m-%dT%H:%M:%SZ)
   select: |-
     $TEST_SELECT

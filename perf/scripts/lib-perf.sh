@@ -215,7 +215,14 @@ calculate_stats() {
 # Log with timestamp
 # Usage: log_info "message"
 log_info() {
-  echo "[$(date +'%Y-%m-%d %H:%M:%S')] INFO: $*" >&2
+  local msg="[$(date +'%Y-%m-%d %H:%M:%S')] INFO: $*"
+
+  # Write to log file if available, otherwise to stderr
+  if [ -n "${LOG_FILE:-}" ]; then
+    echo "$msg" >> "$LOG_FILE"
+  else
+    echo "$msg" >&2
+  fi
 }
 
 # Log error with timestamp

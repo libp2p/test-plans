@@ -1,1555 +1,1270 @@
 # Scripts Design Documentation
 
-This document provides comprehensive documentation for all scripts used across the test-plans repository, including common scripts shared by all test suites and test-specific scripts for transport, hole-punch, and perf tests.
+## Introduction
 
-## Table of Contents
+This document explains how the test infrastructure works in the test-plans repository. It covers the complete execution flow from running tests to creating snapshots, with detailed documentation of all common functions.
 
-- [Overview](#overview)
-- [Common Scripts](#common-scripts)
-- [Common Libraries](#common-libraries)
-- [Transport-Specific Scripts](#transport-specific-scripts)
-- [Hole-Punch-Specific Scripts](#hole-punch-specific-scripts)
-- [Perf-Specific Scripts](#perf-specific-scripts)
-- [Architecture Patterns](#architecture-patterns)
-- [Usage Examples](#usage-examples)
+**Purpose**: Provide a clear understanding of:
+- How tests are executed from start to finish
+- How filtering, caching, and building work
+- How to add new test suites
+- Reference for all common functions
 
----
-
-## Overview
-
-The test-plans repository uses a unified bash-based script architecture that provides:
-- **Pure bash orchestration** (no Node.js/npm/TypeScript dependencies)
-- **YAML-based configuration** for all test definitions
-- **Content-addressed caching** for optimal performance
-- **Modular design** with shared common libraries
-- **Test-specific customization** for different test types
-
-### Script Organization
-
-```
-test-plans/
-├── scripts/                          # Common scripts shared by all test suites
-│   ├── build-single-image.sh        # Single Docker image builder
-│   ├── check-dependencies.sh        # Dependency verification
-│   ├── lib-image-building.sh        # Docker build functions
-│   ├── lib-image-naming.sh          # Image naming conventions
-│   ├── lib-remote-execution.sh      # SSH remote execution
-│   ├── lib-snapshot-images.sh       # Docker image snapshots
-│   ├── lib-test-aliases.sh          # Test alias expansion
-│   ├── lib-test-caching.sh          # Test matrix caching
-│   ├── lib-test-execution.sh        # Test execution helpers
-│   ├── lib-test-filtering.sh        # Test filtering logic
-│   └── update-readme-results.sh     # Results formatting
-├── transport/scripts/                # Transport-specific scripts
-├── hole-punch/scripts/               # Hole-punch-specific scripts
-└── perf/scripts/                     # Perf-specific scripts
-```
-
-### Design Principles
-
-1. **Never modify shared scripts** - Test-specific logic goes in test directories
-2. **Use CACHE_DIR variable** - Never hardcode paths like `/srv/cache`
-3. **Error handling** - All scripts use `set -euo pipefail`
-4. **Content addressing** - All artifacts are content-hashed for deduplication
-5. **Parallel execution** - Tests run in parallel with configurable workers
+**Target audience**: Developers maintaining or extending the test infrastructure.
 
 ---
 
-## Common Scripts
+## Test Execution Flow
 
-These scripts are located in the `scripts/` directory and are shared across all test suites.
+### Overview
 
-### build-single-image.sh
+When you run `./run_tests.sh`, the system goes through a well-defined sequence of steps from argument parsing to final results.
 
-**Purpose**: Builds a single Docker image from a YAML configuration file.
+### Complete Execution Flow
 
-**Usage**:
-```bash
-./scripts/build-single-image.sh /srv/cache/build-yamls/docker-build-<name>.yaml
-```
+#### Step 1: Argument Parsing
+**Location**: `run_tests.sh` lines 64-91
 
-**Features**:
-- Reads YAML configuration with build context, Dockerfile path, and source information
-- Supports GitHub, local, and browser source types
-- Handles source code downloading and caching
-- Tags images with content-based naming
-- Used by all test suite build orchestrators
+Parses command-line options and sets environment variables.
 
-**Input YAML Schema**:
-```yaml
-image_name: transport-interop-rust-v0.56
-build_context: /srv/cache/snapshots/abc123/interop-tests
-dockerfile: Dockerfile.native
-source:
-  type: github
-  repo: libp2p/rust-libp2p
-  commit: abc123...
-```
+**Options processed**:
+- `--test-select VALUE` - Select tests
+- `--test-ignore VALUE` - Ignore tests
+- `--workers VALUE` - Parallel workers
+- `--debug` - Debug mode
+- `--force-matrix-rebuild` - Bypass matrix cache
+- `--force-image-rebuild` - Rebuild images
+- Test-type-specific options (relay, router, baseline, iterations)
 
-**Exit Codes**:
-- `0`: Build succeeded
-- `1`: Build failed
+**Output**: Environment variables set (TEST\_SELECT, WORKERS, DEBUG, etc.)
 
-### check-dependencies.sh
+#### Step 2: Dependency Check (if `--check-deps`)
+**Function called**: `bash ../scripts/check-dependencies.sh`
 
-**Purpose**: Verifies all required system dependencies are installed and meet minimum versions.
-
-**Usage**:
-```bash
-bash ../scripts/check-dependencies.sh
-```
-
-**Checks**:
+**Validates**:
 - bash 4.0+
 - docker 20.10+
 - yq 4.0+
-- wget
-- unzip
-- Docker Compose (auto-detects `docker compose` vs `docker-compose`)
+- wget, unzip
 
-**Side Effects**:
-- Exports `DOCKER_COMPOSE_CMD` to `/tmp/docker-compose-cmd.txt`
-- This file is read by test runners to determine the correct Docker Compose command
+**Output**: Exit 0 if satisfied, exit 1 if missing
 
-**Exit Codes**:
-- `0`: All dependencies satisfied
-- `1`: Missing or outdated dependencies
+#### Step 3: List Commands (if `--list-impls`, `--list-tests`, etc.)
 
-### update-readme-results.sh
+**For** `--list-impls`:
+- **Function**: `yq eval '.implementations[].id' impls.yaml`
+- **Output**: List of implementation IDs
 
-**Purpose**: Updates README.md files with latest test results between comment markers.
+**For** `--list-tests`:
+- **Functions**: `bash scripts/generate-tests.sh` then extract `.tests[].name`
+- **Output**: List of test names
 
-**Usage**:
-```bash
-./scripts/update-readme-results.sh <readme-file> <results-file>
-```
+**Result**: Displays information and exits
 
-**Features**:
-- Finds `<!-- TEST_RESULTS_START -->` and `<!-- TEST_RESULTS_END -->` markers
-- Replaces content between markers with new results
-- Preserves all other README content unchanged
-- Used by CI/CD workflows to update documentation
-
-**Example**:
-```bash
-./scripts/update-readme-results.sh transport/README.md transport/results.md
-```
-
----
-
-## Common Libraries
-
-These bash libraries provide reusable functions for test-specific scripts. All libraries are sourced (not executed) and provide functions that can be called from test scripts.
-
-### lib-test-aliases.sh
-
-**Purpose**: Test alias expansion for simplified test selection.
-
-**Functions**:
-
-#### `load_aliases()`
-Loads test aliases from `impls.yaml` into a global `ALIASES` associative array.
-
-```bash
-# Example impls.yaml content
-test-aliases:
-  - alias: "rust"
-    value: "rust-v0.56|rust-v0.55|rust-v0.54"
-  - alias: "go"
-    value: "go-v0.45|go-v0.44"
-```
-
-#### `expand_aliases(input)`
-Expands alias syntax in test selection strings.
-
-**Supported Syntax**:
-- `~alias` - Expands to alias value
-- `!~alias` - Expands to all implementations NOT matching alias
-
-**Examples**:
-```bash
-source lib-test-aliases.sh
-load_aliases
-
-# Expand to rust versions
-result=$(expand_aliases "~rust")
-# Returns: "rust-v0.56|rust-v0.55|rust-v0.54"
-
-# Expand to everything EXCEPT rust
-result=$(expand_aliases "!~rust")
-# Returns: "go-v0.45|go-v0.44|python-v0.4|..." (all non-rust impls)
-```
-
-#### `get_all_impl_ids()`
-Returns all implementation IDs as a pipe-separated string.
-
-**Usage**:
-```bash
-all_impls=$(get_all_impl_ids)
-# Returns: "rust-v0.56|go-v0.45|python-v0.4|..."
-```
-
-**Best Practice Pattern**:
-To select ONLY tests in an alias (not just tests containing the alias):
-```bash
---test-select '~rust' --test-ignore '!~rust'
-```
-
-This pattern works by:
-1. `--test-select '~rust'` includes all rust implementations
-2. `--test-ignore '!~rust'` ignores everything that is NOT rust
-3. The intersection gives you exactly the rust tests
-
-### lib-test-filtering.sh
-
-**Purpose**: Test filtering logic for test matrix generation.
-
-**Global Variables**:
-- `SELECT_PATTERNS`: Array of patterns to include
-- `IGNORE_PATTERNS`: Array of patterns to exclude
-
-**Functions**:
-
-#### `impl_matches_select(impl_id)`
-Checks if an implementation ID matches any SELECT pattern.
-
-**Parameters**:
-- `impl_id`: Implementation ID to check
-
-**Returns**:
-- `0` (true): Matches select criteria
-- `1` (false): Does not match
-
-#### `matches_select(test_name)`
-Checks if a test name matches any SELECT pattern.
-
-**Parameters**:
-- `test_name`: Full test name
-
-**Returns**:
-- `0` (true): Test should be included
-- `1` (false): Test should be excluded
-
-#### `should_ignore(test_name)`
-Checks if a test name matches any IGNORE pattern.
-
-**Parameters**:
-- `test_name`: Full test name
-
-**Returns**:
-- `0` (true): Test should be ignored
-- `1` (false): Test should not be ignored
-
-#### `get_common(list1, list2)`
-Finds common elements between two space-separated lists.
-
-**Example**:
-```bash
-common=$(get_common "tcp ws quic" "ws quic webrtc")
-# Returns: "ws quic"
-```
-
-**Usage Pattern**:
-```bash
-source lib-test-filtering.sh
-
-# Setup filter patterns
-IFS='|' read -ra SELECT_PATTERNS <<< "$TEST_SELECT"
-IFS='|' read -ra IGNORE_PATTERNS <<< "$TEST_IGNORE"
-
-# Check if test should be included
-if matches_select "$test_name" && ! should_ignore "$test_name"; then
-    # Add test to matrix
-fi
-```
-
-### lib-test-caching.sh
-
-**Purpose**: Test matrix caching to speed up repeated test runs.
-
-**Functions**:
-
-#### `compute_cache_key(test_select, test_ignore, debug)`
-Computes a content-based cache key for test configuration.
-
-**Parameters**:
-- `test_select`: TEST_SELECT filter string
-- `test_ignore`: TEST_IGNORE filter string
-- `debug`: Debug mode flag ("true" or "false")
-
-**Returns**: SHA256 hash (64 characters)
-
-**Implementation**:
-- Hashes impls.yaml content + parameters
-- Uses double-pipe `||` delimiter to prevent collisions
-- Example: `echo "$TEST_SELECT||$TEST_IGNORE||$DEBUG" | sha256sum`
-
-**Example**:
-```bash
-cache_key=$(compute_cache_key "$TEST_SELECT" "$TEST_IGNORE" "false")
-# Returns: "6b10a3ee4f7c9d2a..."
-```
-
-#### `check_and_load_cache(cache_key, cache_dir, output_dir)`
-Checks for cached test matrix and loads it if found.
-
-**Parameters**:
-- `cache_key`: Cache key from `compute_cache_key()`
-- `cache_dir`: Cache directory path (e.g., `/srv/cache`)
-- `output_dir`: Output directory for test-matrix.yaml
-
-**Returns**:
-- `0`: Cache hit (matrix loaded to output_dir/test-matrix.yaml)
-- `1`: Cache miss (need to generate)
-
-**Performance**:
-- Cache hit: ~50-200ms
-- Cache miss: ~2-5 seconds (regeneration needed)
-
-#### `save_to_cache(output_dir, cache_key, cache_dir)`
-Saves generated test matrix to cache.
-
-**Parameters**:
-- `output_dir`: Directory containing test-matrix.yaml
-- `cache_key`: Cache key
-- `cache_dir`: Cache directory path
-
-**Cache Structure**:
-```
-/srv/cache/test-matrix/
-└── <sha256>.yaml    # Cached test matrix files
-```
-
-### lib-image-building.sh
-
-**Purpose**: Docker image building functions for all source types.
-
-**Functions**:
-- `download_github_source()` - Downloads and caches GitHub repository snapshots
-- `prepare_build_context()` - Prepares build context from various source types
-- `build_docker_image()` - Orchestrates Docker build with proper tagging
-- `handle_browser_source()` - Special handling for browser-based implementations
-
-**Source Types Supported**:
-- **github**: Downloads from GitHub repo at specific commit
-- **local**: Uses local filesystem path
-- **browser**: Browser-based implementations (Chromium, Firefox, WebKit)
-
-**Caching Strategy**:
-```
-/srv/cache/snapshots/
-└── <commit-sha>.zip    # Content-addressed source snapshots
-```
-
-### lib-image-naming.sh
-
-**Purpose**: Standardized Docker image naming conventions.
-
-**Functions**:
-- `get_image_name()` - Generates standard image names
-- `parse_image_tag()` - Extracts components from image tags
-
-**Naming Pattern**:
-```
-<test-type>-<implementation-id>
-Example: transport-interop-rust-v0.56
-Example: hole-punch-linux
-Example: perf-rust-v0.56
-```
-
-### lib-remote-execution.sh
-
-**Purpose**: SSH-based remote build execution (primarily used by perf tests).
-
-**Functions**:
-- `setup_remote_server()` - Initializes remote server environment
-- `execute_remote_build()` - Runs Docker build on remote server
-- `sync_remote_image()` - Transfers built images back to local machine
-
-**Requirements**:
-- SSH key-based authentication
-- Remote server with Docker installed
-- User in docker group on remote server
-
-**Configuration** (in impls.yaml):
-```yaml
-servers:
-  - id: remote-1
-    type: remote
-    hostname: "192.168.1.100"
-    username: "perfuser"
-
-implementations:
-  - id: rust-v0.56
-    server: remote-1
-```
-
-### lib-snapshot-images.sh
-
-**Purpose**: Docker image snapshot utilities for test reproducibility.
-
-**Functions**:
-- `save_docker_image()` - Saves image to tar.gz
-- `load_docker_image()` - Loads image from tar.gz
-- `snapshot_all_images()` - Creates snapshots of all test images
-
-**Usage in Test Snapshots**:
-```
-/srv/cache/test-runs/<test-pass>/
-├── docker-images/
-│   ├── transport-interop-rust-v0.56.tar.gz
-│   └── transport-interop-go-v0.45.tar.gz
-```
-
-### lib-test-execution.sh
-
-**Purpose**: Common test execution helpers.
-
-**Functions**:
-- `setup_test_environment()` - Prepares test directories and networks
-- `cleanup_test_resources()` - Cleans up containers and networks
-- `parse_test_results()` - Extracts results from test output
-
----
-
-## Transport-Specific Scripts
-
-Located in `transport/scripts/`, these scripts implement transport interoperability testing.
-
-### build-images.sh
-
-**Purpose**: Build orchestrator for transport test implementations.
-
-**Usage**:
-```bash
-cd transport
-bash scripts/build-images.sh "rust-v0.56" "false"
-```
-
-**Parameters**:
-1. `TEST_SELECT`: Filter for implementations to build (pipe-separated)
-2. `DEBUG`: Debug mode flag ("true" or "false")
+#### Step 4: Load Aliases
+**Function called**: `load_aliases()` from `lib-test-aliases.sh`
 
 **Process**:
-1. Reads `impls.yaml` for implementation definitions
-2. Applies TEST_SELECT filtering
-3. Generates build YAML files in `/srv/cache/build-yamls/`
-4. Calls `build-single-image.sh` for each implementation
-5. Reports build success/failure
+- Reads `test-aliases` section from impls.yaml
+- Populates global ALIASES associative array
 
-**Build Matrix**:
-- Each implementation produces ONE Docker image
-- Image name format: `transport-interop-<impl-id>`
-- Example: `transport-interop-rust-v0.56`
+**Example**:
+```yaml
+test-aliases:
+  - alias: "rust"
+    value: "rust-v0.56|rust-v0.55"
+```
 
-### generate-tests.sh
+**Output**: ALIASES["rust"] = "rust-v0.56|rust-v0.55"
 
-**Purpose**: Generates 3D test matrix for transport interoperability.
+#### Step 5: Expand Filters
+**Function called**: `expand_filter_string(filter, all_names_array)` from `lib-filter-engine.sh`
 
-**Usage**:
+**For each filter** (TEST\_SELECT, TEST\_IGNORE, RELAY\_SELECT, etc.):
+
+**Input**: Raw filter string (e.g., `"~rust|!go"`)
+
+**Process**:
+1. Recursively expands aliases (supports nesting)
+2. Handles inversions (`!value`, `!~alias`)
+3. Deduplicates results
+4. Detects circular references
+
+**Output**: Expanded filter string (e.g., `"rust-v0.56|rust-v0.55|python-v0.4"`)
+
+**Example**:
 ```bash
-cd transport
-bash scripts/generate-tests.sh "$TEST_SELECT" "$TEST_IGNORE" "$DEBUG"
+Input:  "~rust|go-v0.45"
+Expands: ~rust → rust-v0.56|rust-v0.55
+Output: "go-v0.45|rust-v0.55|rust-v0.56"
 ```
 
-**Test Dimensions**:
-1. **Dialer** (implementation acting as client)
-2. **Listener** (implementation acting as server)
-3. **Transport** (tcp, ws, wss)
-4. **Secure Channel** (noise, tls)
-5. **Muxer** (yamux, mplex)
+#### Step 6: Generate Test Matrix
+**Function called**: `bash scripts/generate-tests.sh`
 
-**Special Cases**:
-- **Standalone transports** (quic-v1, webrtc-direct, webtransport): No secure channel or muxer
-- These transports provide all functionality in one protocol
+**Inputs**:
+- Expanded filter strings
+- DEBUG flag
+- FORCE\_MATRIX\_REBUILD flag
 
-**Test Matrix Generation**:
-```
-FOR each dialer in implementations:
-  FOR each listener in implementations:
-    FOR each transport in (dialer.transports ∩ listener.transports):
-      IF transport is standalone:
-        CREATE TEST: dialer x listener (transport)
-      ELSE:
-        FOR each secureChannel in (dialer.secureChannels ∩ listener.secureChannels):
-          FOR each muxer in (dialer.muxers ∩ listener.muxers):
-            CREATE TEST: dialer x listener (transport, secureChannel, muxer)
-```
+**Process**:
+1. Compute cache key: `compute_cache_key()` from `lib-test-caching.sh`
+2. Check cache: `check_and_load_cache()`
+3. If cache hit: Load and exit
+4. If cache miss:
+   - Load implementations into memory
+   - Generate all valid combinations (test-type-specific)
+   - Apply filtering: `matches_select()`, `should_ignore()`
+   - Save matrix: `save_to_cache()`
 
-**Example Test Names**:
-```
-rust-v0.53 x go-v0.45 (tcp, noise, yamux)
-rust-v0.53 x go-v0.45 (quic-v1)
-rust-v0.53 x go-v0.45 (webrtc-direct)
-```
+**Output**: `test-matrix.yaml` with all test combinations
 
-**Output**:
-- `test-matrix.yaml`: Complete test matrix
-- Cached in `/srv/cache/test-matrix/<cache-key>.yaml`
+#### Step 7: Build Docker Images
+**Function called**: `bash scripts/build-images.sh`
 
-**Performance**:
-- Uses associative arrays for O(1) lookups
-- Bulk TSV extraction (single yq call vs hundreds)
-- Typical generation: ~2-5 seconds for 2000+ tests
+**Process**:
+1. Extract unique implementations from test-matrix.yaml
+2. For each implementation:
+   - Generate build YAML
+   - Call: `bash scripts/build-single-image.sh <yaml>`
+   - Which calls: `build_from_github()` or `build_from_github_with_submodules()`
 
-### run-single-test.sh
+**Output**: Docker images tagged as `<test-type>-<impl-id>`
 
-**Purpose**: Executes a single transport interoperability test.
+#### Step 8: Run Tests in Parallel
+**Execution**: `seq 0 $((test_count - 1)) | xargs -P $WORKERS bash -c 'run_test {}'`
 
-**Usage**:
-```bash
-bash scripts/run-single-test.sh <test-index>
-```
+**For each test** (index 0 to N-1):
 
-**Parameters**:
-- `test-index`: Index into test-matrix.yaml (0-based)
+**Function called**: `bash scripts/run-single-test.sh <index>`
 
-**Test Execution**:
-1. Extract test details from test-matrix.yaml
-2. Create isolated Docker network
-3. Start listener container
-4. Start dialer container
-5. Wait for test completion
-6. Capture results (pass/fail, duration, metrics)
-7. Cleanup containers and network
+**Process**:
+1. Extract test details from test-matrix.yaml (dialer, listener, transport, etc.)
+2. Start Docker containers
+3. Wait for test completion
+4. Capture results (status, duration, metrics)
+5. Append to results.yaml.tmp with file locking
 
-**Container Architecture**:
-```
-Docker Network (10.0.0.0/24)
-├── listener (10.0.0.2) - Listens for connection
-└── dialer (10.0.0.3)   - Initiates connection
-```
+**Output**: results.yaml.tmp (partial results, one entry per test)
 
-**Exit Codes**:
-- `0`: Test passed
-- `1`: Test failed
+#### Step 9: Collect Results
+**Process**:
+1. Aggregate results.yaml.tmp
+2. Calculate summary (total, passed, failed)
+3. Add metadata (timestamps, platform, duration, worker count)
 
-### generate-dashboard.sh
+**Output**: `results.yaml` (structured test results)
 
-**Purpose**: Creates results.md markdown dashboard from results.yaml.
+#### Step 10: Generate Dashboard
+**Function called**: `bash scripts/generate-dashboard.sh`
 
-**Usage**:
-```bash
-bash scripts/generate-dashboard.sh
-```
+**Inputs**: results.yaml
 
-**Input**: `results.yaml` (structured test results)
+**Process**:
+1. Extract metadata and summary
+2. Generate results.md (summary + visualizations)
+3. Generate LATEST\_TEST\_RESULTS.md (detailed tables)
+4. Generate results.html (if pandoc available)
+5. For perf: Generate box plots
 
-**Output**: `results.md` (formatted markdown dashboard)
+**Outputs**:
+- results.md
+- LATEST\_TEST\_RESULTS.md
+- results.html
 
-**Dashboard Sections**:
-1. **Summary**: Total tests, pass/fail counts, pass rate
-2. **Environment**: Platform, OS, workers, duration
-3. **Timestamps**: Test start and completion times
-4. **Test Results**: Detailed table of all test results
-5. **Matrix View by Transport**: Dialer × Listener compatibility matrices
+#### Step 11: Create Snapshot (if `--snapshot`)
+**Function called**: `bash scripts/create-snapshot.sh`
 
-**Matrix Views**:
-- Separate matrix for each transport combination
-- Uses symbols for quick scanning (✅ pass, ❌ fail)
-- Transport abbreviations in cells (t=tcp, q=quic, etc.)
+**Process** (uses common libraries):
+1. Validate inputs
+2. Create snapshot directory structure
+3. Copy configuration, results, scripts
+4. Copy GitHub sources (ZIPs + git clones)
+5. Save Docker images
+6. Generate re-run.sh
+7. Generate README and settings
+8. Validate snapshot complete
 
-**Performance Optimization**:
-- Single yq call to extract all data
-- Associative arrays for O(1) lookups
-- 30-80x faster than previous Node.js implementation
+**Output**: Self-contained snapshot directory in `/srv/cache/test-runs/`
 
-### create-snapshot.sh
-
-**Purpose**: Creates a self-contained, reproducible test snapshot.
-
-**Usage**:
-```bash
-bash scripts/create-snapshot.sh
-```
-
-**Snapshot Contents**:
-```
-/srv/cache/test-runs/transport-HHMMSS-DD-MM-YYYY/
-├── impls.yaml              # Test configuration
-├── test-matrix.yaml        # Generated test combinations
-├── results.yaml            # Test results
-├── results.md              # Markdown dashboard
-├── settings.yaml           # Snapshot metadata
-├── scripts/                # All test scripts
-├── snapshots/              # Source code snapshots
-├── docker-images/          # Saved Docker images
-├── docker-compose/         # Generated compose files
-├── logs/                   # Test execution logs
-├── re-run.sh               # Reproducibility script
-└── README.md               # Snapshot documentation
-```
-
-**Features**:
-- Fully self-contained (can run offline)
-- Includes all source code and Docker images
-- `re-run.sh` script for exact reproduction
-- Supports `--force-rebuild` flag
+#### Step 12: Display Summary
+**Output to user**:
+- Total tests, passed, failed
+- Pass rate percentage
+- Duration
+- Snapshot location (if created)
 
 ---
 
-## Hole-Punch-Specific Scripts
+## Test Filtering
 
-Located in `hole-punch/scripts/`, these scripts implement NAT hole punching tests with DCUtR protocol.
+### Filter Syntax
 
-### build-images.sh
+Test filtering supports four pattern types:
 
-**Purpose**: Build orchestrator for hole-punch test implementations.
+1. **Value**: `rust-v0.56` - Matches names containing the value
+2. **Alias**: `~rust` - Expands to alias value from impls.yaml
+3. **Inverted value**: `!rust` - Matches names NOT containing the value
+4. **Inverted alias**: `!~rust` - Expands alias, matches names NOT in expansion
 
-**Usage**:
-```bash
-cd hole-punch
-bash scripts/build-images.sh "linux" "linux" "linux" "false"
+**Combining patterns**: Use pipe (`|`) to combine multiple patterns.
+
+**Examples**:
+- `~rust` → Expands to all rust versions
+- `!~rust` → All implementations except rust
+- `~rust|go-v0.45` → Rust versions plus go-v0.45
+- `!python` → All implementations not containing "python"
+
+### Two-Step Filtering Pattern
+
+**Critical**: All filtering follows this pattern:
+
+**Step 1 - SELECT**: Applied to ALL entity names → selected\_set
+**Step 2 - IGNORE**: Applied to selected\_set (NOT to all names) → final\_set
+
+**Example**:
+```
+Command: --test-select '~rust' --test-ignore 'v0.56'
+
+Step 1 (SELECT):
+  Input: [all implementations]
+  Filter: ~rust → rust-v0.56|rust-v0.55
+  Output: rust-v0.56, rust-v0.55
+
+Step 2 (IGNORE):
+  Input: rust-v0.56, rust-v0.55  # Only from selected set!
+  Filter: v0.56
+  Output: rust-v0.55
+
+Final: Only rust-v0.55 tests will run
 ```
 
-**Parameters**:
-1. `DIALER_SELECT`: Filter for dialer implementations
-2. `LISTENER_SELECT`: Filter for listener implementations
-3. `RELAY_SELECT`: Filter for relay implementations
-4. `DEBUG`: Debug mode flag
+### Key Functions
 
-**Build Matrix**:
-Each test requires THREE types of images:
-1. **Peer images**: For dialer and listener
-2. **Relay images**: For relay service
-3. **Router images**: For NAT routers
+#### expand\_filter\_string(filter, all\_names\_array)
 
-**Special Handling**:
-- Linux-based implementations use standard libp2p relay
-- Browser implementations require special handling
+- **Inputs**:
+  - `filter`: Raw filter string (may contain `~alias`, `!value`, `!~alias`)
+  - `all_names_array`: Name of array variable containing all possible entity names
+- **Outputs**:
+  - Fully expanded, deduplicated pipe-separated string
+- **Description**: Main entry point for filter processing. Recursively expands aliases (supports nesting), handles inversions (`!value` expands to all non-matching names, `!~alias` expands alias then negates), detects circular references, and deduplicates results. Used by all generate-tests.sh scripts.
+- **Where**: `lib-filter-engine.sh`
 
-### generate-tests.sh
+#### filter\_names(input\_names, all\_names, select\_filter, ignore\_filter)
 
-**Purpose**: Generates complex test matrix for hole punching scenarios.
+- **Inputs**:
+  - `input_names`: Name of array variable with names to filter
+  - `all_names`: Name of array variable with all possible names (for negation)
+  - `select_filter`: Raw SELECT filter string
+  - `ignore_filter`: Raw IGNORE filter string
+- **Outputs**:
+  - Filtered names (one per line via stdout)
+- **Description**: Implements complete two-step filtering pattern. First applies select filter to all input names to get selected set, then applies ignore filter to selected set (not to all names) to get final set. Ensures correct filtering semantics.
+- **Where**: `lib-filter-engine.sh`
 
-**Usage**:
-```bash
-cd hole-punch
-bash scripts/generate-tests.sh "$TEST_SELECT" "$TEST_IGNORE" "$DEBUG"
-```
+#### filter\_matches(name, filter\_string)
 
-**Test Dimensions** (8D matrix):
-1. **Dialer** (peer behind NAT)
-2. **Listener** (peer behind NAT)
-3. **Transport** (tcp, quic-v1)
-4. **Secure Channel** (noise, tls)
-5. **Muxer** (yamux, mplex)
-6. **Relay** (relay implementation)
-7. **Dialer Router** (NAT router implementation)
-8. **Listener Router** (NAT router implementation)
+- **Inputs**:
+  - `name`: Single name to check
+  - `filter_string`: Expanded filter string (pipe-separated patterns)
+- **Outputs**:
+  - Exit code: 0 if matches, 1 if no match
+- **Description**: Generic matching function that checks if name contains any pattern in filter string. Works for any entity type (implementations, relays, routers, baselines). Used throughout generate-tests.sh scripts.
+- **Where**: `lib-filter-engine.sh`
 
-**Example Test Names**:
-```
-linux x linux (tcp, noise, yamux) [relay: linux] - [dr: linux] - [lr: linux]
-linux x linux (quic-v1) [relay: linux] - [dr: linux] - [lr: linux]
-```
+#### load\_aliases()
 
-**Network Topology**:
-Each test creates isolated networks:
-```
-WAN (10.{S1}.{S2}.64/29)
-├── Relay (.65)
-├── Dialer Router (.66)
-└── Listener Router (.67)
-
-LAN-Dialer (10.{S1}.{S2}.92/30)
-└── Dialer (.94)
-
-LAN-Listener (10.{S1}.{S2}.128/30)
-└── Listener (.130)
-```
-
-**Subnet Isolation**:
-- Uses deterministic subnet derivation from test name hash
-- 65,536 unique subnet combinations (256²)
-- Collision probability: ~0.02% for 16 parallel tests
-
-### run-single-test.sh
-
-**Purpose**: Executes a single hole punch test with full network topology.
-
-**Usage**:
-```bash
-bash scripts/run-single-test.sh <test-index>
-```
-
-**Test Execution Flow**:
-1. Extract test details from test-matrix.yaml
-2. Compute unique subnet IDs from test name hash
-3. Create three Docker networks (WAN + 2 LANs)
-4. Start relay container on WAN
-5. Start NAT router containers (dual-homed)
-6. Start dialer and listener containers behind NAT
-7. Configure Redis-based coordination
-8. Wait for hole punching to complete
-9. Verify direct connection established
-10. Cleanup all containers and networks
-
-**Redis Coordination**:
-- Global Redis container shared across tests
-- Per-test key namespacing using TEST_KEY
-- Keys: `relay:{TEST_KEY}`, `listener:{TEST_KEY}`
-
-**NAT Configuration**:
-- SNAT rules for address translation
-- Traffic shaping with 100ms delay
-- Dual-homed routers connecting WAN and LAN
-
-### start-global-services.sh
-
-**Purpose**: Starts shared Redis service for test coordination.
-
-**Usage**:
-```bash
-bash scripts/start-global-services.sh
-```
-
-**Services**:
-- **Redis**: Shared coordination service
-  - Network: `redis-network`
-  - Container name: `redis-global`
-  - Used for multiaddr exchange and peer discovery
-
-**Lifecycle**:
-- Started once before test run
-- Shared across all tests with key namespacing
-- Stopped after test run completes
-
-### stop-global-services.sh
-
-**Purpose**: Stops and removes shared services.
-
-**Usage**:
-```bash
-bash scripts/stop-global-services.sh
-```
-
-**Cleanup**:
-- Stops Redis container
-- Removes Redis network
-- Cleans up any orphaned resources
-
-### generate-dashboard.sh
-
-**Purpose**: Creates hole-punch results dashboard.
-
-**Features**:
-- Summary statistics
-- Per-test results table
-- Dialer × Listener compatibility matrix
-- Test status indicators
-
-### create-snapshot.sh
-
-**Purpose**: Creates hole-punch test snapshot with all network configurations.
-
-**Special Inclusions**:
-- Network topology documentation
-- Redis configuration
-- NAT router configurations
-- Subnet allocation details
+- **Inputs**: None (reads `impls.yaml` from current directory)
+- **Outputs**: Populates global ALIASES associative array
+- **Description**: Loads test-aliases section from impls.yaml into memory for fast alias expansion. Must be called before any filter expansion. Used by all generate-tests.sh scripts.
+- **Where**: `lib-test-aliases.sh`
 
 ---
 
-## Perf-Specific Scripts
+## Test Matrix Generation
 
-Located in `perf/scripts/`, these scripts implement performance benchmarking.
+### Overview
 
-### build-images.sh
+Test matrices define all test combinations to execute. Generation is cached using content-addressed keys for performance.
 
-**Purpose**: Build orchestrator with remote server support.
+### Generation Flow
 
-**Usage**:
-```bash
-cd perf
-bash scripts/build-images.sh "go-v0.45|rust-v0.56" "false"
-```
+1. **Load Implementations**
+   - Reads impls.yaml using yq
+   - Loads into associative arrays for O(1) lookup
+   - Arrays: impl\_transports, impl\_secureChannels, impl\_muxers
 
-**Parameters**:
-1. `TEST_SELECT`: Filter for implementations to build
-2. `DEBUG`: Debug mode flag
+2. **Expand Filters**
+   - Calls `expand_filter_string()` for TEST\_SELECT, TEST\_IGNORE
+   - Also for entity-specific filters (RELAY\_SELECT, BASELINE\_SELECT, etc.)
 
-**Remote Build Support**:
-- Checks implementation `server` configuration
-- For remote servers: Executes build via SSH
-- For local builds: Uses standard build process
-- Transfers images between machines as needed
+3. **Check Cache**
+   - Computes cache key from impls.yaml + filters + debug flag
+   - Checks `/srv/cache/test-matrix/<hash>.yaml`
+   - If exists: Copies to output and returns
 
-**Server Configuration** (in impls.yaml):
+4. **Generate Combinations** (if cache miss)
+   - Test-type-specific logic generates all valid combinations
+   - **Transport**: dialer × listener × transport × secure × muxer
+   - **Hole-Punch**: + relay × dialer\_router × listener\_router (8D)
+   - **Perf**: Separate baseline and main test matrices
+
+5. **Apply Filtering**
+   - For each potential test:
+     - Check `matches_select(test_name)` - must match SELECT filter
+     - Check `should_ignore(test_name)` - must NOT match IGNORE filter
+     - If both pass: Add to matrix
+
+6. **Save Matrix**
+   - Write test-matrix.yaml
+   - Save to cache for future runs
+
+### Key Functions
+
+#### compute\_cache\_key(select, ignore, relay\_select, relay\_ignore, router\_select, router\_ignore, debug)
+
+- **Inputs**:
+  - `select`: TEST\_SELECT filter string
+  - `ignore`: TEST\_IGNORE filter string
+  - `relay_select`: RELAY\_SELECT filter (hole-punch)
+  - `relay_ignore`: RELAY\_IGNORE filter (hole-punch)
+  - `router_select`: ROUTER\_SELECT filter (hole-punch)
+  - `router_ignore`: ROUTER\_IGNORE filter (hole-punch)
+  - `debug`: Debug mode flag
+- **Outputs**:
+  - SHA-256 hash (64 hex characters)
+- **Description**: Creates content-based cache key by hashing impls.yaml content concatenated with all parameters using double-pipe (`||`) delimiter to prevent ambiguous collisions. Used to determine if test matrix can be loaded from cache.
+- **Where**: `lib-test-caching.sh`
+
+#### check\_and\_load\_cache(cache\_key, cache\_dir, output\_dir)
+
+- **Inputs**:
+  - `cache_key`: SHA-256 hash from compute\_cache\_key()
+  - `cache_dir`: Cache directory path (usually `/srv/cache`)
+  - `output_dir`: Output directory for test-matrix.yaml
+- **Outputs**:
+  - Exit code: 0 if cache hit, 1 if cache miss
+  - Side effect: Copies test-matrix.yaml to output\_dir if hit
+- **Description**: Checks if cached test matrix exists for given key. If found, copies to output directory providing 10-100x speedup. Cache hit takes ~50-200ms vs ~2-5 seconds for generation.
+- **Where**: `lib-test-caching.sh`
+
+#### save\_to\_cache(output\_dir, cache\_key, cache\_dir)
+
+- **Inputs**:
+  - `output_dir`: Directory containing test-matrix.yaml to cache
+  - `cache_key`: SHA-256 hash
+  - `cache_dir`: Cache directory path
+- **Outputs**:
+  - None (side effect: file copied to cache)
+- **Description**: Saves generated test-matrix.yaml to cache directory using cache key as filename. Enables fast loading on subsequent runs with same configuration.
+- **Where**: `lib-test-caching.sh`
+
+#### matches\_select(test\_name)
+
+- **Inputs**:
+  - `test_name`: Full test name string
+- **Outputs**:
+  - Exit code: 0 if matches, 1 if no match
+- **Description**: Checks if test name matches any pattern in SELECT\_PATTERNS array (pre-populated from expanded filter). Uses substring matching. Returns true if no select patterns defined (include all).
+- **Where**: `lib-test-filtering.sh`
+
+#### should\_ignore(test\_name)
+
+- **Inputs**:
+  - `test_name`: Full test name string
+- **Outputs**:
+  - Exit code: 0 if should ignore, 1 if keep
+- **Description**: Checks if test name matches any pattern in IGNORE\_PATTERNS array. Handles inverted patterns for dialer/listener matching (ensures both sides match for negated filters). Returns false if no ignore patterns defined.
+- **Where**: `lib-test-filtering.sh`
+
+### Test Matrix Structure
+
+Generated test-matrix.yaml contains:
+
 ```yaml
-servers:
-  - id: remote-1
-    type: remote
-    hostname: "192.168.1.100"
-    username: "perfuser"
+metadata:
+  generatedAt: 2025-12-16T10:00:00Z
+  select: "rust-v0.56|rust-v0.55"
+  ignore: ""
+  totalTests: 184
+  debug: false
 
-implementations:
-  - id: rust-v0.56
-    server: remote-1    # Build and run on remote server
-```
-
-### generate-tests.sh
-
-**Purpose**: Generates performance test matrix with baseline support.
-
-**Usage**:
-```bash
-cd perf
-bash scripts/generate-tests.sh
-```
-
-**Test Types**:
-1. **Baseline tests**: Reference implementations (iperf, https, quic-go)
-2. **Main tests**: libp2p implementation performance
-
-**Test Selection**:
-- `--test-select`: Main test implementations
-- `--test-ignore`: Main test exclusions
-- `--baseline-select`: Baseline implementations
-- `--baseline-ignore`: Baseline exclusions
-
-**Test Matrix Structure**:
-```yaml
 tests:
-  - name: rust-v0.56 x rust-v0.56 (tcp, noise, yamux)
-    type: main
-    client: rust-v0.56
-    server: rust-v0.56
+  - name: "rust-v0.56 x rust-v0.55 (tcp, noise, yamux)"
+    dialer: rust-v0.56
+    listener: rust-v0.55
     transport: tcp
     secureChannel: noise
     muxer: yamux
-    iterations: 10
-
-  - name: iperf x iperf (tcp)
-    type: baseline
-    client: iperf
-    server: iperf
-    iterations: 10
 ```
-
-### run-single-test.sh
-
-**Purpose**: Executes a single performance benchmark.
-
-**Usage**:
-```bash
-bash scripts/run-single-test.sh <test-index>
-```
-
-**Test Execution**:
-1. Start server container (listener)
-2. Wait for server readiness
-3. Start client container (dialer)
-4. Run multiple iterations
-5. Collect performance metrics:
-   - Upload throughput (Gbps)
-   - Download throughput (Gbps)
-   - Latency (seconds)
-6. Calculate statistics (min, Q1, median, Q3, max)
-7. Cleanup containers
-
-**Client-Server Model**:
-```
-Server Container (port 4001)
-  ↓
-Client Container
-  ↓ measures
-Upload/Download/Latency
-```
-
-**Iterations**:
-- Default: 10 iterations per test
-- Configurable via `--iterations` flag
-- Statistical analysis across iterations
-
-### run-baseline.sh
-
-**Purpose**: Executes baseline performance tests.
-
-**Usage**:
-```bash
-bash scripts/run-baseline.sh
-```
-
-**Baseline Implementations**:
-- **iperf**: Raw TCP performance baseline
-- **https**: Go standard library HTTPS
-- **quic-go**: Go standard library QUIC
-
-**Purpose**:
-- Establish performance ceiling
-- Compare libp2p overhead
-- Validate test infrastructure
-
-### lib-perf.sh
-
-**Purpose**: Performance test-specific helper functions.
-
-**Functions**:
-- `start_perf_server()` - Starts server container
-- `run_perf_client()` - Runs client benchmark
-- `parse_perf_output()` - Extracts metrics from JSON output
-- `calculate_statistics()` - Computes box plot statistics
-- `handle_remote_execution()` - Manages remote test execution
-
-**Remote Execution**:
-For multi-machine testing:
-1. Server runs on remote machine
-2. Client runs on local machine
-3. Network latency reflects real-world scenarios
-
-### generate-dashboard.sh
-
-**Purpose**: Creates performance results dashboard.
-
-**Output Files**:
-- `results.yaml`: Structured results
-- `results.md`: Markdown dashboard
-- `results.html`: HTML visualization
-
-**Dashboard Sections**:
-1. **Summary**: Test overview
-2. **Main Test Results**: libp2p performance
-3. **Baseline Results**: Reference performance
-4. **Environment**: Test configuration
-5. **Timestamps**: Test timing
-6. **Box Plot Statistics**: Detailed statistics
-7. **Test Results**: Individual test details
-
-### generate-boxplot.sh
-
-**Purpose**: Generates box plot visualizations using Python.
-
-**Usage**:
-```bash
-bash scripts/generate-boxplot.sh
-```
-
-**Outputs**:
-- `upload_boxplot.png`: Upload throughput distribution
-- `download_boxplot.png`: Download throughput distribution
-- `latency_boxplot.png`: Latency distribution
-
-**Statistics**:
-- Min, Q1, Median, Q3, Max
-- Outlier detection
-- Per-implementation comparison
-
-**Requirements**:
-- Python 3
-- matplotlib
-- numpy (for statistics)
-
-### setup-remote-server.sh
-
-**Purpose**: Initializes remote server for performance testing.
-
-**Usage**:
-```bash
-bash scripts/setup-remote-server.sh <server-id>
-```
-
-**Setup Tasks**:
-1. Verify SSH connectivity
-2. Check Docker installation
-3. Verify user in docker group
-4. Test network connectivity
-5. Verify port 4001 accessibility
-
-### create-snapshot.sh
-
-**Purpose**: Creates performance test snapshot.
-
-**Special Inclusions**:
-- Box plot images
-- Iteration data for all tests
-- Remote server configurations
-- Performance statistics
 
 ---
 
-## Architecture Patterns
+## GitHub Source Handling
 
-### Content-Addressed Caching
+### Overview
 
-All artifacts use content-based addressing for automatic deduplication:
+Implementations can be built from GitHub repositories using either ZIP downloads (for simple repos) or git clones (for repos with submodules).
 
-```
-/srv/cache/
-├── snapshots/<commit-sha>.zip       # Git snapshots (SHA-1, 40 chars)
-├── test-matrix/<sha256>.yaml        # Test matrices (SHA-256, 64 chars)
-├── build-yamls/                     # Build configuration files
-├── docker-images/                   # Docker image cache
-└── test-runs/                       # Test pass snapshots
-```
+### Source Type Detection
 
-**Hash Functions**:
-- **Git snapshots**: SHA-1 (from Git, 40 hex chars)
-- **Docker images**: SHA-256 (64 hex chars, `sha256:` prefix stripped)
-- **Content cache**: SHA-256 (64 hex chars)
+Check `requiresSubmodules` flag in impls.yaml:
 
-**Cache Key Format**:
-Uses double-pipe `||` delimiter to prevent ambiguous collisions:
-```bash
-cache_key=$(echo "$TEST_FILTER||$TEST_IGNORE||$DEBUG" | sha256sum | cut -d' ' -f1)
+```yaml
+implementations:
+  - id: c-v0.0.1
+    source:
+      type: github
+      repo: Pier-Two/c-libp2p
+      commit: 23a617223a3bbfb4b2af8f219f389e440b9c1ac2
+      requiresSubmodules: true  # Triggers git clone
 ```
 
-### Test Matrix Generation Pattern
+**Decision**:
+- If `requiresSubmodules: true` → Use git clone
+- Otherwise → Use ZIP download
 
-All test suites follow the same pattern:
+### ZIP Snapshot Flow
 
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
+**Used for**: Most implementations (no submodules)
 
-# 1. Source common libraries
-source "../scripts/lib-test-aliases.sh"
-source "../scripts/lib-test-filtering.sh"
-source "../scripts/lib-test-caching.sh"
+**Step 1 - Download**:
+- **Function**: `download_github_snapshot(repo, commit, cache_dir)`
+- **Downloads**: `https://github.com/<repo>/archive/<commit>.zip`
+- **Caches**: `/srv/cache/snapshots/<commit>.zip`
 
-# 2. Load aliases and expand
-load_aliases
-TEST_SELECT=$(expand_aliases "$TEST_SELECT")
-TEST_IGNORE=$(expand_aliases "$TEST_IGNORE")
+**Step 2 - Extract**:
+- **Function**: `extract_github_snapshot(snapshot_file, repo_name, commit)`
+- **Extracts**: To temporary directory
+- **Returns**: Work directory path
 
-# 3. Check cache
-cache_key=$(compute_cache_key "$TEST_SELECT" "$TEST_IGNORE" "$DEBUG")
-if check_and_load_cache "$cache_key" "$CACHE_DIR" "$TEST_PASS_DIR"; then
-    echo "Cache hit!"
-    exit 0
-fi
+**Step 3 - Build**:
+- Uses extracted source as build context
+- Runs docker build
 
-# 4. Generate test matrix
-# ... test-specific logic ...
+### Git Clone Flow (with Submodules)
 
-# 5. Save to cache
-save_to_cache "$TEST_PASS_DIR" "$cache_key" "$CACHE_DIR"
-```
+**Used for**: Implementations requiring submodules (e.g., c-v0.0.1)
 
-### Parallel Test Execution Pattern
+**Step 1 - Clone**:
+- **Function**: `clone_github_repo_with_submodules(repo, commit, cache_dir)`
+- **Executes**:
+  ```bash
+  git clone --depth 1 https://github.com/<repo>.git
+  git submodule update --init --recursive --depth 1
+  ```
+- **Caches**: `/srv/cache/git-repos/<repo>-<commit>/`
 
-All test suites use xargs for parallel execution:
+**Step 2 - Build**:
+- Uses git clone directory as build context
+- All submodules available during build
 
-```bash
-# Define test execution function
-run_test() {
-    local test_index=$1
+### Key Functions
 
-    # Extract test from matrix
-    # Run test
-    # Append results with file locking
+#### get\_required\_github\_sources()
 
-    (
-        flock -x 200
-        cat >> results.yaml.tmp <<EOF
-  - name: $test_name
-    status: $status
-EOF
-    ) 200>/tmp/results.lock
-}
+- **Inputs**: None (reads impls.yaml from current directory)
+- **Outputs**: TSV format: `commit<TAB>repo<TAB>requiresSubmodules`
+- **Description**: Extracts all GitHub-based implementations with their source requirements. Used to determine which ZIP snapshots or git clones are needed for building or snapshot creation.
+- **Where**: `lib-github-snapshots.sh`
 
-# Export function and variables
-export -f run_test
-export CACHE_DIR TEST_PASS_DIR
+#### copy\_github\_sources\_to\_snapshot(snapshot\_dir, cache\_dir)
 
-# Run tests in parallel
-seq 0 $((test_count - 1)) | xargs -P "$WORKER_COUNT" -I {} bash -c 'run_test {}'
-```
+- **Inputs**:
+  - `snapshot_dir`: Target snapshot directory
+  - `cache_dir`: Source cache directory (usually `/srv/cache`)
+- **Outputs**:
+  - Exit code: 0 if all copied, 1 if any missing
+  - Prints: Count of ZIPs and git clones copied
+- **Description**: Copies GitHub sources to snapshot directories. ZIP files go to snapshots/, git clones go to git-repos/. Handles both types automatically based on requiresSubmodules flag. Used by create-snapshot.sh scripts.
+- **Where**: `lib-github-snapshots.sh`
 
-**File Locking**:
-- Uses `flock` for safe concurrent writes
-- Lock file: `/tmp/results.lock`
-- Prevents race conditions in results.yaml
+#### prepare\_git\_clones\_for\_build(snapshot\_dir, cache\_dir)
 
-### Image Build Orchestration Pattern
+- **Inputs**:
+  - `snapshot_dir`: Snapshot directory containing git-repos/
+  - `cache_dir`: Target cache directory
+- **Outputs**: None (side effect: git clones copied to cache)
+- **Description**: Makes git clones from snapshot available to build system by copying them to cache directory. Called during snapshot re-run to prepare sources for image building.
+- **Where**: `lib-github-snapshots.sh`
 
-All test suites follow the same build pattern:
+#### clone\_github\_repo\_with\_submodules(repo, commit, cache\_dir)
 
-```bash
-#!/usr/bin/env bash
-# 1. Read impls.yaml
-# 2. Apply filters
-# 3. For each implementation:
-#    a. Generate build YAML
-#    b. Save to /srv/cache/build-yamls/
-#    c. Call build-single-image.sh
-# 4. Report build results
-```
+- **Inputs**:
+  - `repo`: Repository name (e.g., "libp2p/rust-libp2p")
+  - `commit`: Commit SHA
+  - `cache_dir`: Cache directory for storing clone
+- **Outputs**:
+  - Work directory path (caller must clean up)
+  - Exit code: 0 if success, 1 if failed
+- **Description**: Clones GitHub repository and initializes all submodules recursively. Uses --depth 1 for efficiency. Caches clone in git-repos/ for reuse. Handles nested submodules.
+- **Where**: `lib-image-building.sh`
 
-**Build YAML Structure**:
+### Caching
+
+**ZIP Snapshots**: `/srv/cache/snapshots/<commit>.zip` (keyed by Git SHA-1, 40 chars)
+**Git Clones**: `/srv/cache/git-repos/<repo>-<commit>/` (includes .git directory and all submodules)
+
+Both are persistent across test runs and snapshots.
+
+---
+
+## Docker Image Building
+
+### Overview
+
+Docker images are built from implementation sources (GitHub ZIP, GitHub git, local filesystem, or browser) using a YAML-driven build system.
+
+### Build Flow
+
+**Step 1 - Generate Build YAML** (in build-images.sh):
+
+Creates build configuration file:
 ```yaml
 image_name: transport-interop-rust-v0.56
-build_context: /srv/cache/snapshots/abc123/interop-tests
+build_context: /tmp/work/rust-libp2p/interop-tests
 dockerfile: Dockerfile.native
 source:
   type: github
   repo: libp2p/rust-libp2p
   commit: abc123...
-  dockerfile: interop-tests/Dockerfile.native
+  requiresSubmodules: false
+cacheDir: /srv/cache
 ```
 
-### Snapshot Creation Pattern
+**Step 2 - Execute Build** (build-single-image.sh):
 
-All test suites create reproducible snapshots:
+Reads build YAML and calls appropriate build function:
+- GitHub (no submodules): `build_from_github()`
+- GitHub (with submodules): `build_from_github_with_submodules()`
+- Local: `build_from_local()`
+- Browser: Uses browser Docker image
 
-```bash
-#!/usr/bin/env bash
-# 1. Create snapshot directory
-# 2. Copy test configuration
-# 3. Copy test results
-# 4. Copy all scripts
-# 5. Save Docker images
-# 6. Copy source snapshots
-# 7. Generate re-run.sh script
-# 8. Create README.md
-```
+**Step 3 - Docker Build**:
 
-**Snapshot Structure**:
-```
-<test>-HHMMSS-DD-MM-YYYY/
-├── impls.yaml              # Configuration
-├── test-matrix.yaml        # Test combinations
-├── results.yaml            # Test results
-├── results.md              # Dashboard
-├── settings.yaml           # Metadata
-├── scripts/                # All scripts
-├── snapshots/              # Source code
-├── docker-images/          # Saved images
-├── docker-compose/         # Compose files
-├── logs/                   # Execution logs
-├── re-run.sh               # Reproducibility
-└── README.md               # Documentation
-```
+Executes `docker build` with:
+- Build context from source (ZIP extract, git clone, or local path)
+- Dockerfile from impls.yaml
+- Tags image as `<test-type>-<impl-id>`
+
+### Key Functions
+
+#### build\_from\_github(yaml\_file, output\_filter)
+
+- **Inputs**:
+  - `yaml_file`: Path to build YAML configuration
+  - `output_filter`: Output style ("normal" or "quiet")
+- **Outputs**:
+  - Exit code: 0 if success, 1 if failed
+  - Docker image created and tagged
+- **Description**: Builds Docker image from GitHub ZIP snapshot. Downloads snapshot if not cached, extracts to temporary directory, runs docker build with specified context and Dockerfile. Cleans up temporary files after build.
+- **Where**: `lib-image-building.sh`
+
+#### build\_from\_github\_with\_submodules(yaml\_file, output\_filter)
+
+- **Inputs**:
+  - `yaml_file`: Path to build YAML configuration
+  - `output_filter`: Output style ("normal" or "quiet")
+- **Outputs**:
+  - Exit code: 0 if success, 1 if failed
+  - Docker image created and tagged
+- **Description**: Builds Docker image from git clone with submodules. Clones repository if not cached (with --recursive flag), or uses cached clone, then runs docker build. Ensures all submodules are initialized before building.
+- **Where**: `lib-image-building.sh`
+
+#### download\_github\_snapshot(repo, commit, cache\_dir)
+
+- **Inputs**:
+  - `repo`: Repository name (e.g., "libp2p/go-libp2p")
+  - `commit`: Full commit SHA
+  - `cache_dir`: Cache directory path
+- **Outputs**:
+  - Path to cached ZIP file
+  - Exit code: 0 if success, 1 if download failed
+- **Description**: Downloads GitHub repository archive as ZIP file. Checks cache first using commit SHA as key. If not cached, downloads from `https://github.com/<repo>/archive/<commit>.zip` and saves to cache.
+- **Where**: `lib-image-building.sh`
+
+### Image Naming Convention
+
+**Format**: `<test-type>-<component>-<impl-id>`
+
+**Examples**:
+- `transport-interop-rust-v0.56`
+- `hole-punch-peer-linux`
+- `hole-punch-relay-linux`
+- `hole-punch-router-linux`
+- `perf-rust-v0.56`
 
 ---
 
-## Usage Examples
+## Caching System
 
-### Example 1: Running Transport Tests with Aliases
+### Overview
 
-```bash
-cd transport
+All artifacts use content-addressed caching for deduplication and performance optimization.
 
-# Run only rust implementations
-./run_tests.sh --test-select '~rust' --test-ignore '!~rust' --workers 8
+### Cache Directory Structure
 
-# Explanation:
-# --test-select '~rust' expands to: rust-v0.56|rust-v0.55|rust-v0.54|rust-v0.53
-# --test-ignore '!~rust' expands to: go-v0.45|python-v0.4|... (everything except rust)
-# Result: Only rust x rust tests will run
+```
+/srv/cache/
+├── snapshots/              # GitHub ZIP archives
+│   └── <commit-sha>.zip    # Keyed by Git SHA-1 (40 hex chars)
+├── git-repos/              # Git clones with submodules
+│   └── <repo>-<commit>/    # Full git clone including .git
+├── test-matrix/            # Generated test matrices
+│   └── <sha256>.yaml       # Keyed by SHA-256 (64 hex chars)
+├── build-yamls/            # Build configuration files
+│   └── docker-build-<name>.yaml
+└── test-runs/              # Test pass snapshots
+    └── <test-type>-HHMMSS-DD-MM-YYYY/
 ```
 
-### Example 2: Running Hole-Punch Tests with Debug
+### Cache Key Generation
 
-```bash
-cd hole-punch
+**For test matrices**:
 
-# Run specific implementation with debug logging
-./run_tests.sh --test-select "linux" --debug --workers 4
+**Function**: `compute_cache_key()`
 
-# Debug mode:
-# - Sets debug=true in container environment
-# - Enables verbose logging
-# - Useful for troubleshooting
+**Algorithm**:
+1. Read impls.yaml content
+2. Concatenate: `impls_content||TEST_SELECT||TEST_IGNORE||...||DEBUG`
+3. Compute SHA-256 hash
+4. Return 64-character hex string
+
+**Why double-pipe** (`||`): Prevents ambiguous collisions where different parameter combinations could produce same concatenation.
+
+**Example**:
+```
+Inputs: TEST_SELECT="rust", TEST_IGNORE="", DEBUG="false"
+Key: sha256(impls.yaml||rust||||false)
+Output: "6b10a3ee4f7c9d2a1e..."
 ```
 
-### Example 3: Running Perf Tests with Baseline
+**For GitHub snapshots**:
+- ZIP files: Keyed by commit SHA (from Git, 40 characters)
+- Git clones: Keyed by `<repo>-<commit>` (directory name)
 
-```bash
-cd perf
+### Cache Performance
 
-# Test rust against go baseline
-./run_tests.sh \
-    --test-select '~rust' --test-ignore '!~rust' \
-    --baseline-select '~go' --baseline-ignore '!~go' \
-    --iterations 5 \
-    --workers 4
+**Cache hit**:
+- Time: ~50-200ms (file copy)
+- Benefit: Skips generation entirely
 
-# This will:
-# 1. Run go baseline tests (iperf, https, quic-go)
-# 2. Run rust x rust tests
-# 3. Compare rust performance against baseline
+**Cache miss**:
+- Time: ~2-5 seconds (generation + save)
+- Next run: Will be cache hit
+
+**Typical speedup**: 10-100x on cache hits
+
+### Key Functions
+
+#### compute\_cache\_key(...)
+
+- **Inputs**: All filter parameters (up to 6), debug flag
+- **Outputs**: SHA-256 hash string (64 characters)
+- **Description**: Creates content-based cache identifier from impls.yaml and all parameters. Uses double-pipe delimiter between parameters to prevent collision ambiguity. Used before test matrix generation to check cache.
+- **Where**: `lib-test-caching.sh`
+
+#### check\_and\_load\_cache(cache\_key, cache\_dir, output\_dir)
+
+- **Inputs**:
+  - `cache_key`: SHA-256 hash
+  - `cache_dir`: Cache directory (e.g., `/srv/cache`)
+  - `output_dir`: Output directory for matrix file
+- **Outputs**:
+  - Exit code: 0 if hit (matrix loaded), 1 if miss
+- **Description**: Checks if `/srv/cache/test-matrix/<key>.yaml` exists. If found, copies to output directory and returns success. Provides significant performance improvement by avoiding regeneration.
+- **Where**: `lib-test-caching.sh`
+
+#### save\_to\_cache(output\_dir, cache\_key, cache\_dir)
+
+- **Inputs**:
+  - `output_dir`: Directory with test-matrix.yaml to save
+  - `cache_key`: SHA-256 hash
+  - `cache_dir`: Cache directory
+- **Outputs**: None (side effect: matrix saved to cache)
+- **Description**: Copies test-matrix.yaml from output directory to cache using cache key as filename. Called after successful matrix generation to enable caching for future runs.
+- **Where**: `lib-test-caching.sh`
+
+---
+
+## Snapshot Creation
+
+### Overview
+
+Snapshots are self-contained archives of test runs that include all files needed for exact reproduction: configuration, results, scripts, Docker images, and source code.
+
+### Creation Flow (10 Steps)
+
+#### Step 1: Validate Inputs
+**Function**: `validate_snapshot_inputs(test_pass_dir, cache_dir)`
+
+Checks that results.yaml, test-matrix.yaml, and impls.yaml exist.
+
+#### Step 2: Create Directory Structure
+**Function**: `create_snapshot_directory(snapshot_dir)`
+
+Creates:
+- `logs/` - Test execution logs
+- `docker-compose/` - Generated compose files
+- `docker-images/` - Saved Docker images
+- `snapshots/` - GitHub ZIP archives
+- `git-repos/` - Git clones with submodules
+- `scripts/` - Test scripts
+
+#### Step 3: Copy Configuration
+**Function**: `copy_config_files(snapshot_dir, test_pass_dir, test_type)`
+
+Copies:
+- impls.yaml
+- test-matrix.yaml
+- results.yaml, results.md, results.html
+- LATEST\_TEST\_RESULTS.md
+- Box plot images (perf only)
+
+#### Step 4: Copy Scripts
+**Function**: `copy_all_scripts(snapshot_dir, test_type)`
+
+Copies:
+- Test-specific scripts from `scripts/`
+- Common libraries from `../scripts/`
+- Makes all scripts executable
+
+#### Step 5: Copy GitHub Sources
+**Function**: `copy_github_sources_to_snapshot(snapshot_dir, cache_dir)`
+
+Copies:
+- ZIP snapshots → `snapshots/`
+- Git clones → `git-repos/`
+- Handles both types automatically
+
+#### Step 6: Save Docker Images
+**Function**: `save_docker_image(image_name, output_dir)` (called for each image)
+
+Saves images as compressed tar files.
+
+#### Step 7: Generate Re-run Script
+**Function**: `generate_rerun_script(snapshot_dir, test_type, test_pass, original_options)`
+
+Creates complete re-run.sh with:
+- All filter options (11-17 depending on test type)
+- Argument parsing
+- Help text
+- Image loading/building logic
+- Test execution
+- Results collection
+
+#### Step 8: Generate Metadata
+**Functions**: `create_settings_yaml()`, `generate_snapshot_readme()`
+
+Creates:
+- settings.yaml - Snapshot metadata
+- README.md - Documentation and usage instructions
+
+#### Step 9: Validate Snapshot
+**Function**: `validate_snapshot_complete(snapshot_dir)`
+
+Checks all required files are present.
+
+#### Step 10: Display Summary
+**Function**: `display_snapshot_summary(snapshot_dir)`
+
+Shows:
+- Snapshot location and size
+- File counts (logs, images, ZIPs, git clones)
+- Re-run command
+
+### Snapshot Directory Structure
+
+```
+snapshot-HHMMSS-DD-MM-YYYY/
+├── impls.yaml              # Implementation definitions
+├── impls/                  # Local implementations (if any)
+├── test-matrix.yaml        # Test combinations
+├── results.yaml            # Structured results
+├── results.md              # Markdown dashboard
+├── results.html            # HTML visualization
+├── LATEST_TEST_RESULTS.md  # Detailed results
+├── settings.yaml           # Snapshot metadata
+├── README.md               # Documentation
+├── re-run.sh               # Re-run script (COMPLETE)
+├── scripts/                # Test-specific scripts
+│   └── *.sh
+├── ../scripts/             # Common libraries
+│   └── lib-*.sh
+├── logs/                   # Test execution logs
+├── docker-compose/         # Generated compose files
+├── docker-images/          # Saved images (.tar.gz)
+├── snapshots/              # GitHub ZIP archives
+└── git-repos/              # Git clones with submodules
+    └── c-libp2p-<commit>/
 ```
 
-### Example 4: Building Images for Specific Implementation
+### Re-run.sh Capabilities
 
+**Default re-run** (uses original settings):
 ```bash
-cd transport
-
-# Build only rust-v0.56 image
-bash scripts/build-images.sh "rust-v0.56" "false"
-
-# Build with debug symbols
-bash scripts/build-images.sh "rust-v0.56" "true"
-```
-
-### Example 5: Creating a Test Snapshot
-
-```bash
-cd transport
-
-# Run tests and create snapshot
-./run_tests.sh --test-select "rust-v0.56" --snapshot
-
-# Snapshot location
-ls -l /srv/cache/test-runs/transport-HHMMSS-DD-MM-YYYY/
-
-# Reproduce the test run
-cd /srv/cache/test-runs/transport-HHMMSS-DD-MM-YYYY/
 ./re-run.sh
 ```
 
-### Example 6: Using Test Aliases in impls.yaml
+**Re-run with different filters**:
+```bash
+# Transport
+./re-run.sh --test-select '~rust' --workers 4
 
-```yaml
-# Define aliases in impls.yaml
-test-aliases:
-  - alias: "rust"
-    value: "rust-v0.56|rust-v0.55|rust-v0.54|rust-v0.53"
-  - alias: "go"
-    value: "go-v0.45|go-v0.44|go-v0.43"
-  - alias: "stable"
-    value: "rust-v0.56|go-v0.45"
+# Hole-punch
+./re-run.sh --relay-select 'linux' --router-ignore 'chromium'
 
-# Then use in commands:
-./run_tests.sh --test-select '~stable'
-./run_tests.sh --test-ignore '~rust'
-./run_tests.sh --test-select '!~rust'  # Everything EXCEPT rust
+# Perf
+./re-run.sh --baseline-select '~baselines' --iterations 20
 ```
 
-### Example 7: Remote Perf Testing
+**Force rebuild**:
+```bash
+./re-run.sh --force-image-rebuild --force-matrix-rebuild
+```
+
+**Preview tests**:
+```bash
+./re-run.sh --test-select '~go' --list-tests
+```
+
+### Key Functions
+
+#### create\_snapshot\_directory(snapshot\_dir)
+
+- **Inputs**: Snapshot directory path
+- **Outputs**: Exit code (0=success, 1=already exists)
+- **Description**: Creates complete snapshot directory structure including all subdirectories (logs, docker-compose, docker-images, snapshots, git-repos, scripts). Returns error if directory already exists to prevent overwriting.
+- **Where**: `lib-snapshot-creation.sh`
+
+#### copy\_config\_files(snapshot\_dir, test\_pass\_dir, test\_type)
+
+- **Inputs**:
+  - `snapshot_dir`: Target snapshot directory
+  - `test_pass_dir`: Source test pass directory
+  - `test_type`: Type of test ("transport", "hole-punch", or "perf")
+- **Outputs**: None (side effect: files copied)
+- **Description**: Copies all configuration and results files to snapshot. Includes impls.yaml, test-matrix.yaml, all results files, and test-type-specific files like box plot images for perf tests.
+- **Where**: `lib-snapshot-creation.sh`
+
+#### generate\_rerun\_script(snapshot\_dir, test\_type, test\_pass\_name, original\_options)
+
+- **Inputs**:
+  - `snapshot_dir`: Target snapshot directory
+  - `test_type`: "transport", "hole-punch", or "perf"
+  - `test_pass_name`: Name of test pass
+  - `original_options`: Associative array name with original run options
+- **Outputs**:
+  - Creates re-run.sh file (executable, ~10-15KB)
+- **Description**: Generates complete re-run.sh script with full option support (11-17 options depending on test type). Includes help text, argument parsing, validation, image handling, smart matrix regeneration, test execution, and results collection. Major improvement enabling snapshots to be re-run with different filters.
+- **Where**: `lib-snapshot-rerun.sh`
+
+#### save\_docker\_image(image\_name, output\_dir)
+
+- **Inputs**:
+  - `image_name`: Docker image name to save
+  - `output_dir`: Output directory for tar file
+- **Outputs**:
+  - Exit code: 0 if success, 1 if image not found
+  - Creates: `<image_name>.tar.gz` file
+- **Description**: Saves Docker image as compressed tar file using `docker save | gzip`. Creates output directory if needed. Used by create-snapshot.sh to save all required images.
+- **Where**: `lib-snapshot-images.sh`
+
+---
+
+## Adding a New Test Suite
+
+### Overview
+
+To add a new test type (e.g., "latency-tests"), you need to create 6 scripts plus configuration files.
+
+### Required Scripts
+
+#### 1. Main Orchestrator: `<test>/run_tests.sh` (~300 lines)
+
+**Purpose**: Main entry point for running tests
+
+**Must implement**:
+- Argument parsing (standard + test-specific options)
+- Dependency checking (call check-dependencies.sh)
+- List commands (--list-impls, --list-tests)
+- Alias loading and filter expansion
+- Test matrix generation
+- Docker image building
+- Test execution (parallel with xargs)
+- Results collection
+- Dashboard generation
+- Snapshot creation (if --snapshot)
+
+**Standard options**:
+- `--test-select VALUE` - Filter tests
+- `--test-ignore VALUE` - Exclude tests
+- `--workers VALUE` - Parallel workers (default: nproc)
+- `--debug` - Debug mode
+- `--force-matrix-rebuild` - Bypass matrix cache
+- `--force-image-rebuild` - Rebuild all images
+- `-y, --yes` - Skip confirmations
+- `--check-deps` - Validate dependencies
+- `--list-impls` - List implementations
+- `--list-tests` - List tests
+- `--help` - Show help
+
+**Common library usage**:
+```bash
+source ../scripts/lib-test-aliases.sh
+source ../scripts/lib-filter-engine.sh
+source ../scripts/lib-test-caching.sh
+
+load_aliases
+all_impl_ids=($(yq eval '.implementations[].id' impls.yaml))
+TEST_SELECT=$(expand_filter_string "$TEST_SELECT" all_impl_ids)
+```
+
+#### 2. Test Matrix Generator: `<test>/scripts/generate-tests.sh` (~200 lines)
+
+**Purpose**: Generate test-matrix.yaml with all test combinations
+
+**Must implement**:
+- Load implementations from impls.yaml into associative arrays
+- Expand filter strings using `expand_filter_string()`
+- Generate test combinations (test-type-specific logic)
+- Apply filtering using `matches_select()` and `should_ignore()`
+- Cache test matrix using `compute_cache_key()`, `check_and_load_cache()`, `save_to_cache()`
+
+**Output**: test-matrix.yaml
+
+#### 3. Image Builder: `<test>/scripts/build-images.sh` (~100 lines)
+
+**Purpose**: Build Docker images for all implementations
+
+**Must implement**:
+- Parse implementation filter
+- For each implementation in impls.yaml:
+  - Generate build YAML configuration
+  - Call `bash ../scripts/build-single-image.sh <yaml>`
+- Report build results
+
+**Uses**: Common build-single-image.sh, lib-image-building.sh
+
+#### 4. Single Test Runner: `<test>/scripts/run-single-test.sh` (~150 lines)
+
+**Purpose**: Execute a single test by index
+
+**Must implement**:
+- Extract test details from test-matrix.yaml using index
+- Start Docker containers (test-type-specific setup)
+- Wait for test completion
+- Capture results (status, duration, metrics)
+- Append to results file with file locking (flock)
+
+#### 5. Dashboard Generator: `<test>/scripts/generate-dashboard.sh` (~200 lines)
+
+**Purpose**: Generate results visualizations from results.yaml
+
+**Must implement**:
+- Read results.yaml
+- Generate results.md (summary + visualizations)
+- Generate LATEST\_TEST\_RESULTS.md (detailed tables)
+- Generate results.html (optional, if pandoc available)
+
+**Output**: results.md, LATEST\_TEST\_RESULTS.md, results.html
+
+#### 6. Snapshot Creator: `<test>/scripts/create-snapshot.sh` (~120 lines)
+
+**Purpose**: Create self-contained snapshot of test run
+
+**Must implement** (using common libraries):
+```bash
+source ../../scripts/lib-snapshot-creation.sh
+source ../../scripts/lib-github-snapshots.sh
+source ../../scripts/lib-snapshot-rerun.sh
+source ../../scripts/lib-snapshot-images.sh
+
+# Validate, create structure, copy files
+validate_snapshot_inputs()
+create_snapshot_directory()
+copy_config_files()
+copy_all_scripts()
+copy_github_sources_to_snapshot()
+
+# Save images (test-type-specific naming)
+for impl in required_impls; do
+    save_docker_image "<test-type>-<impl>" "$SNAPSHOT_DIR/docker-images"
+done
+
+# Generate re-run.sh with test-type-specific options
+declare -A original_options
+original_options[test_select]="${TEST_SELECT:-}"
+# ... set all options ...
+generate_rerun_script "$SNAPSHOT_DIR" "<test-type>" "$test_pass" original_options
+
+# Finalize
+create_settings_yaml()
+generate_snapshot_readme()
+validate_snapshot_complete()
+```
+
+### Required Configuration
+
+#### impls.yaml
+
+Defines implementations to test:
 
 ```yaml
-# Configure remote server in perf/impls.yaml
-servers:
-  - id: remote-1
-    type: remote
-    hostname: "192.168.1.100"
-    username: "perfuser"
+test-aliases:
+  - alias: "myalias"
+    value: "impl1|impl2"
 
 implementations:
-  - id: rust-v0.56
-    server: remote-1  # Run on remote server
+  - id: impl-v1.0
     source:
       type: github
-      repo: libp2p/rust-libp2p
-      commit: abc123
+      repo: org/repo
+      commit: <full-sha>
+      dockerfile: path/to/Dockerfile
+      requiresSubmodules: false  # or true
+    transports: [tcp, quic-v1]
+    secureChannels: [noise, tls]
+    muxers: [yamux, mplex]
 ```
 
-```bash
-cd perf
+### Code Breakdown
 
-# Build and test on remote server
-bash scripts/build-images.sh "rust-v0.56" "false"
-./run_tests.sh --test-select "rust-v0.56"
+**Test-specific code** (must write): ~850 lines
+- Main orchestrator: ~300 lines
+- Test matrix logic: ~200 lines
+- Test execution: ~150 lines
+- Dashboard generation: ~200 lines
 
-# The scripts will:
-# 1. Build Docker image on remote-1
-# 2. Start server container on remote-1
-# 3. Run client locally against remote server
-# 4. Measure real network latency
-```
+**Common code** (reused): ~2,500 lines
+- Filtering: ~750 lines (lib-filter-engine.sh, lib-test-filtering.sh, etc.)
+- Building: ~600 lines (lib-image-building.sh, build-single-image.sh, etc.)
+- Snapshots: ~1,150 lines (lib-snapshot-*.sh libraries)
 
-### Example 8: Cache Management
-
-```bash
-# Check cache size
-du -sh /srv/cache/*
-
-# Clear test matrix cache (force regeneration)
-rm -rf /srv/cache/test-matrix/*
-
-# Clear source snapshots (force re-download)
-rm -rf /srv/cache/snapshots/*
-
-# Clear build YAMLs
-rm -rf /srv/cache/build-yamls/*
-
-# Keep test runs (these are valuable snapshots)
-# Only delete if you're sure you don't need them
-```
-
-### Example 9: Debugging Failed Tests
-
-```bash
-cd transport
-
-# Run single test with debug mode
-./run_tests.sh --test-select "rust-v0.56 x go-v0.45" --debug
-
-# Check logs
-cat logs/rust-v0.56_x_go-v0.45_tcp_noise_yamux.log
-
-# Check Docker Compose file
-cat docker-compose/rust-v0.56_x_go-v0.45_tcp_noise_yamux.yaml
-
-# Manually run the test
-docker-compose -f docker-compose/rust-v0.56_x_go-v0.45_tcp_noise_yamux.yaml up
-```
-
-### Example 10: Custom Test Matrix
-
-```bash
-cd transport
-
-# Generate test matrix without running tests
-TEST_PASS_DIR=/tmp/my-test-matrix \
-TEST_SELECT="rust-v0.56|go-v0.45" \
-TEST_IGNORE="" \
-DEBUG="false" \
-bash scripts/generate-tests.sh
-
-# Inspect generated matrix
-yq eval '.tests[] | .name' /tmp/my-test-matrix/test-matrix.yaml
-
-# Count tests
-yq eval '.tests | length' /tmp/my-test-matrix/test-matrix.yaml
-```
+**Effective total per suite**: ~850 lines test-specific + shared infrastructure
 
 ---
 
-## Maintenance Guidelines
+## Common Functions Index
 
-### When to Update Common Scripts
+### lib-filter-engine.sh
 
-**Update common scripts when**:
-- Bug fixes affect multiple test types
-- New filtering features needed globally
-- Performance improvements applicable to all
-- Security issues need patching
+#### expand\_filter\_string(filter, all\_names\_array)
+- **Inputs**:
+  - `filter`: Raw filter string (may contain `~alias`, `!value`, `!~alias`)
+  - `all_names_array`: Name of array variable with all possible entity names
+- **Outputs**: Fully expanded, deduplicated pipe-separated string
+- **Description**: Main filter processing function. Recursively expands aliases (supports unlimited nesting), handles inversions (`!value` becomes all non-matching names, `!~alias` expands alias then negates), detects circular alias references, and deduplicates final result.
+- **Where**: `lib-filter-engine.sh:108`
 
-**Keep test-specific when**:
-- Logic unique to one test type
-- Different network topologies
-- Type-specific test execution
-- Test-specific metrics collection
+#### filter\_names(input\_names, all\_names, select\_filter, ignore\_filter)
+- **Inputs**:
+  - `input_names`: Array variable name with names to filter
+  - `all_names`: Array variable name with all possible names
+  - `select_filter`: Raw SELECT filter (may have aliases)
+  - `ignore_filter`: Raw IGNORE filter (may have aliases)
+- **Outputs**: Filtered names, one per line
+- **Description**: Implements two-step filtering pattern. Applies select filter to input names to get selected set, then applies ignore filter to selected set (not to all names). This ensures correct filtering semantics where ignore operates on already-selected items.
+- **Where**: `lib-filter-engine.sh:217`
 
-### Version Compatibility
+#### filter\_matches(name, filter\_string)
+- **Inputs**:
+  - `name`: Single name to check
+  - `filter_string`: Expanded filter string (pipe-separated patterns)
+- **Outputs**: Exit code (0=matches, 1=no match)
+- **Description**: Generic matching function checking if name contains any pattern in filter. Works for any entity type. Used throughout generate-tests.sh for checking implementations, relays, routers, baselines against filters.
+- **Where**: `lib-filter-engine.sh:198`
 
-Common libraries maintain backward compatibility:
-1. Never remove functions (deprecate instead)
-2. Add optional parameters (with defaults)
-3. Document breaking changes in this file
-4. Test all three test suites after changes
+### lib-github-snapshots.sh
 
-### Testing Common Script Changes
+#### copy\_github\_sources\_to\_snapshot(snapshot\_dir, cache\_dir)
+- **Inputs**:
+  - `snapshot_dir`: Target snapshot directory
+  - `cache_dir`: Source cache directory
+- **Outputs**: Exit code, prints count of sources copied
+- **Description**: Copies GitHub sources to snapshot handling both ZIP archives and git clones. Checks requiresSubmodules flag for each implementation, copies ZIPs to snapshots/ and git clones to git-repos/. Enables snapshot reproducibility for all source types.
+- **Where**: `lib-github-snapshots.sh:69`
 
-After modifying common scripts, test all suites:
+#### get\_required\_github\_sources()
+- **Inputs**: None (reads impls.yaml)
+- **Outputs**: TSV: `commit<TAB>repo<TAB>requiresSubmodules`
+- **Description**: Lists all GitHub-based implementations with their source requirements. Used to determine which ZIP snapshots or git clones are needed for snapshot creation or validation.
+- **Where**: `lib-github-snapshots.sh:9`
 
-```bash
-# Test transport
-cd transport
-bash scripts/generate-tests.sh "rust-v0.56" "" "false"
-./run_tests.sh --test-select "rust-v0.56" --workers 1 --check-deps
+#### prepare\_git\_clones\_for\_build(snapshot\_dir, cache\_dir)
+- **Inputs**:
+  - `snapshot_dir`: Snapshot directory with git-repos/
+  - `cache_dir`: Target cache directory
+- **Outputs**: None (copies git clones to cache)
+- **Description**: Makes git clones from snapshot available to build system by copying to cache directory. Called during snapshot re-run to prepare git clones before image building.
+- **Where**: `lib-github-snapshots.sh:125`
 
-# Test hole-punch
-cd hole-punch
-bash scripts/generate-tests.sh "linux" "" "false"
-./run_tests.sh --test-select "linux" --workers 1 --check-deps
+#### validate\_github\_sources\_cached(cache\_dir)
+- **Inputs**: Cache directory path
+- **Outputs**: Exit code (0=all present, 1=missing)
+- **Description**: Validates all required GitHub sources are in cache. Checks for ZIP files or git clones based on requiresSubmodules flag. Lists missing sources if validation fails.
+- **Where**: `lib-github-snapshots.sh:41`
 
-# Test perf
-cd perf
-bash scripts/generate-tests.sh
-./run_tests.sh --test-select "iperf" --workers 1 --check-deps
-```
+### lib-image-building.sh
 
-### Performance Monitoring
+#### build\_from\_github(yaml\_file, output\_filter)
+- **Inputs**:
+  - `yaml_file`: Build YAML configuration file path
+  - `output_filter`: Output mode ("normal" or "quiet")
+- **Outputs**: Exit code (0=success)
+- **Description**: Builds Docker image from GitHub ZIP snapshot. Downloads ZIP if not cached, extracts to temporary directory, runs docker build with specified context and Dockerfile path, tags image, cleans up.
+- **Where**: `lib-image-building.sh:155`
 
-Monitor script performance:
+#### build\_from\_github\_with\_submodules(yaml\_file, output\_filter)
+- **Inputs**:
+  - `yaml_file`: Build YAML configuration file path
+  - `output_filter`: Output mode ("normal" or "quiet")
+- **Outputs**: Exit code (0=success)
+- **Description**: Builds Docker image from git clone with submodules. Clones repository if not cached (using `git clone --recursive`), or uses cached clone, then runs docker build. Ensures all submodules are initialized before building.
+- **Where**: `lib-image-building.sh:184`
 
-```bash
-# Time test generation
-time bash scripts/generate-tests.sh
+#### clone\_github\_repo\_with\_submodules(repo, commit, cache\_dir)
+- **Inputs**:
+  - `repo`: Repository name (e.g., "libp2p/rust-libp2p")
+  - `commit`: Full commit SHA
+  - `cache_dir`: Cache directory for clone
+- **Outputs**: Work directory path (caller must clean up)
+- **Description**: Clones repository with git including all submodules recursively. Uses `--depth 1` for efficiency. Caches clone in git-repos/ for reuse. Returns temporary work directory path that caller must clean up.
+- **Where**: `lib-image-building.sh:52`
 
-# Profile cache hit rate
-grep "Cache hit" logs/*.log | wc -l
-grep "Cache miss" logs/*.log | wc -l
+#### download\_github\_snapshot(repo, commit, cache\_dir)
+- **Inputs**:
+  - `repo`: Repository name
+  - `commit`: Full commit SHA
+  - `cache_dir`: Cache directory path
+- **Outputs**: Path to cached ZIP file
+- **Description**: Downloads GitHub archive as ZIP file. Checks cache first using commit SHA as key. Downloads from GitHub if not cached. Stores in `/srv/cache/snapshots/<commit>.zip`.
+- **Where**: `lib-image-building.sh:6`
 
-# Monitor parallel execution efficiency
-time ./run_tests.sh --workers 1 --test-select "rust-v0.56"
-time ./run_tests.sh --workers 8 --test-select "rust-v0.56"
-```
+### lib-snapshot-creation.sh
 
----
+#### validate\_snapshot\_inputs(test\_pass\_dir, cache\_dir)
+- **Inputs**:
+  - `test_pass_dir`: Test pass directory to validate
+  - `cache_dir`: Cache directory to validate
+- **Outputs**: Exit code (0=valid, 1=invalid)
+- **Description**: Validates all required files exist before snapshot creation. Checks for impls.yaml, test-matrix.yaml, results.yaml. Returns error with clear message if any required file is missing.
+- **Where**: `lib-snapshot-creation.sh:9`
 
-## Troubleshooting
+#### create\_snapshot\_directory(snapshot\_dir)
+- **Inputs**: Snapshot directory path
+- **Outputs**: Exit code (0=success, 1=exists)
+- **Description**: Creates complete snapshot directory structure with all subdirectories including git-repos/ for implementations with submodules. Returns error if directory already exists to prevent accidental overwriting.
+- **Where**: `lib-snapshot-creation.sh:43`
 
-### Common Issues and Solutions
+#### copy\_all\_scripts(snapshot\_dir, test\_type)
+- **Inputs**:
+  - `snapshot_dir`: Target snapshot directory
+  - `test_type`: Test type identifier
+- **Outputs**: None (copies scripts, makes executable)
+- **Description**: Copies both test-specific scripts from scripts/ and common libraries from ../scripts/ to snapshot. Makes all scripts executable. Ensures snapshot is portable and self-contained.
+- **Where**: `lib-snapshot-creation.sh:105`
 
-#### "Command not found" errors
+#### generate\_snapshot\_readme(snapshot\_dir, test\_type, test\_pass, summary\_stats)
+- **Inputs**:
+  - `snapshot_dir`: Target snapshot directory
+  - `test_type`: Type of test
+  - `test_pass`: Test pass name
+  - `summary_stats`: Summary statistics string
+- **Outputs**: Creates README.md file
+- **Description**: Generates comprehensive README with test summary, contents listing, re-run instructions, file structure diagram, and requirements. Provides complete documentation for snapshot users.
+- **Where**: `lib-snapshot-creation.sh:192`
 
-```bash
-# Ensure scripts are executable
-chmod +x scripts/*.sh
-chmod +x transport/scripts/*.sh
-chmod +x hole-punch/scripts/*.sh
-chmod +x perf/scripts/*.sh
-```
+#### display\_snapshot\_summary(snapshot\_dir)
+- **Inputs**: Snapshot directory path
+- **Outputs**: Formatted summary to stdout
+- **Description**: Calculates and displays snapshot summary including size, file counts for all types (logs, docker-compose, images, ZIPs, git clones), and re-run command. Provides clear information about snapshot contents.
+- **Where**: `lib-snapshot-creation.sh:277`
 
-#### "ALIASES: unbound variable"
+### lib-snapshot-images.sh
 
-```bash
-# Ensure load_aliases() is called before using alias functions
-load_aliases  # Must be called first
-expand_aliases "$TEST_SELECT"  # Now safe to use
-```
+#### save\_docker\_image(image\_name, output\_dir)
+- **Inputs**:
+  - `image_name`: Docker image name
+  - `output_dir`: Output directory
+- **Outputs**: Exit code, creates .tar.gz file
+- **Description**: Saves Docker image using `docker save | gzip`. Creates compressed archive for storage in snapshots. Checks if image exists before attempting save.
+- **Where**: `lib-snapshot-images.sh:10`
 
-#### Cache not working
+### lib-snapshot-rerun.sh
 
-```bash
-# Check cache directory permissions
-mkdir -p /srv/cache/test-matrix
-chmod -R 755 /srv/cache
-```
+#### generate\_rerun\_script(snapshot\_dir, test\_type, test\_pass\_name, original\_options)
+- **Inputs**:
+  - `snapshot_dir`: Target snapshot directory
+  - `test_type`: "transport", "hole-punch", or "perf"
+  - `test_pass_name`: Test pass identifier
+  - `original_options`: Array name with original run options
+- **Outputs**: Creates executable re-run.sh script
+- **Description**: Generates complete re-run.sh script with full option support. Embeds default values from original run, creates help text, argument parser, validation, image handling, matrix regeneration logic, and test execution. Enables snapshots to be re-run with same or different options.
+- **Where**: `lib-snapshot-rerun.sh:16`
 
-#### Docker build failures
+### lib-test-aliases.sh
 
-```bash
-# Clear Docker build cache
-docker builder prune -af
+#### load\_aliases()
+- **Inputs**: None (reads impls.yaml from current directory)
+- **Outputs**: Populates global ALIASES associative array
+- **Description**: Loads test-aliases section from impls.yaml. Required before any alias expansion. Called by all generate-tests.sh scripts to enable `~alias` syntax in filters.
+- **Where**: `lib-test-aliases.sh:6`
 
-# Rebuild without cache
-./run_tests.sh --force-image-rebuild
-```
+#### get\_all\_impl\_ids()
+- **Inputs**: None (reads impls.yaml)
+- **Outputs**: Pipe-separated string of all implementation IDs
+- **Description**: Extracts all implementation IDs for use in negation expansion. Used when processing `!~alias` patterns to determine which names are NOT in the alias.
+- **Where**: `lib-test-aliases.sh:29`
 
-#### Network conflicts (hole-punch tests)
+### lib-test-caching.sh
 
-```bash
-# Check for conflicting networks
-docker network ls | grep 10.
+#### compute\_cache\_key(select, ignore, relay\_select, relay\_ignore, router\_select, router\_ignore, debug)
+- **Inputs**: All filter strings (up to 6), debug flag
+- **Outputs**: SHA-256 hash (64 characters)
+- **Description**: Creates content-based cache key from impls.yaml and parameters. Uses double-pipe delimiter (`||`) between values to prevent collision ambiguity. Returns hash used to check/save test matrix cache.
+- **Where**: `lib-test-caching.sh:~8`
 
-# Clean up orphaned networks
-docker network prune -f
-```
+#### check\_and\_load\_cache(cache\_key, cache\_dir, output\_dir)
+- **Inputs**:
+  - `cache_key`: SHA-256 hash
+  - `cache_dir`: Cache directory
+  - `output_dir`: Output directory
+- **Outputs**: Exit code (0=hit, 1=miss)
+- **Description**: Checks if cached test matrix exists. If found, copies to output directory and returns 0. Provides 10-100x speedup by avoiding matrix regeneration (~50ms vs ~2-5 seconds).
+- **Where**: `lib-test-caching.sh:~20`
 
-#### Redis connection failures (hole-punch tests)
+#### save\_to\_cache(output\_dir, cache\_key, cache\_dir)
+- **Inputs**:
+  - `output_dir`: Directory with test-matrix.yaml
+  - `cache_key`: SHA-256 hash
+  - `cache_dir`: Cache directory
+- **Outputs**: None (saves matrix to cache)
+- **Description**: Copies test-matrix.yaml to cache using key as filename. Called after matrix generation to enable caching for future runs with same configuration.
+- **Where**: `lib-test-caching.sh:~35`
 
-```bash
-# Restart Redis
-cd hole-punch
-bash scripts/stop-global-services.sh
-bash scripts/start-global-services.sh
+### lib-test-filtering.sh
 
-# Check Redis logs
-docker logs redis-global
-```
+#### matches\_select(test\_name)
+- **Inputs**: Test name string
+- **Outputs**: Exit code (0=matches, 1=doesn't match)
+- **Description**: Checks if test name matches any pattern in SELECT\_PATTERNS array (populated from expanded filter). Returns true if no patterns defined (include all).
+- **Where**: `lib-test-filtering.sh:84`
 
-#### Remote build failures (perf tests)
+#### should\_ignore(test\_name)
+- **Inputs**: Test name string
+- **Outputs**: Exit code (0=ignore, 1=keep)
+- **Description**: Checks if test name matches any pattern in IGNORE\_PATTERNS array. Handles inverted patterns by extracting dialer/listener and checking both sides. Returns false if no patterns defined (ignore nothing).
+- **Where**: `lib-test-filtering.sh:99`
 
-```bash
-# Test SSH connectivity
-ssh -i ~/.ssh/perf_server perfuser@192.168.1.100 "echo 'Connected'"
-
-# Check Docker on remote
-ssh -i ~/.ssh/perf_server perfuser@192.168.1.100 "docker ps"
-
-# Check remote disk space
-ssh -i ~/.ssh/perf_server perfuser@192.168.1.100 "df -h"
-```
-
----
-
-## Best Practices
-
-### 1. Always Use Aliases for Test Selection
-
-**Good**:
-```bash
-./run_tests.sh --test-select '~rust' --test-ignore '!~rust'
-```
-
-**Bad**:
-```bash
-./run_tests.sh --test-select 'rust-v0.56|rust-v0.55|rust-v0.54'
-```
-
-**Why**: Aliases are maintained in impls.yaml and automatically stay up to date.
-
-### 2. Use Content-Based Caching
-
-**Good**:
-```bash
-# Let caching work automatically
-./run_tests.sh --test-select "rust-v0.56"
-./run_tests.sh --test-select "rust-v0.56"  # Cache hit!
-```
-
-**Bad**:
-```bash
-# Don't bypass cache unnecessarily
-./run_tests.sh --test-select "rust-v0.56" --force-matrix-rebuild
-```
-
-### 3. Create Snapshots for Important Runs
-
-**Good**:
-```bash
-./run_tests.sh --snapshot  # Creates reproducible snapshot
-```
-
-**Why**: Snapshots allow exact reproduction of test results.
-
-### 4. Use Appropriate Worker Counts
-
-**Good**:
-```bash
-# Use reasonable parallelism
-./run_tests.sh --workers 8  # On 8-core machine
-./run_tests.sh --workers 16  # On 16-core machine
-```
-
-**Bad**:
-```bash
-# Don't over-parallelize
-./run_tests.sh --workers 100  # On 8-core machine
-```
-
-### 5. Check Dependencies Before Running
-
-**Good**:
-```bash
-./run_tests.sh --check-deps  # Verify before running
-./run_tests.sh --test-select "rust-v0.56"
-```
-
-### 6. Use Debug Mode for Troubleshooting
-
-**Good**:
-```bash
-./run_tests.sh --test-select "rust-v0.56" --debug --workers 1
-```
-
-**Why**: Debug mode provides verbose logging and runs serially for easier debugging.
-
-### 7. Keep Test-Specific Logic in Test Directories
-
-**Good**:
-```bash
-# transport/scripts/custom-logic.sh
-# Custom transport-specific function
-```
-
-**Bad**:
-```bash
-# scripts/transport-specific-function.sh
-# Don't add test-specific logic to common scripts
-```
+#### get\_common(list1, list2)
+- **Inputs**: Two space-separated lists
+- **Outputs**: Space-separated list of common elements
+- **Description**: Set intersection operation. Used to find common transports, secure channels, or muxers between two implementations during test matrix generation.
+- **Where**: `lib-test-filtering.sh:134`
 
 ---
 
-## Future Enhancements
-
-Planned improvements:
-
-1. **Unified snapshot creation**: Common snapshot script for all test types
-2. **Enhanced remote execution**: Better error handling and progress reporting
-3. **Test retry logic**: Automatic retry for flaky tests
-4. **Performance profiling**: Built-in performance monitoring
-5. **Test parallelization hints**: Automatic worker count optimization
-6. **Cache analytics**: Cache hit rate monitoring and reporting
-7. **Health checks**: Pre-flight checks before test execution
-
----
-
-**Last Updated**: 2025-12-16
-**Version**: 2.0.0
+*Last Updated: 2025-12-16*
+*Version: 3.0.0 (Complete Restructure)*
