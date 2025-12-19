@@ -426,6 +426,7 @@ done
 
 # Start global services
 bash lib/stop-global-services.sh || {
+  echo ""
   echo "  ✗ Stopping global services failed"
 }
 

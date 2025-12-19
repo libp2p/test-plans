@@ -20,8 +20,17 @@ start_redis_service() {
     fi
 
     # Create network if doesn't exist
+    # For perf, create with subnet to support static IP assignment
     if ! docker network inspect "$network_name" &>/dev/null; then
-        docker network create "$network_name" > /dev/null
+        if [[ "$network_name" == "perf-network" ]]; then
+            # Perf network needs subnet for static listener IP (10.5.0.10)
+            docker network create "$network_name" \
+                --subnet 10.5.0.0/24 \
+                --gateway 10.5.0.1 > /dev/null
+        else
+            # Other networks don't need specific subnet
+            docker network create "$network_name" > /dev/null
+        fi
         print_success_indented "Created network: $network_name"
     else
         print_message_indented "Network already exists: $network_name"

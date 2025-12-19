@@ -38,7 +38,12 @@ latency_iterations=$(yq eval ".$MATRIX_SECTION[$TEST_INDEX].latencyIterations" "
 duration=$(yq eval ".$MATRIX_SECTION[$TEST_INDEX].durationPerIteration" "$TEST_PASS_DIR/test-matrix.yaml")
 test_name=$(yq eval ".$MATRIX_SECTION[$TEST_INDEX].name" "$TEST_PASS_DIR/test-matrix.yaml")
 
-log_info "[$((TEST_INDEX + 1))] $test_name"
+# Compute TEST_KEY for Redis key namespacing (8-char hex hash)
+SCRIPT_LIB_DIR="${SCRIPT_LIB_DIR:-$SCRIPT_DIR/../../lib}"
+source "$SCRIPT_LIB_DIR/lib-test-keys.sh"
+TEST_KEY=$(compute_test_key "$test_name")
+
+log_info "[$((TEST_INDEX + 1))] $test_name (key: $TEST_KEY)"
 
 # Construct Docker image names
 DIALER_IMAGE="perf-${dialer_id}"
@@ -59,7 +64,8 @@ LISTENER_IP="10.5.0.10"
 
 # Build environment variables for listener
 LISTENER_ENV="      - IS_DIALER=false
-      - REDIS_ADDR=redis:6379
+      - REDIS_ADDR=perf-redis:6379
+      - TEST_KEY=$TEST_KEY
       - TRANSPORT=$transport
       - LISTENER_IP=$LISTENER_IP"
 
@@ -75,7 +81,8 @@ fi
 
 # Build environment variables for dialer
 DIALER_ENV="      - IS_DIALER=true
-      - REDIS_ADDR=redis:6379
+      - REDIS_ADDR=perf-redis:6379
+      - TEST_KEY=$TEST_KEY
       - TRANSPORT=$transport
       - UPLOAD_BYTES=$upload_bytes
       - DOWNLOAD_BYTES=$download_bytes
@@ -99,28 +106,16 @@ cat > "$COMPOSE_FILE" <<EOF
 name: ${TEST_SLUG}
 
 networks:
-  perf-net:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 10.5.0.0/24
+  perf-network:
+    external: true
 
 services:
-  redis:
-    image: redis:7-alpine
-    container_name: ${TEST_SLUG}_redis
-    command: redis-server --save "" --appendonly no --loglevel warning
-    networks:
-      - perf-net
-
   listener:
     image: ${LISTENER_IMAGE}
     container_name: ${TEST_SLUG}_listener
     init: true
-    depends_on:
-      - redis
     networks:
-      perf-net:
+      perf-network:
         ipv4_address: ${LISTENER_IP}
     environment:
 $LISTENER_ENV
@@ -129,10 +124,9 @@ $LISTENER_ENV
     image: ${DIALER_IMAGE}
     container_name: ${TEST_SLUG}_dialer
     depends_on:
-      - redis
       - listener
     networks:
-      - perf-net
+      - perf-network
     environment:
 $DIALER_ENV
 EOF

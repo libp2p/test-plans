@@ -25,6 +25,7 @@ import (
 var (
 	isDialer      = os.Getenv("IS_DIALER") == "true"
 	redisAddr     = getEnvOrDefault("REDIS_ADDR", "redis:6379")
+	testKey       = getEnvOrDefault("TEST_KEY", "default")
 	listenerIP    = getEnvOrDefault("LISTENER_IP", "10.5.0.10")
 	uploadBytes   int64
 	downloadBytes int64
@@ -98,7 +99,7 @@ func runListenerMode() {
 		io.Copy(w, io.LimitReader(zeroReader{}, size))
 	})
 
-	// Publish listener address to Redis
+	// Publish listener address to Redis with TEST_KEY namespacing
 	multiaddr := fmt.Sprintf("/ip4/%s/tcp/4001/https", listenerIP)
 	log.Printf("Publishing listener address to Redis: %s", multiaddr)
 
@@ -108,11 +109,13 @@ func runListenerMode() {
 	})
 	defer rdb.Close()
 
-	err := rdb.Set(ctx, "listener_multiaddr", multiaddr, 0).Err()
+	listenerAddrKey := fmt.Sprintf("%s_listener_multiaddr", testKey)
+	err := rdb.Set(ctx, listenerAddrKey, multiaddr, 0).Err()
 	if err != nil {
-		log.Fatalf("Failed to publish to Redis: %v", err)
+		log.Fatalf("Failed to publish to Redis (key: %s): %v", listenerAddrKey, err)
 	}
 
+	log.Printf("Published to Redis (key: %s)", listenerAddrKey)
 	log.Println("HTTPS listener ready")
 
 	// Start HTTPS server
@@ -135,9 +138,10 @@ func runClientMode() {
 	defer rdb.Close()
 
 	log.Println("Waiting for listener address from Redis...")
+	listenerAddrKey := fmt.Sprintf("%s_listener_multiaddr", testKey)
 	var listenerAddr string
 	for i := 0; i < 60; i++ {
-		addr, err := rdb.Get(ctx, "listener_multiaddr").Result()
+		addr, err := rdb.Get(ctx, listenerAddrKey).Result()
 		if err == nil && addr != "" {
 			listenerAddr = addr
 			break
@@ -146,10 +150,10 @@ func runClientMode() {
 	}
 
 	if listenerAddr == "" {
-		log.Fatal("Timeout waiting for listener address from Redis")
+		log.Fatalf("Timeout waiting for listener address from Redis (key: %s)", listenerAddrKey)
 	}
 
-	log.Printf("Got listener address: %s", listenerAddr)
+	log.Printf("Got listener address: %s (key: %s)", listenerAddr, listenerAddrKey)
 
 	// Parse multiaddr to get IP and port
 	// Format: /ip4/{IP}/tcp/{PORT}/https

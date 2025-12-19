@@ -34,6 +34,7 @@ class Program
         // Read configuration from environment variables (following WRITE_A_PERF_TEST.md)
         var isDialer = Environment.GetEnvironmentVariable("IS_DIALER") == "true";
         var redisAddr = Environment.GetEnvironmentVariable("REDIS_ADDR") ?? "redis:6379";
+        var testKey = Environment.GetEnvironmentVariable("TEST_KEY") ?? "default";
         var transport = Environment.GetEnvironmentVariable("TRANSPORT") ?? "tcp";
         var secureChannel = Environment.GetEnvironmentVariable("SECURE_CHANNEL");
         var muxer = Environment.GetEnvironmentVariable("MUXER");
@@ -41,6 +42,7 @@ class Program
         logger.LogInformation("Configuration:");
         logger.LogInformation("  IS_DIALER: {IsDialer}", isDialer);
         logger.LogInformation("  REDIS_ADDR: {RedisAddr}", redisAddr);
+        logger.LogInformation("  TEST_KEY: {TestKey}", testKey);
         logger.LogInformation("  TRANSPORT: {Transport}", transport);
         logger.LogInformation("  SECURE_CHANNEL: {Secure}", secureChannel ?? "none");
         logger.LogInformation("  MUXER: {Muxer}", muxer ?? "none");
@@ -136,9 +138,10 @@ class Program
         await localPeer.StartListenAsync(new[] { listenAddr });
         logger.LogInformation("Listener started");
 
-        // Publish the same multiaddr to Redis (what we're actually listening on)
-        await db.StringSetAsync("listener_multiaddr", listenMultiaddr);
-        logger.LogInformation("Published multiaddr to Redis: {Multiaddr}", listenMultiaddr);
+        // Publish the same multiaddr to Redis with TEST_KEY namespacing
+        var listenerAddrKey = $"{testKey}_listener_multiaddr";
+        await db.StringSetAsync(listenerAddrKey, listenMultiaddr);
+        logger.LogInformation("Published multiaddr to Redis: {Multiaddr} (key: {Key})", listenMultiaddr, listenerAddrKey);
 
         logger.LogInformation("Listener ready, waiting for connections...");
 
@@ -146,13 +149,14 @@ class Program
         await Task.Delay(Timeout.Infinite);
     }
 
-    static async Task<string> WaitForListener(IDatabase db, ILogger<Program> logger)
+    static async Task<string> WaitForListener(IDatabase db, ILogger<Program> logger, string testKey)
     {
-        logger.LogInformation("Waiting for listener multiaddr...");
+        var listenerAddrKey = $"{testKey}_listener_multiaddr";
+        logger.LogInformation("Waiting for listener multiaddr (key: {Key})...", listenerAddrKey);
 
         for (int i = 0; i < 30; i++)
         {
-            var addr = await db.StringGetAsync("listener_multiaddr");
+            var addr = await db.StringGetAsync(listenerAddrKey);
             if (!addr.IsNullOrEmpty)
             {
                 return addr.ToString()!;
@@ -160,7 +164,7 @@ class Program
             await Task.Delay(500);
         }
 
-        throw new TimeoutException("Timeout waiting for listener multiaddr");
+        throw new TimeoutException($"Timeout waiting for listener multiaddr (key: {listenerAddrKey})");
     }
 
     static async Task RunDialer(IPeerFactory peerFactory, ILogger<Program> logger, string redisAddr,
@@ -175,7 +179,7 @@ class Program
         logger.LogInformation("Connected to Redis at {RedisAddr}", redisAddr);
 
         // Wait for listener multiaddr
-        var listenerAddr = await WaitForListener(db, logger);
+        var listenerAddr = await WaitForListener(db, logger, testKey);
         logger.LogInformation("Got listener multiaddr: {Addr}", listenerAddr);
 
         // Give listener a moment to be fully ready

@@ -277,13 +277,13 @@ This snapshot contains everything needed to reproduce the test run:
 - **results.html** - HTML visualization
 - **LATEST_TEST_RESULTS.md** - Detailed test results
 - **settings.yaml** - Snapshot metadata
-- **scripts/** - All test scripts (test-specific)
+- **lib/** - Test-specific scripts
 - **../lib/** - Common shared libraries
 - **logs/** - Test execution logs ($total files)
 - **docker-compose/** - Generated compose files
 - **docker-images/** - Saved Docker images (compressed)
-- **snapshots/** - GitHub source archives (ZIP files)
-- **git-repos/** - Git clones with submodules (if applicable)
+- **snapshot/** - GitHub source archives (ZIP files)
+- **git-repo/** - Git clones with submodules (if applicable)
 - **re-run.sh** - Script to reproduce this test run
 
 ## Re-running Tests
@@ -326,7 +326,7 @@ $(basename "$snapshot_dir")/
 ├── results.html
 ├── LATEST_TEST_RESULTS.md
 ├── settings.yaml
-├── scripts/
+├── lib/
 │   └── *.sh
 ├── ../lib/
 │   └── lib-*.sh
@@ -455,7 +455,7 @@ validate_snapshot_complete() {
     [ ! -x "$snapshot_dir/re-run.sh" ] && echo "  ✗ re-run.sh not executable" && errors=$((errors + 1))
 
     # Check directories
-    [ ! -d "$snapshot_dir/scripts" ] && echo "  ✗ Missing: scripts/" && errors=$((errors + 1))
+    [ ! -d "$snapshot_dir/lib" ] && echo "  ✗ Missing: lib/" && errors=$((errors + 1))
     [ ! -d "$snapshot_dir/logs" ] && echo "  ✗ Missing: logs/" && errors=$((errors + 1))
 
     if [ $errors -gt 0 ]; then

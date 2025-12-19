@@ -28,18 +28,21 @@ async fn main() {
     // Read configuration from environment variables
     let is_dialer = env::var("IS_DIALER").unwrap_or_else(|_| "false".to_string()) == "true";
     let redis_addr = env::var("REDIS_ADDR").unwrap_or_else(|_| "redis:6379".to_string());
+    let test_key = env::var("TEST_KEY").unwrap_or_else(|_| "default".to_string());
     let transport = env::var("TRANSPORT").unwrap_or_else(|_| "tcp".to_string());
     let secure = env::var("SECURE_CHANNEL").ok();
     let muxer = env::var("MUXER").ok();
 
+    eprintln!("TEST_KEY: {}", test_key);
+
     if is_dialer {
-        run_dialer(redis_addr, transport, secure, muxer).await;
+        run_dialer(redis_addr, test_key, transport, secure, muxer).await;
     } else {
-        run_listener(redis_addr, transport, secure, muxer).await;
+        run_listener(redis_addr, test_key, transport, secure, muxer).await;
     }
 }
 
-async fn run_listener(redis_addr: String, transport: String, secure: Option<String>, muxer: Option<String>) {
+async fn run_listener(redis_addr: String, test_key: String, transport: String, secure: Option<String>, muxer: Option<String>) {
     eprintln!("Starting perf listener...");
     eprintln!("Transport: {}", transport);
     eprintln!("Secure: {:?}", secure);
@@ -81,11 +84,12 @@ async fn run_listener(redis_addr: String, transport: String, secure: Option<Stri
             let full_multiaddr = format!("{}/p2p/{}", address, peer_id);
             eprintln!("Listening on: {}", full_multiaddr);
 
-            // Publish to Redis
-            let _: () = con.set("listener_multiaddr", full_multiaddr.clone()).await
-                .expect("Failed to publish multiaddr to Redis");
+            // Publish to Redis with TEST_KEY namespacing
+            let listener_addr_key = format!("{}_listener_multiaddr", test_key);
+            let _: () = con.set(&listener_addr_key, full_multiaddr.clone()).await
+                .expect(&format!("Failed to publish multiaddr to Redis (key: {})", listener_addr_key));
 
-            eprintln!("Published multiaddr to Redis: {}", full_multiaddr);
+            eprintln!("Published multiaddr to Redis (key: {})", listener_addr_key);
             break;
         }
     }
@@ -139,7 +143,7 @@ async fn run_listener(redis_addr: String, transport: String, secure: Option<Stri
     }
 }
 
-async fn run_dialer(redis_addr: String, transport: String, secure: Option<String>, muxer: Option<String>) {
+async fn run_dialer(redis_addr: String, test_key: String, transport: String, secure: Option<String>, muxer: Option<String>) {
     // Read test parameters from environment
     let upload_bytes: u64 = env::var("UPLOAD_BYTES")
         .unwrap_or_else(|_| "1073741824".to_string())
@@ -171,9 +175,7 @@ async fn run_dialer(redis_addr: String, transport: String, secure: Option<String
     eprintln!("Connected to Redis at {}", redis_addr);
 
     // Wait for listener multiaddr (with retries)
-    eprintln!("Waiting for listener multiaddr...");
-    let listener_addr_str = wait_for_listener(&mut con).await;
-    eprintln!("Got listener multiaddr: {}", listener_addr_str);
+    let listener_addr_str = wait_for_listener(&mut con, &test_key).await;
 
     // Parse listener multiaddr
     let listener_addr: Multiaddr = listener_addr_str.parse().expect("Invalid multiaddr from Redis");
@@ -301,14 +303,17 @@ async fn run_dialer(redis_addr: String, transport: String, secure: Option<String
     eprintln!("All measurements complete!");
 }
 
-async fn wait_for_listener(con: &mut redis::aio::MultiplexedConnection) -> String {
+async fn wait_for_listener(con: &mut redis::aio::MultiplexedConnection, test_key: &str) -> String {
+    let listener_addr_key = format!("{}_listener_multiaddr", test_key);
+    eprintln!("Waiting for listener multiaddr from Redis (key: {})...", listener_addr_key);
     for _ in 0..30 {
-        if let Ok(Some(addr)) = con.get::<_, Option<String>>("listener_multiaddr").await {
+        if let Ok(Some(addr)) = con.get::<_, Option<String>>(&listener_addr_key).await {
+            eprintln!("Got listener multiaddr (key: {})", listener_addr_key);
             return addr;
         }
         tokio::time::sleep(Duration::from_millis(500)).await;
     }
-    panic!("Timeout waiting for listener multiaddr");
+    panic!("Timeout waiting for listener multiaddr (key: {})", listener_addr_key);
 }
 
 struct Stats {
