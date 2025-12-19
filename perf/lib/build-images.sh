@@ -180,3 +180,4 @@ build_images_from_section "implementations"
 
 echo ""
 echo "  ✓ All images built successfully"
+echo ""

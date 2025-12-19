@@ -124,20 +124,40 @@ copy_all_scripts() {
     local snapshot_dir="$1"
     local test_type="$2"
 
-    # Copy test-specific scripts
+    # Create lib directory
+    mkdir -p "$snapshot_dir/lib"
+
+    # Copy test-specific scripts to lib/
     cp lib/*.sh "$snapshot_dir/lib/" 2>/dev/null || true
 
-    # Copy common scripts from parent directory
-    mkdir -p "$snapshot_dir/../lib"
-    cp ../lib/lib-*.sh "$snapshot_dir/../lib/" 2>/dev/null || true
-    cp ../lib/*.sh "$snapshot_dir/../lib/" 2>/dev/null || true
+    # Copy global scripts to SAME lib/ directory
+    cp ../lib/*.sh "$snapshot_dir/lib/" 2>/dev/null || true
 
-    # Make scripts executable
+    # Make all scripts executable
     chmod +x "$snapshot_dir/lib/"*.sh 2>/dev/null || true
-    chmod +x "$snapshot_dir/../lib/"*.sh 2>/dev/null || true
 
-    echo "  ✓ Copied all scripts (test-specific + common)"
+    echo "  ✓ Copied all scripts (test-specific + global to lib/)"
     return 0
+}
+
+# Copy run.sh script to snapshot
+# Args:
+#   $1: snapshot_dir - Snapshot directory
+#   $2: test_type - Test type (transport, perf, hole-punch)
+copy_run_script() {
+    local snapshot_dir="$1"
+    local test_type="$2"
+
+    # Copy run.sh from current directory to snapshot
+    if [ -f "run.sh" ]; then
+        cp run.sh "$snapshot_dir/run.sh"
+        chmod +x "$snapshot_dir/run.sh"
+        echo "  ✓ Copied run.sh"
+        return 0
+    else
+        echo "  ✗ Warning: run.sh not found"
+        return 1
+    fi
 }
 
 # Copy logs and docker-compose files
@@ -284,7 +304,6 @@ This snapshot contains everything needed to reproduce the test run:
 - **docker-images/** - Saved Docker images (compressed)
 - **snapshot/** - GitHub source archives (ZIP files)
 - **git-repo/** - Git clones with submodules (if applicable)
-- **re-run.sh** - Script to reproduce this test run
 
 ## Re-running Tests
 
@@ -292,20 +311,20 @@ This snapshot contains everything needed to reproduce the test run:
 
 \`\`\`bash
 # Re-run using cached Docker images
-./re-run.sh
+./run.sh
 
 # Force rebuild images before running
-./re-run.sh --force-image-rebuild
+./run.sh --force-image-rebuild
 
 # Re-run with different filters
-./re-run.sh --test-select '~rust' --workers 4
+./run.sh --test-select '~rust' --workers 4
 \`\`\`
 
 ### Available Options
 
-Run \`./re-run.sh --help\` to see all available options.
+Run \`./run.sh --help\` to see all available options.
 
-The re-run script supports the same filtering and configuration options as the
+The run script supports the same filtering and configuration options as the
 original run_tests.sh script, allowing you to subset or modify the test run.
 
 ## Snapshot Details
@@ -327,15 +346,14 @@ $(basename "$snapshot_dir")/
 ├── LATEST_TEST_RESULTS.md
 ├── settings.yaml
 ├── lib/
-│   └── *.sh
-├── ../lib/
+│   ├── *.sh
 │   └── lib-*.sh
 ├── logs/
 ├── docker-compose/
 ├── docker-images/
 ├── snapshots/          # ZIP archives
 ├── git-repos/          # Git clones with submodules
-├── re-run.sh
+├── run.sh
 └── README.md (this file)
 \`\`\`
 
@@ -381,24 +399,25 @@ display_snapshot_summary() {
     local git_count=$(ls -d "$snapshot_dir/git-repo/"*/ 2>/dev/null | wc -l)
 
     echo ""
-    echo "╲ Snapshot Summary"
-    echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-    echo "→ Snapshot: $snapshot_name"
-    echo "→ Location: $snapshot_dir"
-    echo "→ Size: $snapshot_size"
-    echo "→ Logs: $log_count files"
-    echo "→ Docker Compose: $compose_count files"
-    echo "→ Docker Images: $image_count saved"
-    echo "→ ZIP Snapshots: $zip_count files"
+    print_header "Snapshot Summary"
+    #echo "╲ Snapshot Summary"
+    #echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+    echo "  → Snapshot: $snapshot_name"
+    echo "  → Location: $snapshot_dir"
+    echo "  → Size: $snapshot_size"
+    echo "  → Logs: $log_count files"
+    echo "  → Docker Compose: $compose_count files"
+    echo "  → Docker Images: $image_count saved"
+    echo "  → ZIP Snapshots: $zip_count files"
 
     if [ $git_count -gt 0 ]; then
         echo "→ Git Clones: $git_count (with submodules)"
     fi
 
     echo ""
-    echo "To reproduce this test run:"
-    echo "  cd $snapshot_dir"
-    echo "  ./re-run.sh"
+    echo "  To reproduce this test run:"
+    echo "    cd $snapshot_dir"
+    echo "    ./run.sh"
     echo ""
 
     return 0
@@ -451,8 +470,8 @@ validate_snapshot_complete() {
     [ ! -f "$snapshot_dir/results.yaml" ] && echo "  ✗ Missing: results.yaml" && errors=$((errors + 1))
     [ ! -f "$snapshot_dir/settings.yaml" ] && echo "  ✗ Missing: settings.yaml" && errors=$((errors + 1))
     [ ! -f "$snapshot_dir/README.md" ] && echo "  ✗ Missing: README.md" && errors=$((errors + 1))
-    [ ! -f "$snapshot_dir/re-run.sh" ] && echo "  ✗ Missing: re-run.sh" && errors=$((errors + 1))
-    [ ! -x "$snapshot_dir/re-run.sh" ] && echo "  ✗ re-run.sh not executable" && errors=$((errors + 1))
+    [ ! -f "$snapshot_dir/run.sh" ] && echo "  ✗ Missing: run.sh" && errors=$((errors + 1))
+    [ ! -x "$snapshot_dir/run.sh" ] && echo "  ✗ run.sh not executable" && errors=$((errors + 1))
 
     # Check directories
     [ ! -d "$snapshot_dir/lib" ] && echo "  ✗ Missing: lib/" && errors=$((errors + 1))

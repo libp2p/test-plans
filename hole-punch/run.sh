@@ -6,7 +6,32 @@ set -euo pipefail
 # Capture original arguments for inputs.yaml generation
 ORIGINAL_ARGS=("$@")
 
-# Defaults
+# Change to script directory (do this early)
+cd "$(dirname "$0")"
+
+# Set global library directory (needed before loading inputs.yaml)
+SCRIPT_LIB_DIR="${SCRIPT_LIB_DIR:-$(cd "$(dirname "$0")/.." && pwd)/lib}"
+
+# Step 2 (from the_plan.md): Process inputs.yaml if it exists
+if [ -f "inputs.yaml" ]; then
+    source "$SCRIPT_LIB_DIR/lib-inputs-yaml.sh"
+
+    # Load environment variables from inputs.yaml
+    load_inputs_yaml "inputs.yaml"
+
+    # Load command-line args from inputs.yaml
+    mapfile -t YAML_ARGS < <(get_yaml_args "inputs.yaml")
+else
+    YAML_ARGS=()
+fi
+
+# Step 3 (from the_plan.md): Append actual command-line args (these override inputs.yaml)
+CMD_LINE_ARGS=("${YAML_ARGS[@]}" "$@")
+
+# Step 4 (from the_plan.md): Set positional parameters to merged args
+set -- "${CMD_LINE_ARGS[@]}"
+
+# Defaults (after loading inputs.yaml, so inputs.yaml can override)
 CACHE_DIR="${CACHE_DIR:-/srv/cache}"
 TEST_RUN_DIR="${TEST_RUN_DIR:-$CACHE_DIR/test-run}"
 TEST_SELECT="${TEST_SELECT:-}"
@@ -24,12 +49,6 @@ AUTO_YES=false
 DEBUG=false
 FORCE_MATRIX_REBUILD=false
 FORCE_IMAGE_REBUILD=false
-
-# Change to script directory
-cd "$(dirname "$0")"
-
-# Set global library directory
-SCRIPT_LIB_DIR="${SCRIPT_LIB_DIR:-$(cd "$(dirname "$0")/.." && pwd)/lib}"
 
 # Source formatting library
 source "$SCRIPT_LIB_DIR/lib-output-formatting.sh"

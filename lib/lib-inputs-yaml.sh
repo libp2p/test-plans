@@ -106,6 +106,25 @@ load_inputs_yaml() {
     return 0
 }
 
+# Get command-line arguments from inputs.yaml
+# Returns command-line args, one per line
+# Args:
+#   $1: inputs_file - Path to inputs.yaml (default: inputs.yaml)
+# Returns:
+#   Command-line arguments from inputs.yaml, one per line
+# Usage:
+#   mapfile -t YAML_ARGS < <(get_yaml_args "inputs.yaml")
+get_yaml_args() {
+    local inputs_file="${1:-inputs.yaml}"
+
+    if [ ! -f "$inputs_file" ]; then
+        return 1
+    fi
+
+    # Extract command-line args from inputs.yaml
+    yq eval '.commandLineArgs[]' "$inputs_file" 2>/dev/null || true
+}
+
 # Modify inputs.yaml for snapshot context
 # Updates paths to be relative to snapshot directory
 # Args:

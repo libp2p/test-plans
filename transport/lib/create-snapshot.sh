@@ -9,7 +9,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPT_LIB_DIR="${SCRIPT_LIB_DIR:-$SCRIPT_DIR/../../lib}"
 source "$SCRIPT_LIB_DIR/lib-snapshot-creation.sh"
 source "$SCRIPT_LIB_DIR/lib-github-snapshots.sh"
-source "$SCRIPT_LIB_DIR/lib-snapshot-rerun.sh"
 source "$SCRIPT_LIB_DIR/lib-snapshot-images.sh"
 source "$SCRIPT_LIB_DIR/lib-inputs-yaml.sh"
 
@@ -46,9 +45,10 @@ copy_impls_directory "$SNAPSHOT_DIR"
 echo "→ Modifying inputs.yaml for snapshot context..."
 modify_inputs_for_snapshot "$SNAPSHOT_DIR"
 
-# Step 5: Copy scripts
+# Step 5: Copy scripts and run.sh
 echo "→ Copying scripts..."
 copy_all_scripts "$SNAPSHOT_DIR" "$TEST_TYPE"
+copy_run_script "$SNAPSHOT_DIR" "$TEST_TYPE"
 
 # Step 6: Copy logs and docker-compose files
 echo "→ Copying logs and docker-compose files..."
@@ -67,26 +67,18 @@ cleanup_empty_source_dirs "$SNAPSHOT_DIR"
 # Step 8: Save Docker images
 save_docker_images_for_tests "$SNAPSHOT_DIR" "$TEST_TYPE"
 
-# Step 9: Capture original run options
-declare -A original_options
-original_options[test_select]="${TEST_SELECT:-}"
-original_options[test_ignore]="${TEST_IGNORE:-}"
-original_options[workers]="${WORKER_COUNT:-$(nproc 2>/dev/null || echo 4)}"
-original_options[debug]="${DEBUG:-false}"
+# Step 9: run.sh and inputs.yaml are already copied/configured
+# No need to generate re-run.sh - users will run ./run.sh which reads inputs.yaml
 
-# Step 10: Generate re-run.sh script
-echo "→ Generating re-run.sh..."
-generate_rerun_script "$SNAPSHOT_DIR" "$TEST_TYPE" "$test_pass" original_options
-
-# Step 11: Create settings.yaml
+# Step 10: Create settings.yaml
 echo "→ Creating settings.yaml..."
 create_settings_yaml "$SNAPSHOT_DIR" "$test_pass" "$TEST_TYPE" "$CACHE_DIR"
 
-# Step 12: Generate README
+# Step 11: Generate README
 echo "→ Generating README.md..."
 generate_snapshot_readme "$SNAPSHOT_DIR" "$TEST_TYPE" "$test_pass" ""
 
-# Step 13: Validate snapshot is complete
+# Step 12: Validate snapshot is complete
 echo "→ Validating snapshot..."
 if validate_snapshot_complete "$SNAPSHOT_DIR"; then
     echo "  ✓ Snapshot validation passed"

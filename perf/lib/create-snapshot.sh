@@ -10,7 +10,6 @@ cd "$SCRIPT_DIR/.."
 
 source "$SCRIPT_LIB_DIR/lib-snapshot-creation.sh"
 source "$SCRIPT_LIB_DIR/lib-github-snapshots.sh"
-source "$SCRIPT_LIB_DIR/lib-snapshot-rerun.sh"
 source "$SCRIPT_LIB_DIR/lib-snapshot-images.sh"
 source "$SCRIPT_LIB_DIR/lib-inputs-yaml.sh"
 source "$SCRIPT_LIB_DIR/lib-output-formatting.sh"
@@ -48,9 +47,10 @@ copy_impls_directory "$SNAPSHOT_DIR"
 echo "  → Modifying inputs.yaml for snapshot context..."
 modify_inputs_for_snapshot "$SNAPSHOT_DIR"
 
-# Step 5: Copy scripts
+# Step 5: Copy scripts and run.sh
 echo "  → Copying scripts..."
 copy_all_scripts "$SNAPSHOT_DIR" "$TEST_TYPE"
+copy_run_script "$SNAPSHOT_DIR" "$TEST_TYPE"
 
 # Note: Perf tests create logs during re-run, not during initial run
 # So we don't copy logs here - they'll be generated during re-run
@@ -66,31 +66,18 @@ fi
 # Step 7: Save Docker images (main + baseline)
 save_docker_images_for_tests "$SNAPSHOT_DIR" "$TEST_TYPE"
 
-# Step 8: Capture original run options (perf specific)
-declare -A original_options
-original_options[test_select]="${TEST_SELECT:-}"
-original_options[test_ignore]="${TEST_IGNORE:-}"
-original_options[baseline_select]="${BASELINE_SELECT:-}"
-original_options[baseline_ignore]="${BASELINE_IGNORE:-}"
-original_options[iterations]="${ITERATIONS:-10}"
-original_options[upload_bytes]="${UPLOAD_BYTES:-1073741824}"
-original_options[download_bytes]="${DOWNLOAD_BYTES:-1073741824}"
-original_options[workers]="${WORKER_COUNT:-$(nproc 2>/dev/null || echo 4)}"
-original_options[debug]="${DEBUG:-false}"
+# Step 8: run.sh and inputs.yaml are already copied/configured
+# No need to generate re-run.sh - users will run ./run.sh which reads inputs.yaml
 
-# Step 9: Generate re-run.sh script
-echo "  → Generating re-run.sh..."
-generate_rerun_script "$SNAPSHOT_DIR" "$TEST_TYPE" "$test_pass" original_options
-
-# Step 10: Create settings.yaml
+# Step 9: Create settings.yaml
 echo "  → Creating settings.yaml..."
 create_settings_yaml "$SNAPSHOT_DIR" "$test_pass" "$TEST_TYPE" "$CACHE_DIR"
 
-# Step 11: Generate README
+# Step 10: Generate README
 echo "  → Generating README.md..."
 generate_snapshot_readme "$SNAPSHOT_DIR" "$TEST_TYPE" "$test_pass" ""
 
-# Step 12: Validate snapshot is complete
+# Step 11: Validate snapshot is complete
 echo "  → Validating snapshot..."
 if validate_snapshot_complete "$SNAPSHOT_DIR"; then
     echo "    ✓ Snapshot validation passed"

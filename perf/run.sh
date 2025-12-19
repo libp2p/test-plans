@@ -10,8 +10,27 @@ ORIGINAL_ARGS=("$@")
 # Change to script directory
 cd "$(dirname "$0")"
 
-# Set global library directory
+# Set global library directory (needed before loading inputs.yaml)
 export SCRIPT_LIB_DIR="${SCRIPT_LIB_DIR:-$(cd "$(dirname "$0")/.." && pwd)/lib}"
+
+# Step 2 (from the_plan.md): Process inputs.yaml if it exists
+if [ -f "inputs.yaml" ]; then
+    source "$SCRIPT_LIB_DIR/lib-inputs-yaml.sh"
+
+    # Load environment variables from inputs.yaml
+    load_inputs_yaml "inputs.yaml"
+
+    # Load command-line args from inputs.yaml
+    mapfile -t YAML_ARGS < <(get_yaml_args "inputs.yaml")
+else
+    YAML_ARGS=()
+fi
+
+# Step 3 (from the_plan.md): Append actual command-line args (these override inputs.yaml)
+CMD_LINE_ARGS=("${YAML_ARGS[@]}" "$@")
+
+# Step 4 (from the_plan.md): Set positional parameters to merged args
+set -- "${CMD_LINE_ARGS[@]}"
 
 # Initialize common variables (paths, flags, defaults)
 source "$SCRIPT_LIB_DIR/lib-common-init.sh"
