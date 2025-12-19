@@ -194,9 +194,9 @@ for dialer_id in "${all_baseline_ids[@]}"; do
     dialer_server="${baseline_server[$dialer_id]}"
 
     for listener_id in "${all_baseline_ids[@]}"; do
-        # Check if EITHER dialer OR listener is in filtered baseline list
+        # Check if BOTH dialer AND listener are in filtered baseline list
         test_is_selected=false
-        if [[ " ${filtered_baseline_ids[*]} " =~ " ${dialer_id} " ]] || [[ " ${filtered_baseline_ids[*]} " =~ " ${listener_id} " ]]; then
+        if [[ " ${filtered_baseline_ids[*]} " =~ " ${dialer_id} " ]] && [[ " ${filtered_baseline_ids[*]} " =~ " ${listener_id} " ]]; then
             test_is_selected=true
         fi
 
@@ -355,9 +355,9 @@ for dialer_id in "${all_image_ids[@]}"; do
     dialer_server="${image_server[$dialer_id]}"
 
     for listener_id in "${all_image_ids[@]}"; do
-        # Check if EITHER dialer OR listener is in filtered implementation list
+        # Check if BOTH dialer AND listener are in filtered implementation list
         test_is_selected=false
-        if [[ " ${filtered_image_ids[*]} " =~ " ${dialer_id} " ]] || [[ " ${filtered_image_ids[*]} " =~ " ${listener_id} " ]]; then
+        if [[ " ${filtered_image_ids[*]} " =~ " ${dialer_id} " ]] && [[ " ${filtered_image_ids[*]} " =~ " ${listener_id} " ]]; then
             test_is_selected=true
         fi
 

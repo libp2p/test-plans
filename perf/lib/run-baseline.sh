@@ -7,6 +7,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/.."
 
+source "$SCRIPT_LIB_DIR/lib-output-formatting.sh"
 source "lib/lib-perf.sh"
 
 # Check if test matrix exists
@@ -24,8 +25,7 @@ if [ "$baseline_count" -eq 0 ]; then
 fi
 
 echo ""
-echo "╲ Running baseline tests... (1 worker)"
-echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+print_header "Running baseline tests... (1 worker)"
 
 # Initialize baseline results file
 > "$TEST_PASS_DIR/baseline-results.yaml.tmp"

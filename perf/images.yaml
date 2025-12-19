@@ -5,10 +5,10 @@
 # Usage: --test-select "~libp2p" or --test-ignore "~baseline"
 test-aliases:
   - alias: "all"
-    value: "~baselines|~impls"
+    value: "~baselines|~images"
   - alias: "none"
     value: "!~all"
-  - alias: "impls"
+  - alias: "images"
     value: "dotnet-v1.0|go-v0.45|js-v3.x|rust-v0.56"
   - alias: "baselines"
     value: "https|quic-go|iperf"
@@ -53,7 +53,7 @@ baselines:
     name: "HTTPS Baseline (Go stdlib)"
     source:
       type: local
-      path: impls/https/v1.0
+      path: images/https/v1.0
       dockerfile: Dockerfile
     server: local
     transports:
@@ -76,7 +76,7 @@ baselines:
     name: "QUIC-Go Baseline"
     source:
       type: local
-      path: impls/quic-go/v1.0
+      path: images/quic-go/v1.0
       dockerfile: Dockerfile
     server: local
     transports:
@@ -99,7 +99,7 @@ baselines:
     name: "iperf3 TCP Baseline"
     source:
       type: local
-      path: impls/iperf/v3.0
+      path: images/iperf/v3.0
       dockerfile: Dockerfile
     server: local
     transports:
@@ -125,7 +125,7 @@ implementations:
     name: "go-libp2p v0.45"
     source:
       type: local
-      path: impls/go/v0.45
+      path: images/go/v0.45
       dockerfile: Dockerfile
     server: local              # Server to use: local, remote-1, etc.
     transports:
@@ -154,7 +154,7 @@ implementations:
     name: "rust-libp2p v0.56"
     source:
       type: local
-      path: impls/rust/v0.56
+      path: images/rust/v0.56
       dockerfile: Dockerfile
     server: local              # Change to remote-1 for remote testing
     transports:
@@ -182,7 +182,7 @@ implementations:
     name: "js-libp2p v3.x"
     source:
       type: local
-      path: impls/js/v3.x
+      path: images/js/v3.x
       dockerfile: Dockerfile
     server: local
     transports:
@@ -209,7 +209,7 @@ implementations:
     name: "dotnet-libp2p v1.0"
     source:
       type: local
-      path: impls/dotnet/v1.0
+      path: images/dotnet/v1.0
       dockerfile: Dockerfile
     server: local
     transports:

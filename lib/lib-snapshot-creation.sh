@@ -446,20 +446,20 @@ validate_snapshot_complete() {
     local errors=0
 
     # Check critical files
-    [ ! -f "$snapshot_dir/images.yaml" ] && echo "✗ Missing: images.yaml" && errors=$((errors + 1))
-    [ ! -f "$snapshot_dir/test-matrix.yaml" ] && echo "✗ Missing: test-matrix.yaml" && errors=$((errors + 1))
-    [ ! -f "$snapshot_dir/results.yaml" ] && echo "✗ Missing: results.yaml" && errors=$((errors + 1))
-    [ ! -f "$snapshot_dir/settings.yaml" ] && echo "✗ Missing: settings.yaml" && errors=$((errors + 1))
-    [ ! -f "$snapshot_dir/README.md" ] && echo "✗ Missing: README.md" && errors=$((errors + 1))
-    [ ! -f "$snapshot_dir/re-run.sh" ] && echo "✗ Missing: re-run.sh" && errors=$((errors + 1))
-    [ ! -x "$snapshot_dir/re-run.sh" ] && echo "✗ re-run.sh not executable" && errors=$((errors + 1))
+    [ ! -f "$snapshot_dir/images.yaml" ] && echo "  ✗ Missing: images.yaml" && errors=$((errors + 1))
+    [ ! -f "$snapshot_dir/test-matrix.yaml" ] && echo "  ✗ Missing: test-matrix.yaml" && errors=$((errors + 1))
+    [ ! -f "$snapshot_dir/results.yaml" ] && echo "  ✗ Missing: results.yaml" && errors=$((errors + 1))
+    [ ! -f "$snapshot_dir/settings.yaml" ] && echo "  ✗ Missing: settings.yaml" && errors=$((errors + 1))
+    [ ! -f "$snapshot_dir/README.md" ] && echo "  ✗ Missing: README.md" && errors=$((errors + 1))
+    [ ! -f "$snapshot_dir/re-run.sh" ] && echo "  ✗ Missing: re-run.sh" && errors=$((errors + 1))
+    [ ! -x "$snapshot_dir/re-run.sh" ] && echo "  ✗ re-run.sh not executable" && errors=$((errors + 1))
 
     # Check directories
-    [ ! -d "$snapshot_dir/scripts" ] && echo "✗ Missing: scripts/" && errors=$((errors + 1))
-    [ ! -d "$snapshot_dir/logs" ] && echo "✗ Missing: logs/" && errors=$((errors + 1))
+    [ ! -d "$snapshot_dir/scripts" ] && echo "  ✗ Missing: scripts/" && errors=$((errors + 1))
+    [ ! -d "$snapshot_dir/logs" ] && echo "  ✗ Missing: logs/" && errors=$((errors + 1))
 
     if [ $errors -gt 0 ]; then
-        echo "✗ Snapshot validation failed: $errors errors"
+        echo "  ✗ Snapshot validation failed: $errors errors"
         return 1
     fi
 
@@ -480,7 +480,7 @@ create_snapshot_archive() {
 
     cd "$archive_dir"
     tar -czf "$archive_name" "$snapshot_name" 2>/dev/null || {
-        echo "✗ Failed to create archive" >&2
+        echo "  ✗ Failed to create archive" >&2
         return 1
     }
     cd - >/dev/null

@@ -9,13 +9,13 @@ cd "$SCRIPT_DIR/.."
 
 source "lib/lib-perf.sh"
 
-log_info "Verifying server configurations..."
+echo "  → Verifying server configurations..."
 
 # Get all remote servers from images.yaml
 remote_servers=$(get_all_remote_servers)
 
 if [ -z "$remote_servers" ]; then
-  log_info "No remote servers configured - using local servers only"
+  echo "  → No remote servers configured - using local servers only"
   exit 0
 fi
 
@@ -24,8 +24,8 @@ for server_id in $remote_servers; do
   hostname=$(get_remote_hostname "$server_id")
   username=$(get_remote_username "$server_id")
 
-  log_info "Testing remote server: $server_id"
-  echo "  → Host: $username@$hostname"
+  echo "  → Testing remote server: $server_id"
+  echo "    → Host: $username@$hostname"
 
   # Test SSH connectivity
   if ! verify_remote_server "$server_id"; then
@@ -43,7 +43,7 @@ for server_id in $remote_servers; do
   echo "  ✓ SSH connection verified"
 
   # Check Docker on remote server
-  log_debug "Checking Docker on $server_id..."
+  echo "  → Checking Docker on $server_id..."
   if ! exec_on_server "$server_id" "docker --version" >/dev/null 2>&1; then
     log_error "Docker not available on $server_id"
     echo ""
@@ -58,7 +58,7 @@ for server_id in $remote_servers; do
   echo "  ✓ Docker available: $docker_version"
 
   # Check Docker permissions (user can run without sudo)
-  log_debug "Checking Docker permissions on $server_id..."
+  echo "  → Checking Docker permissions on $server_id..."
   if ! exec_on_server "$server_id" "docker ps" >/dev/null 2>&1; then
     log_error "User '$username' cannot run Docker on $server_id"
     echo ""
@@ -71,12 +71,12 @@ for server_id in $remote_servers; do
   echo "  ✓ Docker permissions verified"
 
   # Create working directory on remote
-  log_debug "Creating working directory on $server_id..."
+  echo "  → Creating working directory on $server_id..."
   exec_on_server "$server_id" "mkdir -p /tmp/perf-test" >/dev/null 2>&1 || true
   echo "  ✓ Working directory ready: /tmp/perf-test"
 
   # Copy helper scripts to remote server
-  log_debug "Copying scripts to $server_id..."
+  echo "  → Copying scripts to $server_id..."
   rsync -az --quiet lib/ "${username}@${hostname}:/tmp/perf-test/lib/" || {
     log_error "Failed to copy scripts to $server_id"
     exit 1
@@ -86,4 +86,5 @@ for server_id in $remote_servers; do
   log_info "Remote server $server_id ready"
 done
 
-log_info "All remote servers verified and ready"
+echo ""
+echo "  ✓ All remote servers verified and ready"

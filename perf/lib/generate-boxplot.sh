@@ -13,13 +13,11 @@ RESULTS_FILE="$1"
 OUTPUT_DIR="$2"
 
 if [ ! -f "$RESULTS_FILE" ]; then
-    echo "✗ Error: $RESULTS_FILE not found"
+    echo "  ✗ Error: $RESULTS_FILE not found"
     exit 1
 fi
 
 mkdir -p "$OUTPUT_DIR"
-
-echo "→ Generating box plots..."
 
 # Get counts dynamically from both arrays
 BASELINE_COUNT=$(yq '.baselineResults | length' "$RESULTS_FILE" 2>/dev/null || echo "0")
@@ -235,4 +233,5 @@ fi
 # Clean up temporary files
 rm -f "$OUTPUT_DIR"/*.gp "$OUTPUT_DIR"/*.dat
 
-echo "✓ Box plot generation complete"
+echo ""
+echo "  ✓ Box plot generation complete"

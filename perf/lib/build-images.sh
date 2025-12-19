@@ -7,13 +7,12 @@ set -euo pipefail
 
 # Get script directory and change to perf directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SCRIPT_LIB_DIR="${SCRIPT_LIB_DIR:-$SCRIPT_DIR/../../lib}"
 cd "$SCRIPT_DIR/.."
 
 # Source required libraries
+source "$SCRIPT_LIB_DIR/lib-image-naming.sh"
+source "$SCRIPT_LIB_DIR/lib-remote-execution.sh"
 source "lib/lib-perf.sh"
-source "../lib/lib-image-naming.sh"
-source "../lib/lib-remote-execution.sh"
 
 # Configuration
 CACHE_DIR="${CACHE_DIR:-/srv/cache}"
@@ -179,4 +178,5 @@ EOF
 build_images_from_section "baselines"
 build_images_from_section "implementations"
 
-echo "✓ All images built successfully"
+echo ""
+echo "  ✓ All images built successfully"

@@ -13,7 +13,7 @@ save_docker_images_for_tests() {
     local snapshot_dir="$1"
     local test_type="$2"
 
-    echo "→ Saving Docker images..."
+    echo "  → Saving Docker images..."
 
     # Collect all unique image names needed
     declare -A unique_images

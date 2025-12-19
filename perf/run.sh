@@ -297,12 +297,12 @@ print_header "Server Setup..."
 
 if [ -f lib/setup-remote-server.sh ]; then
   bash lib/setup-remote-server.sh || {
-    log_error "Remote server setup failed"
+    echo "  ✗ Remote server setup failed"
     exit 1
   }
 else
-  log_info "No remote server setup script found"
-  log_info "Proceeding with local-only testing"
+  echo "  → No remote server setup script found"
+  echo "  → Proceeding with local-only testing"
 fi
 
 # Generate test matrix
@@ -312,9 +312,6 @@ print_header "Generating test matrix..."
 export TEST_SELECT TEST_IGNORE BASELINE_SELECT BASELINE_IGNORE
 export UPLOAD_BYTES DOWNLOAD_BYTES
 export ITERATIONS DURATION_PER_ITERATION LATENCY_ITERATIONS FORCE_MATRIX_REBUILD
-
-# Show command with filter values (matching transport format)
-#echo "→ bash lib/generate-tests.sh \"$TEST_SELECT\" \"$TEST_IGNORE\" \"$BASELINE_SELECT\" \"$BASELINE_IGNORE\""
 
 bash lib/generate-tests.sh || {
   echo "✗ Test matrix generation failed"
@@ -356,16 +353,18 @@ source "$SCRIPT_LIB_DIR/lib-test-execution.sh"
 
 # Calculate required Docker images
 image_count=$(get_required_image_count "$TEST_PASS_DIR/test-matrix.yaml" "true")
-print_message "Required Docker images: $image_count"
+echo "  → Required Docker images: $image_count"
 
 # Prompt for confirmation unless auto-approved
 if [ "$AUTO_YES" != true ]; then
   total_tests=$((baseline_count + test_count))
-  read -p "Build $image_count Docker images and execute $total_tests tests ($baseline_count baseline + $test_count main)? (Y/n): " response
+  echo ""
+  read -p "  Build $image_count Docker images and execute $total_tests tests ($baseline_count baseline + $test_count main)? (Y/n): " response
   response=${response:-Y}
 
   if [[ ! "$response" =~ ^[Yy]$ ]]; then
-    echo "Test execution cancelled."
+    echo ""
+    echo "  ✗ Test execution cancelled."
     exit 0
   fi
 fi
@@ -388,7 +387,6 @@ echo ""
 
 # Build each required implementation using pipe-separated list
 IMAGE_FILTER=$(cat "$REQUIRED_IMAGES" | paste -sd'|' -)
-echo "  → bash lib/build-images.sh \"$IMAGE_FILTER\" \"$FORCE_IMAGE_REBUILD\""
 bash lib/build-images.sh "$IMAGE_FILTER" "$FORCE_IMAGE_REBUILD" || {
   echo "✗ Image build failed"
   exit 1
@@ -399,7 +397,7 @@ rm -f "$REQUIRED_IMAGES"
 # Run baseline tests FIRST (before main tests)
 if [ "$baseline_count" -gt 0 ]; then
     bash lib/run-baseline.sh || {
-      log_info "Baseline tests failed or skipped (not critical)"
+      echo "  → Baseline tests failed or skipped (not critical)"
     }
 fi
 
@@ -416,7 +414,7 @@ for ((i=0; i<test_count; i++)); do
 
   # Run test, suppress terminal output (still writes to log file)
   bash lib/run-single-test.sh "$i" >/dev/null 2>&1 || {
-    log_error "Test $i failed"
+    echo "  ✗ Test $i failed"
     # Continue with other tests
   }
 done
@@ -519,10 +517,9 @@ printf "  → Total time: %02d:%02d:%02d\n" $HOURS $MINUTES $SECONDS
 # Generate results dashboard
 echo ""
 print_header "Generating results dashboard..."
-echo "  → bash lib/generate-dashboard.sh"
 
 bash lib/generate-dashboard.sh || {
-  log_error "Dashboard generation failed"
+  echo "  ✗ Dashboard generation failed"
 }
 
 # Generate box plots (optional - requires gnuplot)
@@ -531,7 +528,6 @@ print_header "Generating box plots..."
 
 # Check if gnuplot is available
 if command -v gnuplot &> /dev/null; then
-    echo "  → bash lib/generate-boxplot.sh"
     bash lib/generate-boxplot.sh "$TEST_PASS_DIR/results.yaml" "$TEST_PASS_DIR" || {
         echo "  ✗ Box plot generation failed"
     }
@@ -552,11 +548,8 @@ fi
 
 # Create snapshot (if requested)
 if [ "$CREATE_SNAPSHOT" = true ]; then
-  echo ""
-  print_header "Creating Snapshot"
-
   bash lib/create-snapshot.sh || {
-    log_error "Snapshot creation failed"
+    echo "  ✗ Snapshot creation failed"
   }
 fi
 
