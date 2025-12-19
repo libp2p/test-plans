@@ -57,16 +57,16 @@ save_docker_images_for_tests() {
 
     # Also add base images for browser-type implementations (transport only)
     if [ "$test_type" = "transport" ]; then
-        local impl_count=$(yq eval '.implementations | length' impls.yaml)
+        local impl_count=$(yq eval '.implementations | length' images.yaml)
         for ((i=0; i<impl_count; i++)); do
-            local impl_id=$(yq eval ".implementations[$i].id" impls.yaml)
-            local source_type=$(yq eval ".implementations[$i].source.type" impls.yaml)
+            local impl_id=$(yq eval ".implementations[$i].id" images.yaml)
+            local source_type=$(yq eval ".implementations[$i].source.type" images.yaml)
 
             # Check if this implementation is used in tests
             if echo "${!unique_images[@]}" | grep -q "transport-interop-${impl_id}"; then
                 # If it's a browser type, add its base image
                 if [ "$source_type" = "browser" ]; then
-                    local base_image=$(yq eval ".implementations[$i].source.baseImage" impls.yaml)
+                    local base_image=$(yq eval ".implementations[$i].source.baseImage" images.yaml)
                     if [ -n "$base_image" ] && [ "$base_image" != "null" ]; then
                         local base_img_name=$(get_impl_image_name "$base_image" "$test_type")
                         unique_images["$base_img_name"]=1

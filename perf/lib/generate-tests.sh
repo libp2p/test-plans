@@ -1,7 +1,7 @@
 #!/bin/bash
-# Generate test matrix from impls.yaml with dialer × listener combinations
+# Generate test matrix from images.yaml with dialer × listener combinations
 # Pattern: <dialer> x <listener> (<transport>, <secureChannel>, <muxer>)
-# Similar to transport/scripts/generate-tests.sh
+# Similar to transport/lib/generate-tests.sh
 
 set -uo pipefail  # Removed -e to allow continuation on errors
 
@@ -18,18 +18,18 @@ is_standalone_transport() {
 }
 
 # Source common libraries
-source "../scripts/lib-test-filtering.sh"
-source "../scripts/lib-test-aliases.sh"
-source "../scripts/lib-test-caching.sh"
-source "../scripts/lib-filter-engine.sh"
-source "scripts/lib-perf.sh"
+source "../lib/lib-test-filtering.sh"
+source "../lib/lib-test-aliases.sh"
+source "../lib/lib-test-caching.sh"
+source "../lib/lib-filter-engine.sh"
+source "lib/lib-perf.sh"
 
 # Load test aliases
 load_aliases
 
 # Get all entity IDs for negation expansion
-all_impl_ids=($(yq eval '.implementations[].id' impls.yaml))
-all_baseline_ids=($(yq eval '.baselines[].id' impls.yaml))
+all_impl_ids=($(yq eval '.implementations[].id' images.yaml))
+all_baseline_ids=($(yq eval '.baselines[].id' images.yaml))
 
 # Get parameters from environment
 TEST_SELECT="${TEST_SELECT:-}"
@@ -111,7 +111,7 @@ else
     echo "→ No baseline-ignore specified"
 fi
 
-# Compute cache key from impls.yaml + all filters + debug
+# Compute cache key from images.yaml + all filters + debug
 cache_key=$(compute_cache_key "$TEST_SELECT" "$TEST_IGNORE" "$BASELINE_SELECT" "$BASELINE_IGNORE" "" "" "$DEBUG")
 echo "→ Computed cache key: ${cache_key:0:8}"
 
@@ -123,8 +123,8 @@ fi
 echo ""
 
 # Load baseline data
-baseline_count=$(yq eval '.baselines | length' impls.yaml)
-echo "→ Found $baseline_count baselines in impls.yaml"
+baseline_count=$(yq eval '.baselines | length' images.yaml)
+echo "→ Found $baseline_count baselines in images.yaml"
 echo "→ Loading baseline data into memory..."
 
 declare -A baseline_transports
@@ -134,11 +134,11 @@ declare -A baseline_server
 declare -a baseline_ids
 
 for ((i=0; i<baseline_count; i++)); do
-    id=$(yq eval ".baselines[$i].id" impls.yaml)
-    transports=$(yq eval ".baselines[$i].transports | join(\" \")" impls.yaml)
-    secure=$(yq eval ".baselines[$i].secureChannels | join(\" \")" impls.yaml)
-    muxers=$(yq eval ".baselines[$i].muxers | join(\" \")" impls.yaml)
-    server=$(yq eval ".baselines[$i].server" impls.yaml)
+    id=$(yq eval ".baselines[$i].id" images.yaml)
+    transports=$(yq eval ".baselines[$i].transports | join(\" \")" images.yaml)
+    secure=$(yq eval ".baselines[$i].secureChannels | join(\" \")" images.yaml)
+    muxers=$(yq eval ".baselines[$i].muxers | join(\" \")" images.yaml)
+    server=$(yq eval ".baselines[$i].server" images.yaml)
 
     baseline_ids+=("$id")
     baseline_transports["$id"]="$transports"
@@ -150,8 +150,8 @@ done
 echo "  ✓ Loaded ${#baseline_ids[@]} baselines into memory"
 
 # Load main implementation data
-impl_count=$(yq eval '.implementations | length' impls.yaml)
-echo "→ Found $impl_count implementations in impls.yaml"
+impl_count=$(yq eval '.implementations | length' images.yaml)
+echo "→ Found $impl_count implementations in images.yaml"
 echo "→ Loading implementation data into memory..."
 
 declare -A impl_transports
@@ -161,11 +161,11 @@ declare -A impl_server
 declare -a impl_ids
 
 for ((i=0; i<impl_count; i++)); do
-    id=$(yq eval ".implementations[$i].id" impls.yaml)
-    transports=$(yq eval ".implementations[$i].transports | join(\" \")" impls.yaml)
-    secure=$(yq eval ".implementations[$i].secureChannels | join(\" \")" impls.yaml)
-    muxers=$(yq eval ".implementations[$i].muxers | join(\" \")" impls.yaml)
-    server=$(yq eval ".implementations[$i].server" impls.yaml)
+    id=$(yq eval ".implementations[$i].id" images.yaml)
+    transports=$(yq eval ".implementations[$i].transports | join(\" \")" images.yaml)
+    secure=$(yq eval ".implementations[$i].secureChannels | join(\" \")" images.yaml)
+    muxers=$(yq eval ".implementations[$i].muxers | join(\" \")" images.yaml)
+    server=$(yq eval ".implementations[$i].server" images.yaml)
 
     impl_ids+=("$id")
     impl_transports["$id"]="$transports"
@@ -490,8 +490,8 @@ done
 yq eval -i ".metadata.totalBaselines = $baseline_num" "$TEST_PASS_DIR/test-matrix.yaml"
 yq eval -i ".metadata.totalTests = $test_num" "$TEST_PASS_DIR/test-matrix.yaml"
 
-# Copy impls.yaml for reference
-cp impls.yaml "$TEST_PASS_DIR/"
+# Copy images.yaml for reference
+cp images.yaml "$TEST_PASS_DIR/"
 
 echo "✓ Generated $test_num main tests"
 

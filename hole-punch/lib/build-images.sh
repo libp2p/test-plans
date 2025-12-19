@@ -15,7 +15,7 @@ RELAY_FILTER="${1:-}"      # Optional: pipe-separated relay ID filter
 ROUTER_FILTER="${2:-}"     # Optional: pipe-separated router ID filter
 IMPL_FILTER="${3:-}"       # Optional: pipe-separated implementation ID filter
 FORCE_REBUILD="${4:-false}"  # Optional: force rebuild all images
-BUILD_SCRIPT="$SCRIPT_DIR/../../scripts/build-single-image.sh"
+BUILD_SCRIPT="$SCRIPT_DIR/../../lib/build-single-image.sh"
 
 echo "  → Cache directory: $CACHE_DIR"
 [ -n "$RELAY_FILTER" ] && echo "  → Relay filter: $RELAY_FILTER"
@@ -36,10 +36,10 @@ build_image_type() {
     local filter="$3"
     local prefix="hole-punch-${image_type}-"
 
-    local count=$(yq eval ".$yaml_section | length" impls.yaml)
+    local count=$(yq eval ".$yaml_section | length" images.yaml)
 
     for ((i=0; i<count; i++)); do
-        local id=$(yq eval ".${yaml_section}[$i].id" impls.yaml)
+        local id=$(yq eval ".${yaml_section}[$i].id" images.yaml)
 
         # Apply filter if specified
         if [ -n "$filter" ]; then
@@ -57,7 +57,7 @@ build_image_type() {
         fi
 
         local image_name="${prefix}${id}"
-        local source_type=$(yq eval ".${yaml_section}[$i].source.type" impls.yaml)
+        local source_type=$(yq eval ".${yaml_section}[$i].source.type" images.yaml)
 
         # Check if image already exists (skip if not forcing rebuild)
         if [ "$FORCE_REBUILD" = "false" ] && docker image inspect "$image_name" &>/dev/null; then
@@ -82,11 +82,11 @@ EOF
         # Add source-specific parameters
         case "$source_type" in
             github)
-                local repo=$(yq eval ".${yaml_section}[$i].source.repo" impls.yaml)
-                local commit=$(yq eval ".${yaml_section}[$i].source.commit" impls.yaml)
-                local dockerfile=$(yq eval ".${yaml_section}[$i].source.dockerfile" impls.yaml)
-                local build_context=$(yq eval ".${yaml_section}[$i].source.buildContext // \".\"" impls.yaml)
-                local requires_submodules=$(yq eval ".${yaml_section}[$i].source.requiresSubmodules // false" impls.yaml)
+                local repo=$(yq eval ".${yaml_section}[$i].source.repo" images.yaml)
+                local commit=$(yq eval ".${yaml_section}[$i].source.commit" images.yaml)
+                local dockerfile=$(yq eval ".${yaml_section}[$i].source.dockerfile" images.yaml)
+                local build_context=$(yq eval ".${yaml_section}[$i].source.buildContext // \".\"" images.yaml)
+                local requires_submodules=$(yq eval ".${yaml_section}[$i].source.requiresSubmodules // false" images.yaml)
 
                 cat >> "$yaml_file" <<EOF
 
@@ -101,8 +101,8 @@ EOF
                 ;;
 
             local)
-                local local_path=$(yq eval ".${yaml_section}[$i].source.path" impls.yaml)
-                local dockerfile=$(yq eval ".${yaml_section}[$i].source.dockerfile" impls.yaml)
+                local local_path=$(yq eval ".${yaml_section}[$i].source.path" images.yaml)
+                local dockerfile=$(yq eval ".${yaml_section}[$i].source.dockerfile" images.yaml)
 
                 cat >> "$yaml_file" <<EOF
 
@@ -113,9 +113,9 @@ EOF
                 ;;
 
             browser)
-                local base_image=$(yq eval ".${yaml_section}[$i].source.baseImage" impls.yaml)
-                local browser=$(yq eval ".${yaml_section}[$i].source.browser" impls.yaml)
-                local dockerfile=$(yq eval ".${yaml_section}[$i].source.dockerfile" impls.yaml)
+                local base_image=$(yq eval ".${yaml_section}[$i].source.baseImage" images.yaml)
+                local browser=$(yq eval ".${yaml_section}[$i].source.browser" images.yaml)
+                local dockerfile=$(yq eval ".${yaml_section}[$i].source.dockerfile" images.yaml)
                 local build_context=$(dirname "$dockerfile")
 
                 cat >> "$yaml_file" <<EOF

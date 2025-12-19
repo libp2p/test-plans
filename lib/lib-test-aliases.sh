@@ -2,16 +2,16 @@
 # Common test alias expansion functions
 # Used by both hole-punch and transport test generation
 
-# Load aliases from impls.yaml into an associative array
+# Load aliases from images.yaml into an associative array
 load_aliases() {
     declare -gA ALIASES  # Global associative array
 
-    if [ ! -f "impls.yaml" ]; then
+    if [ ! -f "images.yaml" ]; then
         return
     fi
 
     # Check if test-aliases exists
-    local alias_count=$(yq eval '.test-aliases | length' impls.yaml 2>/dev/null || echo 0)
+    local alias_count=$(yq eval '.test-aliases | length' images.yaml 2>/dev/null || echo 0)
 
     if [ "$alias_count" -eq 0 ] || [ "$alias_count" = "null" ]; then
         return
@@ -19,15 +19,15 @@ load_aliases() {
 
     # Load each alias
     for ((i=0; i<alias_count; i++)); do
-        local alias_name=$(yq eval ".test-aliases[$i].alias" impls.yaml)
-        local alias_value=$(yq eval ".test-aliases[$i].value" impls.yaml)
+        local alias_name=$(yq eval ".test-aliases[$i].alias" images.yaml)
+        local alias_value=$(yq eval ".test-aliases[$i].value" images.yaml)
         ALIASES["$alias_name"]="$alias_value"
     done
 }
 
 # Get all implementation IDs as a pipe-separated string
 get_all_impl_ids() {
-    yq eval '.implementations[].id' impls.yaml | paste -sd'|' -
+    yq eval '.implementations[].id' images.yaml | paste -sd'|' -
 }
 
 # Expand a single negated alias (!~alias)

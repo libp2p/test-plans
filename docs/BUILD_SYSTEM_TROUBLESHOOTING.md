@@ -37,7 +37,7 @@ local:
 EOF
 
 # Run build
-./scripts/build-single-image.sh /tmp/test-build.yaml
+./lib/build-single-image.sh /tmp/test-build.yaml
 ```
 
 ### Inspect YAML Files
@@ -71,7 +71,7 @@ ls -la /srv/cache/build-yamls/
 mkdir -p /srv/cache/build-yamls
 
 # Re-run with debug
-bash -x scripts/build-images.sh "rust-v0.56" "false" 2>&1 | grep "yaml"
+bash -x lib/build-images.sh "rust-v0.56" "false" 2>&1 | grep "yaml"
 ```
 
 ---
@@ -112,10 +112,10 @@ yq eval '.implementations[] | select(.id == "rust-v0.56") | .source.type' impls.
 ```bash
 # Build base image first
 cd /srv/test-plans/transport
-bash scripts/build-images.sh "js-v3.x" "false"
+bash lib/build-images.sh "js-v3.x" "false"
 
 # Then build browser image
-bash scripts/build-images.sh "chromium-js-v3.x" "false"
+bash lib/build-images.sh "chromium-js-v3.x" "false"
 ```
 
 **Build Order:**
@@ -202,7 +202,7 @@ ls -la /srv/cache/snapshots/
 cat /srv/cache/build-yamls/docker-build-<name>.yaml
 
 # 2. Run build manually for detailed output
-./scripts/build-single-image.sh /srv/cache/build-yamls/docker-build-<name>.yaml
+./lib/build-single-image.sh /srv/cache/build-yamls/docker-build-<name>.yaml
 
 # 3. Try docker build directly
 cd /path/to/source
@@ -242,8 +242,8 @@ ssh user@hostname "docker --version"
 
 # Test remote connectivity function
 cd /srv/test-plans/perf
-source scripts/lib-perf.sh
-source ../scripts/lib-remote-execution.sh
+source lib/lib-perf.sh
+source ../lib/lib-remote-execution.sh
 
 test_all_remote_servers "impls.yaml" \
     "get_server_config" \
@@ -299,7 +299,7 @@ pwd
 **Cause:** Missing `-tt` flag in SSH command.
 
 **Solution:**
-Verify `scripts/lib-remote-execution.sh` uses:
+Verify `lib/lib-remote-execution.sh` uses:
 ```bash
 ssh -tt "${username}@${hostname}" "bash $remote_script $remote_yaml" 2>&1
 #    ^^
@@ -334,12 +334,12 @@ yq --version
 
 **For orchestrator:**
 ```bash
-bash -x scripts/build-images.sh "rust-v0.56" "false" 2>&1 | less
+bash -x lib/build-images.sh "rust-v0.56" "false" 2>&1 | less
 ```
 
 **For executor:**
 ```bash
-bash -x ./scripts/build-single-image.sh /srv/cache/build-yamls/docker-build-rust-v0.56.yaml
+bash -x ./lib/build-single-image.sh /srv/cache/build-yamls/docker-build-rust-v0.56.yaml
 ```
 
 ### Inspect Generated YAML
@@ -440,15 +440,15 @@ Include:
 ./run_tests.sh --list-impls
 
 # Test connectivity (perf only)
-source scripts/lib-perf.sh
-source ../scripts/lib-remote-execution.sh
+source lib/lib-perf.sh
+source ../lib/lib-remote-execution.sh
 test_all_remote_servers impls.yaml ...
 
 # Clean rebuild
-bash scripts/build-images.sh "" "true"  # Rebuild all
+bash lib/build-images.sh "" "true"  # Rebuild all
 
 # Debug single image
-./scripts/build-single-image.sh <yaml-file>
+./lib/build-single-image.sh <yaml-file>
 ```
 
 ---

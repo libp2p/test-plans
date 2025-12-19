@@ -5,6 +5,7 @@ set -euo pipefail
 
 # Defaults
 CACHE_DIR="${CACHE_DIR:-/srv/cache}"
+TEST_RUN_DIR="${TEST_RUN_DIR:-$CACHE_DIR/test-run}"
 TEST_SELECT="${TEST_SELECT:-}"
 TEST_IGNORE="${TEST_IGNORE:-}"
 RELAY_SELECT="${RELAY_SELECT:-}"
@@ -103,39 +104,39 @@ echo ""
 
 # List implementations
 if [ "$LIST_IMPLS" = true ]; then
-    if [ ! -f "impls.yaml" ]; then
-        echo "Error: impls.yaml not found"
+    if [ ! -f "images.yaml" ]; then
+        echo "Error: images.yaml not found"
         exit 1
     fi
     echo "╲ Available Implementations"
     echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-    yq eval '.implementations[].id' impls.yaml | sed 's/^/→ /'
+    yq eval '.implementations[].id' images.yaml | sed 's/^/→ /'
     echo ""
     exit 0
 fi
 
 # List relays
 if [ "$LIST_RELAYS" = true ]; then
-    if [ ! -f "impls.yaml" ]; then
-        echo "Error: impls.yaml not found"
+    if [ ! -f "images.yaml" ]; then
+        echo "Error: images.yaml not found"
         exit 1
     fi
     echo "╲ Available Relays"
     echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-    yq eval '.relays[].id' impls.yaml | sed 's/^/→ /'
+    yq eval '.relays[].id' images.yaml | sed 's/^/→ /'
     echo ""
     exit 0
 fi
 
 # List routers
 if [ "$LIST_ROUTERS" = true ]; then
-    if [ ! -f "impls.yaml" ]; then
-        echo "Error: impls.yaml not found"
+    if [ ! -f "images.yaml" ]; then
+        echo "Error: images.yaml not found"
         exit 1
     fi
     echo "╲ Available Routers"
     echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-    yq eval '.routers[].id' impls.yaml | sed 's/^/→ /'
+    yq eval '.routers[].id' images.yaml | sed 's/^/→ /'
     echo ""
     exit 0
 fi
@@ -154,7 +155,7 @@ if [ "$LIST_TESTS" = true ]; then
     echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
     # Generate test matrix
-    if ! bash scripts/generate-tests.sh "$TEST_SELECT" "$TEST_IGNORE" "$RELAY_SELECT" "$RELAY_IGNORE" "$ROUTER_SELECT" "$ROUTER_IGNORE" "$DEBUG" "$FORCE_MATRIX_REBUILD" > /dev/null 2>&1; then
+    if ! bash lib/generate-tests.sh "$TEST_SELECT" "$TEST_IGNORE" "$RELAY_SELECT" "$RELAY_IGNORE" "$ROUTER_SELECT" "$ROUTER_IGNORE" "$DEBUG" "$FORCE_MATRIX_REBUILD" > /dev/null 2>&1; then
         echo "Error: Failed to generate test matrix"
         exit 1
     fi
@@ -186,7 +187,7 @@ fi
 
 # Check dependencies
 if [ "$CHECK_DEPS_ONLY" = true ]; then
-    bash ../scripts/check-dependencies.sh
+    bash ../lib/check-dependencies.sh
     exit $?
 fi
 
@@ -198,7 +199,7 @@ echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔�
 
 # Generate test pass name and folder
 TEST_PASS_NAME="hole-punch-$(date +%H%M%S-%d-%m-%Y)"
-export TEST_PASS_DIR="$CACHE_DIR/test-runs/$TEST_PASS_NAME"
+export TEST_PASS_DIR="$TEST_RUN_DIR/$TEST_PASS_NAME"
 
 echo "→ Test Pass: $TEST_PASS_NAME"
 echo "→ Cache Dir: $CACHE_DIR"
@@ -221,12 +222,12 @@ START_TIME=$(date +%s)
 # Create test pass directory and copy configuration
 mkdir -p "$TEST_PASS_DIR"
 
-cp impls.yaml "$TEST_PASS_DIR/"
+cp images.yaml "$TEST_PASS_DIR/"
 
 # 1. Check dependencies
 echo "╲ Checking dependencies..."
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-if ! bash ../scripts/check-dependencies.sh; then
+if ! bash ../lib/check-dependencies.sh; then
     echo "Dependency check failed. Please install missing dependencies."
     exit 1
 fi
@@ -244,8 +245,8 @@ fi
 echo ""
 echo "╲ Generating test matrix..."
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-echo "→ bash scripts/generate-tests.sh \"$TEST_SELECT\" \"$TEST_IGNORE\" \"$RELAY_SELECT\" \"$RELAY_IGNORE\" \"$ROUTER_SELECT\" \"$ROUTER_IGNORE\" \"$DEBUG\" \"$FORCE_MATRIX_REBUILD\""
-bash scripts/generate-tests.sh "$TEST_SELECT" "$TEST_IGNORE" "$RELAY_SELECT" "$RELAY_IGNORE" "$ROUTER_SELECT" "$ROUTER_IGNORE" "$DEBUG" "$FORCE_MATRIX_REBUILD"
+echo "→ bash lib/generate-tests.sh \"$TEST_SELECT\" \"$TEST_IGNORE\" \"$RELAY_SELECT\" \"$RELAY_IGNORE\" \"$ROUTER_SELECT\" \"$ROUTER_IGNORE\" \"$DEBUG\" \"$FORCE_MATRIX_REBUILD\""
+bash lib/generate-tests.sh "$TEST_SELECT" "$TEST_IGNORE" "$RELAY_SELECT" "$RELAY_IGNORE" "$ROUTER_SELECT" "$ROUTER_IGNORE" "$DEBUG" "$FORCE_MATRIX_REBUILD"
 
 # 3. Display test selection and get confirmation
 test_count=$(yq eval '.metadata.totalTests' "$TEST_PASS_DIR/test-matrix.yaml")
@@ -282,10 +283,10 @@ else
 
     while IFS= read -r impl_id; do
         # Check if this is a browser-type implementation
-        source_type=$(yq eval ".implementations[] | select(.id == \"$impl_id\") | .source.type" impls.yaml)
+        source_type=$(yq eval ".implementations[] | select(.id == \"$impl_id\") | .source.type" images.yaml)
         if [ "$source_type" = "browser" ]; then
             # Add its base image as a dependency
-            base_image=$(yq eval ".implementations[] | select(.id == \"$impl_id\") | .source.baseImage" impls.yaml)
+            base_image=$(yq eval ".implementations[] | select(.id == \"$impl_id\") | .source.baseImage" images.yaml)
             echo "$base_image" >> "$REQUIRED_IMPLS_WITH_DEPS"
         fi
     done < "$REQUIRED_IMPLS"
@@ -303,8 +304,8 @@ else
     echo ""
 
     # Build images with filters (relay, router, impl filters passed separately)
-    echo "→ bash scripts/build-images.sh \"$RELAY_FILTER\" \"$ROUTER_FILTER\" \"$IMPL_FILTER\" \"$FORCE_IMAGE_REBUILD\""
-    bash scripts/build-images.sh "$RELAY_FILTER" "$ROUTER_FILTER" "$IMPL_FILTER" "$FORCE_IMAGE_REBUILD"
+    echo "→ bash lib/build-images.sh \"$RELAY_FILTER\" \"$ROUTER_FILTER\" \"$IMPL_FILTER\" \"$FORCE_IMAGE_REBUILD\""
+    bash lib/build-images.sh "$RELAY_FILTER" "$ROUTER_FILTER" "$IMPL_FILTER" "$FORCE_IMAGE_REBUILD"
 
     rm -f "$REQUIRED_IMPLS" "$REQUIRED_IMPLS_WITH_DEPS"
 fi
@@ -353,7 +354,7 @@ fi
 echo ""
 echo "╲ Starting global services..."
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-bash scripts/start-global-services.sh
+bash lib/start-global-services.sh
 
 # Run tests in parallel
 echo ""
@@ -383,7 +384,7 @@ run_test() {
     echo "[$((index + 1))/$test_count] $name"
 
     start=$(date +%s)
-    if bash scripts/run-single-test.sh "$name" "$dialer" "$listener" "$transport" "$secure" "$muxer"; then
+    if bash lib/run-single-test.sh "$name" "$dialer" "$listener" "$transport" "$secure" "$muxer"; then
         status="pass"
         exit_code=0
     else
@@ -436,7 +437,7 @@ seq 0 $((test_count - 1)) | xargs -P "$WORKER_COUNT" -I {} bash -c 'run_test {}'
 echo ""
 echo "╲ Stopping global services..."
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-bash scripts/stop-global-services.sh
+bash lib/stop-global-services.sh
 
 # 6. Collect results
 echo ""
@@ -505,8 +506,8 @@ printf "→ Total time: %02d:%02d:%02d\n" $HOURS $MINUTES $SECONDS
 echo ""
 echo "╲ Generating results dashboard..."
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-echo "→ bash scripts/generate-dashboard.sh"
-bash scripts/generate-dashboard.sh
+echo "→ bash lib/generate-dashboard.sh"
+bash lib/generate-dashboard.sh
 
 # Final status message
 echo ""
@@ -525,8 +526,8 @@ if [ "$CREATE_SNAPSHOT" = true ]; then
     echo ""
     echo "╲ Creating test pass snapshot..."
     echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-    echo "→ bash scripts/create-snapshot.sh"
-    bash scripts/create-snapshot.sh
+    echo "→ bash lib/create-snapshot.sh"
+    bash lib/create-snapshot.sh
 fi
 
 exit $EXIT_FINAL

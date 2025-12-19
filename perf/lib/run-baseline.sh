@@ -7,7 +7,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/.."
 
-source "scripts/lib-perf.sh"
+source "lib/lib-perf.sh"
 
 # Check if test matrix exists
 if [ ! -f "$TEST_PASS_DIR/test-matrix.yaml" ]; then
@@ -37,7 +37,7 @@ for ((i=0; i<baseline_count; i++)); do
     echo "[$((i + 1))/$baseline_count] $baseline_name"
 
     # Run baseline test using same script, passing "baseline" as test type
-    bash scripts/run-single-test.sh "$i" "baseline" >/dev/null 2>&1 || {
+    bash lib/run-single-test.sh "$i" "baseline" >/dev/null 2>&1 || {
         log_error "Baseline test $i failed"
         # Continue with other baseline tests
     }

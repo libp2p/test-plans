@@ -99,6 +99,6 @@ get_common() {
 #   OLD: TEST_SELECT=$(expand_aliases "$TEST_SELECT")
 #        impl_matches_select "$impl_id"
 #
-#   NEW: all_impls=($(yq eval '.implementations[].id' impls.yaml))
+#   NEW: all_impls=($(yq eval '.implementations[].id' images.yaml))
 #        TEST_SELECT=$(expand_filter_string "$TEST_SELECT" all_impls)
 #        filter_matches "$impl_id" "$TEST_SELECT"

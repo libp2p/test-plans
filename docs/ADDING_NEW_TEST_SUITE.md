@@ -9,12 +9,12 @@ Guide for adding new test suites (e.g., "relay-performance", "e2e-tests") that u
 The unified build system makes it easy to add new test suites. You only need to create a thin orchestrator script that generates YAML files and calls the shared executor.
 
 **Shared Infrastructure (Already Exists):**
-- `scripts/build-single-image.sh` - YAML-based executor
-- `scripts/lib-image-building.sh` - Build functions
-- `scripts/lib-remote-execution.sh` - Remote build support
+- `lib/build-single-image.sh` - YAML-based executor
+- `lib/lib-image-building.sh` - Build functions
+- `lib/lib-remote-execution.sh` - Remote build support
 
 **What You Create:**
-- `<new-test>/scripts/build-images.sh` - Orchestrator (80-150 lines)
+- `<new-test>/lib/build-images.sh` - Orchestrator (80-150 lines)
 - `<new-test>/impls.yaml` - Implementation definitions
 
 ---
@@ -66,7 +66,7 @@ implementations:
 
 ```bash
 #!/bin/bash
-# my-new-test/scripts/build-images.sh
+# my-new-test/lib/build-images.sh
 
 set -euo pipefail
 
@@ -79,7 +79,7 @@ CACHE_DIR="${CACHE_DIR:-/srv/cache}"
 FILTER="${1:-}"           # Optional filter
 FORCE_REBUILD="${2:-false}"
 IMAGE_PREFIX="my-new-test-"
-BUILD_SCRIPT="$SCRIPT_DIR/../../scripts/build-single-image.sh"
+BUILD_SCRIPT="$SCRIPT_DIR/../../lib/build-single-image.sh"
 
 echo "  → Cache directory: $CACHE_DIR"
 [ -n "$FILTER" ] && echo "  → Filter: $FILTER"
@@ -214,7 +214,7 @@ servers:  # NEW: Server definitions
 ### Step 2: Create Server Helper Functions
 
 ```bash
-# my-new-test/scripts/lib-my-test.sh
+# my-new-test/lib/lib-my-test.sh
 
 get_server_config() {
     local impl_id="$1"
@@ -241,8 +241,8 @@ is_remote_server() {
 
 ```bash
 # Source remote execution library
-source "../scripts/lib-remote-execution.sh"
-source "scripts/lib-my-test.sh"
+source "../lib/lib-remote-execution.sh"
+source "lib/lib-my-test.sh"
 
 # In the loop:
 server_id=$(get_server_config "$impl_id")
@@ -301,7 +301,7 @@ build_image_type "peer" "implementations" "$IMPL_FILTER"
 ### 1. Test Build Script
 ```bash
 cd my-new-test
-bash scripts/build-images.sh "rust-v0.56" "false"
+bash lib/build-images.sh "rust-v0.56" "false"
 ```
 
 ### 2. Test with run_tests.sh
@@ -315,7 +315,7 @@ bash scripts/build-images.sh "rust-v0.56" "false"
 # In tests/test-unified-build-system.sh
 cd "$TEST_DIR/my-new-test"
 run_test "My new test orchestrator" \
-    "bash scripts/build-images.sh 'rust-v0.56' 'false'" \
+    "bash lib/build-images.sh 'rust-v0.56' 'false'" \
     0
 ```
 
@@ -345,16 +345,16 @@ run_test "My new test orchestrator" \
 ```
 my-new-test/
 ├── impls.yaml                       # Implementation definitions
-├── scripts/
+├── lib/
 │   ├── build-images.sh             # Orchestrator (80-100 lines)
 │   ├── generate-tests.sh           # Test matrix generator
 │   └── run-single-test.sh          # Single test runner
 └── run_tests.sh                    # Main test runner
 
 Uses (shared):
-├── scripts/build-single-image.sh   # Executor
-├── scripts/lib-image-building.sh   # Build functions
-└── scripts/lib-remote-execution.sh # Remote builds
+├── lib/build-single-image.sh   # Executor
+├── lib/lib-image-building.sh   # Build functions
+└── lib/lib-remote-execution.sh # Remote builds
 ```
 
 **Time to implement:** 1-2 hours (mostly copy-paste from existing tests)
@@ -364,7 +364,7 @@ Uses (shared):
 ## Checklist for New Test Suite
 
 - [ ] Created `<test>/impls.yaml` with implementations
-- [ ] Created `<test>/scripts/build-images.sh` orchestrator
+- [ ] Created `<test>/lib/build-images.sh` orchestrator
 - [ ] Tested local builds
 - [ ] Tested remote builds (if needed)
 - [ ] Tested all source types (github/local/browser)
@@ -377,8 +377,8 @@ Uses (shared):
 ## Need Help?
 
 See existing test suites as examples:
-- **Simplest:** `transport/scripts/build-images.sh` (138 lines)
-- **With remote:** `perf/scripts/build-images.sh` (171 lines)
-- **Multi-component:** `hole-punch/scripts/build-images.sh` (148 lines)
+- **Simplest:** `transport/lib/build-images.sh` (138 lines)
+- **With remote:** `perf/lib/build-images.sh` (171 lines)
+- **Multi-component:** `hole-punch/lib/build-images.sh` (148 lines)
 
 All use the same unified system! 🎉

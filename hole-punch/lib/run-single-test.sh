@@ -54,13 +54,13 @@ fi
 
 # Compute image names and get delays
 RELAY_IMAGE="hole-punch-relay-${RELAY_TYPE}"
-RELAY_DELAY=$(yq eval ".relays[] | select(.id == \"$RELAY_TYPE\") | .delayMs" "$SCRIPT_DIR/../impls.yaml")
+RELAY_DELAY=$(yq eval ".relays[] | select(.id == \"$RELAY_TYPE\") | .delayMs" "$SCRIPT_DIR/../images.yaml")
 
 DIALER_ROUTER_IMAGE="hole-punch-router-${DIALER_ROUTER_TYPE}"
-DIALER_ROUTER_DELAY=$(yq eval ".routers[] | select(.id == \"$DIALER_ROUTER_TYPE\") | .delayMs" "$SCRIPT_DIR/../impls.yaml")
+DIALER_ROUTER_DELAY=$(yq eval ".routers[] | select(.id == \"$DIALER_ROUTER_TYPE\") | .delayMs" "$SCRIPT_DIR/../images.yaml")
 
 LISTENER_ROUTER_IMAGE="hole-punch-router-${LISTENER_ROUTER_TYPE}"
-LISTENER_ROUTER_DELAY=$(yq eval ".routers[] | select(.id == \"$LISTENER_ROUTER_TYPE\") | .delayMs" "$SCRIPT_DIR/../impls.yaml")
+LISTENER_ROUTER_DELAY=$(yq eval ".routers[] | select(.id == \"$LISTENER_ROUTER_TYPE\") | .delayMs" "$SCRIPT_DIR/../images.yaml")
 
 # Sanitize test name for file names
 TEST_SLUG=$(echo "$TEST_NAME" | sed 's/[^a-zA-Z0-9-]/_/g')
@@ -218,7 +218,7 @@ echo "" >> "$LOG_FILE"
 echo "Container 4: Dialer" >> "$LOG_FILE"
 echo "  Container Name: ${TEST_SLUG}_dialer" >> "$LOG_FILE"
 echo "  Image:          hole-punch-peer-${DIALER_ID}" >> "$LOG_FILE"
-echo "  Dockerfile:     Based on implementation from impls.yaml" >> "$LOG_FILE"
+echo "  Dockerfile:     Based on implementation from images.yaml" >> "$LOG_FILE"
 echo "  Purpose:        The peer that initiates the hole punch connection." >> "$LOG_FILE"
 echo "                  Tests the ability to establish a direct connection" >> "$LOG_FILE"
 echo "                  through NAT using the relay for coordination." >> "$LOG_FILE"
@@ -236,7 +236,7 @@ echo "" >> "$LOG_FILE"
 echo "Container 5: Listener" >> "$LOG_FILE"
 echo "  Container Name: ${TEST_SLUG}_listener" >> "$LOG_FILE"
 echo "  Image:          hole-punch-peer-${LISTENER_ID}" >> "$LOG_FILE"
-echo "  Dockerfile:     Based on implementation from impls.yaml" >> "$LOG_FILE"
+echo "  Dockerfile:     Based on implementation from images.yaml" >> "$LOG_FILE"
 echo "  Purpose:        The peer that receives the hole punch connection." >> "$LOG_FILE"
 echo "                  Tests the ability to accept a direct connection" >> "$LOG_FILE"
 echo "                  through NAT using the relay for coordination." >> "$LOG_FILE"

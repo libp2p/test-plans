@@ -1,23 +1,23 @@
 #!/bin/bash
-# Create self-contained test pass snapshot for hole-punch interoperability tests
+# Create self-contained test pass snapshot for transport interoperability tests
 # Uses common snapshot libraries for code reuse
 
 set -euo pipefail
 
 # Source common snapshot libraries
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/../../scripts/lib-snapshot-creation.sh"
-source "$SCRIPT_DIR/../../scripts/lib-github-snapshots.sh"
-source "$SCRIPT_DIR/../../scripts/lib-snapshot-rerun.sh"
-source "$SCRIPT_DIR/../../scripts/lib-snapshot-images.sh"
+source "$SCRIPT_DIR/../../lib/lib-snapshot-creation.sh"
+source "$SCRIPT_DIR/../../lib/lib-github-snapshots.sh"
+source "$SCRIPT_DIR/../../lib/lib-snapshot-rerun.sh"
+source "$SCRIPT_DIR/../../lib/lib-snapshot-images.sh"
 
 # Configuration
-TEST_TYPE="hole-punch"
+TEST_TYPE="transport"
 CACHE_DIR="${CACHE_DIR:-/srv/cache}"
 TEST_PASS_DIR="${TEST_PASS_DIR:-.}"
 
 echo ""
-echo "╲ Creating Hole-Punch Test Snapshot"
+echo "╲ Creating Transport Test Snapshot"
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
 # Step 1: Validate inputs
@@ -26,7 +26,7 @@ validate_snapshot_inputs "$TEST_PASS_DIR" "$CACHE_DIR" || exit 1
 
 # Step 2: Get test pass name and create snapshot directory
 test_pass=$(get_test_pass_name "$TEST_PASS_DIR/results.yaml")
-SNAPSHOT_DIR="$CACHE_DIR/test-runs/$test_pass"
+SNAPSHOT_DIR="$CACHE_DIR/test-run/$test_pass"
 
 echo "→ Snapshot: $test_pass"
 echo "→ Location: $SNAPSHOT_DIR"
@@ -58,17 +58,13 @@ fi
 # Clean up empty directories
 cleanup_empty_source_dirs "$SNAPSHOT_DIR"
 
-# Step 8: Save Docker images (peer, relay, router)
+# Step 8: Save Docker images
 save_docker_images_for_tests "$SNAPSHOT_DIR" "$TEST_TYPE"
 
-# Step 9: Capture original run options (hole-punch specific)
+# Step 9: Capture original run options
 declare -A original_options
 original_options[test_select]="${TEST_SELECT:-}"
 original_options[test_ignore]="${TEST_IGNORE:-}"
-original_options[relay_select]="${RELAY_SELECT:-}"
-original_options[relay_ignore]="${RELAY_IGNORE:-}"
-original_options[router_select]="${ROUTER_SELECT:-}"
-original_options[router_ignore]="${ROUTER_IGNORE:-}"
 original_options[workers]="${WORKER_COUNT:-$(nproc 2>/dev/null || echo 4)}"
 original_options[debug]="${DEBUG:-false}"
 
@@ -96,7 +92,7 @@ fi
 # Step 14: Display summary
 display_snapshot_summary "$SNAPSHOT_DIR"
 
-echo "✓ Hole-punch snapshot created successfully"
+echo "✓ Transport snapshot created successfully"
 echo ""
 
 exit 0

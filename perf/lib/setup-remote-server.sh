@@ -7,11 +7,11 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/.."
 
-source "scripts/lib-perf.sh"
+source "lib/lib-perf.sh"
 
 log_info "Verifying server configurations..."
 
-# Get all remote servers from impls.yaml
+# Get all remote servers from images.yaml
 remote_servers=$(get_all_remote_servers)
 
 if [ -z "$remote_servers" ]; then
@@ -77,7 +77,7 @@ for server_id in $remote_servers; do
 
   # Copy helper scripts to remote server
   log_debug "Copying scripts to $server_id..."
-  rsync -az --quiet scripts/ "${username}@${hostname}:/tmp/perf-test/scripts/" || {
+  rsync -az --quiet lib/ "${username}@${hostname}:/tmp/perf-test/lib/" || {
     log_error "Failed to copy scripts to $server_id"
     exit 1
   }

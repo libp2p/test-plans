@@ -6,6 +6,7 @@ set -euo pipefail
 
 # Default parameters
 CACHE_DIR="${CACHE_DIR:-/srv/cache}"
+TEST_RUN_DIR="${TEST_RUN_DIR:-$CACHE_DIR/test-run}"
 TEST_SELECT="${TEST_SELECT:-}"
 TEST_IGNORE="${TEST_IGNORE:-}"
 BASELINE_SELECT="${BASELINE_SELECT:-}"
@@ -63,7 +64,7 @@ Examples:
   $0 --list-impls
   $0 --list-tests --test-select "~libp2p"
 
-Test Aliases (defined in impls.yaml):
+Test Aliases (defined in images.yaml):
   ~libp2p    - All libp2p implementations (go-v0.45, rust-v0.56, js-v3.x)
   ~baseline  - Baseline implementations (https, quic-go)
   ~go        - Go-based implementations
@@ -112,10 +113,10 @@ done
 cd "$(dirname "$0")"
 
 # Source common libraries (after argument parsing, so --help doesn't need them)
-source "../scripts/lib-test-filtering.sh"
-source "../scripts/lib-test-caching.sh"
-source "../scripts/lib-image-naming.sh"
-source "scripts/lib-perf.sh"
+source "../lib/lib-test-filtering.sh"
+source "../lib/lib-test-caching.sh"
+source "../lib/lib-image-naming.sh"
+source "lib/lib-perf.sh"
 
 echo ""
 echo "                        ╔╦╦╗  ╔═╗"
@@ -127,26 +128,26 @@ echo ""
 
 # List implementations
 if [ "$LIST_IMPLS" = true ]; then
-    if [ ! -f "impls.yaml" ]; then
-        echo "Error: impls.yaml not found"
+    if [ ! -f "images.yaml" ]; then
+        echo "Error: images.yaml not found"
         exit 1
     fi
     echo "╲ Available Implementations"
     echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-    yq eval '.implementations[].id' impls.yaml | sed 's/^/→ /'
+    yq eval '.implementations[].id' images.yaml | sed 's/^/→ /'
     echo ""
     exit 0
 fi
 
 # List baselines
 if [ "$LIST_BASELINES" = true ]; then
-    if [ ! -f "impls.yaml" ]; then
-        echo "Error: impls.yaml not found"
+    if [ ! -f "images.yaml" ]; then
+        echo "Error: images.yaml not found"
         exit 1
     fi
     echo "╲ Available Baselines"
     echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-    yq eval '.baselines[].id' impls.yaml | sed 's/^/→ /'
+    yq eval '.baselines[].id' images.yaml | sed 's/^/→ /'
     echo ""
     exit 0
 fi
@@ -168,15 +169,15 @@ if [ "$LIST_TESTS" = true ]; then
 
     echo "╲ Generating test matrix..."
     echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-    echo "→ bash scripts/generate-tests.sh \"$TEST_SELECT\" \"$TEST_IGNORE\" \"$BASELINE_SELECT\" \"$BASELINE_IGNORE\""
+    echo "→ bash lib/generate-tests.sh \"$TEST_SELECT\" \"$TEST_IGNORE\" \"$BASELINE_SELECT\" \"$BASELINE_IGNORE\""
 
     # Generate test matrix (don't suppress output to show Test Matrix Generation section)
-    bash scripts/generate-tests.sh || true
+    bash lib/generate-tests.sh || true
 
     # Check if matrix was created successfully
     if [ ! -f "$TEMP_DIR/test-matrix.yaml" ]; then
         echo "Error: Failed to generate test matrix"
-        bash scripts/generate-tests.sh 2>&1 | tail -10  # Show error output
+        bash lib/generate-tests.sh 2>&1 | tail -10  # Show error output
         exit 1
     fi
 
@@ -207,7 +208,7 @@ fi
 
 # Check dependencies
 if [ "$CHECK_DEPS_ONLY" = true ]; then
-    bash ../scripts/check-dependencies.sh docker yq
+    bash ../lib/check-dependencies.sh docker yq
     exit $?
 fi
 
@@ -218,7 +219,7 @@ export CACHE_DIR
 # Create test run directory
 TEST_PASS_TIMESTAMP=$(date +%H%M%S-%d-%m-%Y)
 TEST_PASS_NAME="perf-${TEST_PASS_TIMESTAMP}"
-TEST_PASS_DIR="$CACHE_DIR/test-runs/$TEST_PASS_NAME"
+TEST_PASS_DIR="$TEST_RUN_DIR/$TEST_PASS_NAME"
 mkdir -p "$TEST_PASS_DIR"/{logs,results,baseline}
 
 export TEST_PASS_DIR
@@ -246,7 +247,7 @@ echo ""
 # Check dependencies for normal execution
 echo "╲ Checking dependencies..."
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-bash ../scripts/check-dependencies.sh docker yq || {
+bash ../lib/check-dependencies.sh docker yq || {
   echo ""
   echo "Error: Missing required dependencies."
   echo "Run '$0 --check-deps' to see details."
@@ -270,8 +271,8 @@ TEST_START_TIME=$(date +%s)
 echo "╲ Server Setup"
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
-if [ -f scripts/setup-remote-server.sh ]; then
-  bash scripts/setup-remote-server.sh || {
+if [ -f lib/setup-remote-server.sh ]; then
+  bash lib/setup-remote-server.sh || {
     log_error "Remote server setup failed"
     exit 1
   }
@@ -290,9 +291,9 @@ export UPLOAD_BYTES DOWNLOAD_BYTES
 export ITERATIONS DURATION_PER_ITERATION LATENCY_ITERATIONS FORCE_MATRIX_REBUILD
 
 # Show command with filter values (matching transport format)
-echo "→ bash scripts/generate-tests.sh \"$TEST_SELECT\" \"$TEST_IGNORE\" \"$BASELINE_SELECT\" \"$BASELINE_IGNORE\""
+echo "→ bash lib/generate-tests.sh \"$TEST_SELECT\" \"$TEST_IGNORE\" \"$BASELINE_SELECT\" \"$BASELINE_IGNORE\""
 
-bash scripts/generate-tests.sh || {
+bash lib/generate-tests.sh || {
   echo "✗ Test matrix generation failed"
   exit 1
 }
@@ -329,7 +330,7 @@ echo ""
 echo "→ Total: $baseline_count baseline tests, $test_count main tests to execute"
 
 # Source common test execution utilities
-source "../scripts/lib-test-execution.sh"
+source "../lib/lib-test-execution.sh"
 
 # Calculate required Docker images
 image_count=$(get_required_image_count "$TEST_PASS_DIR/test-matrix.yaml" "true")
@@ -366,8 +367,8 @@ echo ""
 
 # Build each required implementation using pipe-separated list
 IMPL_FILTER=$(cat "$REQUIRED_IMPLS" | paste -sd'|' -)
-echo "→ bash scripts/build-images.sh \"$IMPL_FILTER\" \"$FORCE_IMAGE_REBUILD\""
-bash scripts/build-images.sh "$IMPL_FILTER" "$FORCE_IMAGE_REBUILD" || {
+echo "→ bash lib/build-images.sh \"$IMPL_FILTER\" \"$FORCE_IMAGE_REBUILD\""
+bash lib/build-images.sh "$IMPL_FILTER" "$FORCE_IMAGE_REBUILD" || {
   echo "✗ Image build failed"
   exit 1
 }
@@ -376,7 +377,7 @@ rm -f "$REQUIRED_IMPLS"
 
 # Run baseline tests FIRST (before main tests)
 if [ "$baseline_count" -gt 0 ]; then
-    bash scripts/run-baseline.sh || {
+    bash lib/run-baseline.sh || {
       log_info "Baseline tests failed or skipped (not critical)"
     }
 fi
@@ -394,7 +395,7 @@ for ((i=0; i<test_count; i++)); do
   echo "[$((i + 1))/$test_count] $test_name"
 
   # Run test, suppress terminal output (still writes to log file)
-  bash scripts/run-single-test.sh "$i" >/dev/null 2>&1 || {
+  bash lib/run-single-test.sh "$i" >/dev/null 2>&1 || {
     log_error "Test $i failed"
     # Continue with other tests
   }
@@ -500,9 +501,9 @@ printf "→ Total time: %02d:%02d:%02d\n" $HOURS $MINUTES $SECONDS
 echo ""
 echo "╲ Generating results dashboard..."
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-echo "→ bash scripts/generate-dashboard.sh"
+echo "→ bash lib/generate-dashboard.sh"
 
-bash scripts/generate-dashboard.sh || {
+bash lib/generate-dashboard.sh || {
   log_error "Dashboard generation failed"
 }
 
@@ -513,8 +514,8 @@ echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔�
 
 # Check if gnuplot is available
 if command -v gnuplot &> /dev/null; then
-    echo "→ bash scripts/generate-boxplot.sh"
-    bash scripts/generate-boxplot.sh "$TEST_PASS_DIR/results.yaml" "$TEST_PASS_DIR" || {
+    echo "→ bash lib/generate-boxplot.sh"
+    bash lib/generate-boxplot.sh "$TEST_PASS_DIR/results.yaml" "$TEST_PASS_DIR" || {
         echo "  ✗ Box plot generation failed"
     }
 else
@@ -540,7 +541,7 @@ if [ "$SNAPSHOT" = true ]; then
   echo "╲ Creating Snapshot"
   echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
-  bash scripts/create-snapshot.sh || {
+  bash lib/create-snapshot.sh || {
     log_error "Snapshot creation failed"
   }
 fi

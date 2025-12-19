@@ -11,7 +11,7 @@ Build parameters are defined in YAML files located at:
 $CACHE_DIR/build-yamls/docker-build-<name>.yaml
 ```
 
-These YAML files are consumed by `scripts/build-single-image.sh` to build Docker images.
+These YAML files are consumed by `lib/build-single-image.sh` to build Docker images.
 
 ---
 
@@ -447,19 +447,19 @@ local:
 EOF
 
 # Build
-./scripts/build-single-image.sh /tmp/build-rust.yaml
+./lib/build-single-image.sh /tmp/build-rust.yaml
 ```
 
 ### Automated Build (via orchestrator)
 ```bash
 # Transport
-./transport/scripts/build-images.sh "rust-v0.56" "false"
+./transport/lib/build-images.sh "rust-v0.56" "false"
 
 # Perf
-./perf/scripts/build-images.sh "go-v0.45|rust-v0.56" "false"
+./perf/lib/build-images.sh "go-v0.45|rust-v0.56" "false"
 
 # Hole-punch
-./hole-punch/scripts/build-images.sh "" "" "linux" "false"
+./hole-punch/lib/build-images.sh "" "" "linux" "false"
 ```
 
 The orchestrator creates YAML files automatically.

@@ -10,16 +10,16 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/.."
 
 # Source required libraries
-source "scripts/lib-perf.sh"
-source "../scripts/lib-image-naming.sh"
-source "../scripts/lib-remote-execution.sh"
+source "lib/lib-perf.sh"
+source "../lib/lib-image-naming.sh"
+source "../lib/lib-remote-execution.sh"
 
 # Configuration
 CACHE_DIR="${CACHE_DIR:-/srv/cache}"
 FILTER="${1:-}"  # Optional: pipe-separated filter (e.g., "go-v0.45|rust-v0.56")
 FORCE_IMAGE_REBUILD="${2:-false}"
 IMAGE_PREFIX="perf-"
-BUILD_SCRIPT="$SCRIPT_DIR/../../scripts/build-single-image.sh"
+BUILD_SCRIPT="$SCRIPT_DIR/../../lib/build-single-image.sh"
 
 echo "  → Cache directory: $CACHE_DIR"
 if [ -n "$FILTER" ]; then
@@ -34,11 +34,11 @@ mkdir -p "$CACHE_DIR/build-yamls"
 # Helper function to build images from a YAML section (implementations or baselines)
 build_images_from_section() {
     local section="$1"  # "implementations" or "baselines"
-    local count=$(yq eval ".$section | length" impls.yaml)
+    local count=$(yq eval ".$section | length" images.yaml)
 
     for ((i=0; i<count; i++)); do
-        local impl_id=$(yq eval ".${section}[$i].id" impls.yaml)
-        local source_type=$(yq eval ".${section}[$i].source.type" impls.yaml)
+        local impl_id=$(yq eval ".${section}[$i].id" images.yaml)
+        local source_type=$(yq eval ".${section}[$i].source.type" images.yaml)
 
         # Apply filter if specified
         if [ -n "$FILTER" ]; then
@@ -103,11 +103,11 @@ EOF
         # Add source-specific parameters
         case "$source_type" in
             github)
-                local repo=$(yq eval ".${section}[$i].source.repo" impls.yaml)
-                local commit=$(yq eval ".${section}[$i].source.commit" impls.yaml)
-                local dockerfile=$(yq eval ".${section}[$i].source.dockerfile" impls.yaml)
-                local build_context=$(yq eval ".${section}[$i].source.buildContext // \".\"" impls.yaml)
-                local requires_submodules=$(yq eval ".${section}[$i].source.requiresSubmodules // false" impls.yaml)
+                local repo=$(yq eval ".${section}[$i].source.repo" images.yaml)
+                local commit=$(yq eval ".${section}[$i].source.commit" images.yaml)
+                local dockerfile=$(yq eval ".${section}[$i].source.dockerfile" images.yaml)
+                local build_context=$(yq eval ".${section}[$i].source.buildContext // \".\"" images.yaml)
+                local requires_submodules=$(yq eval ".${section}[$i].source.requiresSubmodules // false" images.yaml)
 
                 cat >> "$yaml_file" <<EOF
 
@@ -122,8 +122,8 @@ EOF
                 ;;
 
             local)
-                local local_path=$(yq eval ".${section}[$i].source.path" impls.yaml)
-                local dockerfile=$(yq eval ".${section}[$i].source.dockerfile // \"Dockerfile\"" impls.yaml)
+                local local_path=$(yq eval ".${section}[$i].source.path" images.yaml)
+                local dockerfile=$(yq eval ".${section}[$i].source.dockerfile // \"Dockerfile\"" images.yaml)
 
                 cat >> "$yaml_file" <<EOF
 
@@ -134,9 +134,9 @@ EOF
                 ;;
 
             browser)
-                local base_image=$(yq eval ".${section}[$i].source.baseImage" impls.yaml)
-                local browser=$(yq eval ".${section}[$i].source.browser" impls.yaml)
-                local dockerfile=$(yq eval ".${section}[$i].source.dockerfile" impls.yaml)
+                local base_image=$(yq eval ".${section}[$i].source.baseImage" images.yaml)
+                local browser=$(yq eval ".${section}[$i].source.browser" images.yaml)
+                local dockerfile=$(yq eval ".${section}[$i].source.dockerfile" images.yaml)
                 local build_context=$(dirname "$dockerfile")
 
                 cat >> "$yaml_file" <<EOF
@@ -158,7 +158,7 @@ EOF
         # Execute build (local or remote)
         if [ "$build_location" = "remote" ]; then
             # Copy lib-image-building.sh to remote for use by build script
-            local lib_script="$SCRIPT_DIR/../../scripts/lib-image-building.sh"
+            local lib_script="$SCRIPT_DIR/../../lib/lib-image-building.sh"
 
             build_on_remote "$yaml_file" "$username" "$hostname" "$BUILD_SCRIPT" || {
                 echo "✗ Remote build failed for $impl_id"

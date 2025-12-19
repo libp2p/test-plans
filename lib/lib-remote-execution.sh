@@ -17,10 +17,10 @@ test_ssh_connectivity() {
     fi
 }
 
-# Test connectivity to all remote servers in impls.yaml
+# Test connectivity to all remote servers in images.yaml
 # Returns 0 if all servers are reachable, 1 if any fail
 test_all_remote_servers() {
-    local impls_yaml="${1:-impls.yaml}"
+    local impls_yaml="${1:-images.yaml}"
     local get_server_config_fn="$2"  # Function name to get server config
     local get_remote_hostname_fn="$3"  # Function name to get hostname
     local get_remote_username_fn="$4"  # Function name to get username

@@ -8,11 +8,11 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/.."
 
-source "../scripts/lib-snapshot-creation.sh"
-source "../scripts/lib-github-snapshots.sh"
-source "../scripts/lib-snapshot-rerun.sh"
-source "../scripts/lib-snapshot-images.sh"
-source "scripts/lib-perf.sh"
+source "../lib/lib-snapshot-creation.sh"
+source "../lib/lib-github-snapshots.sh"
+source "../lib/lib-snapshot-rerun.sh"
+source "../lib/lib-snapshot-images.sh"
+source "lib/lib-perf.sh"
 
 # Configuration
 TEST_TYPE="perf"
@@ -29,7 +29,7 @@ validate_snapshot_inputs "$TEST_PASS_DIR" "$CACHE_DIR" || exit 1
 
 # Step 2: Get test pass name and create snapshot directory
 test_pass=$(get_test_pass_name "$TEST_PASS_DIR/results.yaml")
-SNAPSHOT_DIR="$CACHE_DIR/test-runs/$test_pass"
+SNAPSHOT_DIR="$CACHE_DIR/test-run/$test_pass"
 
 echo "→ Snapshot: $test_pass"
 echo "→ Location: $SNAPSHOT_DIR"

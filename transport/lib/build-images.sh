@@ -1,5 +1,5 @@
 #!/bin/bash
-# Build Docker images for all implementations defined in impls.yaml
+# Build Docker images for all implementations defined in images.yaml
 # Refactored to use unified YAML-based build system
 # Uses content-addressed caching under $CACHE_DIR/snapshots/
 # Supports github, local, and browser source types
@@ -15,7 +15,7 @@ CACHE_DIR="${CACHE_DIR:-/srv/cache}"
 FILTER="${1:-}"  # Optional: pipe-separated filter (e.g., "rust-v0.56|rust-v0.55")
 REMOVE="${2:-false}"  # Remove the docker image if set (force rebuild)
 IMAGE_PREFIX="transport-interop-"
-BUILD_SCRIPT="$SCRIPT_DIR/../../scripts/build-single-image.sh"
+BUILD_SCRIPT="$SCRIPT_DIR/../../lib/build-single-image.sh"
 
 echo "  → Cache directory: $CACHE_DIR"
 if [ -n "$FILTER" ]; then
@@ -26,13 +26,13 @@ fi
 mkdir -p "$CACHE_DIR/snapshots"
 mkdir -p "$CACHE_DIR/build-yamls"
 
-# Parse impls.yaml and build each implementation
-impl_count=$(yq eval '.implementations | length' impls.yaml)
+# Parse images.yaml and build each implementation
+impl_count=$(yq eval '.implementations | length' images.yaml)
 
 for ((i=0; i<impl_count; i++)); do
     # Extract implementation details
-    impl_id=$(yq eval ".implementations[$i].id" impls.yaml)
-    source_type=$(yq eval ".implementations[$i].source.type" impls.yaml)
+    impl_id=$(yq eval ".implementations[$i].id" images.yaml)
+    source_type=$(yq eval ".implementations[$i].source.type" images.yaml)
 
     # Construct Docker image name with prefix
     image_name="${IMAGE_PREFIX}${impl_id}"
@@ -81,11 +81,11 @@ EOF
     # Add source-specific parameters
     case "$source_type" in
         github)
-            repo=$(yq eval ".implementations[$i].source.repo" impls.yaml)
-            commit=$(yq eval ".implementations[$i].source.commit" impls.yaml)
-            dockerfile=$(yq eval ".implementations[$i].source.dockerfile" impls.yaml)
-            build_context=$(yq eval ".implementations[$i].source.buildContext // \".\"" impls.yaml)
-            requires_submodules=$(yq eval ".implementations[$i].source.requiresSubmodules // false" impls.yaml)
+            repo=$(yq eval ".implementations[$i].source.repo" images.yaml)
+            commit=$(yq eval ".implementations[$i].source.commit" images.yaml)
+            dockerfile=$(yq eval ".implementations[$i].source.dockerfile" images.yaml)
+            build_context=$(yq eval ".implementations[$i].source.buildContext // \".\"" images.yaml)
+            requires_submodules=$(yq eval ".implementations[$i].source.requiresSubmodules // false" images.yaml)
 
             cat >> "$yaml_file" <<EOF
 
@@ -100,8 +100,8 @@ EOF
             ;;
 
         local)
-            local_path=$(yq eval ".implementations[$i].source.path" impls.yaml)
-            dockerfile=$(yq eval ".implementations[$i].source.dockerfile" impls.yaml)
+            local_path=$(yq eval ".implementations[$i].source.path" images.yaml)
+            dockerfile=$(yq eval ".implementations[$i].source.dockerfile" images.yaml)
 
             cat >> "$yaml_file" <<EOF
 
@@ -112,9 +112,9 @@ EOF
             ;;
 
         browser)
-            base_image=$(yq eval ".implementations[$i].source.baseImage" impls.yaml)
-            browser=$(yq eval ".implementations[$i].source.browser" impls.yaml)
-            dockerfile=$(yq eval ".implementations[$i].source.dockerfile" impls.yaml)
+            base_image=$(yq eval ".implementations[$i].source.baseImage" images.yaml)
+            browser=$(yq eval ".implementations[$i].source.browser" images.yaml)
+            dockerfile=$(yq eval ".implementations[$i].source.dockerfile" images.yaml)
             build_context=$(dirname "$dockerfile")
 
             cat >> "$yaml_file" <<EOF

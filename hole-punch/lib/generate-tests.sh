@@ -1,5 +1,5 @@
 #!/bin/bash
-# Generate test matrix from impls.yaml with filtering support
+# Generate test matrix from images.yaml with filtering support
 # Outputs test-matrix.yaml with content-addressed caching
 # 8D permutations: dialer × listener × transport × secureChannel × muxer × relay × dialer_router × listener_router
 
@@ -28,18 +28,18 @@ is_standalone_transport() {
 
 # Source common libraries
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/../../scripts/lib-test-aliases.sh"
-source "$SCRIPT_DIR/../../scripts/lib-test-filtering.sh"
-source "$SCRIPT_DIR/../../scripts/lib-test-caching.sh"
-source "$SCRIPT_DIR/../../scripts/lib-filter-engine.sh"
+source "$SCRIPT_DIR/../../lib/lib-test-aliases.sh"
+source "$SCRIPT_DIR/../../lib/lib-test-filtering.sh"
+source "$SCRIPT_DIR/../../lib/lib-test-caching.sh"
+source "$SCRIPT_DIR/../../lib/lib-filter-engine.sh"
 
-# Load test aliases from impls.yaml
+# Load test aliases from images.yaml
 load_aliases
 
 # Get all entity IDs for negation expansion
-all_impl_ids=($(yq eval '.implementations[].id' impls.yaml))
-all_relay_ids=($(yq eval '.relays[].id' impls.yaml))
-all_router_ids=($(yq eval '.routers[].id' impls.yaml))
+all_impl_ids=($(yq eval '.implementations[].id' images.yaml))
+all_relay_ids=($(yq eval '.relays[].id' images.yaml))
+all_router_ids=($(yq eval '.routers[].id' images.yaml))
 
 # Use test select and ignore values from CLI arguments
 TEST_SELECT="$CLI_TEST_SELECT"
@@ -103,7 +103,7 @@ if [ -n "$ROUTER_IGNORE" ]; then
     echo "  → Expanded to: $ROUTER_IGNORE"
 fi
 
-# Compute cache key from impls.yaml + all filters + debug
+# Compute cache key from images.yaml + all filters + debug
 cache_key=$(compute_cache_key "$TEST_SELECT" "$TEST_IGNORE" "$RELAY_SELECT" "$RELAY_IGNORE" "$ROUTER_SELECT" "$ROUTER_IGNORE" "$DEBUG")
 echo "→ Computed cache key: ${cache_key:0:8}"
 
@@ -115,16 +115,16 @@ fi
 echo ""
 
 # Read all implementations
-impl_count=$(yq eval '.implementations | length' impls.yaml)
-echo "→ Found $impl_count implementations in impls.yaml"
+impl_count=$(yq eval '.implementations | length' images.yaml)
+echo "→ Found $impl_count implementations in images.yaml"
 
 # Read all relay types
-relay_count=$(yq eval '.relays | length' impls.yaml)
-echo "→ Found $relay_count relay types in impls.yaml"
+relay_count=$(yq eval '.relays | length' images.yaml)
+echo "→ Found $relay_count relay types in images.yaml"
 
 # Read all router types
-router_count=$(yq eval '.routers | length' impls.yaml)
-echo "→ Found $router_count router types in impls.yaml"
+router_count=$(yq eval '.routers | length' images.yaml)
+echo "→ Found $router_count router types in images.yaml"
 
 # Declare associative arrays for O(1) lookups
 declare -A impl_transports    # impl_transports[linux]="tcp quic-v1"
@@ -138,11 +138,11 @@ declare -a router_ids         # router_ids=(linux ...)
 # Load all implementation data using yq
 echo "→ Loading implementation data into memory..."
 for ((i=0; i<impl_count; i++)); do
-    id=$(yq eval ".implementations[$i].id" impls.yaml)
-    transports=$(yq eval ".implementations[$i].transports | join(\" \")" impls.yaml)
-    secure=$(yq eval ".implementations[$i].secureChannels | join(\" \")" impls.yaml)
-    muxers=$(yq eval ".implementations[$i].muxers | join(\" \")" impls.yaml)
-    dial_only=$(yq eval ".implementations[$i].dialOnly | join(\" \")" impls.yaml 2>/dev/null || echo "")
+    id=$(yq eval ".implementations[$i].id" images.yaml)
+    transports=$(yq eval ".implementations[$i].transports | join(\" \")" images.yaml)
+    secure=$(yq eval ".implementations[$i].secureChannels | join(\" \")" images.yaml)
+    muxers=$(yq eval ".implementations[$i].muxers | join(\" \")" images.yaml)
+    dial_only=$(yq eval ".implementations[$i].dialOnly | join(\" \")" images.yaml 2>/dev/null || echo "")
 
     impl_ids+=("$id")
     impl_transports["$id"]="$transports"
@@ -156,7 +156,7 @@ echo "  ✓ Loaded ${#impl_ids[@]} implementations into memory"
 # Load all relay types using yq
 echo "→ Loading relay types into memory..."
 for ((i=0; i<relay_count; i++)); do
-    relay_id=$(yq eval ".relays[$i].id" impls.yaml)
+    relay_id=$(yq eval ".relays[$i].id" images.yaml)
     relay_ids+=("$relay_id")
 done
 
@@ -165,7 +165,7 @@ echo "  ✓ Loaded ${#relay_ids[@]} relay types into memory"
 # Load all router types using yq
 echo "→ Loading router types into memory..."
 for ((i=0; i<router_count; i++)); do
-    router_id=$(yq eval ".routers[$i].id" impls.yaml)
+    router_id=$(yq eval ".routers[$i].id" images.yaml)
     router_ids+=("$router_id")
 done
 
@@ -359,8 +359,8 @@ for test in "${tests[@]}"; do
     IFS='|' read -r name dialer listener transport secure muxer relay_id dialer_router_id listener_router_id <<< "$test"
 
     # Get commits, treating null/empty as local
-    dialer_commit=$(yq eval ".implementations[] | select(.id == \"$dialer\") | .source.commit" impls.yaml 2>/dev/null || echo "local")
-    listener_commit=$(yq eval ".implementations[] | select(.id == \"$listener\") | .source.commit" impls.yaml 2>/dev/null || echo "local")
+    dialer_commit=$(yq eval ".implementations[] | select(.id == \"$dialer\") | .source.commit" images.yaml 2>/dev/null || echo "local")
+    listener_commit=$(yq eval ".implementations[] | select(.id == \"$listener\") | .source.commit" images.yaml 2>/dev/null || echo "local")
 
     # Normalize null values to "local"
     [ "$dialer_commit" = "null" ] && dialer_commit="local"
@@ -397,8 +397,8 @@ for test in "${ignored_tests[@]}"; do
     IFS='|' read -r name dialer listener transport secure muxer relay_id dialer_router_id listener_router_id <<< "$test"
 
     # Get commits, treating null/empty as local
-    dialer_commit=$(yq eval ".implementations[] | select(.id == \"$dialer\") | .source.commit" impls.yaml 2>/dev/null || echo "local")
-    listener_commit=$(yq eval ".implementations[] | select(.id == \"$listener\") | .source.commit" impls.yaml 2>/dev/null || echo "local")
+    dialer_commit=$(yq eval ".implementations[] | select(.id == \"$dialer\") | .source.commit" images.yaml 2>/dev/null || echo "local")
+    listener_commit=$(yq eval ".implementations[] | select(.id == \"$listener\") | .source.commit" images.yaml 2>/dev/null || echo "local")
 
     # Normalize null values to "local"
     [ "$dialer_commit" = "null" ] && dialer_commit="local"

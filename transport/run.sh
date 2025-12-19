@@ -5,6 +5,7 @@ set -euo pipefail
 
 # Defaults
 CACHE_DIR="${CACHE_DIR:-/srv/cache}"
+TEST_RUN_DIR="${TEST_RUN_DIR:-$CACHE_DIR/test-run}"
 TEST_SELECT="${TEST_SELECT:-}"
 TEST_IGNORE="${TEST_IGNORE:-}"
 WORKER_COUNT="${WORKER_COUNT:-$(nproc 2>/dev/null || echo 4)}"
@@ -85,13 +86,13 @@ echo ""
 
 # List implementations
 if [ "$LIST_IMPLS" = true ]; then
-    if [ ! -f "impls.yaml" ]; then
-        echo "Error: impls.yaml not found"
+    if [ ! -f "images.yaml" ]; then
+        echo "Error: images.yaml not found"
         exit 1
     fi
     echo "╲ Available Implementations"
     echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-    yq eval '.implementations[].id' impls.yaml | sed 's/^/→ /'
+    yq eval '.implementations[].id' images.yaml | sed 's/^/→ /'
     echo ""
     exit 0
 fi
@@ -110,7 +111,7 @@ if [ "$LIST_TESTS" = true ]; then
     echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
     # Generate test matrix
-    if ! bash scripts/generate-tests.sh "$TEST_SELECT" "$TEST_IGNORE" "$DEBUG" "$FORCE_MATRIX_REBUILD" > /dev/null 2>&1; then
+    if ! bash lib/generate-tests.sh "$TEST_SELECT" "$TEST_IGNORE" "$DEBUG" "$FORCE_MATRIX_REBUILD" > /dev/null 2>&1; then
         echo "Error: Failed to generate test matrix"
         exit 1
     fi
@@ -142,7 +143,7 @@ fi
 
 # Check dependencies
 if [ "$CHECK_DEPS_ONLY" = true ]; then
-    bash ../scripts/check-dependencies.sh
+    bash ../lib/check-dependencies.sh
     exit $?
 fi
 
@@ -154,7 +155,7 @@ echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔�
 
 # Generate test pass name and folder
 TEST_PASS_NAME="transport-interop-$(date +%H%M%S-%d-%m-%Y)"
-export TEST_PASS_DIR="$CACHE_DIR/test-runs/$TEST_PASS_NAME"
+export TEST_PASS_DIR="$TEST_RUN_DIR/$TEST_PASS_NAME"
 
 echo "→ Test Pass: $TEST_PASS_NAME"
 echo "→ Cache Dir: $CACHE_DIR"
@@ -178,7 +179,7 @@ export TEST_PASS_NAME
 # 1. Check dependencies
 echo "╲ Checking dependencies..."
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-if ! bash ../scripts/check-dependencies.sh; then
+if ! bash ../lib/check-dependencies.sh; then
     echo "✗ Dependency check failed. Please install missing dependencies."
     exit 1
 fi
@@ -196,8 +197,8 @@ fi
 echo ""
 echo "╲ Generating test matrix..."
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-echo "→ bash scripts/generate-tests.sh \"$TEST_SELECT\" \"$TEST_IGNORE\" \"$DEBUG\" \"$FORCE_MATRIX_REBUILD\""
-bash scripts/generate-tests.sh "$TEST_SELECT" "$TEST_IGNORE" "$DEBUG" "$FORCE_MATRIX_REBUILD"
+echo "→ bash lib/generate-tests.sh \"$TEST_SELECT\" \"$TEST_IGNORE\" \"$DEBUG\" \"$FORCE_MATRIX_REBUILD\""
+bash lib/generate-tests.sh "$TEST_SELECT" "$TEST_IGNORE" "$DEBUG" "$FORCE_MATRIX_REBUILD"
 
 # 3. Display test selection and get confirmation
 echo ""
@@ -229,7 +230,7 @@ echo ""
 echo "→ Total: $test_count tests to execute, $ignored_count ignored"
 
 # Source common test execution utilities
-source ../scripts/lib-test-execution.sh
+source ../lib/lib-test-execution.sh
 
 # Calculate required Docker images
 image_count=$(get_required_image_count "$TEST_PASS_DIR/test-matrix.yaml" "false")
@@ -267,10 +268,10 @@ else
 
     while IFS= read -r impl_id; do
         # Check if this is a browser-type implementation
-        source_type=$(yq eval ".implementations[] | select(.id == \"$impl_id\") | .source.type" impls.yaml)
+        source_type=$(yq eval ".implementations[] | select(.id == \"$impl_id\") | .source.type" images.yaml)
         if [ "$source_type" = "browser" ]; then
             # Add its base image as a dependency
-            base_image=$(yq eval ".implementations[] | select(.id == \"$impl_id\") | .source.baseImage" impls.yaml)
+            base_image=$(yq eval ".implementations[] | select(.id == \"$impl_id\") | .source.baseImage" images.yaml)
             echo "$base_image" >> "$REQUIRED_IMPLS_WITH_DEPS"
         fi
     done < "$REQUIRED_IMPLS"
@@ -284,8 +285,8 @@ else
 
     # Build each required implementation using pipe-separated list
     IMPL_FILTER=$(cat "$REQUIRED_IMPLS_WITH_DEPS" | paste -sd'|' -)
-    echo "→ bash scripts/build-images.sh \"$IMPL_FILTER\" \"$FORCE_IMAGE_REBUILD\""
-    bash scripts/build-images.sh "$IMPL_FILTER" "$FORCE_IMAGE_REBUILD"
+    echo "→ bash lib/build-images.sh \"$IMPL_FILTER\" \"$FORCE_IMAGE_REBUILD\""
+    bash lib/build-images.sh "$IMPL_FILTER" "$FORCE_IMAGE_REBUILD"
 
     rm -f "$REQUIRED_IMPLS" "$REQUIRED_IMPLS_WITH_DEPS"
 fi
@@ -315,7 +316,7 @@ run_test() {
     echo "[$((index + 1))/$test_count] $name"
 
     start=$(date +%s)
-    if bash scripts/run-single-test.sh "$name" "$dialer" "$listener" "$transport" "$secure" "$muxer"; then
+    if bash lib/run-single-test.sh "$name" "$dialer" "$listener" "$transport" "$secure" "$muxer"; then
         status="pass"
         exit_code=0
     else
@@ -441,16 +442,16 @@ printf "→ Total time: %02d:%02d:%02d\n" $HOURS $MINUTES $SECONDS
 echo ""
 echo "╲ Generating results dashboard..."
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-echo "→ bash scripts/generate-dashboard.sh"
-bash scripts/generate-dashboard.sh
+echo "→ bash lib/generate-dashboard.sh"
+bash lib/generate-dashboard.sh
 
 # 7. Create snapshot (optional)
 if [ "$CREATE_SNAPSHOT" = true ]; then
     echo ""
     echo "╲ Creating test pass snapshot..."
     echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-    echo "→ bash scripts/create-snapshot.sh"
-    bash scripts/create-snapshot.sh
+    echo "→ bash lib/create-snapshot.sh"
+    bash lib/create-snapshot.sh
 fi
 
 echo ""

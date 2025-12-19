@@ -73,11 +73,11 @@ detect_test_type() {
         echo "perf"
     else
         # Try to detect from parent directory structure
-        if [ -f "impls.yaml" ] && grep -q "hole-punch" impls.yaml 2>/dev/null; then
+        if [ -f "images.yaml" ] && grep -q "hole-punch" images.yaml 2>/dev/null; then
             echo "hole-punch"
-        elif [ -f "impls.yaml" ] && grep -q "transport" impls.yaml 2>/dev/null; then
+        elif [ -f "images.yaml" ] && grep -q "transport" images.yaml 2>/dev/null; then
             echo "transport"
-        elif [ -f "impls.yaml" ] && grep -q "perf" impls.yaml 2>/dev/null; then
+        elif [ -f "images.yaml" ] && grep -q "perf" images.yaml 2>/dev/null; then
             echo "perf"
         else
             echo "Error: Could not detect test type from directory" >&2

@@ -124,7 +124,7 @@ runs:
           LATENCY_ITERATIONS_FLAG="--latency-iterations ${{ inputs.latency-iterations }}"
         fi
 
-        ./run_tests.sh \
+        ./run.sh \
           --test-select '${{ inputs.test-select }}' \
           --test-ignore '${{ inputs.test-ignore }}' \
           --baseline-select '${{ inputs.baseline-select }}' \

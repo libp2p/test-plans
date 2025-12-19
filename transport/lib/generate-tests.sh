@@ -1,5 +1,5 @@
 #!/bin/bash
-# Generate test matrix from impls.yaml with 3D combinations (transport × secureChannel × muxer)
+# Generate test matrix from images.yaml with 3D combinations (transport × secureChannel × muxer)
 # Outputs test-matrix.yaml with content-addressed caching
 
 set -euo pipefail
@@ -23,16 +23,16 @@ is_standalone_transport() {
 
 # Source common libraries
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/../../scripts/lib-test-aliases.sh"
-source "$SCRIPT_DIR/../../scripts/lib-test-filtering.sh"
-source "$SCRIPT_DIR/../../scripts/lib-test-caching.sh"
-source "$SCRIPT_DIR/../../scripts/lib-filter-engine.sh"
+source "$SCRIPT_DIR/../../lib/lib-test-aliases.sh"
+source "$SCRIPT_DIR/../../lib/lib-test-filtering.sh"
+source "$SCRIPT_DIR/../../lib/lib-test-caching.sh"
+source "$SCRIPT_DIR/../../lib/lib-filter-engine.sh"
 
-# Load test aliases from impls.yaml
+# Load test aliases from images.yaml
 load_aliases
 
 # Get all implementation IDs for negation expansion
-all_impl_ids=($(yq eval '.implementations[].id' impls.yaml))
+all_impl_ids=($(yq eval '.implementations[].id' images.yaml))
 
 # Use test select and ignore values from CLI arguments
 TEST_SELECT="$CLI_TEST_SELECT"
@@ -62,7 +62,7 @@ else
     echo "→ No test-ignore specified"
 fi
 
-# Compute cache key from impls.yaml + select + ignore + debug
+# Compute cache key from images.yaml + select + ignore + debug
 # Pass empty strings for relay/router params (not used by transport tests)
 cache_key=$(compute_cache_key "$TEST_SELECT" "$TEST_IGNORE" "" "" "" "" "$DEBUG")
 echo "→ Computed cache key: ${cache_key:0:8}"
@@ -75,8 +75,8 @@ fi
 echo ""
 
 # Read all implementations
-impl_count=$(yq eval '.implementations | length' impls.yaml)
-echo "→ Found $impl_count implementations in impls.yaml"
+impl_count=$(yq eval '.implementations | length' images.yaml)
+echo "→ Found $impl_count implementations in images.yaml"
 
 # Declare associative arrays for O(1) lookups
 declare -A impl_transports    # impl_transports[rust-v0.56]="tcp ws quic-v1"
@@ -88,11 +88,11 @@ declare -a impl_ids           # impl_ids=(rust-v0.56 rust-v0.55 ...)
 # Load all implementation data using yq
 echo "→ Loading implementation data into memory..."
 for ((i=0; i<impl_count; i++)); do
-    id=$(yq eval ".implementations[$i].id" impls.yaml)
-    transports=$(yq eval ".implementations[$i].transports | join(\" \")" impls.yaml)
-    secure=$(yq eval ".implementations[$i].secureChannels | join(\" \")" impls.yaml)
-    muxers=$(yq eval ".implementations[$i].muxers | join(\" \")" impls.yaml)
-    dial_only=$(yq eval ".implementations[$i].dialOnly | join(\" \")" impls.yaml 2>/dev/null || echo "")
+    id=$(yq eval ".implementations[$i].id" images.yaml)
+    transports=$(yq eval ".implementations[$i].transports | join(\" \")" images.yaml)
+    secure=$(yq eval ".implementations[$i].secureChannels | join(\" \")" images.yaml)
+    muxers=$(yq eval ".implementations[$i].muxers | join(\" \")" images.yaml)
+    dial_only=$(yq eval ".implementations[$i].dialOnly | join(\" \")" images.yaml 2>/dev/null || echo "")
 
     impl_ids+=("$id")
     impl_transports["$id"]="$transports"
@@ -239,19 +239,19 @@ for test in "${tests[@]}"; do
     IFS='|' read -r name dialer listener transport secure muxer <<< "$test"
 
     # Get source types and commits (only for github-type implementations)
-    dialer_source_type=$(yq eval ".implementations[] | select(.id == \"$dialer\") | .source.type" impls.yaml)
-    listener_source_type=$(yq eval ".implementations[] | select(.id == \"$listener\") | .source.type" impls.yaml)
+    dialer_source_type=$(yq eval ".implementations[] | select(.id == \"$dialer\") | .source.type" images.yaml)
+    listener_source_type=$(yq eval ".implementations[] | select(.id == \"$listener\") | .source.type" images.yaml)
 
     # Only get commits for github-type sources
     if [ "$dialer_source_type" = "github" ]; then
-        dialer_commit=$(yq eval ".implementations[] | select(.id == \"$dialer\") | .source.commit" impls.yaml)
+        dialer_commit=$(yq eval ".implementations[] | select(.id == \"$dialer\") | .source.commit" images.yaml)
         dialer_snapshot="snapshots/$dialer_commit.zip"
     else
         dialer_snapshot="null"
     fi
 
     if [ "$listener_source_type" = "github" ]; then
-        listener_commit=$(yq eval ".implementations[] | select(.id == \"$listener\") | .source.commit" impls.yaml)
+        listener_commit=$(yq eval ".implementations[] | select(.id == \"$listener\") | .source.commit" images.yaml)
         listener_snapshot="snapshots/$listener_commit.zip"
     else
         listener_snapshot="null"
@@ -279,19 +279,19 @@ for test in "${ignored_tests[@]}"; do
     IFS='|' read -r name dialer listener transport secure muxer <<< "$test"
 
     # Get source types and commits (only for github-type implementations)
-    dialer_source_type=$(yq eval ".implementations[] | select(.id == \"$dialer\") | .source.type" impls.yaml)
-    listener_source_type=$(yq eval ".implementations[] | select(.id == \"$listener\") | .source.type" impls.yaml)
+    dialer_source_type=$(yq eval ".implementations[] | select(.id == \"$dialer\") | .source.type" images.yaml)
+    listener_source_type=$(yq eval ".implementations[] | select(.id == \"$listener\") | .source.type" images.yaml)
 
     # Only get commits for github-type sources
     if [ "$dialer_source_type" = "github" ]; then
-        dialer_commit=$(yq eval ".implementations[] | select(.id == \"$dialer\") | .source.commit" impls.yaml)
+        dialer_commit=$(yq eval ".implementations[] | select(.id == \"$dialer\") | .source.commit" images.yaml)
         dialer_snapshot="snapshots/$dialer_commit.zip"
     else
         dialer_snapshot="null"
     fi
 
     if [ "$listener_source_type" = "github" ]; then
-        listener_commit=$(yq eval ".implementations[] | select(.id == \"$listener\") | .source.commit" impls.yaml)
+        listener_commit=$(yq eval ".implementations[] | select(.id == \"$listener\") | .source.commit" images.yaml)
         listener_snapshot="snapshots/$listener_commit.zip"
     else
         listener_snapshot="null"

@@ -129,7 +129,7 @@ jobs:
 
             echo "iterations=10" >> $GITHUB_OUTPUT
             echo "force-matrix-rebuild=${{ steps.detect.outputs.impls-yaml-changed }}" >> $GITHUB_OUTPUT
-            # Force image rebuild if impls.yaml changed (commit SHA changes require new images)
+            # Force image rebuild if images.yaml changed (commit SHA changes require new images)
             # or if impls folder changed (local implementation files changed)
             if [ "${{ steps.detect.outputs.impls-yaml-changed }}" = "true" ] || [ "${{ steps.detect.outputs.impls-folder-changed }}" = "true" ]; then
               echo "force-image-rebuild=true" >> $GITHUB_OUTPUT

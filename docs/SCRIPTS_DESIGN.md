@@ -39,7 +39,7 @@ Parses command-line options and sets environment variables.
 **Output**: Environment variables set (TEST\_SELECT, WORKERS, DEBUG, etc.)
 
 #### Step 2: Dependency Check (if `--check-deps`)
-**Function called**: `bash ../scripts/check-dependencies.sh`
+**Function called**: `bash ../lib/check-dependencies.sh`
 
 **Validates**:
 - bash 4.0+
@@ -56,7 +56,7 @@ Parses command-line options and sets environment variables.
 - **Output**: List of implementation IDs
 
 **For** `--list-tests`:
-- **Functions**: `bash scripts/generate-tests.sh` then extract `.tests[].name`
+- **Functions**: `bash lib/generate-tests.sh` then extract `.tests[].name`
 - **Output**: List of test names
 
 **Result**: Displays information and exits
@@ -100,7 +100,7 @@ Output: "go-v0.45|rust-v0.55|rust-v0.56"
 ```
 
 #### Step 6: Generate Test Matrix
-**Function called**: `bash scripts/generate-tests.sh`
+**Function called**: `bash lib/generate-tests.sh`
 
 **Inputs**:
 - Expanded filter strings
@@ -120,13 +120,13 @@ Output: "go-v0.45|rust-v0.55|rust-v0.56"
 **Output**: `test-matrix.yaml` with all test combinations
 
 #### Step 7: Build Docker Images
-**Function called**: `bash scripts/build-images.sh`
+**Function called**: `bash lib/build-images.sh`
 
 **Process**:
 1. Extract unique implementations from test-matrix.yaml
 2. For each implementation:
    - Generate build YAML
-   - Call: `bash scripts/build-single-image.sh <yaml>`
+   - Call: `bash lib/build-single-image.sh <yaml>`
    - Which calls: `build_from_github()` or `build_from_github_with_submodules()`
 
 **Output**: Docker images tagged as `<test-type>-<impl-id>`
@@ -136,7 +136,7 @@ Output: "go-v0.45|rust-v0.55|rust-v0.56"
 
 **For each test** (index 0 to N-1):
 
-**Function called**: `bash scripts/run-single-test.sh <index>`
+**Function called**: `bash lib/run-single-test.sh <index>`
 
 **Process**:
 1. Extract test details from test-matrix.yaml (dialer, listener, transport, etc.)
@@ -156,7 +156,7 @@ Output: "go-v0.45|rust-v0.55|rust-v0.56"
 **Output**: `results.yaml` (structured test results)
 
 #### Step 10: Generate Dashboard
-**Function called**: `bash scripts/generate-dashboard.sh`
+**Function called**: `bash lib/generate-dashboard.sh`
 
 **Inputs**: results.yaml
 
@@ -173,7 +173,7 @@ Output: "go-v0.45|rust-v0.55|rust-v0.56"
 - results.html
 
 #### Step 11: Create Snapshot (if `--snapshot`)
-**Function called**: `bash scripts/create-snapshot.sh`
+**Function called**: `bash lib/create-snapshot.sh`
 
 **Process** (uses common libraries):
 1. Validate inputs
@@ -710,7 +710,7 @@ Creates:
 - `docker-images/` - Saved Docker images
 - `snapshots/` - GitHub ZIP archives
 - `git-repos/` - Git clones with submodules
-- `scripts/` - Test scripts
+- `lib/` - Test scripts
 
 #### Step 3: Copy Configuration
 **Function**: `copy_config_files(snapshot_dir, test_pass_dir, test_type)`
@@ -726,8 +726,8 @@ Copies:
 **Function**: `copy_all_scripts(snapshot_dir, test_type)`
 
 Copies:
-- Test-specific scripts from `scripts/`
-- Common libraries from `../scripts/`
+- Test-specific scripts from `lib/`
+- Common libraries from `../lib/`
 - Makes all scripts executable
 
 #### Step 5: Copy GitHub Sources
@@ -788,9 +788,9 @@ snapshot-HHMMSS-DD-MM-YYYY/
 ├── settings.yaml           # Snapshot metadata
 ├── README.md               # Documentation
 ├── re-run.sh               # Re-run script (COMPLETE)
-├── scripts/                # Test-specific scripts
+├── lib/                # Test-specific scripts
 │   └── *.sh
-├── ../scripts/             # Common libraries
+├── ../lib/             # Common libraries
 │   └── lib-*.sh
 ├── logs/                   # Test execution logs
 ├── docker-compose/         # Generated compose files
@@ -912,16 +912,16 @@ To add a new test type (e.g., "latency-tests"), you need to create 6 scripts plu
 
 **Common library usage**:
 ```bash
-source ../scripts/lib-test-aliases.sh
-source ../scripts/lib-filter-engine.sh
-source ../scripts/lib-test-caching.sh
+source ../lib/lib-test-aliases.sh
+source ../lib/lib-filter-engine.sh
+source ../lib/lib-test-caching.sh
 
 load_aliases
 all_impl_ids=($(yq eval '.implementations[].id' impls.yaml))
 TEST_SELECT=$(expand_filter_string "$TEST_SELECT" all_impl_ids)
 ```
 
-#### 2. Test Matrix Generator: `<test>/scripts/generate-tests.sh` (~200 lines)
+#### 2. Test Matrix Generator: `<test>/lib/generate-tests.sh` (~200 lines)
 
 **Purpose**: Generate test-matrix.yaml with all test combinations
 
@@ -934,7 +934,7 @@ TEST_SELECT=$(expand_filter_string "$TEST_SELECT" all_impl_ids)
 
 **Output**: test-matrix.yaml
 
-#### 3. Image Builder: `<test>/scripts/build-images.sh` (~100 lines)
+#### 3. Image Builder: `<test>/lib/build-images.sh` (~100 lines)
 
 **Purpose**: Build Docker images for all implementations
 
@@ -942,12 +942,12 @@ TEST_SELECT=$(expand_filter_string "$TEST_SELECT" all_impl_ids)
 - Parse implementation filter
 - For each implementation in impls.yaml:
   - Generate build YAML configuration
-  - Call `bash ../scripts/build-single-image.sh <yaml>`
+  - Call `bash ../lib/build-single-image.sh <yaml>`
 - Report build results
 
 **Uses**: Common build-single-image.sh, lib-image-building.sh
 
-#### 4. Single Test Runner: `<test>/scripts/run-single-test.sh` (~150 lines)
+#### 4. Single Test Runner: `<test>/lib/run-single-test.sh` (~150 lines)
 
 **Purpose**: Execute a single test by index
 
@@ -958,7 +958,7 @@ TEST_SELECT=$(expand_filter_string "$TEST_SELECT" all_impl_ids)
 - Capture results (status, duration, metrics)
 - Append to results file with file locking (flock)
 
-#### 5. Dashboard Generator: `<test>/scripts/generate-dashboard.sh` (~200 lines)
+#### 5. Dashboard Generator: `<test>/lib/generate-dashboard.sh` (~200 lines)
 
 **Purpose**: Generate results visualizations from results.yaml
 
@@ -970,16 +970,16 @@ TEST_SELECT=$(expand_filter_string "$TEST_SELECT" all_impl_ids)
 
 **Output**: results.md, LATEST\_TEST\_RESULTS.md, results.html
 
-#### 6. Snapshot Creator: `<test>/scripts/create-snapshot.sh` (~120 lines)
+#### 6. Snapshot Creator: `<test>/lib/create-snapshot.sh` (~120 lines)
 
 **Purpose**: Create self-contained snapshot of test run
 
 **Must implement** (using common libraries):
 ```bash
-source ../../scripts/lib-snapshot-creation.sh
-source ../../scripts/lib-github-snapshots.sh
-source ../../scripts/lib-snapshot-rerun.sh
-source ../../scripts/lib-snapshot-images.sh
+source ../../lib/lib-snapshot-creation.sh
+source ../../lib/lib-github-snapshots.sh
+source ../../lib/lib-snapshot-rerun.sh
+source ../../lib/lib-snapshot-images.sh
 
 # Validate, create structure, copy files
 validate_snapshot_inputs()
@@ -1163,7 +1163,7 @@ implementations:
   - `snapshot_dir`: Target snapshot directory
   - `test_type`: Test type identifier
 - **Outputs**: None (copies scripts, makes executable)
-- **Description**: Copies both test-specific scripts from scripts/ and common libraries from ../scripts/ to snapshot. Makes all scripts executable. Ensures snapshot is portable and self-contained.
+- **Description**: Copies both test-specific scripts from lib/ and common libraries from ../lib/ to snapshot. Makes all scripts executable. Ensures snapshot is portable and self-contained.
 - **Where**: `lib-snapshot-creation.sh:105`
 
 #### generate\_snapshot\_readme(snapshot\_dir, test\_type, test\_pass, summary\_stats)

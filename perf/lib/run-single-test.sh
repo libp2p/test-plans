@@ -7,7 +7,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/.."
 
-source "scripts/lib-perf.sh"
+source "lib/lib-perf.sh"
 
 TEST_INDEX=$1
 TEST_TYPE="${2:-main}"  # "main" or "baseline"

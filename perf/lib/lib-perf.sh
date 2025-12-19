@@ -7,7 +7,7 @@
 # Returns: server_id
 get_server_config() {
   local impl_id=$1
-  yq eval ".implementations[] | select(.id == \"$impl_id\") | .server" impls.yaml
+  yq eval ".implementations[] | select(.id == \"$impl_id\") | .server" images.yaml
 }
 
 # Check if server is remote
@@ -15,7 +15,7 @@ get_server_config() {
 # Returns: 0 if remote, 1 if local
 is_remote_server() {
   local server_id=$1
-  local server_type=$(yq eval ".servers[] | select(.id == \"$server_id\") | .type" impls.yaml)
+  local server_type=$(yq eval ".servers[] | select(.id == \"$server_id\") | .type" images.yaml)
   [ "$server_type" = "remote" ]
 }
 
@@ -24,7 +24,7 @@ is_remote_server() {
 # Returns: hostname or IP address
 get_remote_hostname() {
   local server_id=$1
-  yq eval ".servers[] | select(.id == \"$server_id\") | .hostname" impls.yaml
+  yq eval ".servers[] | select(.id == \"$server_id\") | .hostname" images.yaml
 }
 
 # Get remote server username
@@ -32,7 +32,7 @@ get_remote_hostname() {
 # Returns: SSH username
 get_remote_username() {
   local server_id=$1
-  yq eval ".servers[] | select(.id == \"$server_id\") | .username" impls.yaml
+  yq eval ".servers[] | select(.id == \"$server_id\") | .username" images.yaml
 }
 
 # Execute command on server (local or remote)
@@ -122,7 +122,7 @@ get_impl_metadata() {
   local impl_id=$1
   local field=$2
 
-  yq eval ".implementations[] | select(.id == \"$impl_id\") | .$field" impls.yaml
+  yq eval ".implementations[] | select(.id == \"$impl_id\") | .$field" images.yaml
 }
 
 # Get implementation capabilities
@@ -130,7 +130,7 @@ get_impl_metadata() {
 # Returns: newline-separated list of capabilities
 get_impl_capabilities() {
   local impl_id=$1
-  yq eval ".implementations[] | select(.id == \"$impl_id\") | .capabilities[]" impls.yaml
+  yq eval ".implementations[] | select(.id == \"$impl_id\") | .capabilities[]" images.yaml
 }
 
 # Check if implementation supports capability
@@ -150,7 +150,7 @@ has_capability() {
 # Returns: newline-separated list of transports
 get_impl_transports() {
   local impl_id=$1
-  yq eval ".implementations[] | select(.id == \"$impl_id\") | .transports[]" impls.yaml
+  yq eval ".implementations[] | select(.id == \"$impl_id\") | .transports[]" images.yaml
 }
 
 # Format duration in human-readable format
@@ -298,7 +298,7 @@ cleanup_containers() {
 # Usage: get_all_remote_servers
 # Returns: newline-separated list of remote server IDs
 get_all_remote_servers() {
-  yq eval '.servers[] | select(.type == "remote") | .id' impls.yaml
+  yq eval '.servers[] | select(.type == "remote") | .id' images.yaml
 }
 
 # Verify remote server connectivity

@@ -557,7 +557,7 @@ dial(listener_addr);
 ### 1. Build the Docker image
 ```bash
 cd perf
-bash scripts/build-images.sh "your-impl-id" "true"
+bash lib/build-images.sh "your-impl-id" "true"
 ```
 
 ### 2. Run a single test

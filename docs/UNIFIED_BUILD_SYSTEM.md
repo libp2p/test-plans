@@ -11,15 +11,15 @@ YAML-based Docker image build system used by all test suites (transport, perf, h
 ```bash
 # Transport tests
 cd transport
-bash scripts/build-images.sh "rust-v0.56" "false"
+bash lib/build-images.sh "rust-v0.56" "false"
 
 # Perf tests
 cd perf
-bash scripts/build-images.sh "go-v0.45|rust-v0.56" "false"
+bash lib/build-images.sh "go-v0.45|rust-v0.56" "false"
 
 # Hole-punch tests (relay + router + peer)
 cd hole-punch
-bash scripts/build-images.sh "linux" "linux" "linux" "false"
+bash lib/build-images.sh "linux" "linux" "linux" "false"
 ```
 
 ### Build a Single Image Manually
@@ -42,7 +42,7 @@ local:
 EOF
 
 # 2. Build
-./scripts/build-single-image.sh /tmp/my-build.yaml
+./lib/build-single-image.sh /tmp/my-build.yaml
 ```
 
 ---
@@ -85,7 +85,7 @@ EOF
 ## Key Components
 
 ### 1. Orchestrators (Test-Specific)
-**Location:** `<test>/scripts/build-images.sh`
+**Location:** `<test>/lib/build-images.sh`
 
 **Purpose:**
 - Read `impls.yaml`
@@ -94,12 +94,12 @@ EOF
 - Call executor (local or remote)
 
 **Examples:**
-- `transport/scripts/build-images.sh` - 138 lines
-- `perf/scripts/build-images.sh` - 171 lines (with remote support)
-- `hole-punch/scripts/build-images.sh` - 148 lines (relay/router/peer)
+- `transport/lib/build-images.sh` - 138 lines
+- `perf/lib/build-images.sh` - 171 lines (with remote support)
+- `hole-punch/lib/build-images.sh` - 148 lines (relay/router/peer)
 
 ### 2. Executor (Shared)
-**Location:** `scripts/build-single-image.sh`
+**Location:** `lib/build-single-image.sh`
 
 **Purpose:**
 - Read YAML parameters
@@ -110,7 +110,7 @@ EOF
 **Lines:** 87 (reused by all test suites)
 
 ### 3. Build Functions (Shared)
-**Location:** `scripts/lib-image-building.sh`
+**Location:** `lib/lib-image-building.sh`
 
 **Functions:**
 - `download_github_snapshot()` - GitHub caching
@@ -123,7 +123,7 @@ EOF
 **Lines:** 183 (reused by all test suites)
 
 ### 4. Remote Execution (Shared)
-**Location:** `scripts/lib-remote-execution.sh`
+**Location:** `lib/lib-remote-execution.sh`
 
 **Functions:**
 - `test_ssh_connectivity()` - Test single server
@@ -188,10 +188,10 @@ All test suites show the same clean aesthetic:
 cat /srv/cache/build-yamls/docker-build-rust-v0.56.yaml
 
 # Rerun single build
-./scripts/build-single-image.sh /srv/cache/build-yamls/docker-build-rust-v0.56.yaml
+./lib/build-single-image.sh /srv/cache/build-yamls/docker-build-rust-v0.56.yaml
 
 # Debug mode
-bash -x ./scripts/build-single-image.sh <yaml>
+bash -x ./lib/build-single-image.sh <yaml>
 ```
 
 ### Remote Builds
@@ -224,16 +224,16 @@ bash -x ./scripts/build-single-image.sh <yaml>
 
 ```bash
 # Build all images for transport
-cd transport && bash scripts/build-images.sh
+cd transport && bash lib/build-images.sh
 
 # Build specific images for perf
-cd perf && bash scripts/build-images.sh "go-v0.45|rust-v0.56" "false"
+cd perf && bash lib/build-images.sh "go-v0.45|rust-v0.56" "false"
 
 # Force rebuild hole-punch relay
-cd hole-punch && bash scripts/build-images.sh "linux" "" "" "true"
+cd hole-punch && bash lib/build-images.sh "linux" "" "" "true"
 
 # Test single image build
-./scripts/build-single-image.sh /srv/cache/build-yamls/<name>.yaml
+./lib/build-single-image.sh /srv/cache/build-yamls/<name>.yaml
 
 # Run integration tests
 ./tests/test-unified-build-system.sh
@@ -243,8 +243,8 @@ cd hole-punch && bash scripts/build-images.sh "linux" "" "" "true"
 
 # Test remote connectivity (perf)
 cd perf
-source scripts/lib-perf.sh
-source ../scripts/lib-remote-execution.sh
+source lib/lib-perf.sh
+source ../lib/lib-remote-execution.sh
 test_all_remote_servers impls.yaml get_server_config get_remote_hostname get_remote_username is_remote_server
 ```
 

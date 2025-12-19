@@ -18,8 +18,8 @@ validate_snapshot_inputs() {
     fi
 
     # Check required files exist
-    if [ ! -f impls.yaml ]; then
-        echo "✗ Error: impls.yaml not found in current directory" >&2
+    if [ ! -f images.yaml ]; then
+        echo "✗ Error: images.yaml not found in current directory" >&2
         return 1
     fi
 
@@ -53,13 +53,13 @@ create_snapshot_directory() {
     # If directory exists (created during test execution), just ensure subdirectories
     if [ -d "$snapshot_dir" ]; then
         echo "  → Snapshot directory exists, ensuring subdirectories..."
-        mkdir -p "$snapshot_dir"/{logs,docker-compose,docker-images,snapshots,scripts,git-repos}
+        mkdir -p "$snapshot_dir"/{logs,docker-compose,docker-images,snapshot,lib,git-repo}
         echo "  ✓ Snapshot directory structure ready"
         return 0
     fi
 
     # Directory doesn't exist - create complete structure
-    mkdir -p "$snapshot_dir"/{logs,docker-compose,docker-images,snapshots,scripts,git-repos}
+    mkdir -p "$snapshot_dir"/{logs,docker-compose,docker-images,snapshot,lib,git-repo}
 
     echo "  ✓ Created snapshot directory structure"
     return 0
@@ -81,9 +81,9 @@ copy_config_files() {
         same_dir=true
     fi
 
-    # Copy impls.yaml (from current directory, always safe)
-    if [ ! -f "$snapshot_dir/impls.yaml" ]; then
-        cp impls.yaml "$snapshot_dir/" 2>/dev/null || true
+    # Copy images.yaml (from current directory, always safe)
+    if [ ! -f "$snapshot_dir/images.yaml" ]; then
+        cp images.yaml "$snapshot_dir/" 2>/dev/null || true
     fi
 
     # Copy impls/ directory if it exists (for local implementations)
@@ -125,16 +125,16 @@ copy_all_scripts() {
     local test_type="$2"
 
     # Copy test-specific scripts
-    cp scripts/*.sh "$snapshot_dir/scripts/" 2>/dev/null || true
+    cp lib/*.sh "$snapshot_dir/lib/" 2>/dev/null || true
 
     # Copy common scripts from parent directory
-    mkdir -p "$snapshot_dir/../scripts"
-    cp ../scripts/lib-*.sh "$snapshot_dir/../scripts/" 2>/dev/null || true
-    cp ../scripts/*.sh "$snapshot_dir/../scripts/" 2>/dev/null || true
+    mkdir -p "$snapshot_dir/../lib"
+    cp ../lib/lib-*.sh "$snapshot_dir/../lib/" 2>/dev/null || true
+    cp ../lib/*.sh "$snapshot_dir/../lib/" 2>/dev/null || true
 
     # Make scripts executable
-    chmod +x "$snapshot_dir/scripts/"*.sh 2>/dev/null || true
-    chmod +x "$snapshot_dir/../scripts/"*.sh 2>/dev/null || true
+    chmod +x "$snapshot_dir/lib/"*.sh 2>/dev/null || true
+    chmod +x "$snapshot_dir/../lib/"*.sh 2>/dev/null || true
 
     echo "  ✓ Copied all scripts (test-specific + common)"
     return 0
@@ -270,7 +270,7 @@ This is a self-contained snapshot of a **$test_type_name** test run.
 
 This snapshot contains everything needed to reproduce the test run:
 
-- **impls.yaml** - Implementation definitions
+- **images.yaml** - Implementation definitions
 - **test-matrix.yaml** - Generated test combinations
 - **results.yaml** - Structured test results
 - **results.md** - Markdown dashboard
@@ -278,7 +278,7 @@ This snapshot contains everything needed to reproduce the test run:
 - **LATEST_TEST_RESULTS.md** - Detailed test results
 - **settings.yaml** - Snapshot metadata
 - **scripts/** - All test scripts (test-specific)
-- **../scripts/** - Common shared libraries
+- **../lib/** - Common shared libraries
 - **logs/** - Test execution logs ($total files)
 - **docker-compose/** - Generated compose files
 - **docker-images/** - Saved Docker images (compressed)
@@ -319,7 +319,7 @@ original run_tests.sh script, allowing you to subset or modify the test run.
 
 \`\`\`
 $(basename "$snapshot_dir")/
-├── impls.yaml
+├── images.yaml
 ├── test-matrix.yaml
 ├── results.yaml
 ├── results.md
@@ -328,7 +328,7 @@ $(basename "$snapshot_dir")/
 ├── settings.yaml
 ├── scripts/
 │   └── *.sh
-├── ../scripts/
+├── ../lib/
 │   └── lib-*.sh
 ├── logs/
 ├── docker-compose/
@@ -377,8 +377,8 @@ display_snapshot_summary() {
     local log_count=$(ls -1 "$snapshot_dir/logs/" 2>/dev/null | wc -l)
     local compose_count=$(ls -1 "$snapshot_dir/docker-compose/" 2>/dev/null | wc -l)
     local image_count=$(ls -1 "$snapshot_dir/docker-images/" 2>/dev/null | wc -l)
-    local zip_count=$(ls -1 "$snapshot_dir/snapshots/"*.zip 2>/dev/null | wc -l)
-    local git_count=$(ls -d "$snapshot_dir/git-repos/"*/ 2>/dev/null | wc -l)
+    local zip_count=$(ls -1 "$snapshot_dir/snapshot/"*.zip 2>/dev/null | wc -l)
+    local git_count=$(ls -d "$snapshot_dir/git-repo/"*/ 2>/dev/null | wc -l)
 
     echo ""
     echo "╲ Snapshot Summary"
@@ -446,7 +446,7 @@ validate_snapshot_complete() {
     local errors=0
 
     # Check critical files
-    [ ! -f "$snapshot_dir/impls.yaml" ] && echo "✗ Missing: impls.yaml" && errors=$((errors + 1))
+    [ ! -f "$snapshot_dir/images.yaml" ] && echo "✗ Missing: images.yaml" && errors=$((errors + 1))
     [ ! -f "$snapshot_dir/test-matrix.yaml" ] && echo "✗ Missing: test-matrix.yaml" && errors=$((errors + 1))
     [ ! -f "$snapshot_dir/results.yaml" ] && echo "✗ Missing: results.yaml" && errors=$((errors + 1))
     [ ! -f "$snapshot_dir/settings.yaml" ] && echo "✗ Missing: settings.yaml" && errors=$((errors + 1))

@@ -8,7 +8,7 @@ download_github_snapshot() {
     local commit="$2"
     local cache_dir="$3"
 
-    local snapshot_file="$cache_dir/snapshots/$commit.zip"
+    local snapshot_file="$cache_dir/snapshot/$commit.zip"
 
     if [ ! -f "$snapshot_file" ]; then
         echo "  → [MISS] Downloading snapshot..." >&2

@@ -87,7 +87,7 @@ runs:
           DEBUG_FLAG="--debug"
         fi
 
-        ./run_tests.sh \
+        ./run.sh \
           --test-select '${{ inputs.test-select }}' \
           --test-ignore '${{ inputs.test-ignore }}' \
           --relay-select '${{ inputs.relay-select }}' \

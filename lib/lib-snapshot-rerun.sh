@@ -270,7 +270,7 @@ echo "╲ Re-running test pass from snapshot..."
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
 # Validate snapshot
-if [ ! -f impls.yaml ] || [ ! -f test-matrix.yaml ]; then
+if [ ! -f images.yaml ] || [ ! -f test-matrix.yaml ]; then
     echo "✗ Error: Required files missing. Not a valid snapshot."
     exit 1
 fi
@@ -291,7 +291,7 @@ SETUP
     cat >> "$rerun_file" <<'CHECKDEPS'
 # Check dependencies
 if [ "$CHECK_DEPS_ONLY" = true ]; then
-    bash scripts/../scripts/check-dependencies.sh
+    bash lib/../lib/check-dependencies.sh
     exit $?
 fi
 
@@ -346,7 +346,7 @@ _generate_list_commands() {
 if [ "$LIST_IMPLS" = true ]; then
     echo "╲ Available Implementations"
     echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-    yq eval '.implementations[].id' impls.yaml | sed 's/^/→ /'
+    yq eval '.implementations[].id' images.yaml | sed 's/^/→ /'
     echo ""
     exit 0
 fi
@@ -360,7 +360,7 @@ LISTIMPLS
 if [ "$LIST_RELAYS" = true ]; then
     echo "╲ Available Relays"
     echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-    yq eval '.relays[].id' impls.yaml | sed 's/^/→ /'
+    yq eval '.relays[].id' images.yaml | sed 's/^/→ /'
     echo ""
     exit 0
 fi
@@ -369,7 +369,7 @@ fi
 if [ "$LIST_ROUTERS" = true ]; then
     echo "╲ Available Routers"
     echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-    yq eval '.routers[].id' impls.yaml | sed 's/^/→ /'
+    yq eval '.routers[].id' images.yaml | sed 's/^/→ /'
     echo ""
     exit 0
 fi
@@ -414,7 +414,7 @@ if [ "$FORCE_IMAGE_REBUILD" = true ]; then
     IMPL_FILTER=$(cat "$REQUIRED_IMPLS" | paste -sd'|' -)
     rm "$REQUIRED_IMPLS"
 
-    bash scripts/build-images.sh "$IMPL_FILTER" "$DEBUG"
+    bash lib/build-images.sh "$IMPL_FILTER" "$DEBUG"
 
 elif [ -d docker-images ] && [ "$(ls -A docker-images 2>/dev/null)" ]; then
     echo "→ Loading Docker images from snapshot..."
@@ -438,7 +438,7 @@ else
     IMPL_FILTER=$(cat "$REQUIRED_IMPLS" | paste -sd'|' -)
     rm "$REQUIRED_IMPLS"
 
-    bash scripts/build-images.sh "$IMPL_FILTER" "$DEBUG"
+    bash lib/build-images.sh "$IMPL_FILTER" "$DEBUG"
 fi
 
 IMAGEHANDLE
@@ -517,17 +517,17 @@ PERFEXPORT
     case "$test_type" in
         hole-punch)
             cat >> "$rerun_file" <<'HPGEN'
-    bash scripts/generate-tests.sh "$TEST_SELECT" "$TEST_IGNORE" "$RELAY_SELECT" "$RELAY_IGNORE" "$ROUTER_SELECT" "$ROUTER_IGNORE" "$DEBUG" "false"
+    bash lib/generate-tests.sh "$TEST_SELECT" "$TEST_IGNORE" "$RELAY_SELECT" "$RELAY_IGNORE" "$ROUTER_SELECT" "$ROUTER_IGNORE" "$DEBUG" "false"
 HPGEN
             ;;
         perf)
             cat >> "$rerun_file" <<'PERFGEN'
-    bash scripts/generate-tests.sh
+    bash lib/generate-tests.sh
 PERFGEN
             ;;
         *)
             cat >> "$rerun_file" <<'TRANSGEN'
-    bash scripts/generate-tests.sh "$TEST_SELECT" "$TEST_IGNORE" "$DEBUG" "false"
+    bash lib/generate-tests.sh "$TEST_SELECT" "$TEST_IGNORE" "$DEBUG" "false"
 TRANSGEN
             ;;
     esac
@@ -553,7 +553,7 @@ _generate_test_execution() {
 echo ""
 echo "╲ Starting Global Services"
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-bash scripts/start-global-services.sh
+bash lib/start-global-services.sh
 
 HPSERVICES
     fi
@@ -597,7 +597,7 @@ run_test() {
 
     # Run test and capture result
     start=$(date +%s)
-    if bash scripts/run-single-test.sh "$name" "$dialer" "$listener" "$transport" "$secure" "$muxer"; then
+    if bash lib/run-single-test.sh "$name" "$dialer" "$listener" "$transport" "$secure" "$muxer"; then
         status="pass"
         exit_code=0
     else
@@ -644,7 +644,7 @@ run_test() {
     local name=$(yq eval ".tests[$index].name" test-matrix.yaml)
 
     # Run test and capture result
-    if bash scripts/run-single-test.sh "$index" "$test_type"; then
+    if bash lib/run-single-test.sh "$index" "$test_type"; then
         status="pass"
         exit_code=0
     else
@@ -680,7 +680,7 @@ PERFEXEC
 echo ""
 echo "╲ Stopping Global Services"
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-bash scripts/stop-global-services.sh
+bash lib/stop-global-services.sh
 
 HPSTOP
     fi
@@ -738,7 +738,7 @@ fi
 
 # Generate dashboard
 if [ -f scripts/generate-dashboard.sh ]; then
-    bash scripts/generate-dashboard.sh
+    bash lib/generate-dashboard.sh
     echo "  ✓ Generated results dashboard"
 fi
 
@@ -760,7 +760,7 @@ RESULTS
         cat >> "$rerun_file" <<'PERFBOXPLOT'
 # Generate box plots for perf tests
 if [ -f scripts/generate-boxplot.sh ]; then
-    bash scripts/generate-boxplot.sh
+    bash lib/generate-boxplot.sh
     echo "  ✓ Generated box plots"
 fi
 
