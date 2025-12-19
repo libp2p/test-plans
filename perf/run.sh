@@ -173,26 +173,51 @@ if [ "$LIST_TESTS" = true ]; then
         exit 1
     fi
 
-    # Extract and display test count
-    test_count=$(yq eval '.tests | length' "$TEMP_DIR/test-matrix.yaml")
-    baseline_count=$(yq eval '.baselines | length' "$TEMP_DIR/test-matrix.yaml")
+    # Extract and display test counts (selected and ignored)
+    baseline_count=$(yq eval '.metadata.totalBaselines' "$TEMP_DIR/test-matrix.yaml")
+    ignored_baseline_count=$(yq eval '.metadata.ignoredBaselines' "$TEMP_DIR/test-matrix.yaml")
+    test_count=$(yq eval '.metadata.totalTests' "$TEMP_DIR/test-matrix.yaml")
+    ignored_test_count=$(yq eval '.metadata.ignoredTests' "$TEMP_DIR/test-matrix.yaml")
 
     echo ""
-    print_header "Selected Tests ($baseline_count baseline + $test_count main = $((baseline_count + test_count)) total)"
-
+    print_header "Selected Baseline Tests ($baseline_count tests)"
     if [ "$baseline_count" -gt 0 ]; then
-        echo "→ Baseline tests:"
-        yq eval '.baselines[].name' "$TEMP_DIR/test-matrix.yaml" | sed 's/^/  → /'
-        echo ""
-    fi
-
-    if [ "$test_count" -gt 0 ]; then
-        echo "→ Main tests:"
-        yq eval '.tests[].name' "$TEMP_DIR/test-matrix.yaml" | sed 's/^/  → /'
+        yq eval '.baselines[].name' "$TEMP_DIR/test-matrix.yaml" | while read -r name; do
+            echo "  ✓ $name"
+        done
     else
-        echo "→ No main tests selected"
+        echo "  → No baseline tests selected"
     fi
 
+    if [ "$ignored_baseline_count" -gt 0 ]; then
+        echo ""
+        print_header "Ignored Baseline Tests ($ignored_baseline_count tests)"
+        yq eval '.ignoredBaselines[].name' "$TEMP_DIR/test-matrix.yaml" | while read -r name; do
+            echo "  ✗ $name [ignored]"
+        done
+    fi
+
+    echo ""
+    print_header "Selected Main Tests ($test_count tests)"
+    if [ "$test_count" -gt 0 ]; then
+        yq eval '.tests[].name' "$TEMP_DIR/test-matrix.yaml" | while read -r name; do
+            echo "  ✓ $name"
+        done
+    else
+        echo "  → No main tests selected"
+    fi
+
+    if [ "$ignored_test_count" -gt 0 ]; then
+        echo ""
+        print_header "Ignored Main Tests ($ignored_test_count tests)"
+        yq eval '.ignoredTests[].name' "$TEMP_DIR/test-matrix.yaml" | while read -r name; do
+            echo "  ✗ $name [ignored]"
+        done
+    fi
+
+    echo ""
+    echo "  → Total selected: $baseline_count baseline + $test_count main = $((baseline_count + test_count)) tests"
+    echo "  → Total ignored: $ignored_baseline_count baseline + $ignored_test_count main = $((ignored_baseline_count + ignored_test_count)) tests"
     echo ""
     exit 0
 fi
@@ -228,20 +253,20 @@ export TEST_PASS_NAME
 echo ""
 print_header "libp2p Performance Test Suite"
 
-echo "→ Test Pass: $TEST_PASS_NAME"
-echo "→ Cache Dir: $CACHE_DIR"
-echo "→ Test Pass Dir: $TEST_PASS_DIR"
-[ -n "$TEST_SELECT" ] && echo "→ Test Select: $TEST_SELECT"
-[ -n "$TEST_IGNORE" ] && echo "→ Test Ignore: $TEST_IGNORE"
-echo "→ Upload Bytes: $(numfmt --to=iec --suffix=B $UPLOAD_BYTES 2>/dev/null || echo "${UPLOAD_BYTES} bytes")"
-echo "→ Download Bytes: $(numfmt --to=iec --suffix=B $DOWNLOAD_BYTES 2>/dev/null || echo "${DOWNLOAD_BYTES} bytes")"
-echo "→ Iterations: $ITERATIONS"
-echo "→ Duration per Iteration: ${DURATION_PER_ITERATION}s"
-echo "→ Latency Iterations: $LATENCY_ITERATIONS"
-echo "→ Create Snapshot: $SNAPSHOT"
-echo "→ Debug: $DEBUG"
-echo "→ Force Matrix Rebuild: $FORCE_MATRIX_REBUILD"
-echo "→ Force Image Rebuild: $FORCE_IMAGE_REBUILD"
+echo "  → Test Pass: $TEST_PASS_NAME"
+echo "  → Cache Dir: $CACHE_DIR"
+echo "  → Test Pass Dir: $TEST_PASS_DIR"
+[ -n "$TEST_SELECT" ] && echo "  → Test Select: $TEST_SELECT"
+[ -n "$TEST_IGNORE" ] && echo "  → Test Ignore: $TEST_IGNORE"
+echo "  → Upload Bytes: $(numfmt --to=iec --suffix=B $UPLOAD_BYTES 2>/dev/null || echo "${UPLOAD_BYTES} bytes")"
+echo "  → Download Bytes: $(numfmt --to=iec --suffix=B $DOWNLOAD_BYTES 2>/dev/null || echo "${DOWNLOAD_BYTES} bytes")"
+echo "  → Iterations: $ITERATIONS"
+echo "  → Duration per Iteration: ${DURATION_PER_ITERATION}s"
+echo "  → Latency Iterations: $LATENCY_ITERATIONS"
+echo "  → Create Snapshot: $SNAPSHOT"
+echo "  → Debug: $DEBUG"
+echo "  → Force Matrix Rebuild: $FORCE_MATRIX_REBUILD"
+echo "  → Force Image Rebuild: $FORCE_IMAGE_REBUILD"
 echo ""
 
 # Check dependencies for normal execution
@@ -256,7 +281,7 @@ bash "$SCRIPT_LIB_DIR/check-dependencies.sh docker yq || {
 # Read and export the docker compose command detected by check-dependencies.sh
 if [ -f /tmp/docker-compose-cmd.txt ]; then
     export DOCKER_COMPOSE_CMD=$(cat /tmp/docker-compose-cmd.txt)
-    echo "→ Using: $DOCKER_COMPOSE_CMD"
+    echo "  → Using: $DOCKER_COMPOSE_CMD"
 else
     echo "✗ Error: Could not determine docker compose command"
     exit 1
@@ -306,7 +331,7 @@ test_count=$(yq eval '.tests | length' "$TEST_PASS_DIR/test-matrix.yaml" 2>/dev/
 
 # Display baseline tests
 if [ "$baseline_count" -gt 0 ]; then
-    echo "→ Selected baseline tests:"
+    echo "  → Selected baseline tests:"
     yq eval '.baselines[].name' "$TEST_PASS_DIR/test-matrix.yaml" | while read -r test_name; do
         echo "  ✓ $test_name"
     done
@@ -315,7 +340,7 @@ fi
 
 # Display main tests
 if [ "$test_count" -gt 0 ]; then
-    echo "→ Selected main tests:"
+    echo "  → Selected main tests:"
     yq eval '.tests[].name' "$TEST_PASS_DIR/test-matrix.yaml" | while read -r test_name; do
         echo "  ✓ $test_name"
     done
@@ -324,7 +349,7 @@ else
 fi
 
 echo ""
-echo "→ Total: $baseline_count baseline tests, $test_count main tests to execute"
+echo "  → Total: $baseline_count baseline tests, $test_count main tests to execute"
 
 # Source common test execution utilities
 source "$SCRIPT_LIB_DIR/lib-test-execution.sh"
@@ -358,12 +383,12 @@ yq eval '.tests[].listener' "$TEST_PASS_DIR/test-matrix.yaml" 2>/dev/null | sort
 sort -u "$REQUIRED_IMAGES" -o "$REQUIRED_IMAGES"
 
 IMAGE_COUNT=$(wc -l < "$REQUIRED_IMAGES")
-echo "→ Building $IMAGE_COUNT required implementations"
+echo "  → Building $IMAGE_COUNT required implementations"
 echo ""
 
 # Build each required implementation using pipe-separated list
 IMAGE_FILTER=$(cat "$REQUIRED_IMAGES" | paste -sd'|' -)
-echo "→ bash lib/build-images.sh \"$IMAGE_FILTER\" \"$FORCE_IMAGE_REBUILD\""
+echo "  → bash lib/build-images.sh \"$IMAGE_FILTER\" \"$FORCE_IMAGE_REBUILD\""
 bash lib/build-images.sh "$IMAGE_FILTER" "$FORCE_IMAGE_REBUILD" || {
   echo "✗ Image build failed"
   exit 1
@@ -469,10 +494,10 @@ if [ -f "$TEST_PASS_DIR/results.yaml.tmp" ]; then
     rm "$TEST_PASS_DIR/results.yaml.tmp"
 fi
 
-echo "→ Results:"
-echo "  → Total: $TOTAL_TESTS ($baseline_count baseline + $test_count main)"
-echo "  ✓ Passed: $TOTAL_PASSED"
-echo "  ✗ Failed: $TOTAL_FAILED"
+echo "  → Results:"
+echo "    → Total: $TOTAL_TESTS ($baseline_count baseline + $test_count main)"
+echo "    ✓ Passed: $TOTAL_PASSED"
+echo "    ✗ Failed: $TOTAL_FAILED"
 
 # List failed tests if any
 if [ "$TOTAL_FAILED" -gt 0 ]; then
@@ -489,12 +514,12 @@ echo ""
 HOURS=$((TEST_DURATION / 3600))
 MINUTES=$(((TEST_DURATION % 3600) / 60))
 SECONDS=$((TEST_DURATION % 60))
-printf "→ Total time: %02d:%02d:%02d\n" $HOURS $MINUTES $SECONDS
+printf "  → Total time: %02d:%02d:%02d\n" $HOURS $MINUTES $SECONDS
 
 # Generate results dashboard
 echo ""
 echo "╲ Generating results dashboard..."
-echo "→ bash lib/generate-dashboard.sh"
+echo "  → bash lib/generate-dashboard.sh"
 
 bash lib/generate-dashboard.sh || {
   log_error "Dashboard generation failed"
@@ -506,7 +531,7 @@ echo "╲ Generating box plots..."
 
 # Check if gnuplot is available
 if command -v gnuplot &> /dev/null; then
-    echo "→ bash lib/generate-boxplot.sh"
+    echo "  → bash lib/generate-boxplot.sh"
     bash lib/generate-boxplot.sh "$TEST_PASS_DIR/results.yaml" "$TEST_PASS_DIR" || {
         echo "  ✗ Box plot generation failed"
     }

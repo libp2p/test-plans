@@ -36,21 +36,21 @@ check_and_load_cache() {
 
     # If force rebuild requested, skip cache
     if [ "$force_rebuild" = true ]; then
-        echo "  → [SKIP] Force matrix rebuild requested"
+        echo "    → [SKIP] Force matrix rebuild requested"
         mkdir -p "$cache_dir/test-run-matrix"
         return 1
     fi
 
     if [ -f "$cache_file" ]; then
-        echo "  ✓ [HIT] Using cached test matrix: ${cache_key:0:8}.yaml"
+        echo "    ✓ [HIT] Using cached test matrix: ${cache_key:0:8}.yaml"
         cp "$cache_file" "$output_dir/test-matrix.yaml"
 
         # Show cached test count
         local test_count=$(yq eval '.metadata.totalTests' "$output_dir/test-matrix.yaml")
-        echo "  ✓ Loaded $test_count tests from cache"
+        echo "    ✓ Loaded $test_count tests from cache"
         return 0
     else
-        echo "  → [MISS] Generating new test matrix"
+        echo "    → [MISS] Generating new test matrix"
         mkdir -p "$cache_dir/test-run-matrix"
         return 1
     fi
@@ -73,5 +73,5 @@ save_to_cache() {
 
     mkdir -p "$cache_dir/test-run-matrix"
     cp "$output_dir/test-matrix.yaml" "$cache_file"
-    echo "✓ Cached as: ${test_type:+$test_type-}${cache_key:0:8}.yaml"
+    echo "  ✓ Cached as: ${test_type:+$test_type-}${cache_key:0:8}.yaml"
 }
