@@ -25,9 +25,19 @@ FORCE_IMAGE_REBUILD=false
 DEBUG=false
 AUTO_APPROVE=false
 CHECK_DEPS_ONLY=false
-LIST_IMPLS=false
-LIST_BASELINES=false
+LIST_IMAGES=false
 LIST_TESTS=false
+
+# Change to script directory
+cd "$(dirname "$0")"
+
+# Set global library directory
+SCRIPT_LIB_DIR="${SCRIPT_LIB_DIR:-$(cd "$(dirname "$0")/.." && pwd)/lib}"
+
+# Source formatting library
+source "$SCRIPT_LIB_DIR/lib-output-formatting.sh"
+
+print_banner
 
 # Show help
 show_help() {
@@ -53,30 +63,24 @@ Options:
   --debug                       Enable debug mode
   -y, --yes                     Skip confirmation prompts
   --check-deps                  Only check dependencies and exit
-  --list-impls                  List all implementation IDs and exit
-  --list-baselines              List all baseline IDs and exit
+  --list-images                 List all image types used by this test suite and exit
   --list-tests                  List all selected tests and exit
   --help, -h                    Show this help message
 
 Examples:
-  $0
+  $0 --cache-dir /srv/cache --workers 4
   $0 --test-select "go-v0.45" --iterations 3
   $0 --test-select "~libp2p" --snapshot
   $0 --test-ignore "js-v3.x"
   $0 --upload-bytes 5368709120 --download-bytes 5368709120
-  $0 --list-impls
+  $0 --list-images
   $0 --list-tests --test-select "~libp2p"
-
-Test Aliases (defined in images.yaml):
-  ~libp2p    - All libp2p implementations (go-v0.45, rust-v0.56, js-v3.x)
-  ~baseline  - Baseline implementations (https, quic-go)
-  ~go        - Go-based implementations
-  ~rust      - Rust-based implementations
-  ~js        - JavaScript-based implementations
+  $0 --snapshot --force-image-rebuild
 
 Dependencies:
-  bash 4.0+, docker 20.10+, yq 4.0+
+  bash 4.0+, docker 20.10+, yq 4.0+, wget, zip, unzip
   Run with --check-deps to verify installation.
+
 EOF
 }
 
@@ -99,8 +103,7 @@ while [[ $# -gt 0 ]]; do
         --debug) DEBUG=true; shift ;;
         -y|--yes) AUTO_APPROVE=true; shift ;;
         --check-deps) CHECK_DEPS_ONLY=true; shift ;;
-        --list-impls) LIST_IMPLS=true; shift ;;
-        --list-baselines) LIST_BASELINES=true; shift ;;
+        --list-images) LIST_IMAGES=true; shift ;;
         --list-tests) LIST_TESTS=true; shift ;;
         --help|-h) show_help; exit 0 ;;
         *)
@@ -112,48 +115,33 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Change to script directory
-cd "$(dirname "$0")"
-
-# Set global library directory
-SCRIPT_LIB_DIR="${SCRIPT_LIB_DIR:-$(cd "$(dirname "$0")/.." && pwd)/lib}"
-
 # Source common libraries (after argument parsing, so --help doesn't need them)
 source "$SCRIPT_LIB_DIR/lib-test-filtering.sh"
 source "$SCRIPT_LIB_DIR/lib-test-caching.sh"
 source "$SCRIPT_LIB_DIR/lib-image-naming.sh"
 source "lib/lib-perf.sh"
 
-echo ""
-echo "                        ╔╦╦╗  ╔═╗"
-echo "▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁ ║╠╣╚╦═╬╝╠═╗ ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁"
-echo "═══════════════════════ ║║║║║║║╔╣║║ ════════════════════════"
-echo "▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔ ╚╩╩═╣╔╩═╣╔╝ ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-echo "                            ╚╝  ╚╝"
-echo ""
-
-# List implementations
-if [ "$LIST_IMPLS" = true ]; then
+# List images
+if [ "$LIST_IMAGES" = true ]; then
     if [ ! -f "images.yaml" ]; then
-        echo "Error: images.yaml not found"
+        print_error "images.yaml not found"
         exit 1
     fi
-    echo "╲ Available Implementations"
-    echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-    yq eval '.implementations[].id' images.yaml | sed 's/^/→ /'
+
+    source "$SCRIPT_LIB_DIR/lib-test-aliases.sh"
+
+    print_header "Available Images"
+
+    # Get and print implementations
+    all_image_ids=($(get_entity_ids "implementations"))
+    print_list "implementations" "${all_image_ids[@]}"
+
     echo ""
-    exit 0
-fi
 
-# List baselines
-if [ "$LIST_BASELINES" = true ]; then
-    if [ ! -f "images.yaml" ]; then
-        echo "Error: images.yaml not found"
-        exit 1
-    fi
-    echo "╲ Available Baselines"
-    echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-    yq eval '.baselines[].id' images.yaml | sed 's/^/→ /'
+    # Get and print baselines
+    all_baseline_ids=($(get_entity_ids "baselines"))
+    print_list "baselines" "${all_baseline_ids[@]}"
+
     echo ""
     exit 0
 fi
@@ -173,9 +161,7 @@ if [ "$LIST_TESTS" = true ]; then
     export ITERATIONS DURATION_PER_ITERATION LATENCY_ITERATIONS
     export FORCE_MATRIX_REBUILD
 
-    echo "╲ Generating test matrix..."
-    echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-    echo "→ bash lib/generate-tests.sh \"$TEST_SELECT\" \"$TEST_IGNORE\" \"$BASELINE_SELECT\" \"$BASELINE_IGNORE\""
+    print_header "Generating test matrix..."
 
     # Generate test matrix (don't suppress output to show Test Matrix Generation section)
     bash lib/generate-tests.sh || true
@@ -192,8 +178,7 @@ if [ "$LIST_TESTS" = true ]; then
     baseline_count=$(yq eval '.baselines | length' "$TEMP_DIR/test-matrix.yaml")
 
     echo ""
-    echo "╲ Selected Tests ($baseline_count baseline + $test_count main = $((baseline_count + test_count)) total)"
-    echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+    print_header "Selected Tests ($baseline_count baseline + $test_count main = $((baseline_count + test_count)) total)"
 
     if [ "$baseline_count" -gt 0 ]; then
         echo "→ Baseline tests:"
@@ -240,8 +225,8 @@ generate_inputs_yaml "$TEST_PASS_DIR/inputs.yaml" "$TEST_TYPE" "${ORIGINAL_ARGS[
 export TEST_PASS_DIR
 export TEST_PASS_NAME
 
-echo "╲ libp2p Performance Test Suite"
-echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+echo ""
+print_header "libp2p Performance Test Suite"
 
 echo "→ Test Pass: $TEST_PASS_NAME"
 echo "→ Cache Dir: $CACHE_DIR"
@@ -261,7 +246,6 @@ echo ""
 
 # Check dependencies for normal execution
 echo "╲ Checking dependencies..."
-echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 bash "$SCRIPT_LIB_DIR/check-dependencies.sh docker yq || {
   echo ""
   echo "Error: Missing required dependencies."
@@ -299,7 +283,6 @@ fi
 # Generate test matrix
 echo ""
 echo "╲ Generating test matrix..."
-echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
 export TEST_SELECT TEST_IGNORE BASELINE_SELECT BASELINE_IGNORE
 export UPLOAD_BYTES DOWNLOAD_BYTES
@@ -316,7 +299,6 @@ bash lib/generate-tests.sh || {
 # Display test selection and get confirmation
 echo ""
 echo "╲ Test selection..."
-echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
 # Read baseline and main test counts
 baseline_count=$(yq eval '.baselines | length' "$TEST_PASS_DIR/test-matrix.yaml" 2>/dev/null || echo "0")
@@ -349,7 +331,7 @@ source "$SCRIPT_LIB_DIR/lib-test-execution.sh"
 
 # Calculate required Docker images
 image_count=$(get_required_image_count "$TEST_PASS_DIR/test-matrix.yaml" "true")
-echo "→ Required Docker images: $image_count"
+print_message "Required Docker images: $image_count"
 
 # Prompt for confirmation unless auto-approved
 if [ "$AUTO_APPROVE" != true ]; then
@@ -366,29 +348,28 @@ fi
 # Build Docker images
 echo ""
 echo "╲ Building Docker images..."
-echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
 # Get unique implementations from both baselines and main tests
-REQUIRED_IMPLS=$(mktemp)
-yq eval '.baselines[].dialer' "$TEST_PASS_DIR/test-matrix.yaml" 2>/dev/null | sort -u > "$REQUIRED_IMPLS" || true
-yq eval '.baselines[].listener' "$TEST_PASS_DIR/test-matrix.yaml" 2>/dev/null | sort -u >> "$REQUIRED_IMPLS" || true
-yq eval '.tests[].dialer' "$TEST_PASS_DIR/test-matrix.yaml" 2>/dev/null | sort -u >> "$REQUIRED_IMPLS" || true
-yq eval '.tests[].listener' "$TEST_PASS_DIR/test-matrix.yaml" 2>/dev/null | sort -u >> "$REQUIRED_IMPLS" || true
-sort -u "$REQUIRED_IMPLS" -o "$REQUIRED_IMPLS"
+REQUIRED_IMAGES=$(mktemp)
+yq eval '.baselines[].dialer' "$TEST_PASS_DIR/test-matrix.yaml" 2>/dev/null | sort -u > "$REQUIRED_IMAGES" || true
+yq eval '.baselines[].listener' "$TEST_PASS_DIR/test-matrix.yaml" 2>/dev/null | sort -u >> "$REQUIRED_IMAGES" || true
+yq eval '.tests[].dialer' "$TEST_PASS_DIR/test-matrix.yaml" 2>/dev/null | sort -u >> "$REQUIRED_IMAGES" || true
+yq eval '.tests[].listener' "$TEST_PASS_DIR/test-matrix.yaml" 2>/dev/null | sort -u >> "$REQUIRED_IMAGES" || true
+sort -u "$REQUIRED_IMAGES" -o "$REQUIRED_IMAGES"
 
-IMPL_COUNT=$(wc -l < "$REQUIRED_IMPLS")
-echo "→ Building $IMPL_COUNT required implementations"
+IMAGE_COUNT=$(wc -l < "$REQUIRED_IMAGES")
+echo "→ Building $IMAGE_COUNT required implementations"
 echo ""
 
 # Build each required implementation using pipe-separated list
-IMPL_FILTER=$(cat "$REQUIRED_IMPLS" | paste -sd'|' -)
-echo "→ bash lib/build-images.sh \"$IMPL_FILTER\" \"$FORCE_IMAGE_REBUILD\""
-bash lib/build-images.sh "$IMPL_FILTER" "$FORCE_IMAGE_REBUILD" || {
+IMAGE_FILTER=$(cat "$REQUIRED_IMAGES" | paste -sd'|' -)
+echo "→ bash lib/build-images.sh \"$IMAGE_FILTER\" \"$FORCE_IMAGE_REBUILD\""
+bash lib/build-images.sh "$IMAGE_FILTER" "$FORCE_IMAGE_REBUILD" || {
   echo "✗ Image build failed"
   exit 1
 }
 
-rm -f "$REQUIRED_IMPLS"
+rm -f "$REQUIRED_IMAGES"
 
 # Run baseline tests FIRST (before main tests)
 if [ "$baseline_count" -gt 0 ]; then
@@ -400,7 +381,6 @@ fi
 # Run main performance tests
 echo ""
 echo "╲ Running tests... (1 worker)"
-echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
 for ((i=0; i<test_count; i++)); do
   # Get test name from matrix
@@ -419,7 +399,6 @@ done
 # Collect results
 echo ""
 echo "╲ Collecting results..."
-echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
 TEST_END_TIME=$(date +%s)
 TEST_DURATION=$((TEST_END_TIME - TEST_START_TIME))
@@ -515,7 +494,6 @@ printf "→ Total time: %02d:%02d:%02d\n" $HOURS $MINUTES $SECONDS
 # Generate results dashboard
 echo ""
 echo "╲ Generating results dashboard..."
-echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 echo "→ bash lib/generate-dashboard.sh"
 
 bash lib/generate-dashboard.sh || {
@@ -525,7 +503,6 @@ bash lib/generate-dashboard.sh || {
 # Generate box plots (optional - requires gnuplot)
 echo ""
 echo "╲ Generating box plots..."
-echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
 # Check if gnuplot is available
 if command -v gnuplot &> /dev/null; then

@@ -4,6 +4,8 @@
 # Test Aliases - Define reusable patterns for test selection
 # Usage: --test-select "~libp2p" or --test-ignore "~baseline"
 test-aliases:
+  - alias: "all"
+    value: "~baselines|~impls"
   - alias: "impls"
     value: "dotnet-v1.0|go-v0.45|js-v3.x|rust-v0.56"
   - alias: "baselines"

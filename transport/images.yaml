@@ -4,6 +4,8 @@
 # Test Aliases - Define reusable patterns for test selection
 # Usage: --test-select "~browsers" or --test-ignore "!~browsers"
 test-aliases:
+  - alias: "all"
+    value: "~browsers|~rust|~go|~python|~js|~nim|~jvm|~c|~dotnet|~zig|~eth-p2p"
   - alias: "browsers"
     value: "chromium-rust-v0.53|chromium-rust-v0.54|chromium-js-v1.x|chromium-js-v2.x|firefox-js-v1.x|firefox-js-v2.x|webkit-js-v1.x|webkit-js-v2.x"
   - alias: "rust-browsers"

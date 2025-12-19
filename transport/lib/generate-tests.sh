@@ -1,4 +1,7 @@
 #!/bin/bash
+# Source formatting library
+SCRIPT_LIB_DIR="${SCRIPT_LIB_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/lib}"
+source "$SCRIPT_LIB_DIR/lib-output-formatting.sh"
 # Generate test matrix from images.yaml with 3D combinations (transport × secureChannel × muxer)
 # Outputs test-matrix.yaml with content-addressed caching
 
@@ -33,15 +36,14 @@ source "$SCRIPT_LIB_DIR/lib-filter-engine.sh"
 load_aliases
 
 # Get all implementation IDs for negation expansion
-all_impl_ids=($(yq eval '.implementations[].id' images.yaml))
+all_image_ids=($(yq eval '.implementations[].id' images.yaml))
 
 # Use test select and ignore values from CLI arguments
 TEST_SELECT="$CLI_TEST_SELECT"
 TEST_IGNORE="$CLI_TEST_IGNORE"
 
 echo ""
-echo "╲ Test Matrix Generation"
-echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+print_header "Test Matrix Generation"
 
 # Display filters (will expand during filtering)
 if [ -n "$TEST_SELECT" ]; then
@@ -77,44 +79,44 @@ echo ""
 # Filter implementations upfront using global filter_names function
 echo ""
 echo "→ Filtering implementations..."
-mapfile -t filtered_impl_ids < <(filter_entity_list "implementations" "$TEST_SELECT" "$TEST_IGNORE")
-echo "  ✓ Filtered to ${#filtered_impl_ids[@]} implementations"
+mapfile -t filtered_image_ids < <(filter_entity_list "implementations" "$TEST_SELECT" "$TEST_IGNORE")
+echo "  ✓ Filtered to ${#filtered_image_ids[@]} implementations"
 
 # Display filtered implementations if small list
-if [ ${#filtered_impl_ids[@]} -le 10 ]; then
-    for impl_id in "${filtered_impl_ids[@]}"; do
-        echo "    - $impl_id"
+if [ ${#filtered_image_ids[@]} -le 10 ]; then
+    for image_id in "${filtered_image_ids[@]}"; do
+        echo "    - $image_id"
     done
 fi
 
 # Load implementation data only for filtered implementations
 echo "→ Loading implementation data into memory..."
-declare -A impl_transports    # impl_transports[rust-v0.56]="tcp ws quic-v1"
-declare -A impl_secure        # impl_secure[rust-v0.56]="tls noise"
-declare -A impl_muxers        # impl_muxers[rust-v0.56]="yamux mplex"
-declare -A impl_dial_only     # impl_dial_only[chromium-rust-v0.54]="webtransport webrtc-direct ws"
+declare -A image_transports    # image_transports[rust-v0.56]="tcp ws quic-v1"
+declare -A image_secure        # image_secure[rust-v0.56]="tls noise"
+declare -A image_muxers        # image_muxers[rust-v0.56]="yamux mplex"
+declare -A image_dial_only     # image_dial_only[chromium-rust-v0.54]="webtransport webrtc-direct ws"
 
 # Load data for each filtered implementation
-for impl_id in "${filtered_impl_ids[@]}"; do
-    transports=$(yq eval ".implementations[] | select(.id == \"$impl_id\") | .transports | join(\" \")" images.yaml)
-    secure=$(yq eval ".implementations[] | select(.id == \"$impl_id\") | .secureChannels | join(\" \")" images.yaml)
-    muxers=$(yq eval ".implementations[] | select(.id == \"$impl_id\") | .muxers | join(\" \")" images.yaml)
-    dial_only=$(yq eval ".implementations[] | select(.id == \"$impl_id\") | .dialOnly | join(\" \")" images.yaml 2>/dev/null || echo "")
+for image_id in "${filtered_image_ids[@]}"; do
+    transports=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .transports | join(\" \")" images.yaml)
+    secure=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .secureChannels | join(\" \")" images.yaml)
+    muxers=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .muxers | join(\" \")" images.yaml)
+    dial_only=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .dialOnly | join(\" \")" images.yaml 2>/dev/null || echo "")
 
-    impl_transports["$impl_id"]="$transports"
-    impl_secure["$impl_id"]="$secure"
-    impl_muxers["$impl_id"]="$muxers"
-    impl_dial_only["$impl_id"]="$dial_only"
+    image_transports["$image_id"]="$transports"
+    image_secure["$image_id"]="$secure"
+    image_muxers["$image_id"]="$muxers"
+    image_dial_only["$image_id"]="$dial_only"
 done
 
-echo "  ✓ Loaded data for ${#filtered_impl_ids[@]} filtered implementations"
+echo "  ✓ Loaded data for ${#filtered_image_ids[@]} filtered implementations"
 
 # Check if a transport can be used with an implementation as listener
 # Returns 0 (true) if transport can be used as listener, 1 (false) if dialOnly
 can_be_listener_for_transport() {
-    local impl_id="$1"
+    local image_id="$1"
     local transport="$2"
-    local dial_only_transports="${impl_dial_only[$impl_id]:-}"
+    local dial_only_transports="${image_dial_only[$image_id]:-}"
 
     # If no dialOnly restrictions, can always be listener
     [ -z "$dial_only_transports" ] && return 0
@@ -129,24 +131,23 @@ can_be_listener_for_transport() {
 
 echo ""
 echo "╲ Generating test combinations..."
-echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
 # Initialize test lists
 tests=()
 test_num=0
 
 # Iterate through FILTERED implementations only (no inline filtering needed!)
-for dialer_id in "${filtered_impl_ids[@]}"; do
-    dialer_transports="${impl_transports[$dialer_id]}"
-    dialer_secure="${impl_secure[$dialer_id]}"
-    dialer_muxers="${impl_muxers[$dialer_id]}"
+for dialer_id in "${filtered_image_ids[@]}"; do
+    dialer_transports="${image_transports[$dialer_id]}"
+    dialer_secure="${image_secure[$dialer_id]}"
+    dialer_muxers="${image_muxers[$dialer_id]}"
 
-    for listener_id in "${filtered_impl_ids[@]}"; do
+    for listener_id in "${filtered_image_ids[@]}"; do
         # No filtering needed - already filtered upfront!
 
-        listener_transports="${impl_transports[$listener_id]}"
-        listener_secure="${impl_secure[$listener_id]}"
-        listener_muxers="${impl_muxers[$listener_id]}"
+        listener_transports="${image_transports[$listener_id]}"
+        listener_secure="${image_secure[$listener_id]}"
+        listener_muxers="${image_muxers[$listener_id]}"
 
         # Find common transports (much faster than grep)
         common_transports=$(get_common "$dialer_transports" "$listener_transports")
@@ -253,5 +254,4 @@ EOF
 # Cache the generated matrix
 save_to_cache "$OUTPUT_DIR" "$cache_key" "$CACHE_DIR" "transport"
 
-echo "╲ ✓ Generated test matrix with ${#tests[@]} tests"
-echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+print_success "Generated test matrix with ${#tests[@]} tests"

@@ -33,12 +33,13 @@ source "$SCRIPT_LIB_DIR/lib-test-aliases.sh"
 source "$SCRIPT_LIB_DIR/lib-test-filtering.sh"
 source "$SCRIPT_LIB_DIR/lib-test-caching.sh"
 source "$SCRIPT_LIB_DIR/lib-filter-engine.sh"
+source "$SCRIPT_LIB_DIR/lib-output-formatting.sh"
 
 # Load test aliases from images.yaml
 load_aliases
 
 # Get all entity IDs for negation expansion
-all_impl_ids=($(yq eval '.implementations[].id' images.yaml))
+all_image_ids=($(yq eval '.implementations[].id' images.yaml))
 all_relay_ids=($(yq eval '.relays[].id' images.yaml))
 all_router_ids=($(yq eval '.routers[].id' images.yaml))
 
@@ -51,8 +52,7 @@ ROUTER_SELECT="$CLI_ROUTER_SELECT"
 ROUTER_IGNORE="$CLI_ROUTER_IGNORE"
 
 echo ""
-echo "╲ Test Matrix Generation"
-echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+print_header "Test Matrix Generation"
 
 # Display filters (expansion will happen during filter_entity_list calls)
 if [ -n "$TEST_SELECT" ]; then
@@ -111,8 +111,8 @@ echo ""
 
 # Filter all three entity types upfront using global filter_entity_list function
 echo "→ Filtering implementations..."
-mapfile -t filtered_impl_ids < <(filter_entity_list "implementations" "$TEST_SELECT" "$TEST_IGNORE")
-echo "  ✓ Filtered to ${#filtered_impl_ids[@]} implementations"
+mapfile -t filtered_image_ids < <(filter_entity_list "implementations" "$TEST_SELECT" "$TEST_IGNORE")
+echo "  ✓ Filtered to ${#filtered_image_ids[@]} implementations"
 
 echo "→ Filtering relays..."
 mapfile -t filtered_relay_ids < <(filter_entity_list "relays" "$RELAY_SELECT" "$RELAY_IGNORE")
@@ -126,24 +126,24 @@ echo ""
 
 # Load implementation data only for filtered implementations
 echo "→ Loading implementation data into memory..."
-declare -A impl_transports    # impl_transports[linux]="tcp quic-v1"
-declare -A impl_secure        # impl_secure[linux]="noise tls"
-declare -A impl_muxers        # impl_muxers[linux]="yamux mplex"
-declare -A impl_dial_only     # impl_dial_only[linux]="webtransport"
+declare -A image_transports    # image_transports[linux]="tcp quic-v1"
+declare -A image_secure        # image_secure[linux]="noise tls"
+declare -A image_muxers        # image_muxers[linux]="yamux mplex"
+declare -A image_dial_only     # image_dial_only[linux]="webtransport"
 
-for impl_id in "${filtered_impl_ids[@]}"; do
-    transports=$(yq eval ".implementations[] | select(.id == \"$impl_id\") | .transports | join(\" \")" images.yaml)
-    secure=$(yq eval ".implementations[] | select(.id == \"$impl_id\") | .secureChannels | join(\" \")" images.yaml)
-    muxers=$(yq eval ".implementations[] | select(.id == \"$impl_id\") | .muxers | join(\" \")" images.yaml)
-    dial_only=$(yq eval ".implementations[] | select(.id == \"$impl_id\") | .dialOnly | join(\" \")" images.yaml 2>/dev/null || echo "")
+for image_id in "${filtered_image_ids[@]}"; do
+    transports=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .transports | join(\" \")" images.yaml)
+    secure=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .secureChannels | join(\" \")" images.yaml)
+    muxers=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .muxers | join(\" \")" images.yaml)
+    dial_only=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .dialOnly | join(\" \")" images.yaml 2>/dev/null || echo "")
 
-    impl_transports["$impl_id"]="$transports"
-    impl_secure["$impl_id"]="$secure"
-    impl_muxers["$impl_id"]="$muxers"
-    impl_dial_only["$impl_id"]="$dial_only"
+    image_transports["$image_id"]="$transports"
+    image_secure["$image_id"]="$secure"
+    image_muxers["$image_id"]="$muxers"
+    image_dial_only["$image_id"]="$dial_only"
 done
 
-echo "  ✓ Loaded data for ${#filtered_impl_ids[@]} filtered implementations"
+echo "  ✓ Loaded data for ${#filtered_image_ids[@]} filtered implementations"
 
 # Initialize test lists
 tests=()
@@ -152,10 +152,10 @@ test_num=0
 # Check if a transport can be used with an implementation as listener
 # Returns 0 (true) if transport can be used as listener, 1 (false) if dialOnly
 can_be_listener_for_transport() {
-    local impl_id="$1"
+    local image_id="$1"
     local transport="$2"
 
-    local dial_only_transports="${impl_dial_only[$impl_id]:-}"
+    local dial_only_transports="${image_dial_only[$image_id]:-}"
 
     # If no dialOnly restrictions, can always be listener
     [ -z "$dial_only_transports" ] && return 0
@@ -170,23 +170,22 @@ can_be_listener_for_transport() {
 
 echo ""
 echo "╲ Generating test combinations..."
-echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
 # Iterate through FILTERED entities only (no inline filtering or ignore flags needed!)
 for relay_id in "${filtered_relay_ids[@]}"; do
     for dialer_router_id in "${filtered_router_ids[@]}"; do
         for listener_router_id in "${filtered_router_ids[@]}"; do
-            for dialer_id in "${filtered_impl_ids[@]}"; do
-                dialer_transports="${impl_transports[$dialer_id]}"
-                dialer_secure="${impl_secure[$dialer_id]}"
-                dialer_muxers="${impl_muxers[$dialer_id]}"
+            for dialer_id in "${filtered_image_ids[@]}"; do
+                dialer_transports="${image_transports[$dialer_id]}"
+                dialer_secure="${image_secure[$dialer_id]}"
+                dialer_muxers="${image_muxers[$dialer_id]}"
 
-                for listener_id in "${filtered_impl_ids[@]}"; do
+                for listener_id in "${filtered_image_ids[@]}"; do
                     # No filtering needed - all entities already filtered upfront!
 
-                    listener_transports="${impl_transports[$listener_id]}"
-                    listener_secure="${impl_secure[$listener_id]}"
-                    listener_muxers="${impl_muxers[$listener_id]}"
+                    listener_transports="${image_transports[$listener_id]}"
+                    listener_secure="${image_secure[$listener_id]}"
+                    listener_muxers="${image_muxers[$listener_id]}"
 
                     # Find common transports
                     common_transports=$(get_common "$dialer_transports" "$listener_transports")
@@ -298,5 +297,4 @@ EOF
 save_to_cache "$OUTPUT_DIR" "$cache_key" "$CACHE_DIR" "hole-punch"
 
 echo ""
-echo "╲ ✓ Generated test matrix with ${#tests[@]} tests"
-echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+print_success "Generated test matrix with ${#tests[@]} tests"

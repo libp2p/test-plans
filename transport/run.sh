@@ -13,7 +13,7 @@ TEST_SELECT="${TEST_SELECT:-}"
 TEST_IGNORE="${TEST_IGNORE:-}"
 WORKER_COUNT="${WORKER_COUNT:-$(nproc 2>/dev/null || echo 4)}"
 CHECK_DEPS_ONLY=false
-LIST_IMPLS=false
+LIST_IMAGES=false
 LIST_TESTS=false
 CREATE_SNAPSHOT=false
 AUTO_YES=false
@@ -21,10 +21,21 @@ DEBUG=false
 FORCE_MATRIX_REBUILD=false
 FORCE_IMAGE_REBUILD=false
 
+# Change to script directory
+cd "$(dirname "$0")"
+
+# Set global library directory
+SCRIPT_LIB_DIR="${SCRIPT_LIB_DIR:-$(cd "$(dirname "$0")/.." && pwd)/lib}"
+
+# Source formatting library
+source "$SCRIPT_LIB_DIR/lib-output-formatting.sh"
+
+print_banner
+
 # Show help
 show_help() {
     cat <<EOF
-Transport Interoperability Test Runner
+libp2p Transport Interoperability Test Runner
 
 Usage: $0 [options]
 
@@ -39,7 +50,7 @@ Options:
   --force-image-rebuild     Force rebuilding of all docker images (bypass cache)
   -y, --yes                 Skip confirmation prompt and run tests immediately
   --check-deps              Only check dependencies and exit
-  --list-impls              List all implementation IDs and exit
+  --list-images             List all image types used by this test suite and exit
   --list-tests              List all selected tests and exit
   --help                    Show this help message
 
@@ -48,11 +59,14 @@ Examples:
   $0 --test-select "rust-v0.53" --workers 8
   $0 --test-ignore "webrtc"
   $0 --test-select "rust-v0.56" --force-matrix-rebuild
+  $0 --list-images
+  $0 --list-tests --test-select "~libp2p"
   $0 --snapshot --force-image-rebuild
 
 Dependencies:
   bash 4.0+, docker 20.10+, yq 4.0+, wget, zip, unzip
   Run with --check-deps to verify installation.
+
 EOF
 }
 
@@ -69,36 +83,33 @@ while [[ $# -gt 0 ]]; do
         --force-image-rebuild) FORCE_IMAGE_REBUILD=true; shift ;;
         -y|--yes) AUTO_YES=true; shift ;;
         --check-deps) CHECK_DEPS_ONLY=true; shift ;;
-        --list-impls) LIST_IMPLS=true; shift ;;
+        --list-images) LIST_IMAGES=true; shift ;;
         --list-tests) LIST_TESTS=true; shift ;;
         --help|-h) show_help; exit 0 ;;
         *) echo "Unknown option: $1"; echo ""; show_help; exit 1 ;;
     esac
 done
 
-# Change to script directory
-cd "$(dirname "$0")"
+# Source common libraries (after argument parsing, so --help doesn't need them)
+source "$SCRIPT_LIB_DIR/lib-test-filtering.sh"
+source "$SCRIPT_LIB_DIR/lib-test-caching.sh"
+source "$SCRIPT_LIB_DIR/lib-image-naming.sh"
 
-# Set global library directory
-SCRIPT_LIB_DIR="${SCRIPT_LIB_DIR:-$(cd "$(dirname "$0")/.." && pwd)/lib}"
-
-echo ""
-echo "                        ╔╦╦╗  ╔═╗"
-echo "▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁ ║╠╣╚╦═╬╝╠═╗ ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁"
-echo "═══════════════════════ ║║║║║║║╔╣║║ ════════════════════════"
-echo "▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔ ╚╩╩═╣╔╩═╣╔╝ ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-echo "                            ╚╝  ╚╝"
-echo ""
-
-# List implementations
-if [ "$LIST_IMPLS" = true ]; then
+# List images
+if [ "$LIST_IMAGES" = true ]; then
     if [ ! -f "images.yaml" ]; then
-        echo "Error: images.yaml not found"
+        print_error "images.yaml not found"
         exit 1
     fi
-    echo "╲ Available Implementations"
-    echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-    yq eval '.implementations[].id' images.yaml | sed 's/^/→ /'
+
+    source "$SCRIPT_LIB_DIR/lib-test-aliases.sh"
+
+    print_header "Available Images"
+
+    # Get and print implementations
+    all_image_ids=($(get_entity_ids "implementations"))
+    print_list "implementations" "${all_image_ids[@]}"
+
     echo ""
     exit 0
 fi
@@ -110,11 +121,15 @@ if [ "$LIST_TESTS" = true ]; then
     trap "rm -rf $TEMP_DIR" EXIT
 
     export TEST_PASS_DIR="$TEMP_DIR"
-    export CACHE_DIR="${CACHE_DIR:-/srv/cache}"
-    export DEBUG="${DEBUG:-false}"
+    export TEST_PASS_NAME="temp-list"
+    export CACHE_DIR
+    export DEBUG
+    export TEST_SELECT TEST_IGNORE BASELINE_SELECT BASELINE_IGNORE
+    export UPLOAD_BYTES DOWNLOAD_BYTES
+    export ITERATIONS DURATION_PER_ITERATION LATENCY_ITERATIONS
+    export FORCE_MATRIX_REBUILD
 
-    echo "╲ Generating test matrix..."
-    echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+    print_header "Generating test matrix..."
 
     # Generate test matrix
     if ! bash lib/generate-tests.sh "$TEST_SELECT" "$TEST_IGNORE" "$DEBUG" "$FORCE_MATRIX_REBUILD" > /dev/null 2>&1; then
@@ -127,7 +142,7 @@ if [ "$LIST_TESTS" = true ]; then
     ignored_count=$(yq eval '.metadata.ignoredTests' "$TEMP_DIR/test-matrix.yaml")
 
     echo ""
-    echo "╲ Selected Tests ($test_count tests)"
+    print_header "Selected Tests ($test_count tests)"
     echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
     if [ "$test_count" -gt 0 ]; then
@@ -138,7 +153,7 @@ if [ "$LIST_TESTS" = true ]; then
 
     if [ "$ignored_count" -gt 0 ]; then
         echo ""
-        echo "╲ Ignored Tests ($ignored_count tests)"
+        print_header "Ignored Tests ($ignored_count tests)"
         echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
         yq eval '.ignoredTests[].name' "$TEMP_DIR/test-matrix.yaml" | sed 's/^/→ /'
     fi
@@ -156,8 +171,7 @@ fi
 export CACHE_DIR
 export DEBUG
 
-echo "╲ Transport Interoperability Test Suite"
-echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+print_header "Transport Interoperability Test Suite"
 
 # Source test key generation functions
 source "$SCRIPT_LIB_DIR/lib-test-keys.sh"
@@ -194,7 +208,6 @@ export TEST_PASS_NAME
 
 # 1. Check dependencies
 echo "╲ Checking dependencies..."
-echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 if ! bash "$SCRIPT_LIB_DIR/check-dependencies.sh"; then
     echo "✗ Dependency check failed. Please install missing dependencies."
     exit 1
@@ -211,15 +224,13 @@ fi
 
 # 2. Generate test matrix FIRST (before building images)
 echo ""
-echo "╲ Generating test matrix..."
-echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+print_header "Generating test matrix"
 echo "→ bash lib/generate-tests.sh \"$TEST_SELECT\" \"$TEST_IGNORE\" \"$DEBUG\" \"$FORCE_MATRIX_REBUILD\""
 bash lib/generate-tests.sh "$TEST_SELECT" "$TEST_IGNORE" "$DEBUG" "$FORCE_MATRIX_REBUILD"
 
 # 3. Display test selection and get confirmation
 echo ""
 echo "╲ Test selection..."
-echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 echo "→ Selected tests:"
 
 # Read test matrix
@@ -266,51 +277,49 @@ fi
 # 4. Extract unique implementations from test matrix and build only those
 echo ""
 echo "╲ Building Docker images..."
-echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
 # Check if test matrix has any tests
 if [ "$test_count" -eq 0 ]; then
     echo "→ No tests in matrix, skipping image builds"
 else
     # Get unique implementations from test matrix (dialer + listener)
-    REQUIRED_IMPLS=$(mktemp)
-    yq eval '.tests[].dialer' "$TEST_PASS_DIR/test-matrix.yaml" | sort -u > "$REQUIRED_IMPLS"
-    yq eval '.tests[].listener' "$TEST_PASS_DIR/test-matrix.yaml" | sort -u >> "$REQUIRED_IMPLS"
-    sort -u "$REQUIRED_IMPLS" -o "$REQUIRED_IMPLS"
+    REQUIRED_IMAGES=$(mktemp)
+    yq eval '.tests[].dialer' "$TEST_PASS_DIR/test-matrix.yaml" | sort -u > "$REQUIRED_IMAGES"
+    yq eval '.tests[].listener' "$TEST_PASS_DIR/test-matrix.yaml" | sort -u >> "$REQUIRED_IMAGES"
+    sort -u "$REQUIRED_IMAGES" -o "$REQUIRED_IMAGES"
 
     # Also add base images for any browser-type implementations
     REQUIRED_IMPLS_WITH_DEPS=$(mktemp)
-    cp "$REQUIRED_IMPLS" "$REQUIRED_IMPLS_WITH_DEPS"
+    cp "$REQUIRED_IMAGES" "$REQUIRED_IMPLS_WITH_DEPS"
 
-    while IFS= read -r impl_id; do
+    while IFS= read -r image_id; do
         # Check if this is a browser-type implementation
-        source_type=$(yq eval ".implementations[] | select(.id == \"$impl_id\") | .source.type" images.yaml)
+        source_type=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .source.type" images.yaml)
         if [ "$source_type" = "browser" ]; then
             # Add its base image as a dependency
-            base_image=$(yq eval ".implementations[] | select(.id == \"$impl_id\") | .source.baseImage" images.yaml)
+            base_image=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .source.baseImage" images.yaml)
             echo "$base_image" >> "$REQUIRED_IMPLS_WITH_DEPS"
         fi
-    done < "$REQUIRED_IMPLS"
+    done < "$REQUIRED_IMAGES"
 
     # Sort and deduplicate
     sort -u "$REQUIRED_IMPLS_WITH_DEPS" -o "$REQUIRED_IMPLS_WITH_DEPS"
 
-    IMPL_COUNT=$(wc -l < "$REQUIRED_IMPLS_WITH_DEPS")
-    echo "→ Building $IMPL_COUNT required implementations (including base images)"
+    IMAGE_COUNT=$(wc -l < "$REQUIRED_IMPLS_WITH_DEPS")
+    echo "→ Building $IMAGE_COUNT required implementations (including base images)"
     echo ""
 
     # Build each required implementation using pipe-separated list
-    IMPL_FILTER=$(cat "$REQUIRED_IMPLS_WITH_DEPS" | paste -sd'|' -)
-    echo "→ bash lib/build-images.sh \"$IMPL_FILTER\" \"$FORCE_IMAGE_REBUILD\""
-    bash lib/build-images.sh "$IMPL_FILTER" "$FORCE_IMAGE_REBUILD"
+    IMAGE_FILTER=$(cat "$REQUIRED_IMPLS_WITH_DEPS" | paste -sd'|' -)
+    echo "→ bash lib/build-images.sh \"$IMAGE_FILTER\" \"$FORCE_IMAGE_REBUILD\""
+    bash lib/build-images.sh "$IMAGE_FILTER" "$FORCE_IMAGE_REBUILD"
 
-    rm -f "$REQUIRED_IMPLS" "$REQUIRED_IMPLS_WITH_DEPS"
+    rm -f "$REQUIRED_IMAGES" "$REQUIRED_IMPLS_WITH_DEPS"
 fi
 
 # 4. Run tests in parallel
 echo ""
 echo "╲ Running tests... ($WORKER_COUNT workers)"
-echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
 # Read test matrix and export test_count for use in subshells
 test_count=$(yq eval '.metadata.totalTests' "$TEST_PASS_DIR/test-matrix.yaml")
@@ -395,7 +404,6 @@ seq 0 $((test_count - 1)) | xargs -P "$WORKER_COUNT" -I {} bash -c 'run_test {}'
 # 5. Collect results
 echo ""
 echo "╲ Collecting results..."
-echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
 END_TIME=$(date +%s)
 DURATION=$((END_TIME - START_TIME))
@@ -463,7 +471,6 @@ printf "→ Total time: %02d:%02d:%02d\n" $HOURS $MINUTES $SECONDS
 # 6. Generate dashboard
 echo ""
 echo "╲ Generating results dashboard..."
-echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 echo "→ bash lib/generate-dashboard.sh"
 bash lib/generate-dashboard.sh
 
@@ -478,11 +485,11 @@ fi
 
 echo ""
 if [ "$FAILED" -eq 0 ]; then
-    echo "╲ ✓ All tests passed!"
+    print_success "All tests passed!"
     echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
     EXIT_FINAL=0
 else
-    echo "╲ ✗ $FAILED test(s) failed"
+    print_error "$FAILED test(s) failed"
     echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
     EXIT_FINAL=1
 fi
