@@ -314,7 +314,7 @@ export UPLOAD_BYTES DOWNLOAD_BYTES
 export ITERATIONS DURATION_PER_ITERATION LATENCY_ITERATIONS FORCE_MATRIX_REBUILD
 
 bash lib/generate-tests.sh || {
-  echo "✗ Test matrix generation failed"
+  echo "  ✗ Test matrix generation failed"
   exit 1
 }
 
