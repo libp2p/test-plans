@@ -12,7 +12,7 @@ source "lib/lib-perf.sh"
 
 # Check if test matrix exists
 if [ ! -f "$TEST_PASS_DIR/test-matrix.yaml" ]; then
-    log_error "Test matrix not found"
+    echo "  ✗ Test matrix not found"
     exit 1
 fi
 
@@ -20,7 +20,7 @@ fi
 baseline_count=$(yq eval '.baselines | length' "$TEST_PASS_DIR/test-matrix.yaml" 2>/dev/null || echo "0")
 
 if [ "$baseline_count" -eq 0 ]; then
-    log_info "No baseline tests selected"
+    echo "  → No baseline tests selected"
     exit 0
 fi
 
@@ -38,10 +38,9 @@ for ((i=0; i<baseline_count; i++)); do
 
     # Run baseline test using same script, passing "baseline" as test type
     bash lib/run-single-test.sh "$i" "baseline" >/dev/null 2>&1 || {
-        log_error "Baseline test $i failed"
+        echo "  ✗ Baseline test $i failed"
         # Continue with other baseline tests
     }
 done
 
-echo ""
 exit 0

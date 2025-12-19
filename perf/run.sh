@@ -394,10 +394,15 @@ bash lib/build-images.sh "$IMAGE_FILTER" "$FORCE_IMAGE_REBUILD" || {
 
 rm -f "$REQUIRED_IMAGES"
 
+# Start global services
+bash lib/start-global-services.sh || {
+  echo "  ✗ Starting global services failed"
+}
+
 # Run baseline tests FIRST (before main tests)
 if [ "$baseline_count" -gt 0 ]; then
     bash lib/run-baseline.sh || {
-      echo "  → Baseline tests failed or skipped (not critical)"
+      echo "  ✗ Baseline tests failed or skipped (not critical)"
     }
 fi
 
@@ -418,6 +423,11 @@ for ((i=0; i<test_count; i++)); do
     # Continue with other tests
   }
 done
+
+# Start global services
+bash lib/stop-global-services.sh || {
+  echo "  ✗ Stopping global services failed"
+}
 
 # Collect results
 echo ""
