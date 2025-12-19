@@ -1,6 +1,7 @@
 #!/bin/bash
-# inputs.yaml generation and loading functions
-# Handles capturing and restoring test run configuration
+# inputs.yaml generation and modification functions
+# NOTE: Loading functions (load_inputs_yaml, get_yaml_args) are now inlined in run.sh
+# to avoid bootstrap problems. This file only contains generation/modification functions.
 
 set -euo pipefail
 
@@ -82,47 +83,6 @@ EOF
     esac
 
     echo "  ✓ Generated inputs.yaml: $output_file"
-}
-
-# Load configuration from inputs.yaml if it exists
-# This function should be called at the start of run.sh before argument parsing
-# Returns: 0 if loaded, 1 if not found
-load_inputs_yaml() {
-    local inputs_file="${1:-inputs.yaml}"
-
-    if [ ! -f "$inputs_file" ]; then
-        return 1
-    fi
-
-    echo "→ Loading configuration from $inputs_file"
-
-    # Load environment variables
-    while IFS='=' read -r key value; do
-        if [ -n "$key" ] && [ -n "$value" ]; then
-            export "$key"="$value"
-        fi
-    done < <(yq eval '.environmentVariables | to_entries | .[] | .key + "=" + .value' "$inputs_file" 2>/dev/null)
-
-    return 0
-}
-
-# Get command-line arguments from inputs.yaml
-# Returns command-line args, one per line
-# Args:
-#   $1: inputs_file - Path to inputs.yaml (default: inputs.yaml)
-# Returns:
-#   Command-line arguments from inputs.yaml, one per line
-# Usage:
-#   mapfile -t YAML_ARGS < <(get_yaml_args "inputs.yaml")
-get_yaml_args() {
-    local inputs_file="${1:-inputs.yaml}"
-
-    if [ ! -f "$inputs_file" ]; then
-        return 1
-    fi
-
-    # Extract command-line args from inputs.yaml
-    yq eval '.commandLineArgs[]' "$inputs_file" 2>/dev/null || true
 }
 
 # Modify inputs.yaml for snapshot context

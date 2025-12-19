@@ -10,18 +10,41 @@ ORIGINAL_ARGS=("$@")
 # Change to script directory
 cd "$(dirname "$0")"
 
-# Set global library directory (needed before loading inputs.yaml)
-export SCRIPT_LIB_DIR="${SCRIPT_LIB_DIR:-$(cd "$(dirname "$0")/.." && pwd)/lib}"
+# ============================================================================
+# INLINE inputs.yaml LOADING (self-contained, no external dependencies)
+# Avoids bootstrap problem: can't source lib-inputs-yaml.sh before SCRIPT_LIB_DIR is set correctly
+# ============================================================================
+
+load_inputs_yaml_inline() {
+    local inputs_file="${1:-inputs.yaml}"
+    if [ ! -f "$inputs_file" ]; then
+        return 1
+    fi
+    echo "→ Loading configuration from $inputs_file"
+    while IFS='=' read -r key value; do
+        if [ -n "$key" ] && [ -n "$value" ]; then
+            export "$key"="$value"
+        fi
+    done < <(yq eval '.environmentVariables | to_entries | .[] | .key + "=" + .value' "$inputs_file" 2>/dev/null)
+    return 0
+}
+
+get_yaml_args_inline() {
+    local inputs_file="${1:-inputs.yaml}"
+    if [ ! -f "$inputs_file" ]; then
+        return 1
+    fi
+    yq eval '.commandLineArgs[]' "$inputs_file" 2>/dev/null || true
+}
+
+# ============================================================================
+# BOOTSTRAP: Load inputs.yaml BEFORE setting SCRIPT_LIB_DIR
+# ============================================================================
 
 # Step 2 (from the_plan.md): Process inputs.yaml if it exists
 if [ -f "inputs.yaml" ]; then
-    source "$SCRIPT_LIB_DIR/lib-inputs-yaml.sh"
-
-    # Load environment variables from inputs.yaml
-    load_inputs_yaml "inputs.yaml"
-
-    # Load command-line args from inputs.yaml
-    mapfile -t YAML_ARGS < <(get_yaml_args "inputs.yaml")
+    load_inputs_yaml_inline "inputs.yaml"
+    mapfile -t YAML_ARGS < <(get_yaml_args_inline "inputs.yaml")
 else
     YAML_ARGS=()
 fi
@@ -31,6 +54,9 @@ CMD_LINE_ARGS=("${YAML_ARGS[@]}" "$@")
 
 # Step 4 (from the_plan.md): Set positional parameters to merged args
 set -- "${CMD_LINE_ARGS[@]}"
+
+# NOW set SCRIPT_LIB_DIR (after inputs.yaml loaded, so it can be overridden)
+export SCRIPT_LIB_DIR="${SCRIPT_LIB_DIR:-$(cd "$(dirname "$0")/.." && pwd)/lib}"
 
 # Initialize common variables (paths, flags, defaults)
 source "$SCRIPT_LIB_DIR/lib-common-init.sh"

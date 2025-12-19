@@ -17,11 +17,14 @@ is_standalone_transport() {
     echo "$STANDALONE_TRANSPORTS" | grep -qw "$transport"
 }
 
-# Source common libraries
-source "../lib/lib-test-filtering.sh"
-source "../lib/lib-test-aliases.sh"
-source "../lib/lib-test-caching.sh"
-source "../lib/lib-filter-engine.sh"
+# Set SCRIPT_LIB_DIR if not already set (for snapshot context)
+SCRIPT_LIB_DIR="${SCRIPT_LIB_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/lib}"
+
+# Source common libraries using SCRIPT_LIB_DIR
+source "$SCRIPT_LIB_DIR/lib-test-filtering.sh"
+source "$SCRIPT_LIB_DIR/lib-test-aliases.sh"
+source "$SCRIPT_LIB_DIR/lib-test-caching.sh"
+source "$SCRIPT_LIB_DIR/lib-filter-engine.sh"
 source "lib/lib-perf.sh"
 
 # Load test aliases
@@ -74,7 +77,7 @@ else
 fi
 
 # Source formatting library for indented messages
-source "../lib/lib-output-formatting.sh"
+source "$SCRIPT_LIB_DIR/lib-output-formatting.sh"
 
 # Display filters with expansions
 if [ -n "$ORIGINAL_SELECT" ]; then
