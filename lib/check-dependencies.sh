@@ -5,6 +5,9 @@ set -euo pipefail
 
 has_error=false
 
+# Source formatting library
+source "$SCRIPT_LIB_DIR/lib-output-formatting.sh"
+
 # Function to compare semantic versions
 version_compare() {
     # $1 = version to check, $2 = minimum required version
@@ -33,13 +36,13 @@ version_compare() {
 if [ -n "${BASH_VERSION:-}" ]; then
     bash_version="${BASH_VERSION%.*}"
     if [[ $(version_compare "$bash_version" "4.0") -ge 0 ]]; then
-        echo "✓ bash $bash_version (minimum: 4.0)"
+        echo "  ✓ bash $bash_version (minimum: 4.0)"
     else
-        echo "✗ bash $bash_version is too old (minimum: 4.0)"
+        echo "  ✗ bash $bash_version is too old (minimum: 4.0)"
         has_error=true
     fi
 else
-    echo "✗ bash not detected"
+    echo "  ✗ bash not detected"
     has_error=true
 fi
 
@@ -47,21 +50,21 @@ fi
 if command -v docker &> /dev/null; then
     docker_version=$(docker --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
     if [[ $(version_compare "$docker_version" "20.10.0") -ge 0 ]]; then
-        echo "✓ docker $docker_version (minimum: 20.10.0)"
+        echo "  ✓ docker $docker_version (minimum: 20.10.0)"
     else
-        echo "✗ docker $docker_version is too old (minimum: 20.10.0)"
+        echo "  ✗ docker $docker_version is too old (minimum: 20.10.0)"
         has_error=true
     fi
 
     # Check if Docker daemon is running
     if docker info &> /dev/null; then
-        echo "  ✓ Docker daemon is running"
+        echo "    ✓ Docker daemon is running"
     else
-        echo "  ✗ Docker daemon is not running"
+        echo "    ✗ Docker daemon is not running"
         has_error=true
     fi
 else
-    echo "✗ docker is not installed"
+    echo "  ✗ docker is not installed"
     has_error=true
 fi
 
@@ -70,16 +73,16 @@ DOCKER_COMPOSE_CMD=""
 if docker compose version &> /dev/null; then
     # New docker compose plugin
     compose_version=$(docker compose version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-    echo "✓ docker compose $compose_version (using 'docker compose')"
+    echo "  ✓ docker compose $compose_version (using 'docker compose')"
     DOCKER_COMPOSE_CMD="docker compose"
 elif command -v docker-compose &> /dev/null; then
     # Old standalone docker-compose
     compose_version=$(docker-compose --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-    echo "✓ docker-compose $compose_version (using 'docker-compose')"
+    echo "  ✓ docker-compose $compose_version (using 'docker-compose')"
     DOCKER_COMPOSE_CMD="docker-compose"
 else
-    echo "✗ docker compose is not installed"
-    echo "  Install: docker compose plugin (recommended) or standalone docker-compose"
+    echo "  ✗ docker compose is not installed"
+    echo "    → Install: docker compose plugin (recommended) or standalone docker-compose"
     has_error=true
 fi
 
@@ -93,80 +96,75 @@ if command -v yq &> /dev/null; then
     yq_version=$(yq --version 2>&1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
     if [ -n "$yq_version" ]; then
         if [[ $(version_compare "$yq_version" "4.0.0") -ge 0 ]]; then
-            echo "✓ yq $yq_version (minimum: 4.0.0)"
+            echo "  ✓ yq $yq_version (minimum: 4.0.0)"
         else
-            echo "✗ yq $yq_version is too old (minimum: 4.0.0)"
+            echo "  ✗ yq $yq_version is too old (minimum: 4.0.0)"
             has_error=true
         fi
     else
-        echo "✓ yq is installed"
+        echo "  ✓ yq is installed"
     fi
 else
-    echo "✗ yq is not installed"
-    echo "  Install: sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64"
-    echo "           sudo chmod +x /usr/local/bin/yq"
+    echo "  ✗ yq is not installed"
+    echo "    → Install: sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64"
+    echo "               sudo chmod +x /usr/local/bin/yq"
     has_error=true
 fi
 
 # Check wget
 if command -v wget &> /dev/null; then
-    echo "✓ wget is installed"
+    echo "  ✓ wget is installed"
 else
-    echo "✗ wget is not installed"
+    echo "  ✗ wget is not installed"
     has_error=true
 fi
 
 # Check zip
 if command -v zip &> /dev/null; then
-    echo "✓ zip is installed"
+    echo "  ✓ zip is installed"
 else
-    echo "✗ zip is not installed"
+    echo "  ✗ zip is not installed"
     has_error=true
 fi
 
 # Check unzip
 if command -v unzip &> /dev/null; then
-    echo "✓ unzip is installed"
+    echo "  ✓ unzip is installed"
 else
-    echo "✗ unzip is not installed"
+    echo "  ✗ unzip is not installed"
     has_error=true
 fi
 
 # Check ssh (required for remote builds)
 if command -v ssh &> /dev/null; then
-    echo "✓ ssh is installed"
+    echo "  ✓ ssh is installed"
 else
-    echo "✗ ssh is not installed (required for remote builds)"
+    echo "  ✗ ssh is not installed (required for remote builds)"
     has_error=true
 fi
 
 # Check scp (required for remote builds)
 if command -v scp &> /dev/null; then
-    echo "✓ scp is installed"
+    echo "  ✓ scp is installed"
 else
-    echo "✗ scp is not installed (required for remote builds)"
+    echo "  ✗ scp is not installed (required for remote builds)"
     has_error=true
 fi
-
-echo ""
-echo "Optional dependencies (for enhanced features):"
 
 # Check gnuplot (optional - for box plot generation)
 if command -v gnuplot &> /dev/null; then
     gnuplot_version=$(gnuplot --version 2>&1 | grep -oE '[0-9]+\.[0-9]+' | head -1)
-    echo "✓ gnuplot $gnuplot_version (for box plot generation)"
+    echo "  ✓ gnuplot $gnuplot_version (for box plot generation)"
 else
-    echo "✗ gnuplot not found (box plots will be skipped)"
-    echo "  Install: apt-get install gnuplot"
+    echo "  ✗ gnuplot not found (box plots will be skipped)"
+    echo "    → Install: apt-get install gnuplot"
 fi
 
 echo ""
 
 if [ "$has_error" = true ]; then
-    echo "╲ ✗ Some dependencies are missing or outdated"
-    echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+    echo "  ✗ Some dependencies are missing or outdated"
     exit 1
 else
-    echo "╲ ✓ All dependencies are satisfied"
-    echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+    echo "  ✓ All dependencies are satisfied"
 fi

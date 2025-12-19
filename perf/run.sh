@@ -7,11 +7,20 @@ set -euo pipefail
 # Capture original arguments for inputs.yaml generation
 ORIGINAL_ARGS=("$@")
 
-# Default parameters
-CACHE_DIR="${CACHE_DIR:-/srv/cache}"
-TEST_RUN_DIR="${TEST_RUN_DIR:-$CACHE_DIR/test-run}"
-TEST_SELECT="${TEST_SELECT:-}"
-TEST_IGNORE="${TEST_IGNORE:-}"
+# Change to script directory
+cd "$(dirname "$0")"
+
+# Set global library directory
+export SCRIPT_LIB_DIR="${SCRIPT_LIB_DIR:-$(cd "$(dirname "$0")/.." && pwd)/lib}"
+
+# Initialize common variables (paths, flags, defaults)
+source "$SCRIPT_LIB_DIR/lib-common-init.sh"
+init_common_variables
+
+# Override for perf: Must run 1 test at a time (sequential) to get accurate performance results
+WORKER_COUNT=1
+
+# Perf-specific variables
 BASELINE_SELECT="${BASELINE_SELECT:-}"
 BASELINE_IGNORE="${BASELINE_IGNORE:-}"
 UPLOAD_BYTES=1073741824     # 1GB default
@@ -19,20 +28,6 @@ DOWNLOAD_BYTES=1073741824   # 1GB default
 ITERATIONS=10
 DURATION_PER_ITERATION=20   # seconds per iteration for throughput tests
 LATENCY_ITERATIONS=100      # iterations for latency test
-SNAPSHOT=false
-FORCE_MATRIX_REBUILD=false
-FORCE_IMAGE_REBUILD=false
-DEBUG=false
-AUTO_APPROVE=false
-CHECK_DEPS_ONLY=false
-LIST_IMAGES=false
-LIST_TESTS=false
-
-# Change to script directory
-cd "$(dirname "$0")"
-
-# Set global library directory
-SCRIPT_LIB_DIR="${SCRIPT_LIB_DIR:-$(cd "$(dirname "$0")/.." && pwd)/lib}"
 
 # Source formatting library
 source "$SCRIPT_LIB_DIR/lib-output-formatting.sh"
@@ -97,11 +92,11 @@ while [[ $# -gt 0 ]]; do
         --duration) DURATION_PER_ITERATION="$2"; shift 2 ;;
         --latency-iterations) LATENCY_ITERATIONS="$2"; shift 2 ;;
         --cache-dir) CACHE_DIR="$2"; shift 2 ;;
-        --snapshot) SNAPSHOT=true; shift ;;
+        --snapshot) CREATE_SNAPSHOT=true; shift ;;
         --force-matrix-rebuild) FORCE_MATRIX_REBUILD=true; shift ;;
         --force-image-rebuild) FORCE_IMAGE_REBUILD=true; shift ;;
         --debug) DEBUG=true; shift ;;
-        -y|--yes) AUTO_APPROVE=true; shift ;;
+        -y|--yes) AUTO_YES=true; shift ;;
         --check-deps) CHECK_DEPS_ONLY=true; shift ;;
         --list-images) LIST_IMAGES=true; shift ;;
         --list-tests) LIST_TESTS=true; shift ;;
@@ -267,37 +262,38 @@ echo "  → Download Bytes: $(numfmt --to=iec --suffix=B $DOWNLOAD_BYTES 2>/dev/
 echo "  → Iterations: $ITERATIONS"
 echo "  → Duration per Iteration: ${DURATION_PER_ITERATION}s"
 echo "  → Latency Iterations: $LATENCY_ITERATIONS"
-echo "  → Create Snapshot: $SNAPSHOT"
+echo "  → Create Snapshot: $CREATE_SNAPSHOT"
 echo "  → Debug: $DEBUG"
 echo "  → Force Matrix Rebuild: $FORCE_MATRIX_REBUILD"
 echo "  → Force Image Rebuild: $FORCE_IMAGE_REBUILD"
 echo ""
 
 # Check dependencies for normal execution
-echo "╲ Checking dependencies..."
-bash "$SCRIPT_LIB_DIR/check-dependencies.sh docker yq || {
+print_header "Checking dependencies..."
+bash "$SCRIPT_LIB_DIR/check-dependencies.sh" docker yq || {
   echo ""
-  echo "Error: Missing required dependencies."
-  echo "Run '$0 --check-deps' to see details."
+  echo "  ✗ Error: Missing required dependencies."
+  echo "  → Run '$0 --check-deps' to see details."
   exit 1
 }
+
+echo ""
 
 # Read and export the docker compose command detected by check-dependencies.sh
 if [ -f /tmp/docker-compose-cmd.txt ]; then
     export DOCKER_COMPOSE_CMD=$(cat /tmp/docker-compose-cmd.txt)
     echo "  → Using: $DOCKER_COMPOSE_CMD"
 else
-    echo "✗ Error: Could not determine docker compose command"
+    echo "  ✗ Error: Could not determine docker compose command"
     exit 1
 fi
-echo ""
 
 # Start timing (moved before server setup)
 TEST_START_TIME=$(date +%s)
 
 # Setup remote servers (if any)
-echo "╲ Server Setup"
-echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+echo ""
+print_header "Server Setup..."
 
 if [ -f lib/setup-remote-server.sh ]; then
   bash lib/setup-remote-server.sh || {
@@ -311,14 +307,14 @@ fi
 
 # Generate test matrix
 echo ""
-echo "╲ Generating test matrix..."
+print_header "Generating test matrix..."
 
 export TEST_SELECT TEST_IGNORE BASELINE_SELECT BASELINE_IGNORE
 export UPLOAD_BYTES DOWNLOAD_BYTES
 export ITERATIONS DURATION_PER_ITERATION LATENCY_ITERATIONS FORCE_MATRIX_REBUILD
 
 # Show command with filter values (matching transport format)
-echo "→ bash lib/generate-tests.sh \"$TEST_SELECT\" \"$TEST_IGNORE\" \"$BASELINE_SELECT\" \"$BASELINE_IGNORE\""
+#echo "→ bash lib/generate-tests.sh \"$TEST_SELECT\" \"$TEST_IGNORE\" \"$BASELINE_SELECT\" \"$BASELINE_IGNORE\""
 
 bash lib/generate-tests.sh || {
   echo "✗ Test matrix generation failed"
@@ -327,7 +323,7 @@ bash lib/generate-tests.sh || {
 
 # Display test selection and get confirmation
 echo ""
-echo "╲ Test selection..."
+print_header "Test selection..."
 
 # Read baseline and main test counts
 baseline_count=$(yq eval '.baselines | length' "$TEST_PASS_DIR/test-matrix.yaml" 2>/dev/null || echo "0")
@@ -363,7 +359,7 @@ image_count=$(get_required_image_count "$TEST_PASS_DIR/test-matrix.yaml" "true")
 print_message "Required Docker images: $image_count"
 
 # Prompt for confirmation unless auto-approved
-if [ "$AUTO_APPROVE" != true ]; then
+if [ "$AUTO_YES" != true ]; then
   total_tests=$((baseline_count + test_count))
   read -p "Build $image_count Docker images and execute $total_tests tests ($baseline_count baseline + $test_count main)? (Y/n): " response
   response=${response:-Y}
@@ -376,7 +372,7 @@ fi
 
 # Build Docker images
 echo ""
-echo "╲ Building Docker images..."
+print_header "Building Docker images..."
 
 # Get unique implementations from both baselines and main tests
 REQUIRED_IMAGES=$(mktemp)
@@ -409,7 +405,7 @@ fi
 
 # Run main performance tests
 echo ""
-echo "╲ Running tests... (1 worker)"
+print_header "Running tests... (1 worker)"
 
 for ((i=0; i<test_count; i++)); do
   # Get test name from matrix
@@ -427,7 +423,7 @@ done
 
 # Collect results
 echo ""
-echo "╲ Collecting results..."
+print_header "Collecting results..."
 
 TEST_END_TIME=$(date +%s)
 TEST_DURATION=$((TEST_END_TIME - TEST_START_TIME))
@@ -522,7 +518,7 @@ printf "  → Total time: %02d:%02d:%02d\n" $HOURS $MINUTES $SECONDS
 
 # Generate results dashboard
 echo ""
-echo "╲ Generating results dashboard..."
+print_header "Generating results dashboard..."
 echo "  → bash lib/generate-dashboard.sh"
 
 bash lib/generate-dashboard.sh || {
@@ -531,7 +527,7 @@ bash lib/generate-dashboard.sh || {
 
 # Generate box plots (optional - requires gnuplot)
 echo ""
-echo "╲ Generating box plots..."
+print_header "Generating box plots..."
 
 # Check if gnuplot is available
 if command -v gnuplot &> /dev/null; then
@@ -547,20 +543,17 @@ fi
 # Final status message
 echo ""
 if [ "$TOTAL_FAILED" -eq 0 ]; then
-    echo "╲ ✓ All tests passed!"
-    echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+    print_header "✓ All tests passed!"
     EXIT_FINAL=0
 else
-    echo "╲ ✗ $TOTAL_FAILED test(s) failed"
-    echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+    print_header "✗ $TOTAL_FAILED test(s) failed"
     EXIT_FINAL=1
 fi
 
 # Create snapshot (if requested)
-if [ "$SNAPSHOT" = true ]; then
+if [ "$CREATE_SNAPSHOT" = true ]; then
   echo ""
-  echo "╲ Creating Snapshot"
-  echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+  print_header "Creating Snapshot"
 
   bash lib/create-snapshot.sh || {
     log_error "Snapshot creation failed"
