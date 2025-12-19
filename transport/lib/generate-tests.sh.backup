@@ -43,15 +43,22 @@ echo ""
 echo "╲ Test Matrix Generation"
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
-# Display filters (will expand during filtering)
+# Display and expand test selection
 if [ -n "$TEST_SELECT" ]; then
     echo "→ Test select: $TEST_SELECT"
+    TEST_SELECT=$(expand_filter_string "$TEST_SELECT" all_impl_ids)
+    # Always show final expanded value
+    echo "  → Expanded to: $TEST_SELECT"
 else
-    echo "→ No test-select specified (will include all implementations)"
+    echo "→ No test-select specified (will include all tests)"
 fi
 
+# Display and expand test ignore
 if [ -n "$TEST_IGNORE" ]; then
     echo "→ Test ignore: $TEST_IGNORE"
+    TEST_IGNORE=$(expand_filter_string "$TEST_IGNORE" all_impl_ids)
+    # Always show final expanded value
+    echo "  → Expanded to: $TEST_IGNORE"
 else
     echo "→ No test-ignore specified"
 fi
@@ -74,40 +81,49 @@ fi
 
 echo ""
 
-# Filter implementations upfront using global filter_names function
-echo ""
-echo "→ Filtering implementations..."
-mapfile -t filtered_impl_ids < <(filter_entity_list "implementations" "$TEST_SELECT" "$TEST_IGNORE")
-echo "  ✓ Filtered to ${#filtered_impl_ids[@]} implementations"
+# Read all implementations
+impl_count=$(yq eval '.implementations | length' images.yaml)
+echo "→ Found $impl_count implementations in images.yaml"
 
-# Display filtered implementations if small list
-if [ ${#filtered_impl_ids[@]} -le 10 ]; then
-    for impl_id in "${filtered_impl_ids[@]}"; do
-        echo "    - $impl_id"
-    done
-fi
-
-# Load implementation data only for filtered implementations
-echo "→ Loading implementation data into memory..."
+# Declare associative arrays for O(1) lookups
 declare -A impl_transports    # impl_transports[rust-v0.56]="tcp ws quic-v1"
 declare -A impl_secure        # impl_secure[rust-v0.56]="tls noise"
 declare -A impl_muxers        # impl_muxers[rust-v0.56]="yamux mplex"
 declare -A impl_dial_only     # impl_dial_only[chromium-rust-v0.54]="webtransport webrtc-direct ws"
+declare -a impl_ids           # impl_ids=(rust-v0.56 rust-v0.55 ...)
 
-# Load data for each filtered implementation
-for impl_id in "${filtered_impl_ids[@]}"; do
-    transports=$(yq eval ".implementations[] | select(.id == \"$impl_id\") | .transports | join(\" \")" images.yaml)
-    secure=$(yq eval ".implementations[] | select(.id == \"$impl_id\") | .secureChannels | join(\" \")" images.yaml)
-    muxers=$(yq eval ".implementations[] | select(.id == \"$impl_id\") | .muxers | join(\" \")" images.yaml)
-    dial_only=$(yq eval ".implementations[] | select(.id == \"$impl_id\") | .dialOnly | join(\" \")" images.yaml 2>/dev/null || echo "")
+# Load all implementation data using yq
+echo "→ Loading implementation data into memory..."
+for ((i=0; i<impl_count; i++)); do
+    id=$(yq eval ".implementations[$i].id" images.yaml)
+    transports=$(yq eval ".implementations[$i].transports | join(\" \")" images.yaml)
+    secure=$(yq eval ".implementations[$i].secureChannels | join(\" \")" images.yaml)
+    muxers=$(yq eval ".implementations[$i].muxers | join(\" \")" images.yaml)
+    dial_only=$(yq eval ".implementations[$i].dialOnly | join(\" \")" images.yaml 2>/dev/null || echo "")
 
-    impl_transports["$impl_id"]="$transports"
-    impl_secure["$impl_id"]="$secure"
-    impl_muxers["$impl_id"]="$muxers"
-    impl_dial_only["$impl_id"]="$dial_only"
+    impl_ids+=("$id")
+    impl_transports["$id"]="$transports"
+    impl_secure["$id"]="$secure"
+    impl_muxers["$id"]="$muxers"
+    impl_dial_only["$id"]="$dial_only"
 done
 
-echo "  ✓ Loaded data for ${#filtered_impl_ids[@]} filtered implementations"
+echo "  ✓ Loaded ${#impl_ids[@]} implementations into memory"
+
+# Pre-parse select and ignore patterns once
+# Always declare arrays (even if empty) to avoid unbound variable errors
+declare -a SELECT_PATTERNS=()
+declare -a IGNORE_PATTERNS=()
+
+if [ -n "$TEST_SELECT" ]; then
+    IFS='|' read -ra SELECT_PATTERNS <<< "$TEST_SELECT"
+    echo "  ✓ Loaded ${#SELECT_PATTERNS[@]} select patterns"
+fi
+
+if [ -n "$TEST_IGNORE" ]; then
+    IFS='|' read -ra IGNORE_PATTERNS <<< "$TEST_IGNORE"
+    echo "  ✓ Loaded ${#IGNORE_PATTERNS[@]} ignore patterns"
+fi
 
 # Check if a transport can be used with an implementation as listener
 # Returns 0 (true) if transport can be used as listener, 1 (false) if dialOnly
@@ -133,16 +149,20 @@ echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔�
 
 # Initialize test lists
 tests=()
+ignored_tests=()
 test_num=0
 
-# Iterate through FILTERED implementations only (no inline filtering needed!)
-for dialer_id in "${filtered_impl_ids[@]}"; do
+# Iterate through all dialer/listener pairs using pre-loaded data
+for dialer_id in "${impl_ids[@]}"; do
     dialer_transports="${impl_transports[$dialer_id]}"
     dialer_secure="${impl_secure[$dialer_id]}"
     dialer_muxers="${impl_muxers[$dialer_id]}"
 
-    for listener_id in "${filtered_impl_ids[@]}"; do
-        # No filtering needed - already filtered upfront!
+    for listener_id in "${impl_ids[@]}"; do
+        # When TEST_SELECT is specified, include test if EITHER dialer OR listener matches
+        if [ ${#SELECT_PATTERNS[@]} -gt 0 ]; then
+            impl_matches_select "$dialer_id" || impl_matches_select "$listener_id" || continue
+        fi
 
         listener_transports="${impl_transports[$listener_id]}"
         listener_secure="${impl_secure[$listener_id]}"
@@ -165,9 +185,15 @@ for dialer_id in "${filtered_impl_ids[@]}"; do
                 # Standalone transport
                 test_name="$dialer_id x $listener_id ($transport)"
 
-                # No filtering needed - implementations already filtered upfront
-                test_num=$((test_num + 1))
-                tests+=("$test_name|$dialer_id|$listener_id|$transport|null|null")
+                # Check select/ignore (using pre-parsed functions)
+                if matches_select "$test_name"; then
+                    if should_ignore "$test_name"; then
+                        ignored_tests+=("$test_name|$dialer_id|$listener_id|$transport|null|null")
+                    else
+                        test_num=$((test_num + 1))
+                        tests+=("$test_name|$dialer_id|$listener_id|$transport|null|null")
+                    fi
+                fi
 
             else
                 # Non-standalone: need secure + muxer combinations
@@ -183,9 +209,15 @@ for dialer_id in "${filtered_impl_ids[@]}"; do
                     for muxer in $common_muxers; do
                         test_name="$dialer_id x $listener_id ($transport, $secure, $muxer)"
 
-                        # No filtering needed - implementations already filtered upfront
-                        test_num=$((test_num + 1))
-                        tests+=("$test_name|$dialer_id|$listener_id|$transport|$secure|$muxer")
+                        # Check select/ignore (using pre-parsed functions)
+                        if matches_select "$test_name"; then
+                            if should_ignore "$test_name"; then
+                                ignored_tests+=("$test_name|$dialer_id|$listener_id|$transport|$secure|$muxer")
+                            else
+                                test_num=$((test_num + 1))
+                                tests+=("$test_name|$dialer_id|$listener_id|$transport|$secure|$muxer")
+                            fi
+                        fi
                     done
                 done
             fi
@@ -193,7 +225,7 @@ for dialer_id in "${filtered_impl_ids[@]}"; do
     done
 done
 
-echo "✓ Generated ${#tests[@]} tests"
+echo "✓ Generated ${#tests[@]} tests (${#ignored_tests[@]} ignored)"
 
 echo ""
 
@@ -201,10 +233,10 @@ echo ""
 cat > "$OUTPUT_DIR/test-matrix.yaml" <<EOF
 metadata:
   generatedAt: $(date -u +%Y-%m-%dT%H:%M:%SZ)
-  select: $TEST_SELECT
-  ignore: $TEST_IGNORE
+  select: $(echo "$TEST_SELECT" | sed 's/|/, /g')
+  ignore: $(echo "$TEST_IGNORE" | sed 's/|/, /g')
   totalTests: ${#tests[@]}
-  ignoredTests: 0
+  ignoredTests: ${#ignored_tests[@]}
   debug: $DEBUG
 
 tests:
@@ -244,14 +276,48 @@ for test in "${tests[@]}"; do
 EOF
 done
 
-# Add empty ignored tests section (filtering done upfront, so no ignored tests tracked)
+# Add ignored tests section
 cat >> "$OUTPUT_DIR/test-matrix.yaml" <<EOF
 
-ignoredTests: []
+ignoredTests:
 EOF
+
+for test in "${ignored_tests[@]}"; do
+    IFS='|' read -r name dialer listener transport secure muxer <<< "$test"
+
+    # Get source types and commits (only for github-type implementations)
+    dialer_source_type=$(yq eval ".implementations[] | select(.id == \"$dialer\") | .source.type" images.yaml)
+    listener_source_type=$(yq eval ".implementations[] | select(.id == \"$listener\") | .source.type" images.yaml)
+
+    # Only get commits for github-type sources
+    if [ "$dialer_source_type" = "github" ]; then
+        dialer_commit=$(yq eval ".implementations[] | select(.id == \"$dialer\") | .source.commit" images.yaml)
+        dialer_snapshot="snapshots/$dialer_commit.zip"
+    else
+        dialer_snapshot="null"
+    fi
+
+    if [ "$listener_source_type" = "github" ]; then
+        listener_commit=$(yq eval ".implementations[] | select(.id == \"$listener\") | .source.commit" images.yaml)
+        listener_snapshot="snapshots/$listener_commit.zip"
+    else
+        listener_snapshot="null"
+    fi
+
+    cat >> "$OUTPUT_DIR/test-matrix.yaml" <<EOF
+  - name: $name
+    dialer: $dialer
+    listener: $listener
+    transport: $transport
+    secureChannel: $secure
+    muxer: $muxer
+    dialerSnapshot: $dialer_snapshot
+    listenerSnapshot: $listener_snapshot
+EOF
+done
 
 # Cache the generated matrix
 save_to_cache "$OUTPUT_DIR" "$cache_key" "$CACHE_DIR" "transport"
 
-echo "╲ ✓ Generated test matrix with ${#tests[@]} tests"
+echo "╲ ✓ Generated test matrix with ${#tests[@]} tests (${#ignored_tests[@]} ignored)"
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"

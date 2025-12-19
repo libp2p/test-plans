@@ -54,54 +54,41 @@ echo ""
 echo "╲ Test Matrix Generation"
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
-# Display and expand test selection (aliases + negations)
+# Display filters (expansion will happen during filter_entity_list calls)
 if [ -n "$TEST_SELECT" ]; then
     echo "→ Test select: $TEST_SELECT"
-    TEST_SELECT=$(expand_filter_string "$TEST_SELECT" all_impl_ids)
-    echo "  → Expanded to: $TEST_SELECT"
 else
-    echo "→ No test-select specified (will include all tests)"
+    echo "→ No test-select specified (will include all implementations)"
 fi
 
-# Display and expand test ignore (aliases + negations)
 if [ -n "$TEST_IGNORE" ]; then
     echo "→ Test ignore: $TEST_IGNORE"
-    TEST_IGNORE=$(expand_filter_string "$TEST_IGNORE" all_impl_ids)
-    echo "  → Expanded to: $TEST_IGNORE"
 else
     echo "→ No test-ignore specified"
 fi
 
-# Display and expand relay selection (aliases + negations)
 if [ -n "$RELAY_SELECT" ]; then
     echo "→ Relay select: $RELAY_SELECT"
-    RELAY_SELECT=$(expand_filter_string "$RELAY_SELECT" all_relay_ids)
-    echo "  → Expanded to: $RELAY_SELECT"
 else
     echo "→ No relay-select specified (will include all relays)"
 fi
 
-# Display and expand relay ignore (aliases + negations)
 if [ -n "$RELAY_IGNORE" ]; then
     echo "→ Relay ignore: $RELAY_IGNORE"
-    RELAY_IGNORE=$(expand_filter_string "$RELAY_IGNORE" all_relay_ids)
-    echo "  → Expanded to: $RELAY_IGNORE"
+else
+    echo "→ No relay-ignore specified"
 fi
 
-# Display and expand router selection (aliases + negations)
 if [ -n "$ROUTER_SELECT" ]; then
     echo "→ Router select: $ROUTER_SELECT"
-    ROUTER_SELECT=$(expand_filter_string "$ROUTER_SELECT" all_router_ids)
-    echo "  → Expanded to: $ROUTER_SELECT"
 else
     echo "→ No router-select specified (will include all routers)"
 fi
 
-# Display and expand router ignore (aliases + negations)
 if [ -n "$ROUTER_IGNORE" ]; then
     echo "→ Router ignore: $ROUTER_IGNORE"
-    ROUTER_IGNORE=$(expand_filter_string "$ROUTER_IGNORE" all_router_ids)
-    echo "  → Expanded to: $ROUTER_IGNORE"
+else
+    echo "→ No router-ignore specified"
 fi
 
 # Use TEST_RUN_KEY from parent (run.sh) if available
@@ -122,85 +109,45 @@ fi
 
 echo ""
 
-# Read all implementations
-impl_count=$(yq eval '.implementations | length' images.yaml)
-echo "→ Found $impl_count implementations in images.yaml"
+# Filter all three entity types upfront using global filter_entity_list function
+echo "→ Filtering implementations..."
+mapfile -t filtered_impl_ids < <(filter_entity_list "implementations" "$TEST_SELECT" "$TEST_IGNORE")
+echo "  ✓ Filtered to ${#filtered_impl_ids[@]} implementations"
 
-# Read all relay types
-relay_count=$(yq eval '.relays | length' images.yaml)
-echo "→ Found $relay_count relay types in images.yaml"
+echo "→ Filtering relays..."
+mapfile -t filtered_relay_ids < <(filter_entity_list "relays" "$RELAY_SELECT" "$RELAY_IGNORE")
+echo "  ✓ Filtered to ${#filtered_relay_ids[@]} relays"
 
-# Read all router types
-router_count=$(yq eval '.routers | length' images.yaml)
-echo "→ Found $router_count router types in images.yaml"
+echo "→ Filtering routers..."
+mapfile -t filtered_router_ids < <(filter_entity_list "routers" "$ROUTER_SELECT" "$ROUTER_IGNORE")
+echo "  ✓ Filtered to ${#filtered_router_ids[@]} routers"
 
-# Declare associative arrays for O(1) lookups
+echo ""
+
+# Load implementation data only for filtered implementations
+echo "→ Loading implementation data into memory..."
 declare -A impl_transports    # impl_transports[linux]="tcp quic-v1"
 declare -A impl_secure        # impl_secure[linux]="noise tls"
 declare -A impl_muxers        # impl_muxers[linux]="yamux mplex"
 declare -A impl_dial_only     # impl_dial_only[linux]="webtransport"
-declare -a impl_ids           # impl_ids=(linux ...)
-declare -a relay_ids          # relay_ids=(linux ...)
-declare -a router_ids         # router_ids=(linux ...)
 
-# Load all implementation data using yq
-echo "→ Loading implementation data into memory..."
-for ((i=0; i<impl_count; i++)); do
-    id=$(yq eval ".implementations[$i].id" images.yaml)
-    transports=$(yq eval ".implementations[$i].transports | join(\" \")" images.yaml)
-    secure=$(yq eval ".implementations[$i].secureChannels | join(\" \")" images.yaml)
-    muxers=$(yq eval ".implementations[$i].muxers | join(\" \")" images.yaml)
-    dial_only=$(yq eval ".implementations[$i].dialOnly | join(\" \")" images.yaml 2>/dev/null || echo "")
+for impl_id in "${filtered_impl_ids[@]}"; do
+    transports=$(yq eval ".implementations[] | select(.id == \"$impl_id\") | .transports | join(\" \")" images.yaml)
+    secure=$(yq eval ".implementations[] | select(.id == \"$impl_id\") | .secureChannels | join(\" \")" images.yaml)
+    muxers=$(yq eval ".implementations[] | select(.id == \"$impl_id\") | .muxers | join(\" \")" images.yaml)
+    dial_only=$(yq eval ".implementations[] | select(.id == \"$impl_id\") | .dialOnly | join(\" \")" images.yaml 2>/dev/null || echo "")
 
-    impl_ids+=("$id")
-    impl_transports["$id"]="$transports"
-    impl_secure["$id"]="$secure"
-    impl_muxers["$id"]="$muxers"
-    impl_dial_only["$id"]="$dial_only"
+    impl_transports["$impl_id"]="$transports"
+    impl_secure["$impl_id"]="$secure"
+    impl_muxers["$impl_id"]="$muxers"
+    impl_dial_only["$impl_id"]="$dial_only"
 done
 
-echo "  ✓ Loaded ${#impl_ids[@]} implementations into memory"
-
-# Load all relay types using yq
-echo "→ Loading relay types into memory..."
-for ((i=0; i<relay_count; i++)); do
-    relay_id=$(yq eval ".relays[$i].id" images.yaml)
-    relay_ids+=("$relay_id")
-done
-
-echo "  ✓ Loaded ${#relay_ids[@]} relay types into memory"
-
-# Load all router types using yq
-echo "→ Loading router types into memory..."
-for ((i=0; i<router_count; i++)); do
-    router_id=$(yq eval ".routers[$i].id" images.yaml)
-    router_ids+=("$router_id")
-done
-
-echo "  ✓ Loaded ${#router_ids[@]} router types into memory"
+echo "  ✓ Loaded data for ${#filtered_impl_ids[@]} filtered implementations"
 
 # Initialize test lists
 tests=()
-ignored_tests=()
 test_num=0
-
-# Declare pattern arrays for implementation filtering (still used by common functions)
-declare -a SELECT_PATTERNS=()
-declare -a IGNORE_PATTERNS=()
-
-if [ -n "$TEST_SELECT" ]; then
-    IFS='|' read -ra SELECT_PATTERNS <<< "$TEST_SELECT"
-    echo "  ✓ Loaded ${#SELECT_PATTERNS[@]} test select patterns"
-fi
-
-if [ -n "$TEST_IGNORE" ]; then
-    IFS='|' read -ra IGNORE_PATTERNS <<< "$TEST_IGNORE"
-    echo "  ✓ Loaded ${#IGNORE_PATTERNS[@]} test ignore patterns"
-fi
-
-# Note: Relay and router filtering now uses generic filter_matches() from lib-filter-engine.sh
-# The duplicate relay_matches_select(), relay_should_ignore(), router_matches_select(),
-# and router_should_ignore() functions have been removed.
 
 # Check if a transport can be used with an implementation as listener
 # Returns 0 (true) if transport can be used as listener, 1 (false) if dialOnly
@@ -225,51 +172,17 @@ echo ""
 echo "╲ Generating test combinations..."
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
-# Iterate through all relay, router, and implementation combinations
-for relay_id in "${relay_ids[@]}"; do
-    # Skip if relay doesn't match select filter
-    if [ -n "$RELAY_SELECT" ] && ! filter_matches "$relay_id" "$RELAY_SELECT"; then
-        continue
-    fi
-    # Track if relay should be ignored (don't skip, just flag for later)
-    relay_is_ignored=false
-    if [ -n "$RELAY_IGNORE" ] && filter_matches "$relay_id" "$RELAY_IGNORE"; then
-        relay_is_ignored=true
-    fi
-
-    for dialer_router_id in "${router_ids[@]}"; do
-        # Skip if dialer router doesn't match select filter
-        if [ -n "$ROUTER_SELECT" ] && ! filter_matches "$dialer_router_id" "$ROUTER_SELECT"; then
-            continue
-        fi
-        # Track if dialer router should be ignored
-        dialer_router_is_ignored=false
-        if [ -n "$ROUTER_IGNORE" ] && filter_matches "$dialer_router_id" "$ROUTER_IGNORE"; then
-            dialer_router_is_ignored=true
-        fi
-
-        for listener_router_id in "${router_ids[@]}"; do
-            # Skip if listener router doesn't match select filter
-            if [ -n "$ROUTER_SELECT" ] && ! filter_matches "$listener_router_id" "$ROUTER_SELECT"; then
-                continue
-            fi
-            # Track if listener router should be ignored
-            listener_router_is_ignored=false
-            if [ -n "$ROUTER_IGNORE" ] && filter_matches "$listener_router_id" "$ROUTER_IGNORE"; then
-                listener_router_is_ignored=true
-            fi
-
-            for dialer_id in "${impl_ids[@]}"; do
-                # Skip if dialer doesn't match select filter
-                impl_matches_select "$dialer_id" || continue
-
+# Iterate through FILTERED entities only (no inline filtering or ignore flags needed!)
+for relay_id in "${filtered_relay_ids[@]}"; do
+    for dialer_router_id in "${filtered_router_ids[@]}"; do
+        for listener_router_id in "${filtered_router_ids[@]}"; do
+            for dialer_id in "${filtered_impl_ids[@]}"; do
                 dialer_transports="${impl_transports[$dialer_id]}"
                 dialer_secure="${impl_secure[$dialer_id]}"
                 dialer_muxers="${impl_muxers[$dialer_id]}"
 
-                for listener_id in "${impl_ids[@]}"; do
-                    # Skip if listener doesn't match select filter
-                    impl_matches_select "$listener_id" || continue
+                for listener_id in "${filtered_impl_ids[@]}"; do
+                    # No filtering needed - all entities already filtered upfront!
 
                     listener_transports="${impl_transports[$listener_id]}"
                     listener_secure="${impl_secure[$listener_id]}"
@@ -292,19 +205,9 @@ for relay_id in "${relay_ids[@]}"; do
                             # Standalone transport (no secure/muxer needed)
                             test_name="$dialer_id x $listener_id ($transport) [dr: $dialer_router_id, rly: $relay_id, lr: $listener_router_id]"
 
-                            # Check select/ignore (including component-level ignores)
-                            if matches_select "$test_name"; then
-                                # Check if any component is ignored or if test name should be ignored
-                                if [ "$relay_is_ignored" = true ] || \
-                                   [ "$dialer_router_is_ignored" = true ] || \
-                                   [ "$listener_router_is_ignored" = true ] || \
-                                   should_ignore "$test_name"; then
-                                    ignored_tests+=("$test_name|$dialer_id|$listener_id|$transport|null|null|$relay_id|$dialer_router_id|$listener_router_id")
-                                else
-                                    test_num=$((test_num + 1))
-                                    tests+=("$test_name|$dialer_id|$listener_id|$transport|null|null|$relay_id|$dialer_router_id|$listener_router_id")
-                                fi
-                            fi
+                            # No filtering needed - all entities already filtered upfront
+                            test_num=$((test_num + 1))
+                            tests+=("$test_name|$dialer_id|$listener_id|$transport|null|null|$relay_id|$dialer_router_id|$listener_router_id")
                         else
                             # Non-standalone: need secure + muxer combinations
                             common_secure=$(get_common "$dialer_secure" "$listener_secure")
@@ -319,19 +222,9 @@ for relay_id in "${relay_ids[@]}"; do
                                 for muxer in $common_muxers; do
                                     test_name="$dialer_id x $listener_id ($transport, $secure, $muxer) [dr: $dialer_router_id, rly: $relay_id, lr: $listener_router_id]"
 
-                                    # Check select/ignore (including component-level ignores)
-                                    if matches_select "$test_name"; then
-                                        # Check if any component is ignored or if test name should be ignored
-                                        if [ "$relay_is_ignored" = true ] || \
-                                           [ "$dialer_router_is_ignored" = true ] || \
-                                           [ "$listener_router_is_ignored" = true ] || \
-                                           should_ignore "$test_name"; then
-                                            ignored_tests+=("$test_name|$dialer_id|$listener_id|$transport|$secure|$muxer|$relay_id|$dialer_router_id|$listener_router_id")
-                                        else
-                                            test_num=$((test_num + 1))
-                                            tests+=("$test_name|$dialer_id|$listener_id|$transport|$secure|$muxer|$relay_id|$dialer_router_id|$listener_router_id")
-                                        fi
-                                    fi
+                                    # No filtering needed - all entities already filtered upfront
+                                    test_num=$((test_num + 1))
+                                    tests+=("$test_name|$dialer_id|$listener_id|$transport|$secure|$muxer|$relay_id|$dialer_router_id|$listener_router_id")
                                 done
                             done
                         fi
@@ -342,7 +235,7 @@ for relay_id in "${relay_ids[@]}"; do
     done
 done
 
-echo "✓ Generated ${#tests[@]} tests (${#ignored_tests[@]} ignored)"
+echo "✓ Generated ${#tests[@]} tests"
 
 echo ""
 
@@ -350,14 +243,14 @@ echo ""
 cat > "$OUTPUT_DIR/test-matrix.yaml" <<EOF
 metadata:
   generatedAt: $(date -u +%Y-%m-%dT%H:%M:%SZ)
-  select: $(echo "$TEST_SELECT" | sed 's/|/, /g')
-  ignore: $(echo "$TEST_IGNORE" | sed 's/|/, /g')
-  relaySelect: $(echo "$RELAY_SELECT" | sed 's/|/, /g')
-  relayIgnore: $(echo "$RELAY_IGNORE" | sed 's/|/, /g')
-  routerSelect: $(echo "$ROUTER_SELECT" | sed 's/|/, /g')
-  routerIgnore: $(echo "$ROUTER_IGNORE" | sed 's/|/, /g')
+  select: $TEST_SELECT
+  ignore: $TEST_IGNORE
+  relaySelect: $RELAY_SELECT
+  relayIgnore: $RELAY_IGNORE
+  routerSelect: $ROUTER_SELECT
+  routerIgnore: $ROUTER_IGNORE
   totalTests: ${#tests[@]}
-  ignoredTests: ${#ignored_tests[@]}
+  ignoredTests: 0
   debug: $DEBUG
 
 tests:
@@ -395,47 +288,15 @@ EOF
     fi
 done
 
-# Add ignored tests section
+# Add empty ignored tests section (filtering done upfront, so no ignored tests tracked)
 cat >> "$OUTPUT_DIR/test-matrix.yaml" <<EOF
 
-ignoredTests:
+ignoredTests: []
 EOF
-
-for test in "${ignored_tests[@]}"; do
-    IFS='|' read -r name dialer listener transport secure muxer relay_id dialer_router_id listener_router_id <<< "$test"
-
-    # Get commits, treating null/empty as local
-    dialer_commit=$(yq eval ".implementations[] | select(.id == \"$dialer\") | .source.commit" images.yaml 2>/dev/null || echo "local")
-    listener_commit=$(yq eval ".implementations[] | select(.id == \"$listener\") | .source.commit" images.yaml 2>/dev/null || echo "local")
-
-    # Normalize null values to "local"
-    [ "$dialer_commit" = "null" ] && dialer_commit="local"
-    [ "$listener_commit" = "null" ] && listener_commit="local"
-
-    cat >> "$OUTPUT_DIR/test-matrix.yaml" <<EOF
-  - name: "$name"
-    dialer: $dialer
-    listener: $listener
-    transport: $transport
-    secureChannel: $secure
-    muxer: $muxer
-    dialerRouter: $dialer_router_id
-    relay: $relay_id
-    listenerRouter: $listener_router_id
-EOF
-
-    # Only add snapshot fields for non-local sources
-    if [ "$dialer_commit" != "local" ]; then
-        echo "    dialerSnapshot: snapshots/$dialer_commit.zip" >> "$OUTPUT_DIR/test-matrix.yaml"
-    fi
-    if [ "$listener_commit" != "local" ]; then
-        echo "    listenerSnapshot: snapshots/$listener_commit.zip" >> "$OUTPUT_DIR/test-matrix.yaml"
-    fi
-done
 
 # Cache the generated matrix
 save_to_cache "$OUTPUT_DIR" "$cache_key" "$CACHE_DIR" "hole-punch"
 
 echo ""
-echo "╲ ✓ Generated test matrix with ${#tests[@]} tests (${#ignored_tests[@]} ignored)"
+echo "╲ ✓ Generated test matrix with ${#tests[@]} tests"
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"

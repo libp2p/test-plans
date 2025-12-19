@@ -1,17 +1,29 @@
 #!/bin/bash
-# Common test alias expansion functions
-# Used by both hole-punch and transport test generation
+# Alias loading from images.yaml
+#
+# NOTE: Alias expansion is in lib-filter-engine.sh (expand_filter_string)
+# This file only loads aliases into the ALIASES array and provides entity ID retrieval
 
 # Load aliases from images.yaml into an associative array
+# This populates the global ALIASES array used by filter functions
+#
+# Args:
+#   $1: images_file - Path to images.yaml (default: images.yaml)
+# Returns:
+#   Populates global ALIASES associative array
+# Usage:
+#   load_aliases
+#   load_aliases "custom-images.yaml"
 load_aliases() {
+    local images_file="${1:-images.yaml}"
     declare -gA ALIASES  # Global associative array
 
-    if [ ! -f "images.yaml" ]; then
+    if [ ! -f "$images_file" ]; then
         return
     fi
 
     # Check if test-aliases exists
-    local alias_count=$(yq eval '.test-aliases | length' images.yaml 2>/dev/null || echo 0)
+    local alias_count=$(yq eval '.test-aliases | length' "$images_file" 2>/dev/null || echo 0)
 
     if [ "$alias_count" -eq 0 ] || [ "$alias_count" = "null" ]; then
         return
@@ -19,116 +31,38 @@ load_aliases() {
 
     # Load each alias
     for ((i=0; i<alias_count; i++)); do
-        local alias_name=$(yq eval ".test-aliases[$i].alias" images.yaml)
-        local alias_value=$(yq eval ".test-aliases[$i].value" images.yaml)
+        local alias_name=$(yq eval ".test-aliases[$i].alias" "$images_file")
+        local alias_value=$(yq eval ".test-aliases[$i].value" "$images_file")
         ALIASES["$alias_name"]="$alias_value"
     done
 }
 
-# Get all implementation IDs as a pipe-separated string
-get_all_impl_ids() {
-    yq eval '.implementations[].id' images.yaml | paste -sd'|' -
-}
-
-# Expand a single negated alias (!~alias)
-# Returns the expanded value (all impl IDs that DON'T match the alias value)
-expand_negated_alias() {
-    local alias_name="$1"
-
-    # Get the alias value
-    if [ -z "${ALIASES[$alias_name]:-}" ]; then
-        echo ""
-        return
-    fi
-
-    local alias_value="${ALIASES[$alias_name]}"
-
-    # Get all implementation IDs
-    local all_impls=$(get_all_impl_ids)
-
-    # Split alias value by | to get patterns to exclude
-    IFS='|' read -ra EXCLUDE_PATTERNS <<< "$alias_value"
-
-    # Split all impl IDs by |
-    IFS='|' read -ra ALL_IDS <<< "$all_impls"
-
-    # Filter: keep IDs that DON'T match any exclude pattern
-    local result=""
-    for impl_id in "${ALL_IDS[@]}"; do
-        local should_exclude=false
-
-        for pattern in "${EXCLUDE_PATTERNS[@]}"; do
-            if [[ "$impl_id" == *"$pattern"* ]]; then
-                should_exclude=true
-                break
-            fi
-        done
-
-        if [ "$should_exclude" = false ]; then
-            if [ -z "$result" ]; then
-                result="$impl_id"
-            else
-                result="$result|$impl_id"
-            fi
-        fi
-    done
-
-    echo "$result"
-}
-
-# Expand aliases in a test selection string
-# Handles both ~alias and !~alias syntax
-expand_aliases() {
-    local input="$1"
-
-    # If empty, return empty
-    if [ -z "$input" ]; then
-        echo ""
-        return
-    fi
-
-    local result="$input"
-
-    # Process negated aliases first (!~alias)
-    while [[ "$result" =~ \!~([a-zA-Z0-9_-]+) ]]; do
-        local alias_name="${BASH_REMATCH[1]}"
-        local expanded=$(expand_negated_alias "$alias_name")
-
-        if [ -n "$expanded" ]; then
-            # Replace !~alias with expanded value
-            result="${result//!~$alias_name/$expanded}"
-        else
-            # Unknown alias, remove it
-            result="${result//!~$alias_name/}"
-        fi
-    done
-
-    # Process regular aliases (~alias)
-    while [[ "$result" =~ ~([a-zA-Z0-9_-]+) ]]; do
-        local alias_name="${BASH_REMATCH[1]}"
-
-        if [ -n "${ALIASES[$alias_name]:-}" ]; then
-            local alias_value="${ALIASES[$alias_name]}"
-            # Replace ~alias with its value
-            result="${result//~$alias_name/$alias_value}"
-        else
-            # Unknown alias, remove it
-            result="${result//~$alias_name/}"
-        fi
-    done
-
-    # Clean up any double pipes or leading/trailing pipes
-    result=$(echo "$result" | sed 's/||*/|/g' | sed 's/^|//; s/|$//')
-
-    echo "$result"
-}
-
-# NOTE: The functions expand_aliases() and expand_negated_alias() are legacy functions
-# with known limitations:
-# - Not fully recursive (can't handle nested aliases beyond 1 level)
-# - No loop detection
-# - Inverted aliases don't work correctly
+# Generic function to get all entity IDs from images.yaml
+# Works for any entity type: implementations, baselines, relays, routers, etc.
 #
-# For new code, source lib-filter-engine.sh and use:
-# - expand_filter_string() for full expansion with recursion and loop detection
-# - filter_names() for complete select/ignore filtering
+# Args:
+#   $1: entity_type - Entity type key in images.yaml (e.g., "implementations", "baselines", "relays")
+#   $2: images_file - Path to images.yaml (default: images.yaml)
+# Returns:
+#   Array of entity IDs (one per line)
+# Usage:
+#   all_impl_ids=($(get_entity_ids "implementations"))
+#   all_baseline_ids=($(get_entity_ids "baselines"))
+#   all_relay_ids=($(get_entity_ids "relays" "custom-images.yaml"))
+get_entity_ids() {
+    local entity_type="$1"
+    local images_file="${2:-images.yaml}"
+
+    if [ ! -f "$images_file" ]; then
+        return 0
+    fi
+
+    yq eval ".${entity_type}[].id" "$images_file" 2>/dev/null || echo ""
+}
+
+# NOTE: The following functions have been REMOVED after migration to lib-filter-engine.sh:
+# - get_all_impl_ids() - REMOVED: Use get_entity_ids("implementations") instead
+# - expand_negated_alias() - REMOVED: Use expand_filter_string() from lib-filter-engine.sh
+# - expand_aliases() - REMOVED: Use expand_filter_string() from lib-filter-engine.sh
+#
+# All test suites now use filter_names() or filter_entity_list() from lib-filter-engine.sh

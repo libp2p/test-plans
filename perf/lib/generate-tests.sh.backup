@@ -42,38 +42,71 @@ ITERATIONS="${ITERATIONS:-10}"
 DURATION_PER_ITERATION="${DURATION_PER_ITERATION:-20}"
 LATENCY_ITERATIONS="${LATENCY_ITERATIONS:-100}"
 
-# Save original filters for display
+# Expand aliases and negations (but don't display yet)
 ORIGINAL_SELECT="$TEST_SELECT"
 ORIGINAL_IGNORE="$TEST_IGNORE"
 ORIGINAL_BASELINE_SELECT="$BASELINE_SELECT"
 ORIGINAL_BASELINE_IGNORE="$BASELINE_IGNORE"
+
+if [ -n "$TEST_SELECT" ]; then
+    TEST_SELECT=$(expand_filter_string "$TEST_SELECT" all_impl_ids)
+fi
+
+if [ -n "$TEST_IGNORE" ]; then
+    TEST_IGNORE=$(expand_filter_string "$TEST_IGNORE" all_impl_ids)
+fi
+
+if [ -n "$BASELINE_SELECT" ]; then
+    BASELINE_SELECT=$(expand_filter_string "$BASELINE_SELECT" all_baseline_ids)
+fi
+
+if [ -n "$BASELINE_IGNORE" ]; then
+    BASELINE_IGNORE=$(expand_filter_string "$BASELINE_IGNORE" all_baseline_ids)
+fi
+
+# Pre-parse select and ignore patterns for implementation filtering
+# (Still used by common impl_matches_select and should_ignore functions)
+declare -a SELECT_PATTERNS=()
+declare -a IGNORE_PATTERNS=()
+
+if [ -n "$TEST_SELECT" ]; then
+    IFS='|' read -ra SELECT_PATTERNS <<< "$TEST_SELECT"
+fi
+
+if [ -n "$TEST_IGNORE" ]; then
+    IFS='|' read -ra IGNORE_PATTERNS <<< "$TEST_IGNORE"
+fi
 
 # Output section header
 echo ""
 echo "╲ Test Matrix Generation"
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
-# Display filters
+# Display expanded filters (AFTER header, like transport)
 if [ -n "$ORIGINAL_SELECT" ]; then
     echo "→ Test select: $ORIGINAL_SELECT"
+    echo "  → Expanded to: $TEST_SELECT"
 else
-    echo "→ No test-select specified (will include all implementations)"
+    echo "→ No test-select specified (will include all tests)"
 fi
 
 if [ -n "$ORIGINAL_IGNORE" ]; then
     echo "→ Test ignore: $ORIGINAL_IGNORE"
+    echo "  → Expanded to: $TEST_IGNORE"
 else
     echo "→ No test-ignore specified"
 fi
 
 if [ -n "$ORIGINAL_BASELINE_SELECT" ]; then
     echo "→ Baseline select: $ORIGINAL_BASELINE_SELECT"
+    echo "  → Expanded to: $BASELINE_SELECT"
 else
     echo "→ No baseline-select specified (will include all baselines)"
 fi
 
 if [ -n "$ORIGINAL_BASELINE_IGNORE" ]; then
     echo "→ Baseline ignore: $ORIGINAL_BASELINE_IGNORE"
+    echo "  → Expanded to: $BASELINE_IGNORE"
 else
     echo "→ No baseline-ignore specified"
 fi
@@ -97,60 +130,65 @@ fi
 
 echo ""
 
-# Filter implementations and baselines upfront using global filter_entity_list function
-echo "→ Filtering implementations..."
-mapfile -t filtered_impl_ids < <(filter_entity_list "implementations" "$TEST_SELECT" "$TEST_IGNORE")
-echo "  ✓ Filtered to ${#filtered_impl_ids[@]} implementations"
-
-echo "→ Filtering baselines..."
-mapfile -t filtered_baseline_ids < <(filter_entity_list "baselines" "$BASELINE_SELECT" "$BASELINE_IGNORE")
-echo "  ✓ Filtered to ${#filtered_baseline_ids[@]} baselines"
-
-echo ""
-
-# Load baseline data only for filtered baselines
+# Load baseline data
+baseline_count=$(yq eval '.baselines | length' images.yaml)
+echo "→ Found $baseline_count baselines in images.yaml"
 echo "→ Loading baseline data into memory..."
 
 declare -A baseline_transports
 declare -A baseline_secure
 declare -A baseline_muxers
 declare -A baseline_server
+declare -a baseline_ids
 
-for baseline_id in "${filtered_baseline_ids[@]}"; do
-    transports=$(yq eval ".baselines[] | select(.id == \"$baseline_id\") | .transports | join(\" \")" images.yaml)
-    secure=$(yq eval ".baselines[] | select(.id == \"$baseline_id\") | .secureChannels | join(\" \")" images.yaml)
-    muxers=$(yq eval ".baselines[] | select(.id == \"$baseline_id\") | .muxers | join(\" \")" images.yaml)
-    server=$(yq eval ".baselines[] | select(.id == \"$baseline_id\") | .server" images.yaml)
+for ((i=0; i<baseline_count; i++)); do
+    id=$(yq eval ".baselines[$i].id" images.yaml)
+    transports=$(yq eval ".baselines[$i].transports | join(\" \")" images.yaml)
+    secure=$(yq eval ".baselines[$i].secureChannels | join(\" \")" images.yaml)
+    muxers=$(yq eval ".baselines[$i].muxers | join(\" \")" images.yaml)
+    server=$(yq eval ".baselines[$i].server" images.yaml)
 
-    baseline_transports["$baseline_id"]="$transports"
-    baseline_secure["$baseline_id"]="$secure"
-    baseline_muxers["$baseline_id"]="$muxers"
-    baseline_server["$baseline_id"]="$server"
+    baseline_ids+=("$id")
+    baseline_transports["$id"]="$transports"
+    baseline_secure["$id"]="$secure"
+    baseline_muxers["$id"]="$muxers"
+    baseline_server["$id"]="$server"
 done
 
-echo "  ✓ Loaded data for ${#filtered_baseline_ids[@]} filtered baselines"
+echo "  ✓ Loaded ${#baseline_ids[@]} baselines into memory"
 
-# Load main implementation data only for filtered implementations
+# Load main implementation data
+impl_count=$(yq eval '.implementations | length' images.yaml)
+echo "→ Found $impl_count implementations in images.yaml"
 echo "→ Loading implementation data into memory..."
 
 declare -A impl_transports
 declare -A impl_secure
 declare -A impl_muxers
 declare -A impl_server
+declare -a impl_ids
 
-for impl_id in "${filtered_impl_ids[@]}"; do
-    transports=$(yq eval ".implementations[] | select(.id == \"$impl_id\") | .transports | join(\" \")" images.yaml)
-    secure=$(yq eval ".implementations[] | select(.id == \"$impl_id\") | .secureChannels | join(\" \")" images.yaml)
-    muxers=$(yq eval ".implementations[] | select(.id == \"$impl_id\") | .muxers | join(\" \")" images.yaml)
-    server=$(yq eval ".implementations[] | select(.id == \"$impl_id\") | .server" images.yaml)
+for ((i=0; i<impl_count; i++)); do
+    id=$(yq eval ".implementations[$i].id" images.yaml)
+    transports=$(yq eval ".implementations[$i].transports | join(\" \")" images.yaml)
+    secure=$(yq eval ".implementations[$i].secureChannels | join(\" \")" images.yaml)
+    muxers=$(yq eval ".implementations[$i].muxers | join(\" \")" images.yaml)
+    server=$(yq eval ".implementations[$i].server" images.yaml)
 
-    impl_transports["$impl_id"]="$transports"
-    impl_secure["$impl_id"]="$secure"
-    impl_muxers["$impl_id"]="$muxers"
-    impl_server["$impl_id"]="$server"
+    impl_ids+=("$id")
+    impl_transports["$id"]="$transports"
+    impl_secure["$id"]="$secure"
+    impl_muxers["$id"]="$muxers"
+    impl_server["$id"]="$server"
 done
 
-echo "  ✓ Loaded data for ${#filtered_impl_ids[@]} filtered implementations"
+echo "  ✓ Loaded ${#impl_ids[@]} implementations into memory"
+if [ ${#SELECT_PATTERNS[@]} -gt 0 ]; then
+    echo "  ✓ Loaded ${#SELECT_PATTERNS[@]} select patterns"
+fi
+if [ ${#IGNORE_PATTERNS[@]} -gt 0 ]; then
+    echo "  ✓ Loaded ${#IGNORE_PATTERNS[@]} ignore patterns"
+fi
 echo ""
 
 # Note: Baseline filtering now uses generic filter_matches() from lib-filter-engine.sh
@@ -187,15 +225,24 @@ baselines:
 EOF
 
 # Generate baseline tests (baseline x baseline combinations)
-# Loop only through filtered baselines - no inline filtering needed!
-for dialer_id in "${filtered_baseline_ids[@]}"; do
+for dialer_id in "${baseline_ids[@]}"; do
+    # Apply baseline select filter
+    if [ -n "$BASELINE_SELECT" ] && ! filter_matches "$dialer_id" "$BASELINE_SELECT"; then
+        continue
+    fi
+
     dialer_transports="${baseline_transports[$dialer_id]}"
     dialer_secure="${baseline_secure[$dialer_id]}"
     dialer_muxers="${baseline_muxers[$dialer_id]}"
     dialer_server="${baseline_server[$dialer_id]}"
 
-    for listener_id in "${filtered_baseline_ids[@]}"; do
-        # No filtering needed - already filtered upfront!
+    for listener_id in "${baseline_ids[@]}"; do
+        # Apply baseline select filter (match if EITHER dialer OR listener matches)
+        if [ -n "$BASELINE_SELECT" ]; then
+            if ! filter_matches "$dialer_id" "$BASELINE_SELECT" && ! filter_matches "$listener_id" "$BASELINE_SELECT"; then
+                continue
+            fi
+        fi
 
         listener_transports="${baseline_transports[$listener_id]}"
         listener_secure="${baseline_secure[$listener_id]}"
@@ -212,7 +259,11 @@ for dialer_id in "${filtered_baseline_ids[@]}"; do
                 # Standalone transport
                 test_name="$dialer_id x $listener_id ($transport)"
 
-                # No filtering needed - baselines already filtered upfront
+                # Check ignore
+                if [ -n "$BASELINE_IGNORE" ] && filter_matches "$test_name" "$BASELINE_IGNORE"; then
+                    continue
+                fi
+
                 # Add baseline test
                 cat >> "$TEST_PASS_DIR/test-matrix.yaml" <<EOF
   - id: baseline-$baseline_num
@@ -259,7 +310,13 @@ EOF
                         echo "DEBUG: Creating raw transport baseline: $test_name" >&2
                     fi
 
-                    # No filtering needed - baselines already filtered upfront
+                    if [ -n "$BASELINE_IGNORE" ] && filter_matches "$test_name" "$BASELINE_IGNORE"; then
+                        if [ "${DEBUG:-false}" = "true" ]; then
+                            echo "DEBUG: Ignoring $test_name" >&2
+                        fi
+                        continue
+                    fi
+
                     cat >> "$TEST_PASS_DIR/test-matrix.yaml" <<EOF
   - id: baseline-$baseline_num
     name: "$test_name"
@@ -286,8 +343,10 @@ EOF
                     for secure in $common_secure; do
                         for muxer in $common_muxers; do
                             test_name="$dialer_id x $listener_id ($transport, $secure, $muxer)"
+                            if [ -n "$BASELINE_IGNORE" ] && filter_matches "$test_name" "$BASELINE_IGNORE"; then
+                                continue
+                            fi
 
-                            # No filtering needed - baselines already filtered upfront
                             cat >> "$TEST_PASS_DIR/test-matrix.yaml" <<EOF
   - id: baseline-$baseline_num
     name: "$test_name"
@@ -326,15 +385,18 @@ EOF
 echo "╲ Generating main test combinations..."
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
-# Iterate through filtered implementations only - no inline filtering needed!
-for dialer_id in "${filtered_impl_ids[@]}"; do
+# Iterate through all dialer/listener pairs
+for dialer_id in "${impl_ids[@]}"; do
     dialer_transports="${impl_transports[$dialer_id]}"
     dialer_secure="${impl_secure[$dialer_id]}"
     dialer_muxers="${impl_muxers[$dialer_id]}"
     dialer_server="${impl_server[$dialer_id]}"
 
-    for listener_id in "${filtered_impl_ids[@]}"; do
-        # No filtering needed - already filtered upfront!
+    for listener_id in "${impl_ids[@]}"; do
+        # When TEST_SELECT is specified, include test if EITHER dialer OR listener matches
+        if [ ${#SELECT_PATTERNS[@]} -gt 0 ]; then
+            impl_matches_select "$dialer_id" || impl_matches_select "$listener_id" || continue
+        fi
 
         listener_transports="${impl_transports[$listener_id]}"
         listener_secure="${impl_secure[$listener_id]}"
@@ -353,7 +415,15 @@ for dialer_id in "${filtered_impl_ids[@]}"; do
                 # Standalone transport - no secureChannel/muxer needed
                 test_name="$dialer_id x $listener_id ($transport)"
 
-                # No filtering needed - implementations already filtered upfront
+                # Check select/ignore
+                if ! matches_select "$test_name"; then
+                    continue
+                fi
+
+                if should_ignore "$test_name"; then
+                    continue
+                fi
+
                 # Single test with all 3 measurements (upload, download, latency)
                 cat >> "$TEST_PASS_DIR/test-matrix.yaml" <<EOF
   - id: test-$test_num
@@ -388,7 +458,15 @@ EOF
                     for muxer in $common_muxers; do
                         test_name="$dialer_id x $listener_id ($transport, $secure, $muxer)"
 
-                        # No filtering needed - implementations already filtered upfront
+                        # Check select/ignore
+                        if ! matches_select "$test_name"; then
+                            continue
+                        fi
+
+                        if should_ignore "$test_name"; then
+                            continue
+                        fi
+
                         # Single test with all 3 measurements
                         cat >> "$TEST_PASS_DIR/test-matrix.yaml" <<EOF
   - id: test-$test_num

@@ -1,9 +1,45 @@
 #!/bin/bash
 # Common filter engine for test/baseline/relay/router filtering
 # Provides recursive alias expansion with loop detection, proper inversion, and deduplication
-
+#
+# THIS IS THE PRIMARY FILTERING LIBRARY FOR ALL TEST SUITES
+# All test suites should use filter_names() or filter_entity_list() for entity filtering
+#
 # NOTE: This library requires ALIASES associative array to be loaded
 # Source lib-test-aliases.sh and call load_aliases() before using these functions
+#
+# RECOMMENDED USAGE PATTERN:
+#
+#   # 1. Load aliases
+#   source lib-test-aliases.sh
+#   load_aliases
+#
+#   # 2. Get all entity IDs
+#   all_impl_ids=($(get_entity_ids "implementations"))
+#
+#   # 3. Filter entities using the global function
+#   mapfile -t filtered_impls < <(filter_names all_impl_ids all_impl_ids "$TEST_SELECT" "$TEST_IGNORE")
+#
+#   # 4. Generate tests using only filtered entities
+#   for impl in "${filtered_impls[@]}"; do
+#       # No filtering checks needed here!
+#   done
+#
+# MULTI-ENTITY EXAMPLE (Perf test with impls + baselines):
+#
+#   load_aliases
+#   all_impl_ids=($(get_entity_ids "implementations"))
+#   all_baseline_ids=($(get_entity_ids "baselines"))
+#
+#   mapfile -t filtered_impls < <(filter_names all_impl_ids all_impl_ids "$TEST_SELECT" "$TEST_IGNORE")
+#   mapfile -t filtered_baselines < <(filter_names all_baseline_ids all_baseline_ids "$BASELINE_SELECT" "$BASELINE_IGNORE")
+#
+#   for impl in "${filtered_impls[@]}"; do
+#       # Generate impl tests
+#   done
+#   for baseline in "${filtered_baselines[@]}"; do
+#       # Generate baseline tests
+#   done
 
 # Internal: Recursively expand a single alias with loop detection
 # Args:
@@ -295,6 +331,47 @@ filter_names() {
 #   filtered=$(filter_entities relay_ids all_relays "~linux" "")
 filter_entities() {
     filter_names "$@"
+}
+
+# Filter entity list from images.yaml using select/ignore filters
+# This is the RECOMMENDED convenience function for all test suites
+# It combines entity loading, alias loading, and filtering in one call
+#
+# Args:
+#   $1: entity_type - Entity type in images.yaml ("implementations", "baselines", "relays", "routers")
+#   $2: select_filter - Raw select filter (may contain aliases, inversions)
+#   $3: ignore_filter - Raw ignore filter (may contain aliases, inversions)
+#   $4: images_file - Path to images.yaml (default: images.yaml)
+# Returns:
+#   Filtered entity IDs, one per line
+# Usage:
+#   # Filter implementations
+#   mapfile -t filtered_impls < <(filter_entity_list "implementations" "$TEST_SELECT" "$TEST_IGNORE")
+#
+#   # Filter baselines in perf test
+#   mapfile -t filtered_baselines < <(filter_entity_list "baselines" "$BASELINE_SELECT" "$BASELINE_IGNORE")
+#
+#   # Filter relays in hole-punch test
+#   mapfile -t filtered_relays < <(filter_entity_list "relays" "$RELAY_SELECT" "$RELAY_IGNORE")
+#
+#   # Filter routers in hole-punch test
+#   mapfile -t filtered_routers < <(filter_entity_list "routers" "$ROUTER_SELECT" "$ROUTER_IGNORE")
+filter_entity_list() {
+    local entity_type="$1"
+    local select_filter="$2"
+    local ignore_filter="$3"
+    local images_file="${4:-images.yaml}"
+
+    # Get all entity IDs
+    local all_ids=($(yq eval ".${entity_type}[].id" "$images_file" 2>/dev/null))
+
+    if [ ${#all_ids[@]} -eq 0 ]; then
+        return 0  # No entities of this type
+    fi
+
+    # Use filter_names for the actual filtering
+    local input_ids=("${all_ids[@]}")
+    filter_names input_ids all_ids "$select_filter" "$ignore_filter"
 }
 
 # Debug helper: Print expansion steps (useful for troubleshooting)
