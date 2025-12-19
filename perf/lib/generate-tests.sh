@@ -48,27 +48,67 @@ ORIGINAL_IGNORE="$TEST_IGNORE"
 ORIGINAL_BASELINE_SELECT="$BASELINE_SELECT"
 ORIGINAL_BASELINE_IGNORE="$BASELINE_IGNORE"
 
-# Display filters
+# Expand filters explicitly so we can display the expansions
+if [ -n "$TEST_SELECT" ]; then
+    EXPANDED_TEST_SELECT=$(expand_filter_string "$TEST_SELECT" all_image_ids)
+else
+    EXPANDED_TEST_SELECT=""
+fi
+
+if [ -n "$TEST_IGNORE" ]; then
+    EXPANDED_TEST_IGNORE=$(expand_filter_string "$TEST_IGNORE" all_image_ids)
+else
+    EXPANDED_TEST_IGNORE=""
+fi
+
+if [ -n "$BASELINE_SELECT" ]; then
+    EXPANDED_BASELINE_SELECT=$(expand_filter_string "$BASELINE_SELECT" all_baseline_ids)
+else
+    EXPANDED_BASELINE_SELECT=""
+fi
+
+if [ -n "$BASELINE_IGNORE" ]; then
+    EXPANDED_BASELINE_IGNORE=$(expand_filter_string "$BASELINE_IGNORE" all_baseline_ids)
+else
+    EXPANDED_BASELINE_IGNORE=""
+fi
+
+# Source formatting library for indented messages
+source "../lib/lib-output-formatting.sh"
+
+# Display filters with expansions
 if [ -n "$ORIGINAL_SELECT" ]; then
     echo "  → Test select: $ORIGINAL_SELECT"
+    if [ "$ORIGINAL_SELECT" != "$EXPANDED_TEST_SELECT" ]; then
+        echo "    → Expanded to: $EXPANDED_TEST_SELECT"
+    fi
 else
     echo "  → No test-select specified (will include all implementations)"
 fi
 
 if [ -n "$ORIGINAL_IGNORE" ]; then
     echo "  → Test ignore: $ORIGINAL_IGNORE"
+    if [ "$ORIGINAL_IGNORE" != "$EXPANDED_TEST_IGNORE" ]; then
+        echo "    → Expanded to: $EXPANDED_TEST_IGNORE"
+    fi
 else
     echo "  → No test-ignore specified"
 fi
 
 if [ -n "$ORIGINAL_BASELINE_SELECT" ]; then
     echo "  → Baseline select: $ORIGINAL_BASELINE_SELECT"
+    if [ "$ORIGINAL_BASELINE_SELECT" != "$EXPANDED_BASELINE_SELECT" ]; then
+        echo "    → Expanded to: $EXPANDED_BASELINE_SELECT"
+    fi
 else
     echo "  → No baseline-select specified (will include all baselines)"
 fi
 
 if [ -n "$ORIGINAL_BASELINE_IGNORE" ]; then
     echo "  → Baseline ignore: $ORIGINAL_BASELINE_IGNORE"
+    if [ "$ORIGINAL_BASELINE_IGNORE" != "$EXPANDED_BASELINE_IGNORE" ]; then
+        echo "    → Expanded to: $EXPANDED_BASELINE_IGNORE"
+    fi
 else
     echo "  → No baseline-ignore specified"
 fi
@@ -92,13 +132,13 @@ fi
 
 echo ""
 
-# Filter implementations and baselines upfront using global filter_entity_list function
+# Filter implementations and baselines using already-expanded strings
 echo "  → Filtering implementations..."
-mapfile -t filtered_image_ids < <(filter_entity_list "implementations" "$TEST_SELECT" "$TEST_IGNORE")
+mapfile -t filtered_image_ids < <(filter_names all_image_ids all_image_ids "$EXPANDED_TEST_SELECT" "$EXPANDED_TEST_IGNORE")
 echo "    ✓ Filtered to ${#filtered_image_ids[@]} implementations (${#all_image_ids[@]} total)"
 
 echo "  → Filtering baselines..."
-mapfile -t filtered_baseline_ids < <(filter_entity_list "baselines" "$BASELINE_SELECT" "$BASELINE_IGNORE")
+mapfile -t filtered_baseline_ids < <(filter_names all_baseline_ids all_baseline_ids "$EXPANDED_BASELINE_SELECT" "$EXPANDED_BASELINE_IGNORE")
 echo "    ✓ Filtered to ${#filtered_baseline_ids[@]} baselines (${#all_baseline_ids[@]} total)"
 
 echo ""
