@@ -189,12 +189,14 @@ if [ "$LIST_TESTS" = true ]; then
         echo "  → No baseline tests selected"
     fi
 
+    echo ""
+    print_header "Ignored Baseline Tests ($ignored_baseline_count tests)"
     if [ "$ignored_baseline_count" -gt 0 ]; then
-        echo ""
-        print_header "Ignored Baseline Tests ($ignored_baseline_count tests)"
         yq eval '.ignoredBaselines[].name' "$TEMP_DIR/test-matrix.yaml" | while read -r name; do
-            echo "  ✗ $name [ignored]"
+            echo "  ✗ $name"
         done
+    else
+        echo "  → No baseline tests ignored"
     fi
 
     echo ""
@@ -207,12 +209,14 @@ if [ "$LIST_TESTS" = true ]; then
         echo "  → No main tests selected"
     fi
 
+    echo ""
+    print_header "Ignored Main Tests ($ignored_test_count tests)"
     if [ "$ignored_test_count" -gt 0 ]; then
-        echo ""
-        print_header "Ignored Main Tests ($ignored_test_count tests)"
         yq eval '.ignoredTests[].name' "$TEMP_DIR/test-matrix.yaml" | while read -r name; do
-            echo "  ✗ $name [ignored]"
+            echo "  ✗ $name"
         done
+    else
+        echo "  → No main tests ignored"
     fi
 
     echo ""

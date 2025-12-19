@@ -6,6 +6,8 @@
 test-aliases:
   - alias: "all"
     value: "~baselines|~impls"
+  - alias: "none"
+    value: "!~all"
   - alias: "impls"
     value: "dotnet-v1.0|go-v0.45|js-v3.x|rust-v0.56"
   - alias: "baselines"

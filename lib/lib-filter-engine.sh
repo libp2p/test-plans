@@ -268,10 +268,14 @@ filter_matches() {
 #   filtered=$(filter_names input_impls all_impls "~rust" "v0.56")
 #   # Returns: rust-v0.55
 filter_names() {
-    local -n input_names_ref=$1
-    local -n all_names_ref=$2
+    local input_names_array_name="$1"
+    local all_names_array_name="$2"
     local select_filter="$3"
     local ignore_filter="$4"
+
+    # Create namerefs with unique names to avoid circular reference
+    local -n input_names_ref="$input_names_array_name"
+    local -n all_names_ref="$all_names_array_name"
 
     # Step 1: Apply SELECT filter
     local selected=()
@@ -280,9 +284,9 @@ filter_names() {
         # No select filter = include all input names
         selected=("${input_names_ref[@]}")
     else
-        # Expand select filter
+        # Expand select filter - pass original array name to avoid circular nameref
         local expanded_select
-        expanded_select=$(expand_filter_string "$select_filter" all_names_ref) || return 1
+        expanded_select=$(expand_filter_string "$select_filter" "$all_names_array_name") || return 1
 
         # Filter input names to those matching select
         for name in "${input_names_ref[@]}"; do
@@ -299,9 +303,9 @@ filter_names() {
         # No ignore filter = keep all selected
         final=("${selected[@]}")
     else
-        # Expand ignore filter
+        # Expand ignore filter - pass original array name to avoid circular nameref
         local expanded_ignore
-        expanded_ignore=$(expand_filter_string "$ignore_filter" all_names_ref) || return 1
+        expanded_ignore=$(expand_filter_string "$ignore_filter" "$all_names_array_name") || return 1
 
         # Remove names that match ignore from selected set
         for name in "${selected[@]}"; do
