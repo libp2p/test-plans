@@ -7,6 +7,7 @@ set -euo pipefail
 
 # Get script directory and change to perf directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_LIB_DIR="${SCRIPT_LIB_DIR:-$SCRIPT_DIR/../../lib}"
 cd "$SCRIPT_DIR/.."
 
 # Source required libraries
@@ -19,7 +20,7 @@ CACHE_DIR="${CACHE_DIR:-/srv/cache}"
 FILTER="${1:-}"  # Optional: pipe-separated filter (e.g., "go-v0.45|rust-v0.56")
 FORCE_IMAGE_REBUILD="${2:-false}"
 IMAGE_PREFIX="perf-"
-BUILD_SCRIPT="$SCRIPT_DIR/../../lib/build-single-image.sh"
+BUILD_SCRIPT="$SCRIPT_LIB_DIR/build-single-image.sh"
 
 echo "  → Cache directory: $CACHE_DIR"
 if [ -n "$FILTER" ]; then
@@ -158,7 +159,7 @@ EOF
         # Execute build (local or remote)
         if [ "$build_location" = "remote" ]; then
             # Copy lib-image-building.sh to remote for use by build script
-            local lib_script="$SCRIPT_DIR/../../lib/lib-image-building.sh"
+            local lib_script="$SCRIPT_LIB_DIR/lib-image-building.sh"
 
             build_on_remote "$yaml_file" "$username" "$hostname" "$BUILD_SCRIPT" || {
                 echo "✗ Remote build failed for $impl_id"

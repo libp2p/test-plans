@@ -24,13 +24,20 @@ check_and_load_cache() {
     local cache_dir="$2"
     local output_dir="$3"
     local force_rebuild="${4:-false}"  # Optional: force matrix rebuild
+    local test_type="${5:-}"  # Optional: test type prefix
 
-    local cache_file="$cache_dir/test-run-matrix/${cache_key}.yaml"
+    # Use test type prefix if provided
+    # Use first 8 chars of cache_key for filename
+    if [ -n "$test_type" ]; then
+        local cache_file="$cache_dir/test-run-matrix/${test_type}-${cache_key:0:8}.yaml"
+    else
+        local cache_file="$cache_dir/test-run-matrix/${cache_key:0:8}.yaml"
+    fi
 
     # If force rebuild requested, skip cache
     if [ "$force_rebuild" = true ]; then
         echo "  → [SKIP] Force matrix rebuild requested"
-        mkdir -p "$cache_dir/test-matrix"
+        mkdir -p "$cache_dir/test-run-matrix"
         return 1
     fi
 
@@ -44,7 +51,7 @@ check_and_load_cache() {
         return 0
     else
         echo "  → [MISS] Generating new test matrix"
-        mkdir -p "$cache_dir/test-matrix"
+        mkdir -p "$cache_dir/test-run-matrix"
         return 1
     fi
 }
@@ -54,9 +61,17 @@ save_to_cache() {
     local output_dir="$1"
     local cache_key="$2"
     local cache_dir="$3"
+    local test_type="${4:-}"  # Optional: test type prefix
 
-    local cache_file="$cache_dir/test-run-matrix/${cache_key}.yaml"
+    # Use test type prefix if provided
+    # Use first 8 chars of cache_key for filename
+    if [ -n "$test_type" ]; then
+        local cache_file="$cache_dir/test-run-matrix/${test_type}-${cache_key:0:8}.yaml"
+    else
+        local cache_file="$cache_dir/test-run-matrix/${cache_key:0:8}.yaml"
+    fi
 
+    mkdir -p "$cache_dir/test-run-matrix"
     cp "$output_dir/test-matrix.yaml" "$cache_file"
-    echo "✓ Cached as: ${cache_key:0:8}.yaml"
+    echo "✓ Cached as: ${test_type:+$test_type-}${cache_key:0:8}.yaml"
 }

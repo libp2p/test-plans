@@ -4,6 +4,9 @@
 
 set -euo pipefail
 
+# Capture original arguments for inputs.yaml generation
+ORIGINAL_ARGS=("$@")
+
 # Default parameters
 CACHE_DIR="${CACHE_DIR:-/srv/cache}"
 TEST_RUN_DIR="${TEST_RUN_DIR:-$CACHE_DIR/test-run}"
@@ -112,10 +115,13 @@ done
 # Change to script directory
 cd "$(dirname "$0")"
 
+# Set global library directory
+SCRIPT_LIB_DIR="${SCRIPT_LIB_DIR:-$(cd "$(dirname "$0")/.." && pwd)/lib}"
+
 # Source common libraries (after argument parsing, so --help doesn't need them)
-source "../lib/lib-test-filtering.sh"
-source "../lib/lib-test-caching.sh"
-source "../lib/lib-image-naming.sh"
+source "$SCRIPT_LIB_DIR/lib-test-filtering.sh"
+source "$SCRIPT_LIB_DIR/lib-test-caching.sh"
+source "$SCRIPT_LIB_DIR/lib-image-naming.sh"
 source "lib/lib-perf.sh"
 
 echo ""
@@ -208,7 +214,7 @@ fi
 
 # Check dependencies
 if [ "$CHECK_DEPS_ONLY" = true ]; then
-    bash ../lib/check-dependencies.sh docker yq
+    bash "$SCRIPT_LIB_DIR/check-dependencies.sh" docker yq
     exit $?
 fi
 
@@ -216,11 +222,20 @@ fi
 export DEBUG
 export CACHE_DIR
 
-# Create test run directory
-TEST_PASS_TIMESTAMP=$(date +%H%M%S-%d-%m-%Y)
-TEST_PASS_NAME="perf-${TEST_PASS_TIMESTAMP}"
+# Source test key generation functions
+source "$SCRIPT_LIB_DIR/lib-test-keys.sh"
+
+# Generate test run key and test pass name
+TEST_TYPE="perf"
+TEST_RUN_KEY=$(compute_test_run_key "images.yaml" "$TEST_SELECT||$TEST_IGNORE||$BASELINE_SELECT||$BASELINE_IGNORE||$DEBUG||$ITERATIONS")
+TEST_PASS_NAME="${TEST_TYPE}-${TEST_RUN_KEY}-$(date +%H%M%S-%d-%m-%Y)"
 TEST_PASS_DIR="$TEST_RUN_DIR/$TEST_PASS_NAME"
 mkdir -p "$TEST_PASS_DIR"/{logs,results,baseline}
+export TEST_RUN_KEY
+
+# Generate inputs.yaml for reproducibility
+source "$SCRIPT_LIB_DIR/lib-inputs-yaml.sh"
+generate_inputs_yaml "$TEST_PASS_DIR/inputs.yaml" "$TEST_TYPE" "${ORIGINAL_ARGS[@]}"
 
 export TEST_PASS_DIR
 export TEST_PASS_NAME
@@ -247,7 +262,7 @@ echo ""
 # Check dependencies for normal execution
 echo "╲ Checking dependencies..."
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-bash ../lib/check-dependencies.sh docker yq || {
+bash "$SCRIPT_LIB_DIR/check-dependencies.sh docker yq || {
   echo ""
   echo "Error: Missing required dependencies."
   echo "Run '$0 --check-deps' to see details."
@@ -330,7 +345,7 @@ echo ""
 echo "→ Total: $baseline_count baseline tests, $test_count main tests to execute"
 
 # Source common test execution utilities
-source "../lib/lib-test-execution.sh"
+source "$SCRIPT_LIB_DIR/lib-test-execution.sh"
 
 # Calculate required Docker images
 image_count=$(get_required_image_count "$TEST_PASS_DIR/test-matrix.yaml" "true")

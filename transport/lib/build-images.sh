@@ -8,6 +8,7 @@ set -euo pipefail
 
 # Get script directory and change to it
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_LIB_DIR="${SCRIPT_LIB_DIR:-$SCRIPT_DIR/../../lib}"
 cd "$SCRIPT_DIR/.."  # Change to transport/ directory
 
 # Configuration
@@ -15,7 +16,7 @@ CACHE_DIR="${CACHE_DIR:-/srv/cache}"
 FILTER="${1:-}"  # Optional: pipe-separated filter (e.g., "rust-v0.56|rust-v0.55")
 REMOVE="${2:-false}"  # Remove the docker image if set (force rebuild)
 IMAGE_PREFIX="transport-interop-"
-BUILD_SCRIPT="$SCRIPT_DIR/../../lib/build-single-image.sh"
+BUILD_SCRIPT="$SCRIPT_LIB_DIR/build-single-image.sh"
 
 echo "  → Cache directory: $CACHE_DIR"
 if [ -n "$FILTER" ]; then

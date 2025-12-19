@@ -3,6 +3,9 @@
 
 set -euo pipefail
 
+# Capture original arguments for inputs.yaml generation
+ORIGINAL_ARGS=("$@")
+
 # Defaults
 CACHE_DIR="${CACHE_DIR:-/srv/cache}"
 TEST_RUN_DIR="${TEST_RUN_DIR:-$CACHE_DIR/test-run}"
@@ -76,6 +79,9 @@ done
 # Change to script directory
 cd "$(dirname "$0")"
 
+# Set global library directory
+SCRIPT_LIB_DIR="${SCRIPT_LIB_DIR:-$(cd "$(dirname "$0")/.." && pwd)/lib}"
+
 echo ""
 echo "                        ╔╦╦╗  ╔═╗"
 echo "▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁ ║╠╣╚╦═╬╝╠═╗ ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁"
@@ -143,7 +149,7 @@ fi
 
 # Check dependencies
 if [ "$CHECK_DEPS_ONLY" = true ]; then
-    bash ../lib/check-dependencies.sh
+    bash "$SCRIPT_LIB_DIR/check-dependencies.sh"
     exit $?
 fi
 
@@ -153,9 +159,15 @@ export DEBUG
 echo "╲ Transport Interoperability Test Suite"
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
-# Generate test pass name and folder
-TEST_PASS_NAME="transport-interop-$(date +%H%M%S-%d-%m-%Y)"
+# Source test key generation functions
+source "$SCRIPT_LIB_DIR/lib-test-keys.sh"
+
+# Generate test run key and test pass name
+TEST_TYPE="transport"
+TEST_RUN_KEY=$(compute_test_run_key "images.yaml" "$TEST_SELECT||$TEST_IGNORE||$DEBUG")
+TEST_PASS_NAME="${TEST_TYPE}-${TEST_RUN_KEY}-$(date +%H%M%S-%d-%m-%Y)"
 export TEST_PASS_DIR="$TEST_RUN_DIR/$TEST_PASS_NAME"
+export TEST_RUN_KEY
 
 echo "→ Test Pass: $TEST_PASS_NAME"
 echo "→ Cache Dir: $CACHE_DIR"
@@ -170,7 +182,11 @@ echo "→ Force Image Rebuild: $FORCE_IMAGE_REBUILD"
 echo ""
 
 # Create test pass folder structure
-mkdir -p "$TEST_PASS_DIR"/{logs,docker-compose}
+mkdir -p "$TEST_PASS_DIR"/{logs,results,docker-compose}
+
+# Generate inputs.yaml for reproducibility
+source "$SCRIPT_LIB_DIR/lib-inputs-yaml.sh"
+generate_inputs_yaml "$TEST_PASS_DIR/inputs.yaml" "$TEST_TYPE" "${ORIGINAL_ARGS[@]}"
 
 START_TIME=$(date +%s)
 
@@ -179,7 +195,7 @@ export TEST_PASS_NAME
 # 1. Check dependencies
 echo "╲ Checking dependencies..."
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-if ! bash ../lib/check-dependencies.sh; then
+if ! bash "$SCRIPT_LIB_DIR/check-dependencies.sh"; then
     echo "✗ Dependency check failed. Please install missing dependencies."
     exit 1
 fi
@@ -230,7 +246,7 @@ echo ""
 echo "→ Total: $test_count tests to execute, $ignored_count ignored"
 
 # Source common test execution utilities
-source ../lib/lib-test-execution.sh
+source "$SCRIPT_LIB_DIR/lib-test-execution.sh"
 
 # Calculate required Docker images
 image_count=$(get_required_image_count "$TEST_PASS_DIR/test-matrix.yaml" "false")
@@ -300,8 +316,7 @@ echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔�
 test_count=$(yq eval '.metadata.totalTests' "$TEST_PASS_DIR/test-matrix.yaml")
 export test_count
 
-# Initialize results
-> "$TEST_PASS_DIR/results.yaml.tmp"
+# Note: Individual results will be saved to results/ directory
 
 # Run tests with parallel workers
 run_test() {
@@ -342,28 +357,30 @@ run_test() {
         fi
     fi
 
-    # Append to results (with locking to avoid race conditions)
-    (
-        flock -x 200
-        cat >> "$TEST_PASS_DIR/results.yaml.tmp" <<EOF
-  - name: $name
-    status: $status
-    exitCode: $exit_code
-    duration: ${duration}s
-    dialer: $dialer
-    listener: $listener
-    transport: $transport
-    secureChannel: $secure
-    muxer: $muxer
+    # Compute test key for this individual test
+    source "$SCRIPT_LIB_DIR/lib-test-keys.sh"
+    TEST_KEY=$(compute_test_key "$name")
+
+    # Save individual test result
+    cat > "$TEST_PASS_DIR/results/${TEST_KEY}.yaml" <<EOF
+name: $name
+status: $status
+exitCode: $exit_code
+duration: ${duration}s
+dialer: $dialer
+listener: $listener
+transport: $transport
+secureChannel: $secure
+muxer: $muxer
 EOF
-        # Add metrics if available
-        if [ -n "$handshake_ms" ]; then
-            echo "    handshakePlusOneRTTMs: $handshake_ms" >> "$TEST_PASS_DIR/results.yaml.tmp"
-        fi
-        if [ -n "$ping_ms" ]; then
-            echo "    pingRTTMs: $ping_ms" >> "$TEST_PASS_DIR/results.yaml.tmp"
-        fi
-    ) 200>/tmp/results.lock
+
+    # Add metrics if available
+    if [ -n "$handshake_ms" ]; then
+        echo "handshakePlusOneRTTMs: $handshake_ms" >> "$TEST_PASS_DIR/results/${TEST_KEY}.yaml"
+    fi
+    if [ -n "$ping_ms" ]; then
+        echo "pingRTTMs: $ping_ms" >> "$TEST_PASS_DIR/results/${TEST_KEY}.yaml"
+    fi
 
     return $exit_code
 }
@@ -383,13 +400,11 @@ echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔�
 END_TIME=$(date +%s)
 DURATION=$((END_TIME - START_TIME))
 
-# Count pass/fail
-# grep -c outputs "0" and exits with status 1 when count is 0
-# Using || true to avoid the || echo 0 adding an extra 0
-PASSED=$(grep -c "status: pass" "$TEST_PASS_DIR/results.yaml.tmp" || true)
-FAILED=$(grep -c "status: fail" "$TEST_PASS_DIR/results.yaml.tmp" || true)
+# Count pass/fail from individual result files
+PASSED=$(grep -h "^status: pass" "$TEST_PASS_DIR"/results/*.yaml 2>/dev/null | wc -l || echo 0)
+FAILED=$(grep -h "^status: fail" "$TEST_PASS_DIR"/results/*.yaml 2>/dev/null | wc -l || echo 0)
 
-# Handle empty results (when grep finds nothing, it outputs nothing with || true)
+# Handle empty results
 PASSED=${PASSED:-0}
 FAILED=${FAILED:-0}
 
@@ -412,8 +427,15 @@ summary:
 tests:
 EOF
 
-cat "$TEST_PASS_DIR/results.yaml.tmp" >> "$TEST_PASS_DIR/results.yaml"
-rm "$TEST_PASS_DIR/results.yaml.tmp"
+# Aggregate individual result files into results.yaml
+for result_file in "$TEST_PASS_DIR"/results/*.yaml; do
+    if [ -f "$result_file" ]; then
+        # Read first line and add as array item
+        echo "  - name: $(yq eval '.name' "$result_file")" >> "$TEST_PASS_DIR/results.yaml"
+        # Add remaining fields with proper indentation
+        yq eval 'del(.name) | to_entries | .[] | "    " + .key + ": " + (.value | @json)' "$result_file" | sed 's/"//g' >> "$TEST_PASS_DIR/results.yaml"
+    fi
+done
 
 # Collect failed test names
 FAILED_TESTS=()

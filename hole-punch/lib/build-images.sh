@@ -7,6 +7,7 @@ set -euo pipefail
 
 # Get script directory and change to hole-punch directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_LIB_DIR="${SCRIPT_LIB_DIR:-$SCRIPT_DIR/../../lib}"
 cd "$SCRIPT_DIR/.."
 
 # Configuration
@@ -15,7 +16,7 @@ RELAY_FILTER="${1:-}"      # Optional: pipe-separated relay ID filter
 ROUTER_FILTER="${2:-}"     # Optional: pipe-separated router ID filter
 IMPL_FILTER="${3:-}"       # Optional: pipe-separated implementation ID filter
 FORCE_REBUILD="${4:-false}"  # Optional: force rebuild all images
-BUILD_SCRIPT="$SCRIPT_DIR/../../lib/build-single-image.sh"
+BUILD_SCRIPT="$SCRIPT_LIB_DIR/build-single-image.sh"
 
 echo "  → Cache directory: $CACHE_DIR"
 [ -n "$RELAY_FILTER" ] && echo "  → Relay filter: $RELAY_FILTER"

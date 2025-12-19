@@ -23,10 +23,11 @@ is_standalone_transport() {
 
 # Source common libraries
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/../../lib/lib-test-aliases.sh"
-source "$SCRIPT_DIR/../../lib/lib-test-filtering.sh"
-source "$SCRIPT_DIR/../../lib/lib-test-caching.sh"
-source "$SCRIPT_DIR/../../lib/lib-filter-engine.sh"
+SCRIPT_LIB_DIR="${SCRIPT_LIB_DIR:-$SCRIPT_DIR/../../lib}"
+source "$SCRIPT_LIB_DIR/lib-test-aliases.sh"
+source "$SCRIPT_LIB_DIR/lib-test-filtering.sh"
+source "$SCRIPT_LIB_DIR/lib-test-caching.sh"
+source "$SCRIPT_LIB_DIR/lib-filter-engine.sh"
 
 # Load test aliases from images.yaml
 load_aliases
@@ -62,13 +63,19 @@ else
     echo "→ No test-ignore specified"
 fi
 
-# Compute cache key from images.yaml + select + ignore + debug
-# Pass empty strings for relay/router params (not used by transport tests)
-cache_key=$(compute_cache_key "$TEST_SELECT" "$TEST_IGNORE" "" "" "" "" "$DEBUG")
-echo "→ Computed cache key: ${cache_key:0:8}"
+# Use TEST_RUN_KEY from parent (run.sh) if available
+# Otherwise compute cache key from images.yaml + select + ignore + debug
+if [ -n "${TEST_RUN_KEY:-}" ]; then
+    cache_key="$TEST_RUN_KEY"
+    echo "→ Using test run key: $cache_key"
+else
+    # Fallback for standalone execution
+    cache_key=$(compute_cache_key "$TEST_SELECT" "$TEST_IGNORE" "" "" "" "" "$DEBUG")
+    echo "→ Computed cache key: ${cache_key:0:8}"
+fi
 
 # Check cache (with optional force rebuild)
-if check_and_load_cache "$cache_key" "$CACHE_DIR" "$OUTPUT_DIR" "$FORCE_MATRIX_REBUILD"; then
+if check_and_load_cache "$cache_key" "$CACHE_DIR" "$OUTPUT_DIR" "$FORCE_MATRIX_REBUILD" "transport"; then
     exit 0
 fi
 
@@ -310,7 +317,7 @@ EOF
 done
 
 # Cache the generated matrix
-save_to_cache "$OUTPUT_DIR" "$cache_key" "$CACHE_DIR"
+save_to_cache "$OUTPUT_DIR" "$cache_key" "$CACHE_DIR" "transport"
 
 echo "╲ ✓ Generated test matrix with ${#tests[@]} tests (${#ignored_tests[@]} ignored)"
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"

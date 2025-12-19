@@ -111,8 +111,16 @@ else
     echo "→ No baseline-ignore specified"
 fi
 
-# Compute cache key from images.yaml + all filters + debug
-cache_key=$(compute_cache_key "$TEST_SELECT" "$TEST_IGNORE" "$BASELINE_SELECT" "$BASELINE_IGNORE" "" "" "$DEBUG")
+# Use TEST_RUN_KEY from parent (run.sh) if available
+# Otherwise compute cache key from images.yaml + all filters + debug
+if [ -n "${TEST_RUN_KEY:-}" ]; then
+    cache_key="$TEST_RUN_KEY"
+    echo "→ Using test run key: $cache_key"
+else
+    # Fallback for standalone execution
+    cache_key=$(compute_cache_key "$TEST_SELECT" "$TEST_IGNORE" "$BASELINE_SELECT" "$BASELINE_IGNORE" "" "" "$DEBUG")
+    echo "→ Computed cache key: ${cache_key:0:8}"
+fi
 echo "→ Computed cache key: ${cache_key:0:8}"
 
 # Check cache (with optional force rebuild)
@@ -496,7 +504,7 @@ cp images.yaml "$TEST_PASS_DIR/"
 echo "✓ Generated $test_num main tests"
 
 # Cache the generated matrix
-save_to_cache "$TEST_PASS_DIR" "$cache_key" "$CACHE_DIR"
+save_to_cache "$TEST_PASS_DIR" "$cache_key" "$CACHE_DIR" "perf"
 
 echo ""
 

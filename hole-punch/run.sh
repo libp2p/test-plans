@@ -3,6 +3,9 @@
 
 set -euo pipefail
 
+# Capture original arguments for inputs.yaml generation
+ORIGINAL_ARGS=("$@")
+
 # Defaults
 CACHE_DIR="${CACHE_DIR:-/srv/cache}"
 TEST_RUN_DIR="${TEST_RUN_DIR:-$CACHE_DIR/test-run}"
@@ -93,6 +96,9 @@ done
 
 # Change to script directory
 cd "$(dirname "$0")"
+
+# Set global library directory
+SCRIPT_LIB_DIR="${SCRIPT_LIB_DIR:-$(cd "$(dirname "$0")/.." && pwd)/lib}"
 
 echo ""
 echo "                        ╔╦╦╗  ╔═╗"
@@ -187,7 +193,7 @@ fi
 
 # Check dependencies
 if [ "$CHECK_DEPS_ONLY" = true ]; then
-    bash ../lib/check-dependencies.sh
+    bash "$SCRIPT_LIB_DIR/check-dependencies.sh"
     exit $?
 fi
 
@@ -197,9 +203,15 @@ export DEBUG
 echo "╲ Hole Punch Interoperability Test Suite"
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
-# Generate test pass name and folder
-TEST_PASS_NAME="hole-punch-$(date +%H%M%S-%d-%m-%Y)"
+# Source test key generation functions
+source "$SCRIPT_LIB_DIR/lib-test-keys.sh"
+
+# Generate test run key and test pass name
+TEST_TYPE="hole-punch"
+TEST_RUN_KEY=$(compute_test_run_key "images.yaml" "$TEST_SELECT||$TEST_IGNORE||$RELAY_SELECT||$RELAY_IGNORE||$ROUTER_SELECT||$ROUTER_IGNORE||$DEBUG")
+TEST_PASS_NAME="${TEST_TYPE}-${TEST_RUN_KEY}-$(date +%H%M%S-%d-%m-%Y)"
 export TEST_PASS_DIR="$TEST_RUN_DIR/$TEST_PASS_NAME"
+export TEST_RUN_KEY
 
 echo "→ Test Pass: $TEST_PASS_NAME"
 echo "→ Cache Dir: $CACHE_DIR"
@@ -221,13 +233,20 @@ START_TIME=$(date +%s)
 
 # Create test pass directory and copy configuration
 mkdir -p "$TEST_PASS_DIR"
+mkdir -p "$TEST_PASS_DIR"/{logs,results,docker-compose}
 
 cp images.yaml "$TEST_PASS_DIR/"
+
+# Generate inputs.yaml for reproducibility
+source "$SCRIPT_LIB_DIR/lib-inputs-yaml.sh"
+generate_inputs_yaml "$TEST_PASS_DIR/inputs.yaml" "$TEST_TYPE" "${ORIGINAL_ARGS[@]}"
+
+export TEST_PASS_NAME
 
 # 1. Check dependencies
 echo "╲ Checking dependencies..."
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-if ! bash ../lib/check-dependencies.sh; then
+if ! bash "$SCRIPT_LIB_DIR/check-dependencies.sh"; then
     echo "Dependency check failed. Please install missing dependencies."
     exit 1
 fi

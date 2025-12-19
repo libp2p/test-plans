@@ -6,10 +6,12 @@ set -euo pipefail
 
 # Source common snapshot libraries
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/../../lib/lib-snapshot-creation.sh"
-source "$SCRIPT_DIR/../../lib/lib-github-snapshots.sh"
-source "$SCRIPT_DIR/../../lib/lib-snapshot-rerun.sh"
-source "$SCRIPT_DIR/../../lib/lib-snapshot-images.sh"
+SCRIPT_LIB_DIR="${SCRIPT_LIB_DIR:-$SCRIPT_DIR/../../lib}"
+source "$SCRIPT_LIB_DIR/lib-snapshot-creation.sh"
+source "$SCRIPT_LIB_DIR/lib-github-snapshots.sh"
+source "$SCRIPT_LIB_DIR/lib-snapshot-rerun.sh"
+source "$SCRIPT_LIB_DIR/lib-snapshot-images.sh"
+source "$SCRIPT_LIB_DIR/lib-inputs-yaml.sh"
 
 # Configuration
 TEST_TYPE="hole-punch"
@@ -39,6 +41,10 @@ create_snapshot_directory "$SNAPSHOT_DIR" || exit 1
 echo "→ Copying configuration and results..."
 copy_config_files "$SNAPSHOT_DIR" "$TEST_PASS_DIR" "$TEST_TYPE"
 copy_impls_directory "$SNAPSHOT_DIR"
+
+# Step 4b: Modify inputs.yaml for snapshot context
+echo "→ Modifying inputs.yaml for snapshot context..."
+modify_inputs_for_snapshot "$SNAPSHOT_DIR"
 
 # Step 5: Copy scripts
 echo "→ Copying scripts..."

@@ -12,6 +12,7 @@ source "../lib/lib-snapshot-creation.sh"
 source "../lib/lib-github-snapshots.sh"
 source "../lib/lib-snapshot-rerun.sh"
 source "../lib/lib-snapshot-images.sh"
+source "../lib/lib-inputs-yaml.sh"
 source "lib/lib-perf.sh"
 
 # Configuration
@@ -42,6 +43,10 @@ create_snapshot_directory "$SNAPSHOT_DIR" || exit 1
 echo "→ Copying configuration and results..."
 copy_config_files "$SNAPSHOT_DIR" "$TEST_PASS_DIR" "$TEST_TYPE"
 copy_impls_directory "$SNAPSHOT_DIR"
+
+# Step 4b: Modify inputs.yaml for snapshot context
+echo "→ Modifying inputs.yaml for snapshot context..."
+modify_inputs_for_snapshot "$SNAPSHOT_DIR"
 
 # Step 5: Copy scripts
 echo "→ Copying scripts..."
