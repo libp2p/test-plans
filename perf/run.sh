@@ -1,6 +1,5 @@
 #!/bin/bash
 # Main test runner for libp2p performance benchmarks
-# Similar structure to transport/run_tests.sh and hole-punch/run_tests.sh
 
 set -euo pipefail
 
@@ -98,9 +97,9 @@ Options:
   --latency-iterations VALUE    Iterations for latency test (default: 100)
   --cache-dir VALUE             Cache directory (default: /srv/cache)
   --snapshot                    Create test pass snapshot after completion
+  --debug                       Enable debug mode
   --force-matrix-rebuild        Force test matrix regeneration (bypass cache)
   --force-image-rebuild         Force Docker image rebuilds (bypass cache)
-  --debug                       Enable debug mode
   -y, --yes                     Skip confirmation prompts
   --check-deps                  Only check dependencies and exit
   --list-images                 List all image types used by this test suite and exit
@@ -108,7 +107,6 @@ Options:
   --help, -h                    Show this help message
 
 Examples:
-  $0 --cache-dir /srv/cache --workers 4
   $0 --test-select "go-v0.45" --iterations 3
   $0 --test-select "~libp2p" --snapshot
   $0 --test-ignore "js-v3.x"
@@ -138,9 +136,9 @@ while [[ $# -gt 0 ]]; do
         --latency-iterations) LATENCY_ITERATIONS="$2"; shift 2 ;;
         --cache-dir) CACHE_DIR="$2"; shift 2 ;;
         --snapshot) CREATE_SNAPSHOT=true; shift ;;
+        --debug) DEBUG=true; shift ;;
         --force-matrix-rebuild) FORCE_MATRIX_REBUILD=true; shift ;;
         --force-image-rebuild) FORCE_IMAGE_REBUILD=true; shift ;;
-        --debug) DEBUG=true; shift ;;
         -y|--yes) AUTO_YES=true; shift ;;
         --check-deps) CHECK_DEPS_ONLY=true; shift ;;
         --list-images) LIST_IMAGES=true; shift ;;
@@ -276,6 +274,8 @@ fi
 export DEBUG
 export CACHE_DIR
 
+print_header "Perf Interoperability Test Suite"
+
 # Source test key generation functions
 source "$SCRIPT_LIB_DIR/lib-test-keys.sh"
 
@@ -283,8 +283,8 @@ source "$SCRIPT_LIB_DIR/lib-test-keys.sh"
 TEST_TYPE="perf"
 TEST_RUN_KEY=$(compute_test_run_key "images.yaml" "$TEST_SELECT||$TEST_IGNORE||$BASELINE_SELECT||$BASELINE_IGNORE||$DEBUG||$ITERATIONS")
 TEST_PASS_NAME="${TEST_TYPE}-${TEST_RUN_KEY}-$(date +%H%M%S-%d-%m-%Y)"
-TEST_PASS_DIR="$TEST_RUN_DIR/$TEST_PASS_NAME"
-mkdir -p "$TEST_PASS_DIR"/{logs,results,baseline}
+export TEST_PASS_DIR="$TEST_RUN_DIR/$TEST_PASS_NAME"
+mkdir -p "$TEST_PASS_DIR"/{logs,results,baseline,docker-compose}
 export TEST_RUN_KEY
 
 # Generate inputs.yaml for reproducibility
@@ -300,6 +300,7 @@ print_header "libp2p Performance Test Suite"
 echo "  → Test Pass: $TEST_PASS_NAME"
 echo "  → Cache Dir: $CACHE_DIR"
 echo "  → Test Pass Dir: $TEST_PASS_DIR"
+echo "  → Workers: $WORKER_COUNT"
 [ -n "$TEST_SELECT" ] && echo "  → Test Select: $TEST_SELECT"
 [ -n "$TEST_IGNORE" ] && echo "  → Test Ignore: $TEST_IGNORE"
 echo "  → Upload Bytes: $(numfmt --to=iec --suffix=B $UPLOAD_BYTES 2>/dev/null || echo "${UPLOAD_BYTES} bytes")"
@@ -322,6 +323,10 @@ bash "$SCRIPT_LIB_DIR/check-dependencies.sh" docker yq || {
   exit 1
 }
 
+# Start timing (moved before server setup)
+TEST_START_TIME=$(date +%s)
+
+export TEST_PASS_NAME
 echo ""
 
 # Read and export the docker compose command detected by check-dependencies.sh
@@ -333,8 +338,6 @@ else
     exit 1
 fi
 
-# Start timing (moved before server setup)
-TEST_START_TIME=$(date +%s)
 
 # Setup remote servers (if any)
 echo ""
@@ -366,6 +369,7 @@ bash lib/generate-tests.sh || {
 # Display test selection and get confirmation
 echo ""
 print_header "Test selection..."
+echo "→ Selected tests:"
 
 # Read baseline and main test counts
 baseline_count=$(yq eval '.baselines | length' "$TEST_PASS_DIR/test-matrix.yaml" 2>/dev/null || echo "0")
@@ -470,9 +474,9 @@ for ((i=0; i<test_count; i++)); do
 done
 
 # Start global services
+echo ""
 bash lib/stop-global-services.sh || {
-  echo ""
-  echo "  ✗ Stopping global services failed"
+  print_error "Stopping global services failed"
 }
 
 # Collect results
@@ -516,6 +520,7 @@ metadata:
   duration: ${TEST_DURATION}s
   platform: $(uname -m)
   os: $(uname -s)
+  workerCount: $WORKER_COUNT
 
 summary:
   totalBaselines: $baseline_count
@@ -595,10 +600,10 @@ fi
 # Final status message
 echo ""
 if [ "$TOTAL_FAILED" -eq 0 ]; then
-    print_header "✓ All tests passed!"
+    print_success "All tests passed!"
     EXIT_FINAL=0
 else
-    print_header "✗ $TOTAL_FAILED test(s) failed"
+    print_error "$FAILED test(s) failed"
     EXIT_FINAL=1
 fi
 

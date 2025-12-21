@@ -15,6 +15,11 @@ TRANSPORT="$4"
 SECURE_CHANNEL="${5:-null}"  # Optional for standalone transports
 MUXER="${6:-null}"           # Optional for standalone transports
 
+# Compute TEST_KEY for Redis key namespacing (8-char hex)
+SCRIPT_LIB_DIR="${SCRIPT_LIB_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/lib}"
+source "$SCRIPT_LIB_DIR/lib-test-keys.sh"
+TEST_KEY=$(compute_test_key "$TEST_NAME")
+
 # Construct Docker image names with transport-interop prefix
 DIALER_IMAGE="transport-interop-${DIALER_ID}"
 LISTENER_IMAGE="transport-interop-${LISTENER_ID}"
@@ -32,7 +37,7 @@ COMPOSE_DIR="${TEST_PASS_DIR:-.}/docker-compose"
 LOG_FILE="$LOGS_DIR/${TEST_SLUG}.log"
 
 # Only log to file, no console output
-echo "Running: $TEST_NAME" >> "$LOG_FILE"
+echo "Running: $TEST_NAME (key: $TEST_KEY)" >> "$LOG_FILE"
 
 # Generate docker-compose file for this test
 COMPOSE_FILE="$COMPOSE_DIR/${TEST_SLUG}-compose.yaml"
@@ -42,7 +47,8 @@ DIALER_ENV="      - version=$DIALER_ID
       - transport=$TRANSPORT
       - is_dialer=true
       - ip=0.0.0.0
-      - redis_addr=redis:6379
+      - REDIS_ADDR=transport-redis:6379
+      - TEST_KEY=$TEST_KEY
       - debug=$DEBUG"
 
 # Add optional muxer and security for dialer
@@ -61,7 +67,8 @@ LISTENER_ENV="      - version=$LISTENER_ID
       - transport=$TRANSPORT
       - is_dialer=false
       - ip=0.0.0.0
-      - redis_addr=redis:6379
+      - REDIS_ADDR=transport-redis:6379
+      - TEST_KEY=$TEST_KEY
       - debug=$DEBUG"
 
 # Add optional muxer and security for listener
@@ -80,23 +87,16 @@ cat > "$COMPOSE_FILE" <<EOF
 name: ${TEST_SLUG}
 
 networks:
-  default:
-    driver: bridge
+  transport-network:
+    external: true
 
 services:
-  redis:
-    image: redis:7-alpine
-    container_name: ${TEST_SLUG}_redis
-    environment:
-      - REDIS_ARGS=--loglevel warning
-    command: redis-server --save "" --appendonly no
-
   listener:
     image: ${LISTENER_IMAGE}
     container_name: ${TEST_SLUG}_listener
     init: true
-    depends_on:
-      - redis
+    networks:
+      - transport-network
     environment:
 $LISTENER_ENV
 
@@ -104,8 +104,9 @@ $LISTENER_ENV
     image: ${DIALER_IMAGE}
     container_name: ${TEST_SLUG}_dialer
     depends_on:
-      - redis
       - listener
+    networks:
+      - transport-network
     environment:
 $DIALER_ENV
 EOF

@@ -9,10 +9,11 @@ set -euo pipefail
 
 # Configuration
 CACHE_DIR="${CACHE_DIR:-/srv/cache}"
-CLI_TEST_SELECT="${1:-}"
-CLI_TEST_IGNORE="${2:-}"
-DEBUG="${3:-false}"  # Optional: debug mode flag
-FORCE_MATRIX_REBUILD="${4:-false}"  # Optional: force matrix rebuild
+# Get parameters from environment (exported by run.sh - no CLI arguments)
+TEST_SELECT="${TEST_SELECT:-}"
+TEST_IGNORE="${TEST_IGNORE:-}"
+DEBUG="${DEBUG:-false}"
+FORCE_MATRIX_REBUILD="${FORCE_MATRIX_REBUILD:-false}"
 OUTPUT_DIR="${TEST_PASS_DIR:-.}"  # Use TEST_PASS_DIR if set, otherwise current directory
 
 # Standalone transports (don't require muxer/secureChannel)
@@ -38,9 +39,7 @@ load_aliases
 # Get all implementation IDs for negation expansion
 all_image_ids=($(yq eval '.implementations[].id' images.yaml))
 
-# Use test select and ignore values from CLI arguments
-TEST_SELECT="$CLI_TEST_SELECT"
-TEST_IGNORE="$CLI_TEST_IGNORE"
+# TEST_SELECT and TEST_IGNORE are already set from environment (exported by run.sh)
 
 echo ""
 print_header "Test Matrix Generation"

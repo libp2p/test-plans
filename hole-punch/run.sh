@@ -57,24 +57,15 @@ set -- "${CMD_LINE_ARGS[@]}"
 # NOW set SCRIPT_LIB_DIR (after inputs.yaml loaded, so it can be overridden)
 export SCRIPT_LIB_DIR="${SCRIPT_LIB_DIR:-$(cd "$(dirname "$0")/.." && pwd)/lib}"
 
-# Defaults (after loading inputs.yaml, so inputs.yaml can override)
-CACHE_DIR="${CACHE_DIR:-/srv/cache}"
-TEST_RUN_DIR="${TEST_RUN_DIR:-$CACHE_DIR/test-run}"
-TEST_SELECT="${TEST_SELECT:-}"
-TEST_IGNORE="${TEST_IGNORE:-}"
+# Initialize common variables (paths, flags, defaults)
+source "$SCRIPT_LIB_DIR/lib-common-init.sh"
+init_common_variables
+
+# Hole-punch-specific variables
 RELAY_SELECT="${RELAY_SELECT:-}"
 RELAY_IGNORE="${RELAY_IGNORE:-}"
 ROUTER_SELECT="${ROUTER_SELECT:-}"
 ROUTER_IGNORE="${ROUTER_IGNORE:-}"
-WORKER_COUNT="${WORKER_COUNT:-$(nproc 2>/dev/null || echo 4)}"
-CHECK_DEPS_ONLY=false
-LIST_IMAGES=false
-LIST_TESTS=false
-CREATE_SNAPSHOT=false
-AUTO_YES=false
-DEBUG=false
-FORCE_MATRIX_REBUILD=false
-FORCE_IMAGE_REBUILD=false
 
 # Source formatting library
 source "$SCRIPT_LIB_DIR/lib-output-formatting.sh"
