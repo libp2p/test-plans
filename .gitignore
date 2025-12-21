@@ -52,3 +52,6 @@ dist
 downloads/
 
 .nvim
+
+# Rust build artifacts
+target/

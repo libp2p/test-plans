@@ -45,26 +45,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  detect-changes:
-    if: github.event_name != 'workflow_dispatch'
-    runs-on: [self-hosted, linux, x64, ephemeral]
-    outputs:
-      changed-impls: ${{ steps.detect.outputs.changed-impls }}
-      has-changes: ${{ steps.detect.outputs.has-changes }}
-      impls-yaml-changed: ${{ steps.detect.outputs.impls-yaml-changed }}
-      impls-folder-changed: ${{ steps.detect.outputs.impls-folder-changed }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Detect changed implementations
-        id: detect
-        uses: ./.github/actions/detect-changed-impls
-        with:
-          test-type: transport
-
   resolve-parameters:
     runs-on: [self-hosted, linux, x64, ephemeral]
     outputs:
@@ -105,7 +85,16 @@ jobs:
           else
             # Automatic trigger - use change detection outputs
             echo "test-select=${{ steps.detect.outputs.changed-impls }}" >> $GITHUB_OUTPUT
-            echo "test-ignore=!${{ steps.detect.outputs.changed-impls }}" >> $GITHUB_OUTPUT
+
+            # Negate each implementation ID in the pipe-separated list
+            CHANGED_IMPLS="${{ steps.detect.outputs.changed-impls }}"
+            if [ -n "$CHANGED_IMPLS" ]; then
+              NEGATED_IMPLS=$(echo "$CHANGED_IMPLS" | sed 's/|/|!/g;s/^/!/')
+              echo "test-ignore=$NEGATED_IMPLS" >> $GITHUB_OUTPUT
+            else
+              echo "test-ignore=" >> $GITHUB_OUTPUT
+            fi
+
             echo "force-matrix-rebuild=${{ steps.detect.outputs.impls-yaml-changed }}" >> $GITHUB_OUTPUT
             # Force image rebuild if impls.yaml changed (commit SHA changes require new images)
             # or if impls folder changed (local implementation files changed)
@@ -127,6 +116,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Install ssh and scp
+        shell: bash
+        run: |
+          apt-get update -qq && apt-get install -y openssh-client
 
       - name: Run transport interop tests
         uses: ./.github/actions/run-bash-transport-test

@@ -27,7 +27,7 @@ on:
       relay-ignore:
         description: 'Ignore specific relays (pipe-separated substrings)'
         required: false
-        default: ''
+        default: '~failing'
         type: string
       router-select:
         description: 'Select specific routers (pipe-separated substrings)'
@@ -65,28 +65,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  detect-changes:
-    if: github.event_name != 'workflow_dispatch'
-    runs-on: [self-hosted, linux, x64, ephemeral]
-    outputs:
-      changed-impls: ${{ steps.detect.outputs.changed-impls }}
-      changed-relays: ${{ steps.detect.outputs.changed-relays }}
-      changed-routers: ${{ steps.detect.outputs.changed-routers }}
-      has-changes: ${{ steps.detect.outputs.has-changes }}
-      impls-yaml-changed: ${{ steps.detect.outputs.impls-yaml-changed }}
-      impls-folder-changed: ${{ steps.detect.outputs.impls-folder-changed }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Detect changed implementations/relays/routers
-        id: detect
-        uses: ./.github/actions/detect-changed-impls
-        with:
-          test-type: hole-punch
-
   resolve-parameters:
     runs-on: [self-hosted, linux, x64, ephemeral]
     outputs:
@@ -135,11 +113,38 @@ jobs:
           else
             # Automatic trigger - use change detection outputs
             echo "test-select=${{ steps.detect.outputs.changed-impls }}" >> $GITHUB_OUTPUT
-            echo "test-ignore=!${{ steps.detect.outputs.changed-impls }}" >> $GITHUB_OUTPUT
+
+            # Negate each implementation ID in the pipe-separated list
+            CHANGED_IMPLS="${{ steps.detect.outputs.changed-impls }}"
+            if [ -n "$CHANGED_IMPLS" ]; then
+              NEGATED_IMPLS=$(echo "$CHANGED_IMPLS" | sed 's/|/|!/g;s/^/!/')
+              echo "test-ignore=$NEGATED_IMPLS" >> $GITHUB_OUTPUT
+            else
+              echo "test-ignore=" >> $GITHUB_OUTPUT
+            fi
+
             echo "relay-select=${{ steps.detect.outputs.changed-relays }}" >> $GITHUB_OUTPUT
-            echo "relay-ignore=!${{ steps.detect.outputs.changed-relays }}" >> $GITHUB_OUTPUT
+
+            # Negate each relay ID in the pipe-separated list
+            CHANGED_RELAYS="${{ steps.detect.outputs.changed-relays }}"
+            if [ -n "$CHANGED_RELAYS" ]; then
+              NEGATED_RELAYS=$(echo "$CHANGED_RELAYS" | sed 's/|/|!/g;s/^/!/')
+              echo "relay-ignore=$NEGATED_RELAYS" >> $GITHUB_OUTPUT
+            else
+              echo "relay-ignore=" >> $GITHUB_OUTPUT
+            fi
+
             echo "router-select=${{ steps.detect.outputs.changed-routers }}" >> $GITHUB_OUTPUT
-            echo "router-ignore=!${{ steps.detect.outputs.changed-routers }}" >> $GITHUB_OUTPUT
+
+            # Negate each router ID in the pipe-separated list
+            CHANGED_ROUTERS="${{ steps.detect.outputs.changed-routers }}"
+            if [ -n "$CHANGED_ROUTERS" ]; then
+              NEGATED_ROUTERS=$(echo "$CHANGED_ROUTERS" | sed 's/|/|!/g;s/^/!/')
+              echo "router-ignore=$NEGATED_ROUTERS" >> $GITHUB_OUTPUT
+            else
+              echo "router-ignore=" >> $GITHUB_OUTPUT
+            fi
+
             echo "force-matrix-rebuild=${{ steps.detect.outputs.impls-yaml-changed }}" >> $GITHUB_OUTPUT
             echo "force-image-rebuild=${{ steps.detect.outputs.impls-folder-changed }}" >> $GITHUB_OUTPUT
             echo "debug=false" >> $GITHUB_OUTPUT

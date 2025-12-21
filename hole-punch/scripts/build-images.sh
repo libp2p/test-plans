@@ -1,8 +1,13 @@
 #!/bin/bash
-# Build Docker images for all implementations defined in impls.yaml
+# Build Docker images for all hole-punch components (relays, routers, peers)
+# Refactored to use unified YAML-based build system
 # Uses content-addressed caching under $CACHE_DIR/snapshots/
 
 set -euo pipefail
+
+# Get script directory and change to hole-punch directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR/.."
 
 # Configuration
 CACHE_DIR="${CACHE_DIR:-/srv/cache}"
@@ -10,363 +15,137 @@ RELAY_FILTER="${1:-}"      # Optional: pipe-separated relay ID filter
 ROUTER_FILTER="${2:-}"     # Optional: pipe-separated router ID filter
 IMPL_FILTER="${3:-}"       # Optional: pipe-separated implementation ID filter
 FORCE_REBUILD="${4:-false}"  # Optional: force rebuild all images
+BUILD_SCRIPT="$SCRIPT_DIR/../../scripts/build-single-image.sh"
 
 echo "  → Cache directory: $CACHE_DIR"
 [ -n "$RELAY_FILTER" ] && echo "  → Relay filter: $RELAY_FILTER"
 [ -n "$ROUTER_FILTER" ] && echo "  → Router filter: $ROUTER_FILTER"
 [ -n "$IMPL_FILTER" ] && echo "  → Implementation filter: $IMPL_FILTER"
 [ "$FORCE_REBUILD" = "true" ] && echo "  → Force rebuild: enabled"
+echo ""
 
-# Ensure cache directory exists
+# Ensure cache directories exist
 mkdir -p "$CACHE_DIR/snapshots"
+mkdir -p "$CACHE_DIR/build-yamls"
 
-# Function to build a single image from repo
-build_image_from_source() {
-    local image_name="$1"
-    local repo="$2"
-    local commit="$3"
-    local dockerfile="$4"
-    local build_context="${5:-$dockerfile}"  # Default to dockerfile path if not specified
+# Helper function to build any image type (relay/router/peer)
+# This unifies the build process - all three types use the same logic!
+build_image_type() {
+    local image_type="$1"        # relay, router, or peer
+    local yaml_section="$2"      # relays, routers, or implementations
+    local filter="$3"
+    local prefix="hole-punch-${image_type}-"
 
-    # Check if image already exists (skip if not forcing rebuild)
-    if [ "$FORCE_REBUILD" = "false" ] && docker image inspect "$image_name" &>/dev/null; then
-        echo "  ✓ $image_name (already built)"
-        return 0
-    fi
+    local count=$(yq eval ".$yaml_section | length" impls.yaml)
 
-    echo ""
-    echo "╲ Building: $image_name"
-    echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-    echo "→ Repo: $repo"
-    echo "→ Commit: ${commit:0:8}"
+    for ((i=0; i<count; i++)); do
+        local id=$(yq eval ".${yaml_section}[$i].id" impls.yaml)
 
-    snapshot_file="$CACHE_DIR/snapshots/$commit.zip"
-
-    # Download snapshot if not cached
-    if [ ! -f "$snapshot_file" ]; then
-        echo "  → [MISS] Downloading snapshot..."
-        repo_url="https://github.com/$repo/archive/$commit.zip"
-        wget -q -O "$snapshot_file" "$repo_url" || {
-            echo "✗ Failed to download snapshot"
-            return 1
-        }
-
-        # Create metadata file
-        cat > "$snapshot_file.metadata" <<EOF
-url: $repo_url
-downloadedAt: $(date -u +%Y-%m-%dT%H:%M:%SZ)
-size: $(stat -f%z "$snapshot_file" 2>/dev/null || stat -c%s "$snapshot_file")
-repo: $repo
-commit: $commit
-EOF
-        echo "  ✓ Added to cache: ${commit:0:8}.zip"
-    else
-        echo "  ✓ [HIT] Using cached snapshot: ${commit:0:8}.zip"
-    fi
-
-    # Extract snapshot to temporary directory
-    work_dir=$(mktemp -d)
-    trap "rm -rf $work_dir" EXIT
-
-    echo "→ Extracting snapshot..."
-    unzip -q "$snapshot_file" -d "$work_dir"
-
-    # Find extracted directory (GitHub archives are named repo-commit)
-    repo_name=$(basename "$repo")
-    extracted_dir="$work_dir/$repo_name-$commit"
-
-    if [ ! -d "$extracted_dir" ]; then
-        echo "✗ Expected directory not found: $extracted_dir"
-        ls -la "$work_dir"
-        rm -rf "$work_dir"
-        trap - EXIT
-        return 1
-    fi
-
-    # Determine build context directory
-    local context_dir="$extracted_dir"
-    if [ "$build_context" != "$dockerfile" ]; then
-        # If build context is different from dockerfile location, use it
-        context_dir="$extracted_dir/$(dirname "$build_context")"
-    fi
-
-    # Build Docker image
-    echo "→ Building Docker image..."
-    echo "→ Command: docker build -f $extracted_dir/$dockerfile -t $image_name $context_dir"
-    if ! docker build -f "$extracted_dir/$dockerfile" -t "$image_name" "$context_dir" 2>&1 | grep -E "^(#|Step|Successfully|ERROR)"; then
-        echo "✗ Docker build failed"
-        rm -rf "$work_dir"
-        trap - EXIT
-        return 1
-    fi
-
-    echo "✓ Built: $image_name"
-
-    # Clean up
-    rm -rf "$work_dir"
-    trap - EXIT
-}
-
-# Build relay images if needed
-build_relay_images() {
-    local relay_count=$(yq eval '.relays | length' impls.yaml)
-
-    for ((i=0; i<relay_count; i++)); do
-        local relay_id=$(yq eval ".relays[$i].id" impls.yaml)
-        local relay_image="hole-punch-relay-${relay_id}"
-        local relay_type=$(yq eval ".relays[$i].source.type" impls.yaml)
-
-        # Apply filter if specified (substring match on pipe-separated list)
-        if [ -n "$RELAY_FILTER" ]; then
+        # Apply filter if specified
+        if [ -n "$filter" ]; then
             match_found=false
-            IFS='|' read -ra FILTER_PATTERNS <<< "$RELAY_FILTER"
+            IFS='|' read -ra FILTER_PATTERNS <<< "$filter"
             for pattern in "${FILTER_PATTERNS[@]}"; do
-                if [[ "$relay_id" == *"$pattern"* ]]; then
+                if [[ "$id" == *"$pattern"* ]]; then
                     match_found=true
                     break
                 fi
             done
             if [ "$match_found" = false ]; then
-                continue  # Skip silently
+                continue
             fi
         fi
 
+        local image_name="${prefix}${id}"
+        local source_type=$(yq eval ".${yaml_section}[$i].source.type" impls.yaml)
+
         # Check if image already exists (skip if not forcing rebuild)
-        if [ "$FORCE_REBUILD" = "false" ] && docker image inspect "$relay_image" &>/dev/null; then
-            echo "  ✓ $relay_image (already built)"
+        if [ "$FORCE_REBUILD" = "false" ] && docker image inspect "$image_name" &>/dev/null; then
+            echo "  ✓ $image_name (already built)"
             continue
         fi
 
-        echo ""
-        echo "╲ Building relay: $relay_id ($relay_image)"
-        echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+        # Create YAML file for this build
+        local yaml_file="$CACHE_DIR/build-yamls/docker-build-${image_type}-${id}.yaml"
 
-        if [ "$relay_type" = "local" ]; then
-            local relay_path=$(yq eval ".relays[$i].source.path" impls.yaml)
-            local relay_dockerfile=$(yq eval ".relays[$i].source.dockerfile" impls.yaml)
+        cat > "$yaml_file" <<EOF
+imageName: $image_name
+imageType: $image_type
+imagePrefix: $prefix
+sourceType: $source_type
+buildLocation: local
+cacheDir: $CACHE_DIR
+forceRebuild: $FORCE_REBUILD
+outputStyle: clean
+EOF
 
-            echo "→ Building from local path: $relay_path"
-            echo "→ Command: docker build -f $relay_path/$relay_dockerfile -t $relay_image $relay_path"
+        # Add source-specific parameters
+        case "$source_type" in
+            github)
+                local repo=$(yq eval ".${yaml_section}[$i].source.repo" impls.yaml)
+                local commit=$(yq eval ".${yaml_section}[$i].source.commit" impls.yaml)
+                local dockerfile=$(yq eval ".${yaml_section}[$i].source.dockerfile" impls.yaml)
+                local build_context=$(yq eval ".${yaml_section}[$i].source.buildContext // \".\"" impls.yaml)
+                local requires_submodules=$(yq eval ".${yaml_section}[$i].source.requiresSubmodules // false" impls.yaml)
 
-            if ! docker build -f "$relay_path/$relay_dockerfile" -t "$relay_image" "$relay_path" 2>&1 | grep -E "^(#|Step|Successfully|ERROR)"; then
-                echo "✗ Docker build failed"
-                return 1
-            fi
+                cat >> "$yaml_file" <<EOF
 
-            echo "✓ Built: $relay_image"
-        else
-            local relay_repo=$(yq eval ".relays[$i].source.repo" impls.yaml)
-            local relay_commit=$(yq eval ".relays[$i].source.commit" impls.yaml)
-            local relay_dockerfile=$(yq eval ".relays[$i].source.dockerfile" impls.yaml)
-            local relay_context=$(yq eval ".relays[$i].source.buildContext" impls.yaml)
+github:
+  repo: $repo
+  commit: $commit
+  dockerfile: $dockerfile
+  buildContext: $build_context
 
-            build_image_from_source "$relay_image" "$relay_repo" "$relay_commit" "$relay_dockerfile" "$relay_context"
-        fi
-    done
-}
+requiresSubmodules: $requires_submodules
+EOF
+                ;;
 
-# Build router images if needed
-build_router_images() {
-    local router_count=$(yq eval '.routers | length' impls.yaml)
+            local)
+                local local_path=$(yq eval ".${yaml_section}[$i].source.path" impls.yaml)
+                local dockerfile=$(yq eval ".${yaml_section}[$i].source.dockerfile" impls.yaml)
 
-    for ((i=0; i<router_count; i++)); do
-        local router_id=$(yq eval ".routers[$i].id" impls.yaml)
-        local router_image="hole-punch-router-${router_id}"
-        local router_type=$(yq eval ".routers[$i].source.type" impls.yaml)
+                cat >> "$yaml_file" <<EOF
 
-        # Apply filter if specified (substring match on pipe-separated list)
-        if [ -n "$ROUTER_FILTER" ]; then
-            match_found=false
-            IFS='|' read -ra FILTER_PATTERNS <<< "$ROUTER_FILTER"
-            for pattern in "${FILTER_PATTERNS[@]}"; do
-                if [[ "$router_id" == *"$pattern"* ]]; then
-                    match_found=true
-                    break
-                fi
-            done
-            if [ "$match_found" = false ]; then
-                continue  # Skip silently
-            fi
-        fi
+local:
+  path: $local_path
+  dockerfile: $dockerfile
+EOF
+                ;;
 
-        # Check if image already exists (skip if not forcing rebuild)
-        if [ "$FORCE_REBUILD" = "false" ] && docker image inspect "$router_image" &>/dev/null; then
-            echo "  ✓ $router_image (already built)"
-            continue
-        fi
+            browser)
+                local base_image=$(yq eval ".${yaml_section}[$i].source.baseImage" impls.yaml)
+                local browser=$(yq eval ".${yaml_section}[$i].source.browser" impls.yaml)
+                local dockerfile=$(yq eval ".${yaml_section}[$i].source.dockerfile" impls.yaml)
+                local build_context=$(dirname "$dockerfile")
 
-        echo ""
-        echo "╲ Building router: $router_id ($router_image)"
-        echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+                cat >> "$yaml_file" <<EOF
 
-        if [ "$router_type" = "local" ]; then
-            local router_path=$(yq eval ".routers[$i].source.path" impls.yaml)
-            local router_dockerfile=$(yq eval ".routers[$i].source.dockerfile" impls.yaml)
+browser:
+  baseImage: $base_image
+  browser: $browser
+  dockerfile: $dockerfile
+  buildContext: $build_context
+EOF
+                ;;
 
-            echo "→ Building from local path: $router_path"
-            echo "→ Command: docker build -f $router_path/$router_dockerfile -t $router_image $router_path"
+            *)
+                echo "✗ Unknown source type: $source_type"
+                exit 1
+                ;;
+        esac
 
-            if ! docker build -f "$router_path/$router_dockerfile" -t "$router_image" "$router_path" 2>&1 | grep -E "^(#|Step|Successfully|ERROR)"; then
-                echo "✗ Docker build failed"
-                return 1
-            fi
-
-            echo "✓ Built: $router_image"
-        else
-            local router_repo=$(yq eval ".routers[$i].source.repo" impls.yaml)
-            local router_commit=$(yq eval ".routers[$i].source.commit" impls.yaml)
-            local router_dockerfile=$(yq eval ".routers[$i].source.dockerfile" impls.yaml)
-            local router_context=$(yq eval ".routers[$i].source.buildContext" impls.yaml)
-
-            build_image_from_source "$router_image" "$router_repo" "$router_commit" "$router_dockerfile" "$router_context"
-        fi
-    done
-}
-
-# Build relays and routers first
-build_relay_images
-build_router_images
-
-# Parse impls.yaml and build each implementation
-impl_count=$(yq eval '.implementations | length' impls.yaml)
-
-for ((i=0; i<impl_count; i++)); do
-    # Extract implementation details
-    impl_id=$(yq eval ".implementations[$i].id" impls.yaml)
-    impl_image="hole-punch-peer-${impl_id}"
-    source_type=$(yq eval ".implementations[$i].source.type" impls.yaml)
-
-    # Apply filter if specified (substring match on pipe-separated list)
-    if [ -n "$IMPL_FILTER" ]; then
-        # Check if impl_id matches any of the pipe-separated filter patterns
-        match_found=false
-        IFS='|' read -ra FILTER_PATTERNS <<< "$IMPL_FILTER"
-        for pattern in "${FILTER_PATTERNS[@]}"; do
-            if [[ "$impl_id" == *"$pattern"* ]]; then
-                match_found=true
-                break
-            fi
-        done
-        if [ "$match_found" = false ]; then
-            continue  # Skip silently
-        fi
-    fi
-
-    # Check if image already exists (skip if not forcing rebuild)
-    if [ "$FORCE_REBUILD" = "false" ] && docker image inspect "$impl_image" &>/dev/null; then
-        echo "  ✓ $impl_image (already built)"
-        continue
-    fi
-
-    echo ""
-    echo "╲ Building peer: $impl_id ($impl_image)"
-    echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-
-    if [ "$source_type" = "local" ]; then
-        impl_path=$(yq eval ".implementations[$i].source.path" impls.yaml)
-        impl_dockerfile=$(yq eval ".implementations[$i].source.dockerfile" impls.yaml)
-
-        echo "→ Building from local path: $impl_path"
-        echo "→ Command: docker build -f $impl_path/$impl_dockerfile -t $impl_image $impl_path"
-
-        if ! docker build -f "$impl_path/$impl_dockerfile" -t "$impl_image" "$impl_path" 2>&1 | grep -E "^(#|Step|Successfully|ERROR)"; then
-            echo "✗ Docker build failed"
-            exit 1
-        fi
-
-        echo "✓ Built: $impl_image"
-        continue
-    fi
-
-    # GitHub source
-    repo=$(yq eval ".implementations[$i].source.repo" impls.yaml)
-    commit=$(yq eval ".implementations[$i].source.commit" impls.yaml)
-    dockerfile=$(yq eval ".implementations[$i].source.dockerfile" impls.yaml)
-
-    echo "→ Repo: $repo"
-    echo "→ Commit: ${commit:0:8}"
-
-    snapshot_file="$CACHE_DIR/snapshots/$commit.zip"
-
-    # Download snapshot if not cached
-    if [ ! -f "$snapshot_file" ]; then
-        echo "  → [MISS] Downloading snapshot..."
-        repo_url="https://github.com/$repo/archive/$commit.zip"
-        wget -q -O "$snapshot_file" "$repo_url" || {
-            echo "✗ Failed to download snapshot"
+        # Execute build using unified build system
+        bash "$BUILD_SCRIPT" "$yaml_file" || {
+            echo "✗ Build failed for ${image_type}: $id"
             exit 1
         }
+    done
+}
 
-        # Create metadata file
-        cat > "$snapshot_file.metadata" <<EOF
-url: $repo_url
-downloadedAt: $(date -u +%Y-%m-%dT%H:%M:%SZ)
-size: $(stat -f%z "$snapshot_file" 2>/dev/null || stat -c%s "$snapshot_file")
-repo: $repo
-commit: $commit
-EOF
-        echo "  ✓ Added to cache: ${commit:0:8}.zip"
-    else
-        echo "  ✓ [HIT] Using cached snapshot: ${commit:0:8}.zip"
-    fi
-
-    # Extract snapshot to temporary directory
-    work_dir=$(mktemp -d)
-    trap "rm -rf $work_dir" EXIT
-
-    echo "→ Extracting snapshot..."
-    unzip -q "$snapshot_file" -d "$work_dir"
-
-    # Find extracted directory (GitHub archives are named repo-commit)
-    repo_name=$(basename "$repo")
-    extracted_dir="$work_dir/$repo_name-$commit"
-
-    if [ ! -d "$extracted_dir" ]; then
-        echo "✗ Expected directory not found: $extracted_dir"
-        ls -la "$work_dir"
-        exit 1
-    fi
-
-    # Build Docker image
-    echo "→ Building Docker image..."
-    echo "→ Command: docker build -f $extracted_dir/$dockerfile -t $impl_image $extracted_dir"
-    if ! docker build -f "$extracted_dir/$dockerfile" -t "$impl_image" "$extracted_dir" 2>&1 | grep -E "^(#|Step|Successfully|ERROR)"; then
-        echo "✗ Docker build failed"
-        exit 1
-    fi
-
-    # Get image ID (strip sha256: prefix)
-    image_id=$(docker image inspect "$impl_image" -f '{{.Id}}' | cut -d':' -f2)
-
-    # Generate image.yaml in impl directory
-    impl_lang=$(echo "$impl_id" | cut -d'-' -f1)
-    impl_version=$(echo "$impl_id" | cut -d'-' -f2)
-
-    # Determine output location (if version directory exists)
-    if [ -d "impls/$impl_lang/$impl_version" ]; then
-        image_yaml="impls/$impl_lang/$impl_version/image.yaml"
-    else
-        # Store in impl lang directory
-        image_yaml="impls/$impl_lang/image-$impl_version.yaml"
-    fi
-
-    cat > "$image_yaml" <<EOF
-imageID: $image_id
-imageName: $impl_image
-builtAt: $(date -u +%Y-%m-%dT%H:%M:%SZ)
-arch: $(uname -m)
-snapshot: snapshots/$commit.zip
-commit: $commit
-repo: $repo
-EOF
-
-    echo "✓ Built: $impl_image"
-    echo "✓ Image ID: ${image_id:0:12}..."
-
-    # Clean up
-    rm -rf "$work_dir"
-    trap - EXIT
-done
+# Build all image types using the same unified process
+build_image_type "relay" "relays" "$RELAY_FILTER"
+build_image_type "router" "routers" "$ROUTER_FILTER"
+build_image_type "peer" "implementations" "$IMPL_FILTER"
 
 echo ""
 echo "✓ All required images built successfully"

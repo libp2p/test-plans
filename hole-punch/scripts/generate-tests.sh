@@ -47,60 +47,60 @@ echo ""
 echo "╲ Test Matrix Generation"
 echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
 
-# Display test selection
+# Display and expand test selection (aliases + negations)
 if [ -n "$TEST_SELECT" ]; then
     echo "→ Test select: $TEST_SELECT"
+    ORIGINAL_SELECT="$TEST_SELECT"
+    TEST_SELECT=$(expand_all_patterns "$TEST_SELECT" "impls.yaml")
+    echo "  → Expanded to: $TEST_SELECT"
 else
     echo "→ No test-select specified (will include all tests)"
 fi
 
-# Expand aliases in TEST_SELECT
-if [ -n "$TEST_SELECT" ]; then
-    ORIGINAL_SELECT="$TEST_SELECT"
-    TEST_SELECT=$(expand_aliases "$TEST_SELECT")
-    if [ "$TEST_SELECT" != "$ORIGINAL_SELECT" ]; then
-        echo "  → Expanded aliases to: $TEST_SELECT"
-    fi
-fi
-
-# Display test ignore
+# Display and expand test ignore (aliases + negations)
 if [ -n "$TEST_IGNORE" ]; then
     echo "→ Test ignore: $TEST_IGNORE"
+    ORIGINAL_IGNORE="$TEST_IGNORE"
+    TEST_IGNORE=$(expand_all_patterns "$TEST_IGNORE" "impls.yaml")
+    echo "  → Expanded to: $TEST_IGNORE"
 else
     echo "→ No test-ignore specified"
 fi
 
-# Expand aliases in TEST_IGNORE
-if [ -n "$TEST_IGNORE" ]; then
-    ORIGINAL_IGNORE="$TEST_IGNORE"
-    TEST_IGNORE=$(expand_aliases "$TEST_IGNORE")
-    if [ "$TEST_IGNORE" != "$ORIGINAL_IGNORE" ]; then
-        echo "  → Expanded aliases to: $TEST_IGNORE"
-    fi
-fi
-
-# Display relay selection
+# Display and expand relay selection (aliases + negations)
 if [ -n "$RELAY_SELECT" ]; then
     echo "→ Relay select: $RELAY_SELECT"
+    ORIGINAL_RELAY_SELECT="$RELAY_SELECT"
+    RELAY_SELECT=$(expand_all_patterns "$RELAY_SELECT" "impls.yaml")
+    echo "  → Expanded to: $RELAY_SELECT"
 else
     echo "→ No relay-select specified (will include all relays)"
 fi
 
-# Display relay ignore
+# Display and expand relay ignore (aliases + negations)
 if [ -n "$RELAY_IGNORE" ]; then
     echo "→ Relay ignore: $RELAY_IGNORE"
+    ORIGINAL_RELAY_IGNORE="$RELAY_IGNORE"
+    RELAY_IGNORE=$(expand_all_patterns "$RELAY_IGNORE" "impls.yaml")
+    echo "  → Expanded to: $RELAY_IGNORE"
 fi
 
-# Display router selection
+# Display and expand router selection (aliases + negations)
 if [ -n "$ROUTER_SELECT" ]; then
     echo "→ Router select: $ROUTER_SELECT"
+    ORIGINAL_ROUTER_SELECT="$ROUTER_SELECT"
+    ROUTER_SELECT=$(expand_all_patterns "$ROUTER_SELECT" "impls.yaml")
+    echo "  → Expanded to: $ROUTER_SELECT"
 else
     echo "→ No router-select specified (will include all routers)"
 fi
 
-# Display router ignore
+# Display and expand router ignore (aliases + negations)
 if [ -n "$ROUTER_IGNORE" ]; then
     echo "→ Router ignore: $ROUTER_IGNORE"
+    ORIGINAL_ROUTER_IGNORE="$ROUTER_IGNORE"
+    ROUTER_IGNORE=$(expand_all_patterns "$ROUTER_IGNORE" "impls.yaml")
+    echo "  → Expanded to: $ROUTER_IGNORE"
 fi
 
 # Compute cache key from impls.yaml + all filters + debug

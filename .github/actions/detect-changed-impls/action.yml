@@ -3,7 +3,7 @@ description: "Detect which implementations/relays/routers have changed in impls.
 
 inputs:
   test-type:
-    description: "Type of test (transport or hole-punch)"
+    description: "Type of test (transport, hole-punch, or perf)"
     required: true
   base-ref:
     description: "Base branch to compare against"
@@ -20,6 +20,9 @@ outputs:
   changed-routers:
     description: "Pipe-separated list of changed router IDs (hole-punch only)"
     value: ${{ steps.detect.outputs.changed-routers }}
+  changed-baselines:
+    description: "Pipe-separated list of changed baseline IDs (perf only)"
+    value: ${{ steps.detect.outputs.changed-baselines }}
   has-changes:
     description: "Boolean indicating if any changes were detected"
     value: ${{ steps.detect.outputs.has-changes }}
@@ -49,8 +52,11 @@ runs:
         elif [ "$TEST_TYPE" = "hole-punch" ]; then
           IMPLS_FILE="hole-punch/impls.yaml"
           IMPLS_DIR="hole-punch/impls"
+        elif [ "$TEST_TYPE" = "perf" ]; then
+          IMPLS_FILE="perf/impls.yaml"
+          IMPLS_DIR="perf/impls"
         else
-          echo "Error: Invalid test-type. Must be 'transport' or 'hole-punch'"
+          echo "Error: Invalid test-type. Must be 'transport', 'hole-punch', or 'perf'"
           exit 1
         fi
 
@@ -63,6 +69,7 @@ runs:
         CHANGED_IMPLS=""
         CHANGED_RELAYS=""
         CHANGED_ROUTERS=""
+        CHANGED_BASELINES=""
         IMPLS_YAML_CHANGED="false"
         IMPLS_FOLDER_CHANGED="false"
 
@@ -137,6 +144,29 @@ runs:
             done
           fi
 
+          # For perf: also check baselines
+          if [ "$TEST_TYPE" = "perf" ]; then
+            # Check baselines
+            OLD_BASELINES=$(yq eval '.baselines[].id' /tmp/impls-old.yaml 2>/dev/null | sort || echo "")
+            NEW_BASELINES=$(yq eval '.baselines[].id' /tmp/impls-new.yaml 2>/dev/null | sort || echo "")
+
+            for baseline_id in $NEW_BASELINES; do
+              if echo "$OLD_BASELINES" | grep -q "^${baseline_id}$"; then
+                # Exists in old, check if content changed
+                OLD_BASELINE=$(yq eval ".baselines[] | select(.id == \"$baseline_id\")" /tmp/impls-old.yaml 2>/dev/null || echo "")
+                NEW_BASELINE=$(yq eval ".baselines[] | select(.id == \"$baseline_id\")" /tmp/impls-new.yaml 2>/dev/null || echo "")
+                if [ "$OLD_BASELINE" != "$NEW_BASELINE" ]; then
+                  CHANGED_BASELINES="${CHANGED_BASELINES:+$CHANGED_BASELINES|}$baseline_id"
+                  echo "  → Changed baseline: $baseline_id"
+                fi
+              else
+                # New baseline
+                CHANGED_BASELINES="${CHANGED_BASELINES:+$CHANGED_BASELINES|}$baseline_id"
+                echo "  → New baseline: $baseline_id"
+              fi
+            done
+          fi
+
           rm -f /tmp/impls-old.yaml /tmp/impls-new.yaml
         fi
 
@@ -167,8 +197,10 @@ runs:
                 # Construct full path for comparison
                 if [ "$TEST_TYPE" = "transport" ]; then
                   FULL_SOURCE_PATH="transport/$SOURCE_PATH"
-                else
+                elif [ "$TEST_TYPE" = "hole-punch" ]; then
                   FULL_SOURCE_PATH="hole-punch/$SOURCE_PATH"
+                elif [ "$TEST_TYPE" = "perf" ]; then
+                  FULL_SOURCE_PATH="perf/$SOURCE_PATH"
                 fi
 
                 # Check if changed file is within this source path
@@ -221,6 +253,27 @@ runs:
                 fi
               done
             fi
+
+            # For perf: also check baselines
+            if [ "$TEST_TYPE" = "perf" ]; then
+              # Check baselines
+              BASELINE_COUNT=$(yq eval '.baselines | length' "$IMPLS_FILE" 2>/dev/null || echo "0")
+              for ((i=0; i<BASELINE_COUNT; i++)); do
+                SOURCE_TYPE=$(yq eval ".baselines[$i].source.type" "$IMPLS_FILE" 2>/dev/null)
+                if [ "$SOURCE_TYPE" = "local" ]; then
+                  SOURCE_PATH=$(yq eval ".baselines[$i].source.path" "$IMPLS_FILE")
+                  FULL_SOURCE_PATH="perf/$SOURCE_PATH"
+
+                  if [[ "$changed_file" == "$FULL_SOURCE_PATH"* ]]; then
+                    BASELINE_ID=$(yq eval ".baselines[$i].id" "$IMPLS_FILE")
+                    if [[ "|$CHANGED_BASELINES|" != *"|$BASELINE_ID|"* ]]; then
+                      CHANGED_BASELINES="${CHANGED_BASELINES:+$CHANGED_BASELINES|}$BASELINE_ID"
+                      echo "    ✓ Matched to baseline: $BASELINE_ID"
+                    fi
+                  fi
+                fi
+              done
+            fi
           done <<< "$IMPLS_FOLDER_FILES"
         fi
 
@@ -228,13 +281,19 @@ runs:
         echo "changed-impls=$CHANGED_IMPLS" >> $GITHUB_OUTPUT
         echo "changed-relays=$CHANGED_RELAYS" >> $GITHUB_OUTPUT
         echo "changed-routers=$CHANGED_ROUTERS" >> $GITHUB_OUTPUT
+        echo "changed-baselines=$CHANGED_BASELINES" >> $GITHUB_OUTPUT
         echo "impls-yaml-changed=$IMPLS_YAML_CHANGED" >> $GITHUB_OUTPUT
         echo "impls-folder-changed=$IMPLS_FOLDER_CHANGED" >> $GITHUB_OUTPUT
 
         # Set has-changes
-        if [ -n "$CHANGED_IMPLS" ] || [ -n "$CHANGED_RELAYS" ] || [ -n "$CHANGED_ROUTERS" ]; then
+        if [ -n "$CHANGED_IMPLS" ] || [ -n "$CHANGED_RELAYS" ] || [ -n "$CHANGED_ROUTERS" ] || [ -n "$CHANGED_BASELINES" ]; then
           echo "has-changes=true" >> $GITHUB_OUTPUT
-          echo "→ Summary: impls=$CHANGED_IMPLS, relays=$CHANGED_RELAYS, routers=$CHANGED_ROUTERS"
+          # Update summary to include baselines
+          if [ "$TEST_TYPE" = "perf" ]; then
+            echo "→ Summary: impls=$CHANGED_IMPLS, relays=$CHANGED_RELAYS, routers=$CHANGED_ROUTERS, baselines=$CHANGED_BASELINES"
+          else
+            echo "→ Summary: impls=$CHANGED_IMPLS, relays=$CHANGED_RELAYS, routers=$CHANGED_ROUTERS"
+          fi
         else
           echo "has-changes=false" >> $GITHUB_OUTPUT
           echo "→ No relevant changes detected"

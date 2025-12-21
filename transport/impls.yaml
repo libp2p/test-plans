@@ -31,7 +31,7 @@ test-aliases:
   - alias: "eth-p2p"
     value: "eth-p2p-z-v0.0.1"
   - alias: "failing"
-    value: "js-v2.x|c-v0.0.1"
+    value: ""
 
 implementations:
   # Rust implementations
@@ -160,8 +160,9 @@ implementations:
   - id: python-v0.4
     source:
       type: github
-      repo: libp2p/py-libp2p
-      commit: 999b326e168e26ca771a120d2db10e83341802d7
+      repo: sumanjeet0012/py-libp2p
+      commit: e79b6e9f2d7adf6cd1d089e6696d39f43af12c6f
+
       dockerfile: interop/transport/Dockerfile
     transports: [tcp, ws, wss, quic-v1, webrtc-direct]
     secureChannels: [noise]

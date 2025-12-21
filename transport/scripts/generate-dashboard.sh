@@ -109,87 +109,74 @@ if [ "$test_count" -gt 0 ]; then
 
 ---
 
-## Matrix View by Transport
+## Matrix View by Transport + Secure Channel + Muxer
 
 EOF
 
-    # Generate matrix view grouped by transport
-    transports=$(yq eval '.tests[].transport' "$RESULTS_FILE" | sort -u)
+    # Generate matrix view grouped by transport + secure channel + muxer combination
+    # Get all unique combinations (transport|secureChannel|muxer)
+    combinations=$(yq eval '.tests[] | .transport + "|" + (.secureChannel // "null") + "|" + (.muxer // "null")' "$RESULTS_FILE" | sort -u)
 
-for transport in $transports; do
-    echo "### Transport: $transport" >> "$OUTPUT_FILE"
-    echo "" >> "$OUTPUT_FILE"
+    for combo in $combinations; do
+        IFS='|' read -r transport secure muxer <<< "$combo"
 
-    # Get unique dialers and listeners for this transport
-    dialers=$(yq eval ".tests[] | select(.transport == \"$transport\") | .dialer" "$RESULTS_FILE" | sort -u)
-    listeners=$(yq eval ".tests[] | select(.transport == \"$transport\") | .listener" "$RESULTS_FILE" | sort -u)
+        # Create table title based on combination
+        if [ "$secure" = "null" ] || [ "$muxer" = "null" ]; then
+            echo "### $transport" >> "$OUTPUT_FILE"
+        else
+            echo "### $transport + $secure + $muxer" >> "$OUTPUT_FILE"
+        fi
+        echo "" >> "$OUTPUT_FILE"
 
-    # Create header row
-    echo -n "| Dialer \\ Listener |" >> "$OUTPUT_FILE"
-    for listener in $listeners; do
-        echo -n " $listener |" >> "$OUTPUT_FILE"
-    done
-    echo "" >> "$OUTPUT_FILE"
+        # Get unique dialers and listeners for THIS SPECIFIC COMBINATION
+        dialers=$(yq eval ".tests[] | select(.transport == \"$transport\" and (.secureChannel // \"null\") == \"$secure\" and (.muxer // \"null\") == \"$muxer\") | .dialer" "$RESULTS_FILE" | sort -u)
+        listeners=$(yq eval ".tests[] | select(.transport == \"$transport\" and (.secureChannel // \"null\") == \"$secure\" and (.muxer // \"null\") == \"$muxer\") | .listener" "$RESULTS_FILE" | sort -u)
 
-    # Create separator row
-    echo -n "|---|" >> "$OUTPUT_FILE"
-    for listener in $listeners; do
-        echo -n "---|" >> "$OUTPUT_FILE"
-    done
-    echo "" >> "$OUTPUT_FILE"
-
-    # Create data rows
-    for dialer in $dialers; do
-        echo -n "| **$dialer** |" >> "$OUTPUT_FILE"
-
+        # Create header row
+        echo -n "| Dialer \\ Listener |" >> "$OUTPUT_FILE"
         for listener in $listeners; do
-            result=""
-
-            # Try all possible secure/muxer combinations using hash map lookups (O(1) instead of O(n))
-            # This is much faster than searching through all tests linearly
-            for secure in "tls" "noise" "plaintext" "null"; do
-                for muxer in "yamux" "mplex" "null"; do
-                    # Construct test name based on whether it's standalone
-                    if [ "$secure" = "null" ] || [ "$muxer" = "null" ]; then
-                        test_name="$dialer x $listener ($transport)"
-                    else
-                        test_name="$dialer x $listener ($transport, $secure, $muxer)"
-                    fi
-
-                    # O(1) hash map lookup instead of O(n) linear search
-                    if [ -n "${test_status_map[$test_name]:-}" ]; then
-                        test_status="${test_status_map[$test_name]}"
-                        test_secure="${test_secure_map[$test_name]}"
-                        test_muxer="${test_muxer_map[$test_name]}"
-
-                        if [ "$test_status" = "pass" ]; then
-                            icon="✅"
-                        else
-                            icon="❌"
-                        fi
-
-                        # For standalone transports, just show icon
-                        if [ "$test_secure" = "null" ] || [ "$test_muxer" = "null" ]; then
-                            result="${result}${icon} "
-                        else
-                            # Show secure/muxer combo
-                            result="${result}${icon}${test_secure:0:1}/${test_muxer:0:1} "
-                        fi
-                    fi
-                done
-            done
-
-            if [ -z "$result" ]; then
-                result="-"
-            fi
-
-            echo -n " $result |" >> "$OUTPUT_FILE"
+            echo -n " $listener |" >> "$OUTPUT_FILE"
         done
         echo "" >> "$OUTPUT_FILE"
-    done
 
-    echo "" >> "$OUTPUT_FILE"
-done
+        # Create separator row
+        echo -n "|---|" >> "$OUTPUT_FILE"
+        for listener in $listeners; do
+            echo -n "---|" >> "$OUTPUT_FILE"
+        done
+        echo "" >> "$OUTPUT_FILE"
+
+        # Create data rows
+        for dialer in $dialers; do
+            echo -n "| **$dialer** |" >> "$OUTPUT_FILE"
+
+            for listener in $listeners; do
+                # Construct test name for this specific combination
+                if [ "$secure" = "null" ] || [ "$muxer" = "null" ]; then
+                    test_name="$dialer x $listener ($transport)"
+                else
+                    test_name="$dialer x $listener ($transport, $secure, $muxer)"
+                fi
+
+                # Use O(1) hash map lookup
+                if [ -n "${test_status_map[$test_name]:-}" ]; then
+                    test_status="${test_status_map[$test_name]}"
+                    if [ "$test_status" = "pass" ]; then
+                        icon="✅"
+                    else
+                        icon="❌"
+                    fi
+                    echo -n " $icon |" >> "$OUTPUT_FILE"
+                else
+                    # No test run for this combination
+                    echo -n " - |" >> "$OUTPUT_FILE"
+                fi
+            done
+            echo "" >> "$OUTPUT_FILE"
+        done
+
+        echo "" >> "$OUTPUT_FILE"
+    done
 fi
 
 cat >> "$OUTPUT_FILE" <<EOF
@@ -200,10 +187,12 @@ cat >> "$OUTPUT_FILE" <<EOF
 
 - ✅ Test passed
 - ❌ Test failed
-- **n/y** = noise/yamux, **t/m** = tls/mplex, etc.
-- Transports: tcp, ws, quic-v1, webrtc-direct, webtransport
-- Secure channels: noise (n), tls (t), plaintext (p)
-- Muxers: yamux (y), mplex (m)
+- **-** No test run for this combination
+- Each table shows results for a specific transport + secure channel + muxer combination
+- Standalone transports (quic-v1, webrtc-direct, webtransport) have one table each
+- Non-standalone transports (tcp, ws) have multiple tables (one per secure+muxer combo)
+- Dialers are shown on the Y-axis (rows)
+- Listeners are shown on the X-axis (columns)
 
 ---
 
