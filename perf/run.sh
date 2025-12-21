@@ -502,8 +502,6 @@ FAILED=0
 if [ -f "$TEST_PASS_DIR/results.yaml.tmp" ]; then
     PASSED=$(grep -c "status: pass" "$TEST_PASS_DIR/results.yaml.tmp" || true)
     FAILED=$(grep -c "status: fail" "$TEST_PASS_DIR/results.yaml.tmp" || true)
-    PASSED=${PASSED:-0}
-    FAILED=${FAILED:-0}
 fi
 
 # Total counts
@@ -609,9 +607,11 @@ fi
 
 # Create snapshot (if requested)
 if [ "$CREATE_SNAPSHOT" = true ]; then
-  bash lib/create-snapshot.sh || {
-    echo "  ✗ Snapshot creation failed"
-  }
+    echo ""
+    print_header "Creating test pass snapshot..."
+    bash lib/create-snapshot.sh || {
+      echo "  ✗ Snapshot creation failed"
+    }
 fi
 
 exit $EXIT_FINAL

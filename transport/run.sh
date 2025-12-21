@@ -496,8 +496,12 @@ DURATION=$((END_TIME - TEST_START_TIME))
 
 
 # Count pass/fail from individual result files
-PASSED=$(grep -h "^status: pass" "$TEST_PASS_DIR"/results/*.yaml 2>/dev/null | wc -l)
-FAILED=$(grep -h "^status: fail" "$TEST_PASS_DIR"/results/*.yaml 2>/dev/null | wc -l)
+PASSED=0
+FAILED=0
+if [ -f "$TEST_PASS_DIR/results.yaml.tmp" ]; then
+    PASSED=$(grep -c "status: pass" "$TEST_PASS_DIR/results.yaml.tmp" || true)
+    FAILED=$(grep -c "status: fail" "$TEST_PASS_DIR/results.yaml.tmp" || true)
+fi
 
 # Handle empty results
 PASSED=${PASSED:-0}
@@ -559,6 +563,7 @@ printf "→ Total time: %02d:%02d:%02d\n" $HOURS $MINUTES $SECONDS
 # 6. Generate dashboard
 echo ""
 print_header "Generating results dashboard..."
+
 bash lib/generate-dashboard.sh || {
     echo "  ✗ Dashboard generation failed"
 }
@@ -572,12 +577,10 @@ else
     EXIT_FINAL=1
 fi
 
-# 7. Create snapshot (if requested)
+# Create snapshot (if requested)
 if [ "$CREATE_SNAPSHOT" = true ]; then
-    echo ""
-    print_header "Creating test pass snapshot..."
     bash lib/create-snapshot.sh || {
-        echo "  ✗ Snapshot creation failed"
+      echo "  ✗ Snapshot creation failed"
     }
 fi
 
