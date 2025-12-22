@@ -8,19 +8,11 @@ set -uo pipefail  # Removed -e to allow continuation on errors
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/.."
 
-# Standalone transports (don't require secureChannel/muxer)
-STANDALONE_TRANSPORTS="quic quic-v1 webtransport webrtc webrtc-direct https"
-
-# Check if transport is standalone
-is_standalone_transport() {
-    local transport="$1"
-    echo "$STANDALONE_TRANSPORTS" | grep -qw "$transport"
-}
-
 # Set SCRIPT_LIB_DIR if not already set (for snapshot context)
 SCRIPT_LIB_DIR="${SCRIPT_LIB_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/lib}"
 
 # Source common libraries using SCRIPT_LIB_DIR
+source "$SCRIPT_LIB_DIR/lib-generate-tests.sh"
 source "$SCRIPT_LIB_DIR/lib-test-filtering.sh"
 source "$SCRIPT_LIB_DIR/lib-test-aliases.sh"
 source "$SCRIPT_LIB_DIR/lib-test-caching.sh"
@@ -203,8 +195,7 @@ ignored_test_num=0
 ignored_baseline_tests=()
 ignored_main_tests=()
 
-echo "╲ Generating baseline test combinations..."
-echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+print_header "Generating baseline test combinations..."
 
 # Create test matrix header
 cat > "$TEST_PASS_DIR/test-matrix.yaml" <<EOF

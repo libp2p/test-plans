@@ -16,18 +16,10 @@ DEBUG="${DEBUG:-false}"
 FORCE_MATRIX_REBUILD="${FORCE_MATRIX_REBUILD:-false}"
 OUTPUT_DIR="${TEST_PASS_DIR:-.}"  # Use TEST_PASS_DIR if set, otherwise current directory
 
-# Standalone transports (don't require muxer/secureChannel)
-STANDALONE_TRANSPORTS="quic quic-v1 webtransport webrtc webrtc-direct"
-
-# Check if transport is standalone (doesn't need muxer/secureChannel)
-is_standalone_transport() {
-    local transport="$1"
-    echo "$STANDALONE_TRANSPORTS" | grep -qw "$transport"
-}
-
 # Source common libraries
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPT_LIB_DIR="${SCRIPT_LIB_DIR:-$SCRIPT_DIR/../../lib}"
+source "$SCRIPT_LIB_DIR/lib-generate-tests.sh"
 source "$SCRIPT_LIB_DIR/lib-test-aliases.sh"
 source "$SCRIPT_LIB_DIR/lib-test-filtering.sh"
 source "$SCRIPT_LIB_DIR/lib-test-caching.sh"

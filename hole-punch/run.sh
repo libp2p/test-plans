@@ -193,7 +193,7 @@ if [ "$LIST_TESTS" = true ]; then
     print_header "Generating test matrix..."
 
     # Generate test matrix
-    if ! bash lib/generate-tests.sh "$TEST_SELECT" "$TEST_IGNORE" "$RELAY_SELECT" "$RELAY_IGNORE" "$ROUTER_SELECT" "$ROUTER_IGNORE" "$DEBUG" "$FORCE_MATRIX_REBUILD" > /dev/null 2>&1; then
+    if ! bash lib/generate-tests.sh > /dev/null 2>&1; then
         echo "Error: Failed to generate test matrix"
         exit 1
     fi
@@ -231,6 +231,14 @@ fi
 
 export CACHE_DIR
 export DEBUG
+export TEST_SELECT
+export TEST_IGNORE
+export RELAY_SELECT
+export RELAY_IGNORE
+export ROUTER_SELECT
+export ROUTER_IGNORE
+export FORCE_MATRIX_REBUILD
+export TEST_PASS_DIR
 
 print_header "Hole Punch Interoperability Test Suite"
 
@@ -293,8 +301,8 @@ fi
 # 2. Generate test matrix FIRST (before building images)
 echo ""
 echo "╲ Generating test matrix..."
-echo "→ bash lib/generate-tests.sh \"$TEST_SELECT\" \"$TEST_IGNORE\" \"$RELAY_SELECT\" \"$RELAY_IGNORE\" \"$ROUTER_SELECT\" \"$ROUTER_IGNORE\" \"$DEBUG\" \"$FORCE_MATRIX_REBUILD\""
-bash lib/generate-tests.sh "$TEST_SELECT" "$TEST_IGNORE" "$RELAY_SELECT" "$RELAY_IGNORE" "$ROUTER_SELECT" "$ROUTER_IGNORE" "$DEBUG" "$FORCE_MATRIX_REBUILD"
+echo "→ bash lib/generate-tests.sh"
+bash lib/generate-tests.sh
 
 # 3. Display test selection and get confirmation
 test_count=$(yq eval '.metadata.totalTests' "$TEST_PASS_DIR/test-matrix.yaml")
