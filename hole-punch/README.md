@@ -267,7 +267,7 @@ The `--force-rebuild` flag forces rebuilding of all Docker images from the captu
 <!-- TEST_RESULTS_START -->
 # Hole Punch Interoperability Test Results
 
-## Test Pass: `hole-punch-024602-22-12-2025`
+## Test Pass: `hole-punch-024206-23-12-2025`
 
 **Summary:**
 - **Total Tests:** 5
@@ -282,8 +282,8 @@ The `--force-rebuild` flag forces rebuilding of all Docker images from the captu
 - **Duration:** 16s
 
 **Timestamps:**
-- **Started:** 2025-12-22T02:46:02Z
-- **Completed:** 2025-12-22T02:46:18Z
+- **Started:** 2025-12-23T02:42:06Z
+- **Completed:** 2025-12-23T02:42:22Z
 
 ---
 
@@ -316,6 +316,6 @@ The `--force-rebuild` flag forces rebuilding of all Docker images from the captu
 
 ---
 
-*Generated: 2025-12-22T02:46:18Z*
+*Generated: 2025-12-23T02:42:22Z*
 <!-- TEST_RESULTS_END -->
 
