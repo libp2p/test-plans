@@ -267,7 +267,7 @@ The `--force-rebuild` flag forces rebuilding of all Docker images from the captu
 <!-- TEST_RESULTS_START -->
 # Hole Punch Interoperability Test Results
 
-## Test Pass: `hole-punch-024206-23-12-2025`
+## Test Pass: `hole-punch-024029-24-12-2025`
 
 **Summary:**
 - **Total Tests:** 5
@@ -282,8 +282,8 @@ The `--force-rebuild` flag forces rebuilding of all Docker images from the captu
 - **Duration:** 16s
 
 **Timestamps:**
-- **Started:** 2025-12-23T02:42:06Z
-- **Completed:** 2025-12-23T02:42:22Z
+- **Started:** 2025-12-24T02:40:29Z
+- **Completed:** 2025-12-24T02:40:45Z
 
 ---
 
@@ -291,11 +291,11 @@ The `--force-rebuild` flag forces rebuilding of all Docker images from the captu
 
 | Test | Dialer | Listener | Transport | Status | Duration |
 |------|--------|----------|-----------|--------|----------|
-| linux x linux (tcp, tls, mplex) [dr: linux, rly: linux, lr: linux] | linux | linux | tcp | ✅ | 10s |
-| linux x linux (tcp, noise, mplex) [dr: linux, rly: linux, lr: linux] | linux | linux | tcp | ✅ | 11s |
-| linux x linux (tcp, tls, yamux) [dr: linux, rly: linux, lr: linux] | linux | linux | tcp | ✅ | 12s |
-| linux x linux (quic-v1) [dr: linux, rly: linux, lr: linux] | linux | linux | quic-v1 | ✅ | 13s |
-| linux x linux (tcp, noise, yamux) [dr: linux, rly: linux, lr: linux] | linux | linux | tcp | ✅ | 14s |
+| linux x linux (tcp, noise, mplex) [dr: linux, rly: linux, lr: linux] | linux | linux | tcp | ✅ | 10s |
+| linux x linux (tcp, tls, yamux) [dr: linux, rly: linux, lr: linux] | linux | linux | tcp | ✅ | 11s |
+| linux x linux (tcp, tls, mplex) [dr: linux, rly: linux, lr: linux] | linux | linux | tcp | ✅ | 12s |
+| linux x linux (tcp, noise, yamux) [dr: linux, rly: linux, lr: linux] | linux | linux | tcp | ✅ | 13s |
+| linux x linux (quic-v1) [dr: linux, rly: linux, lr: linux] | linux | linux | quic-v1 | ✅ | 14s |
 
 ---
 
@@ -316,6 +316,6 @@ The `--force-rebuild` flag forces rebuilding of all Docker images from the captu
 
 ---
 
-*Generated: 2025-12-23T02:42:22Z*
+*Generated: 2025-12-24T02:40:45Z*
 <!-- TEST_RESULTS_END -->
 
