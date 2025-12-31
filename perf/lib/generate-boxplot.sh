@@ -4,17 +4,20 @@
 
 set -euo pipefail
 
+# Source common libraries
+source "${SCRIPT_LIB_DIR}/lib-output-formatting.sh"
+
 if [ $# -ne 2 ]; then
-    echo "Usage: $0 <results.yaml> <output_dir>"
-    exit 1
+  echo "Usage: $0 <results.yaml> <output_dir>"
+  exit 1
 fi
 
 RESULTS_FILE="$1"
 OUTPUT_DIR="$2"
 
 if [ ! -f "$RESULTS_FILE" ]; then
-    echo "  ✗ Error: $RESULTS_FILE not found"
-    exit 1
+  print_error "Error: $RESULTS_FILE not found"
+  exit 1
 fi
 
 mkdir -p "$OUTPUT_DIR"
@@ -23,7 +26,7 @@ mkdir -p "$OUTPUT_DIR"
 BASELINE_COUNT=$(yq '.baselineResults | length' "$RESULTS_FILE" 2>/dev/null || echo "0")
 TEST_COUNT=$(yq '.testResults | length' "$RESULTS_FILE" 2>/dev/null || echo "0")
 
-echo "  → Found $BASELINE_COUNT baseline results and $TEST_COUNT test results"
+print_message "Found $BASELINE_COUNT baseline results and $TEST_COUNT test results"
 
 # Data files
 UPLOAD_BOX="$OUTPUT_DIR/upload_box.dat"
@@ -55,11 +58,11 @@ EOF
 
 # Function to add box data for a metric
 add_box_data() {
-    local array_path="$1"
-    local array_idx="$2"
-    local metric="$3"
-    local boxfile="$4"
-    local idx="$5"
+  local array_path="$1"
+  local array_idx="$2"
+  local metric="$3"
+  local boxfile="$4"
+  local idx="$5"
 
     # Get name and stats
     local name min q1 med q3 max
@@ -70,80 +73,80 @@ add_box_data() {
 
     # Only add if we have valid data
     if [ "$med" != "null" ] && [ -n "$med" ]; then
-        printf "%d\t\"%s\"\t%s\t%s\t%s\t%s\t%s\n" "$idx" "$name" "$min" "$q1" "$med" "$q3" "$max" >> "$boxfile"
+      printf "%d\t\"%s\"\t%s\t%s\t%s\t%s\t%s\n" "$idx" "$name" "$min" "$q1" "$med" "$q3" "$max" >> "$boxfile"
     fi
-}
+  }
 
 # Function to add outlier data for a metric
 add_outlier_data() {
-    local array_path="$1"
-    local array_idx="$2"
-    local metric="$3"
-    local outfile="$4"
-    local idx="$5"
+  local array_path="$1"
+  local array_idx="$2"
+  local metric="$3"
+  local outfile="$4"
+  local idx="$5"
 
     # Get outliers and prepend idx to each line
     local outlier_count
     outlier_count=$(yq "${array_path}[${array_idx}].${metric}.outliers | length" "$RESULTS_FILE" 2>/dev/null || echo "0")
     if [ "$outlier_count" -gt 0 ]; then
-        yq -r "${array_path}[${array_idx}].${metric}.outliers[]" "$RESULTS_FILE" | while read -r outlier; do
-            [ -n "$outlier" ] && printf "%d\t%s\n" "$idx" "$outlier" >> "$outfile"
-        done
+      yq -r "${array_path}[${array_idx}].${metric}.outliers[]" "$RESULTS_FILE" | while read -r outlier; do
+      [ -n "$outlier" ] && printf "%d\t%s\n" "$idx" "$outlier" >> "$outfile"
+    done
     fi
-}
+  }
 
 # =============== UPLOAD ===============
-echo "  → Extracting upload data..."
+print_message "Extracting upload data..."
 idx=1
 
 # Iterate over baselineResults
 for i in $(seq 0 $((BASELINE_COUNT-1))); do
-    add_box_data ".baselineResults" "$i" "upload" "$UPLOAD_BOX" "$idx"
-    add_outlier_data ".baselineResults" "$i" "upload" "$UPLOAD_OUT" "$idx"
-    ((idx++))
+  add_box_data ".baselineResults" "$i" "upload" "$UPLOAD_BOX" "$idx"
+  add_outlier_data ".baselineResults" "$i" "upload" "$UPLOAD_OUT" "$idx"
+  ((idx++))
 done
 
 # Iterate over testResults
 for i in $(seq 0 $((TEST_COUNT-1))); do
-    add_box_data ".testResults" "$i" "upload" "$UPLOAD_BOX" "$idx"
-    add_outlier_data ".testResults" "$i" "upload" "$UPLOAD_OUT" "$idx"
-    ((idx++))
+  add_box_data ".testResults" "$i" "upload" "$UPLOAD_BOX" "$idx"
+  add_outlier_data ".testResults" "$i" "upload" "$UPLOAD_OUT" "$idx"
+  ((idx++))
 done
 
 # =============== DOWNLOAD ===============
-echo "  → Extracting download data..."
+print_message "Extracting download data..."
 idx=1
 
 # Iterate over baselineResults
 for i in $(seq 0 $((BASELINE_COUNT-1))); do
-    add_box_data ".baselineResults" "$i" "download" "$DOWNLOAD_BOX" "$idx"
-    add_outlier_data ".baselineResults" "$i" "download" "$DOWNLOAD_OUT" "$idx"
-    ((idx++))
+  add_box_data ".baselineResults" "$i" "download" "$DOWNLOAD_BOX" "$idx"
+  add_outlier_data ".baselineResults" "$i" "download" "$DOWNLOAD_OUT" "$idx"
+  ((idx++))
 done
 
 # Iterate over testResults
 for i in $(seq 0 $((TEST_COUNT-1))); do
-    add_box_data ".testResults" "$i" "download" "$DOWNLOAD_BOX" "$idx"
-    add_outlier_data ".testResults" "$i" "download" "$DOWNLOAD_OUT" "$idx"
-    ((idx++))
+  add_box_data ".testResults" "$i" "download" "$DOWNLOAD_BOX" "$idx"
+  add_outlier_data ".testResults" "$i" "download" "$DOWNLOAD_OUT" "$idx"
+  ((idx++))
 done
 
 # =============== LATENCY ===============
-echo "  → Extracting latency data..."
+print_message "Extracting latency data..."
 idx=1
 
 # Iterate over baselineResults
 for i in $(seq 0 $((BASELINE_COUNT-1))); do
-    add_box_data ".baselineResults" "$i" "latency" "$LATENCY_BOX" "$idx"
-    add_outlier_data ".baselineResults" "$i" "latency" "$LATENCY_OUT" "$idx"
-    ((idx++))
+  add_box_data ".baselineResults" "$i" "latency" "$LATENCY_BOX" "$idx"
+  add_outlier_data ".baselineResults" "$i" "latency" "$LATENCY_OUT" "$idx"
+  ((idx++))
 done
 
 # Iterate over testResults
 for i in $(seq 0 $((TEST_COUNT-1))); do
-    add_box_data ".testResults" "$i" "latency" "$LATENCY_BOX" "$idx"
-    add_outlier_data ".testResults" "$i" "latency" "$LATENCY_OUT" "$idx"
-    ((idx++))
+  add_box_data ".testResults" "$i" "latency" "$LATENCY_BOX" "$idx"
+  add_outlier_data ".testResults" "$i" "latency" "$LATENCY_OUT" "$idx"
+  ((idx++))
 done
 
 # =============== GNUPlot scripts using candlesticks ===============
@@ -210,28 +213,30 @@ plot '$LATENCY_BOX' using 1:4:3:7:6:xticlabels(2) notitle with candlesticks lc r
 EOF
 
 # =============== Generate plots ===============
-echo "  → Generating plots with gnuplot..."
+print_message "Generating plots with gnuplot..."
+indent
 
 if gnuplot "$OUTPUT_DIR/upload.gp" 2>/dev/null; then
-    echo "  ✓ Generated boxplot-upload.png"
+  print_success "Generated boxplot-upload.png"
 else
-    echo "  ✗ Failed to generate upload box plot"
+  print_error "Failed to generate upload box plot"
 fi
 
 if gnuplot "$OUTPUT_DIR/download.gp" 2>/dev/null; then
-    echo "  ✓ Generated boxplot-download.png"
+  print_success "Generated boxplot-download.png"
 else
-    echo "  ✗ Failed to generate download box plot"
+  print_error "Failed to generate download box plot"
 fi
 
 if gnuplot "$OUTPUT_DIR/latency.gp" 2>/dev/null; then
-    echo "  ✓ Generated boxplot-latency.png"
+  print_success "Generated boxplot-latency.png"
 else
-    echo "  ✗ Failed to generate latency box plot"
+  print_error "Failed to generate latency box plot"
 fi
+unindent
 
 # Clean up temporary files
 rm -f "$OUTPUT_DIR"/*.gp "$OUTPUT_DIR"/*.dat
 
 echo ""
-echo "  ✓ Box plot generation complete"
+print_success "Box plot generation complete"

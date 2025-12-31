@@ -3,6 +3,9 @@
 
 set -euo pipefail
 
+# Set starting indent level
+INDENT=1
+
 # Capture original arguments for inputs.yaml generation
 ORIGINAL_ARGS=("$@")
 
@@ -19,7 +22,7 @@ load_inputs_yaml_inline() {
     if [ ! -f "$inputs_file" ]; then
         return 1
     fi
-    echo "→ Loading configuration from $inputs_file"
+    echo "  → Loading configuration from $inputs_file"
     while IFS='=' read -r key value; do
         if [ -n "$key" ] && [ -n "$value" ]; then
             export "$key"="$value"
@@ -194,7 +197,7 @@ if [ "$LIST_TESTS" = true ]; then
 
     # Generate test matrix
     if ! bash lib/generate-tests.sh > /dev/null 2>&1; then
-        echo "Error: Failed to generate test matrix"
+        print_error "Failed to generate test matrix"
         exit 1
     fi
 
@@ -202,20 +205,16 @@ if [ "$LIST_TESTS" = true ]; then
     test_count=$(yq eval '.metadata.totalTests' "$TEMP_DIR/test-matrix.yaml")
     ignored_count=$(yq eval '.metadata.ignoredTests' "$TEMP_DIR/test-matrix.yaml")
 
-    echo ""
-    echo "╲ Selected Tests ($test_count tests)"
-    echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+    print_header "Selected Tests ($test_count tests)"
 
     if [ "$test_count" -gt 0 ]; then
         yq eval '.tests[].name' "$TEMP_DIR/test-matrix.yaml" | sed 's/^/→ /'
     else
-        echo "→ No tests selected"
+        print_message "No tests selected"
     fi
 
     if [ "$ignored_count" -gt 0 ]; then
-        echo ""
-        echo "╲ Ignored Tests ($ignored_count tests)"
-        echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+        print_header "Ignored Tests ($ignored_count tests)"
         yq eval '.ignoredTests[].name' "$TEMP_DIR/test-matrix.yaml" | sed 's/^/→ /'
     fi
 
@@ -252,20 +251,20 @@ TEST_PASS_NAME="${TEST_TYPE}-${TEST_RUN_KEY}-$(date +%H%M%S-%d-%m-%Y)"
 export TEST_PASS_DIR="$TEST_RUN_DIR/$TEST_PASS_NAME"
 export TEST_RUN_KEY
 
-echo "→ Test Pass: $TEST_PASS_NAME"
-echo "→ Cache Dir: $CACHE_DIR"
-echo "→ Test Pass Dir: $TEST_PASS_DIR"
-echo "→ Workers: $WORKER_COUNT"
-[ -n "$TEST_SELECT" ] && echo "→ Test Select: $TEST_SELECT"
-[ -n "$TEST_IGNORE" ] && echo "→ Test Ignore: $TEST_IGNORE"
-[ -n "$RELAY_SELECT" ] && echo "→ Relay Select: $RELAY_SELECT"
-[ -n "$RELAY_IGNORE" ] && echo "→ Relay Ignore: $RELAY_IGNORE"
-[ -n "$ROUTER_SELECT" ] && echo "→ Router Select: $ROUTER_SELECT"
-[ -n "$ROUTER_IGNORE" ] && echo "→ Router Ignore: $ROUTER_IGNORE"
-echo "→ Create Snapshot: $CREATE_SNAPSHOT"
-echo "→ Debug: $DEBUG"
-echo "→ Force Matrix Rebuild: $FORCE_MATRIX_REBUILD"
-echo "→ Force Image Rebuild: $FORCE_IMAGE_REBUILD"
+print_message "Test Pass: $TEST_PASS_NAME"
+print_message "Cache Dir: $CACHE_DIR"
+print_message "Test Pass Dir: $TEST_PASS_DIR"
+print_message "Workers: $WORKER_COUNT"
+[ -n "$TEST_SELECT" ] && print_message "Test Select: $TEST_SELECT"
+[ -n "$TEST_IGNORE" ] && print_message "Test Ignore: $TEST_IGNORE"
+[ -n "$RELAY_SELECT" ] && print_message "Relay Select: $RELAY_SELECT"
+[ -n "$RELAY_IGNORE" ] && print_message "Relay Ignore: $RELAY_IGNORE"
+[ -n "$ROUTER_SELECT" ] && print_message "Router Select: $ROUTER_SELECT"
+[ -n "$ROUTER_IGNORE" ] && print_message "Router Ignore: $ROUTER_IGNORE"
+print_message "Create Snapshot: $CREATE_SNAPSHOT"
+print_message "Debug: $DEBUG"
+print_message "Force Matrix Rebuild: $FORCE_MATRIX_REBUILD"
+print_message "Force Image Rebuild: $FORCE_IMAGE_REBUILD"
 echo ""
 
 START_TIME=$(date +%s)
@@ -283,32 +282,30 @@ generate_inputs_yaml "$TEST_PASS_DIR/inputs.yaml" "$TEST_TYPE" "${ORIGINAL_ARGS[
 export TEST_PASS_NAME
 
 # 1. Check dependencies
-echo "╲ Checking dependencies..."
+print_header "Checking dependencies..."
 if ! bash "$SCRIPT_LIB_DIR/check-dependencies.sh"; then
-    echo "Dependency check failed. Please install missing dependencies."
+    print_error "Dependency check failed. Please install missing dependencies."
     exit 1
 fi
 
 # Read and export the docker compose command detected by check-dependencies.sh
 if [ -f /tmp/docker-compose-cmd.txt ]; then
     export DOCKER_COMPOSE_CMD=$(cat /tmp/docker-compose-cmd.txt)
-    echo "→ Using: $DOCKER_COMPOSE_CMD"
+    print_message "Using: $DOCKER_COMPOSE_CMD"
 else
-    echo "✗ Error: Could not determine docker compose command"
+    print_error "Could not determine docker compose command"
     exit 1
 fi
 
 # 2. Generate test matrix FIRST (before building images)
-echo ""
-echo "╲ Generating test matrix..."
-echo "→ bash lib/generate-tests.sh"
+print_header "╲ Generating test matrix..."
 bash lib/generate-tests.sh
 
 # 3. Display test selection and get confirmation
 test_count=$(yq eval '.metadata.totalTests' "$TEST_PASS_DIR/test-matrix.yaml")
 
 if [ "$test_count" -eq 0 ]; then
-    echo "→ No tests in matrix, skipping image builds"
+    print_message "No tests in matrix, skipping image builds"
 else
     # Extract unique RELAYS from test matrix
     # Note: Relays do NOT have dialOnly - all relays in matrix should be built
@@ -356,11 +353,11 @@ else
     ROUTER_COUNT=$(echo "$ROUTER_FILTER" | tr '|' '\n' | grep -v '^$' | wc -l)
     IMAGE_COUNT=$(wc -l < "$REQUIRED_IMPLS_WITH_DEPS")
 
-    echo "→ Building $RELAY_COUNT relay(s), $ROUTER_COUNT router(s), $IMAGE_COUNT implementation(s) (including base images)"
+    print_message "Building $RELAY_COUNT relay(s), $ROUTER_COUNT router(s), $IMAGE_COUNT implementation(s) (including base images)"
     echo ""
 
     # Build images with filters (relay, router, impl filters passed separately)
-    echo "→ bash lib/build-images.sh \"$RELAY_FILTER\" \"$ROUTER_FILTER\" \"$IMAGE_FILTER\" \"$FORCE_IMAGE_REBUILD\""
+    print_message "bash lib/build-images.sh \"$RELAY_FILTER\" \"$ROUTER_FILTER\" \"$IMAGE_FILTER\" \"$FORCE_IMAGE_REBUILD\""
     bash lib/build-images.sh "$RELAY_FILTER" "$ROUTER_FILTER" "$IMAGE_FILTER" "$FORCE_IMAGE_REBUILD"
 
     rm -f "$REQUIRED_IMAGES" "$REQUIRED_IMPLS_WITH_DEPS"
@@ -368,8 +365,9 @@ fi
 
 # Display test list and prompt for confirmation
 echo ""
-echo "╲ Test selection..."
-echo "→ Selected tests:"
+
+print_header "Test selection..."
+print_message "Selected tests:"
 
 # Read test matrix
 test_count=$(yq eval '.metadata.totalTests' "$TEST_PASS_DIR/test-matrix.yaml")
@@ -378,21 +376,22 @@ ignored_count=$(yq eval '.metadata.ignoredTests' "$TEST_PASS_DIR/test-matrix.yam
 # Display active tests (extract all names in one yq call)
 if [ "$test_count" -gt 0 ]; then
     yq eval '.tests[].name' "$TEST_PASS_DIR/test-matrix.yaml" | while read -r test_name; do
-        echo "  ✓ $test_name"
+        print_success "$test_name"
     done
 fi
 
 # Display ignored tests (extract all names in one yq call)
 if [ "$ignored_count" -gt 0 ]; then
     echo ""
-    echo "→ Ignored tests:"
+    print_message "Ignored tests:"
     yq eval '.ignoredTests[].name' "$TEST_PASS_DIR/test-matrix.yaml" | while read -r test_name; do
-        echo "  ✗ $test_name [ignored]"
+        print_error "$test_name [ignored]"
     done
 fi
 
 echo ""
-echo "→ Total: $test_count tests to execute, $ignored_count ignored"
+
+print_message "Total: $test_count tests to execute, $ignored_count ignored"
 
 # Prompt user for confirmation (unless -y flag was set)
 if [ "$AUTO_YES" = false ]; then
@@ -400,19 +399,17 @@ if [ "$AUTO_YES" = false ]; then
     response=${response:-Y}  # Default to Y if user just presses enter
 
     if [[ ! "$response" =~ ^[Yy]$ ]]; then
-        echo "Test execution cancelled."
+        print_error "Test execution cancelled."
         exit 0
     fi
 fi
 
 # Start global services
-echo ""
-echo "╲ Starting global services..."
+print_message "Starting global services..."
 bash lib/start-global-services.sh
 
 # Run tests in parallel
-echo ""
-echo "╲ Running tests... ($WORKER_COUNT workers)"
+print_header "Running tests... ($WORKER_COUNT workers)"
 
 # Read test matrix and export test_count for use in subshells
 test_count=$(yq eval '.metadata.totalTests' "$TEST_PASS_DIR/test-matrix.yaml")
@@ -434,7 +431,7 @@ run_test() {
     local relay=$(yq eval ".tests[$index].relay" "$TEST_PASS_DIR/test-matrix.yaml")
     local listener_router=$(yq eval ".tests[$index].listenerRouter" "$TEST_PASS_DIR/test-matrix.yaml")
 
-    echo "[$((index + 1))/$test_count] $name"
+    print_message "[$((index + 1))/$test_count] $name"
 
     start=$(date +%s)
     if bash lib/run-single-test.sh "$name" "$dialer" "$listener" "$transport" "$secure" "$muxer"; then
@@ -487,13 +484,11 @@ export -f run_test
 seq 0 $((test_count - 1)) | xargs -P "$WORKER_COUNT" -I {} bash -c 'run_test {}' || true
 
 # Cleanup
-echo ""
-echo "╲ Stopping global services..."
+print_header "Stopping global services..."
 bash lib/stop-global-services.sh
 
 # 6. Collect results
-echo ""
-echo "╲ Collecting results..."
+print_header "Collecting results..."
 
 END_TIME=$(date +%s)
 DURATION=$((END_TIME - START_TIME))
@@ -536,47 +531,40 @@ if [ "$FAILED" -gt 0 ]; then
     readarray -t FAILED_TESTS < <(yq eval '.tests[] | select(.status == "fail") | .name' "$TEST_PASS_DIR/results.yaml")
 fi
 
-echo "→ Results:"
-echo "  → Total: $test_count"
-echo "  ✓ Passed: $PASSED"
-echo "  ✗ Failed: $FAILED"
-if [ "$FAILED" -gt 0 ]; then
-    for test_name in "${FAILED_TESTS[@]}"; do
-        echo "    - $test_name"
-    done
-fi
+print_message "Results:"
+indent
+print_message "Total: $test_count"
+print_success "Passed: $PASSED"
+print_error "Failed: $FAILED"
+print_list "Failed Tests:" "${FAILED_TESTS[@]}"
+unindent
 echo ""
+
 
 # Display execution time
 HOURS=$((DURATION / 3600))
 MINUTES=$(((DURATION % 3600) / 60))
 SECONDS=$((DURATION % 60))
-printf "→ Total time: %02d:%02d:%02d\n" $HOURS $MINUTES $SECONDS
+execution_time=$(printf "Total time: %02d:%02d:%02d\n" $HOURS $MINUTES $SECONDS)
+print_message "$execution_time"
 
 # 6. Generate dashboard
-echo ""
-echo "╲ Generating results dashboard..."
-echo "→ bash lib/generate-dashboard.sh"
+print_header "Generating results dashboard..."
 bash lib/generate-dashboard.sh
 
 # Final status message
 echo ""
 if [ "$FAILED" -eq 0 ]; then
-    echo "╲ ✓ All tests passed!"
-    echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+    print_header "✓ All tests passed!"
     EXIT_FINAL=0
 else
-    echo "╲ ✗ $FAILED test(s) failed"
-    echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
+    print_header "✗ $FAILED test(s) failed"
     EXIT_FINAL=1
 fi
 
 # 7. Create snapshot (optional)
 if [ "$CREATE_SNAPSHOT" = true ]; then
-    echo ""
-    echo "╲ Creating test pass snapshot..."
-    echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
-    echo "→ bash lib/create-snapshot.sh"
+    print_header "Creating test pass snapshot..."
     bash lib/create-snapshot.sh
 fi
 

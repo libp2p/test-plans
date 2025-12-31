@@ -1,37 +1,36 @@
 #!/bin/bash
-# Source formatting library
-SCRIPT_LIB_DIR="${SCRIPT_LIB_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/lib}"
-source "$SCRIPT_LIB_DIR/lib-output-formatting.sh"
-# Generate test matrix from images.yaml with 3D combinations (transport × secureChannel × muxer)
+# Generate test matrix from images.yaml with filtering
 # Outputs test-matrix.yaml with content-addressed caching
+# Permutations: dialer × listener × transport × secureChannel × muxer
 
-set -euo pipefail
+set -uo pipefail  # Removed -e to allow continuation on errors
 
-# Configuration
+# Set SCRIPT_LIB_DIR if not already set (for snapshot context)
+SCRIPT_LIB_DIR="${SCRIPT_LIB_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/lib}"
+
+# Source common libraries
+source "$SCRIPT_LIB_DIR/lib-filter-engine.sh"
+source "$SCRIPT_LIB_DIR/lib-generate-tests.sh"
+source "$SCRIPT_LIB_DIR/lib-output-formatting.sh"
+source "$SCRIPT_LIB_DIR/lib-test-aliases.sh"
+source "$SCRIPT_LIB_DIR/lib-test-filtering.sh"
+source "$SCRIPT_LIB_DIR/lib-test-caching.sh"
+
+# Common parameters
 CACHE_DIR="${CACHE_DIR:-/srv/cache}"
-# Get parameters from environment (exported by run.sh - no CLI arguments)
 TEST_SELECT="${TEST_SELECT:-}"
 TEST_IGNORE="${TEST_IGNORE:-}"
 DEBUG="${DEBUG:-false}"
 FORCE_MATRIX_REBUILD="${FORCE_MATRIX_REBUILD:-false}"
 OUTPUT_DIR="${TEST_PASS_DIR:-.}"  # Use TEST_PASS_DIR if set, otherwise current directory
 
-# Source common libraries
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SCRIPT_LIB_DIR="${SCRIPT_LIB_DIR:-$SCRIPT_DIR/../../lib}"
-source "$SCRIPT_LIB_DIR/lib-generate-tests.sh"
-source "$SCRIPT_LIB_DIR/lib-test-aliases.sh"
-source "$SCRIPT_LIB_DIR/lib-test-filtering.sh"
-source "$SCRIPT_LIB_DIR/lib-test-caching.sh"
-source "$SCRIPT_LIB_DIR/lib-filter-engine.sh"
+# Transport parameters
 
 # Load test aliases from images.yaml
 load_aliases
 
-# Get all implementation IDs for negation expansion
-all_image_ids=($(yq eval '.implementations[].id' images.yaml))
-
-# TEST_SELECT and TEST_IGNORE are already set from environment (exported by run.sh)
+# Get common entity IDs for negation expansion and ignored test generation
+all_image_ids=($(get_entity_ids "implementations"))
 
 echo ""
 print_header "Test Matrix Generation"

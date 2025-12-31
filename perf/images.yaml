@@ -56,16 +56,9 @@ baselines:
       path: images/https/v1.0
       dockerfile: Dockerfile
     server: local
-    transports:
-      - https
-    secureChannels: []  # Standalone transport
-    muxers: []          # Standalone transport
-    protocols:
-      - perf
-    capabilities:
-      - upload
-      - download
-      - latency
+    transports: [https]
+    protocols: [perf]
+    capabilities: [upload, download, latency]
     metadata:
       language: go
       version: stdlib
@@ -79,16 +72,9 @@ baselines:
       path: images/quic-go/v1.0
       dockerfile: Dockerfile
     server: local
-    transports:
-      - quic
-    secureChannels: []  # Standalone transport
-    muxers: []          # Standalone transport
-    protocols:
-      - perf
-    capabilities:
-      - upload
-      - download
-      - latency
+    transports: [quic]
+    protocols: [perf]
+    capabilities: [upload, download, latency]
     metadata:
       language: go
       version: v0.40.0
@@ -102,16 +88,9 @@ baselines:
       path: images/iperf/v3.0
       dockerfile: Dockerfile
     server: local
-    transports:
-      - tcp
-    secureChannels: []  # Raw TCP, no encryption
-    muxers: []          # No muxing
-    protocols:
-      - iperf3
-    capabilities:
-      - upload
-      - download
-      - latency
+    transports: [tcp]
+    protocols: [iperf3]
+    capabilities: [upload, download, latency]
     metadata:
       language: bash
       version: "3.0"
@@ -128,22 +107,11 @@ implementations:
       path: images/go/v0.45
       dockerfile: Dockerfile
     server: local              # Server to use: local, remote-1, etc.
-    transports:
-      - tcp
-      - quic-v1
-      - webtransport
-    secureChannels:
-      - noise
-      - tls
-    muxers:
-      - yamux
-      - mplex
-    protocols:
-      - perf
-    capabilities:
-      - upload
-      - download
-      - latency
+    transports: [tcp, quic-v1, webtransport]
+    secureChannels: [noise, tls]
+    muxers: [yamux, mplex]
+    protocols: [perf]
+    capabilities: [upload, download, latency]
     metadata:
       language: go
       version: v0.45.0
@@ -157,21 +125,11 @@ implementations:
       path: images/rust/v0.56
       dockerfile: Dockerfile
     server: local              # Change to remote-1 for remote testing
-    transports:
-      - tcp
-      - quic-v1
-    secureChannels:
-      - noise
-      - tls
-    muxers:
-      - yamux
-      - mplex
-    protocols:
-      - perf
-    capabilities:
-      - upload
-      - download
-      - latency
+    transports: [tcp, quic-v1]
+    secureChannels: [noise, tls]
+    muxers: [yamux, mplex]
+    protocols: [perf]
+    capabilities: [upload, download, latency]
     metadata:
       language: rust
       version: v0.56.0
@@ -185,20 +143,11 @@ implementations:
       path: images/js/v3.x
       dockerfile: Dockerfile
     server: local
-    transports:
-      - tcp
-      - webtransport
-    secureChannels:
-      - noise
-      - tls
-    muxers:
-      - yamux
-      - mplex
-    protocols:
-      - perf
-    capabilities:
-      - upload
-      - download
+    transports: [tcp, webtransport]
+    secureChannels: [noise, tls]
+    muxers: [yamux, mplex]
+    protocols: [perf]
+    capabilities: [upload, download]
     metadata:
       language: javascript
       version: v3.0.0
@@ -212,20 +161,11 @@ implementations:
       path: images/dotnet/v1.0
       dockerfile: Dockerfile
     server: local
-    transports:
-      - tcp
-      - quic-v1
-    secureChannels:
-      - noise
-      - tls
-    muxers:
-      - yamux
-      - mplex
-    protocols:
-      - perf
-    capabilities:
-      - upload
-      - download
+    transports: [tcp, quic-v1]
+    secureChannels: [noise, tls]
+    muxers: [yamux, mplex]
+    protocols: [perf]
+    capabilities: [upload, download]
     metadata:
       language: dotnet
       version: v1.0

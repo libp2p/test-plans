@@ -4,60 +4,68 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR/.."
+export LOG_FILE
 
-source "lib/lib-perf.sh"
+source "${SCRIPT_LIB_DIR}/lib-output-formatting.sh"
+source "${SCRIPT_LIB_DIR}/lib-test-caching.sh"
 
 TEST_INDEX=$1
-TEST_TYPE="${2:-main}"  # "main" or "baseline"
-
-# Docker compose command
-DOCKER_COMPOSE_CMD="${DOCKER_COMPOSE_CMD:-docker compose}"
-
-# Read test configuration from appropriate section
-if [ "$TEST_TYPE" = "baseline" ]; then
-    MATRIX_SECTION="baselines"
-    RESULTS_FILE="$TEST_PASS_DIR/baseline-results.yaml.tmp"
-else
-    MATRIX_SECTION="tests"
-    RESULTS_FILE="$TEST_PASS_DIR/results.yaml.tmp"
-fi
+TEST_PASS="${2:-tests}"  # "main" or "baseline"
+RESULTS_FILE="${3:-"${TEST_PASS_DIR}/results.yaml.tmp"}"
+    
+print_debug "test index: ${TEST_INDEX}"
+print_debug "test_pass: ${TEST_PASS}"
 
 # Read test configuration from matrix
-dialer_id=$(yq eval ".$MATRIX_SECTION[$TEST_INDEX].dialer" "$TEST_PASS_DIR/test-matrix.yaml")
-listener_id=$(yq eval ".$MATRIX_SECTION[$TEST_INDEX].listener" "$TEST_PASS_DIR/test-matrix.yaml")
-transport=$(yq eval ".$MATRIX_SECTION[$TEST_INDEX].transport" "$TEST_PASS_DIR/test-matrix.yaml")
-secure=$(yq eval ".$MATRIX_SECTION[$TEST_INDEX].secureChannel" "$TEST_PASS_DIR/test-matrix.yaml")
-muxer=$(yq eval ".$MATRIX_SECTION[$TEST_INDEX].muxer" "$TEST_PASS_DIR/test-matrix.yaml")
-upload_bytes=$(yq eval ".$MATRIX_SECTION[$TEST_INDEX].uploadBytes" "$TEST_PASS_DIR/test-matrix.yaml")
-download_bytes=$(yq eval ".$MATRIX_SECTION[$TEST_INDEX].downloadBytes" "$TEST_PASS_DIR/test-matrix.yaml")
-upload_iterations=$(yq eval ".$MATRIX_SECTION[$TEST_INDEX].uploadIterations" "$TEST_PASS_DIR/test-matrix.yaml")
-download_iterations=$(yq eval ".$MATRIX_SECTION[$TEST_INDEX].downloadIterations" "$TEST_PASS_DIR/test-matrix.yaml")
-latency_iterations=$(yq eval ".$MATRIX_SECTION[$TEST_INDEX].latencyIterations" "$TEST_PASS_DIR/test-matrix.yaml")
-duration=$(yq eval ".$MATRIX_SECTION[$TEST_INDEX].durationPerIteration" "$TEST_PASS_DIR/test-matrix.yaml")
-test_name=$(yq eval ".$MATRIX_SECTION[$TEST_INDEX].name" "$TEST_PASS_DIR/test-matrix.yaml")
+dialer_id=$(yq eval ".${TEST_PASS}[${TEST_INDEX}].dialer.id" "${TEST_PASS_DIR}/test-matrix.yaml")
+listener_id=$(yq eval ".${TEST_PASS}[${TEST_INDEX}].listener.id" "${TEST_PASS_DIR}/test-matrix.yaml")
+transport=$(yq eval ".${TEST_PASS}[${TEST_INDEX}].transport" "${TEST_PASS_DIR}/test-matrix.yaml")
+secure=$(yq eval ".${TEST_PASS}[${TEST_INDEX}].secureChannel" "${TEST_PASS_DIR}/test-matrix.yaml")
+muxer=$(yq eval ".${TEST_PASS}[${TEST_INDEX}].muxer" "${TEST_PASS_DIR}/test-matrix.yaml")
+test_name=$(yq eval ".${TEST_PASS}[${TEST_INDEX}].id" "${TEST_PASS_DIR}/test-matrix.yaml")
+upload_bytes=$(yq eval ".metadata.uploadBytes" "${TEST_PASS_DIR}/test-matrix.yaml")
+download_bytes=$(yq eval ".metadata.downloadBytes" "${TEST_PASS_DIR}/test-matrix.yaml")
+upload_iterations=$(yq eval ".metadata.uploadIterations" "${TEST_PASS_DIR}/test-matrix.yaml")
+download_iterations=$(yq eval ".metadata.downloadIterations" "${TEST_PASS_DIR}/test-matrix.yaml")
+latency_iterations=$(yq eval ".metadata.latencyIterations" "${TEST_PASS_DIR}/test-matrix.yaml")
+duration=$(yq eval ".metadata.durationPerIteration" "${TEST_PASS_DIR}/test-matrix.yaml")
+
+print_debug "test_name: $test_name"
+print_debug "dialer id: $dialer_id"
+print_debug "listener id: $listener_id"
+print_debug "transport: $transport"
+print_debug "secure: $secure"
+print_debug "muxer: $muxer"
+print_debug "upload bytes: $upload_bytes"
+print_debug "download bytes: $download_bytes"
+print_debug "upload iterations: $upload_iterations"
+print_debug "download iterations: $download_iterations"
+print_debug "latency iterations: $latency_iterations"
+print_debug "duration: $duration"
 
 # Compute TEST_KEY for Redis key namespacing (8-char hex hash)
-SCRIPT_LIB_DIR="${SCRIPT_LIB_DIR:-$SCRIPT_DIR/../../lib}"
-source "$SCRIPT_LIB_DIR/lib-test-keys.sh"
 TEST_KEY=$(compute_test_key "$test_name")
+TEST_SLUG=$(echo "$test_name" | sed 's/[^a-zA-Z0-9-]/_/g')
+LOG_FILE="${TEST_PASS_DIR}/logs/${TEST_SLUG}.log"
+> "${LOG_FILE}"
 
-log_info "[$((TEST_INDEX + 1))] $test_name (key: $TEST_KEY)"
+print_debug "test key: $TEST_KEY"
+print_debug "test slug: $TEST_SLUG"
+print_debug "log file: $LOG_FILE"
+
+log_message "[$((TEST_INDEX + 1))] $test_name (key: $TEST_KEY)"
 
 # Construct Docker image names
 DIALER_IMAGE="perf-${dialer_id}"
 LISTENER_IMAGE="perf-${listener_id}"
 
-# Sanitize test name for file/container names
-TEST_SLUG=$(echo "$test_name" | sed 's/[^a-zA-Z0-9-]/_/g')
-
-# Prepare directories
-mkdir -p "$TEST_PASS_DIR/docker-compose"
-LOG_FILE="$TEST_PASS_DIR/logs/${TEST_SLUG}.log"
+print_debug "dialer image: $DIALER_IMAGE"
+print_debug "listener image: $LISTENER_IMAGE"
 
 # Generate docker-compose file
-COMPOSE_FILE="$TEST_PASS_DIR/docker-compose/${TEST_SLUG}-compose.yaml"
+COMPOSE_FILE="${TEST_PASS_DIR}/docker-compose/${TEST_SLUG}-compose.yaml"
+
+print_debug "docker compose file: $COMPOSE_FILE"
 
 # Assign static IP to listener
 LISTENER_IP="10.5.0.10"
@@ -133,7 +141,7 @@ EOF
 
 # Run the test
 log_debug "  Starting containers..."
-echo "Running: $test_name" > "$LOG_FILE"
+log_message "Running: $test_name" > "$LOG_FILE"
 
 # Set timeout (300 seconds / 5 minutes)
 TEST_TIMEOUT=300
@@ -141,7 +149,7 @@ TEST_TIMEOUT=300
 # Start containers and wait for dialer to exit (with timeout)
 if timeout $TEST_TIMEOUT $DOCKER_COMPOSE_CMD -f "$COMPOSE_FILE" up --exit-code-from dialer --abort-on-container-exit >> "$LOG_FILE" 2>&1; then
     EXIT_CODE=0
-    log_info "  ✓ Test complete"
+    log_message "  ✓ Test complete"
 else
     TEST_EXIT=$?
     # Check if it was a timeout (exit code 124)
@@ -149,7 +157,7 @@ else
         EXIT_CODE=1
         log_error "  ✗ Test timed out after ${TEST_TIMEOUT}s"
         echo "" >> "$LOG_FILE"
-        echo "ERROR: Test timed out after ${TEST_TIMEOUT} seconds" >> "$LOG_FILE"
+        log_error "Test timed out after ${TEST_TIMEOUT} seconds" >> "$LOG_FILE"
     else
         EXIT_CODE=1
         log_error "  ✗ Test failed"
@@ -167,7 +175,7 @@ DIALER_LOGS=$($DOCKER_COMPOSE_CMD -f "$COMPOSE_FILE" logs dialer 2>/dev/null || 
 DIALER_YAML=$(echo "$DIALER_LOGS" | grep -E "dialer.*\| (upload:|download:|latency:|  (iterations|min|q1|median|q3|max|outliers|samples|unit):)" | sed 's/^.*| //' || echo "")
 
 # Save complete result to individual file
-cat > "$TEST_PASS_DIR/results/${test_name}.yaml" <<EOF
+cat > "${TEST_PASS_DIR}/results/${test_name}.yaml" <<EOF
 test: $test_name
 dialer: $dialer_id
 listener: $listener_id

@@ -2,6 +2,12 @@
 # Global service management functions for all test suites
 # Provides Redis coordination service for tests
 
+# Source formatting library if not already loaded
+if ! type indent &>/dev/null; then
+  _this_script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  source "$_this_script_dir/lib-output-formatting.sh"
+fi
+
 # Start Redis service for test coordination
 # Args:
 #   $1: network_name - Docker network name (e.g., "perf-network", "hole-punch-network")
@@ -10,56 +16,53 @@
 #   start_redis_service "perf-network" "perf-redis"
 #   start_redis_service "hole-punch-network" "hole-punch-redis"
 start_redis_service() {
-    local network_name="$1"
-    local redis_name="$2"
+  local network_name="$1"
+  local redis_name="$2"
 
-    # Source formatting library if not already loaded
-    if ! type print_success_indented &>/dev/null; then
-        local script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-        source "$script_dir/lib-output-formatting.sh"
-    fi
-
-    # Create network if doesn't exist
-    # For perf, create with subnet to support static IP assignment
-    if ! docker network inspect "$network_name" &>/dev/null; then
-        if [[ "$network_name" == "perf-network" ]]; then
-            # Perf network needs subnet for static listener IP (10.5.0.10)
-            docker network create "$network_name" \
-                --subnet 10.5.0.0/24 \
-                --gateway 10.5.0.1 > /dev/null
-        else
-            # Other networks don't need specific subnet
-            docker network create "$network_name" > /dev/null
-        fi
-        print_success_indented "Created network: $network_name"
+  # Create network if doesn't exist
+  # For perf, create with subnet to support static IP assignment
+  if ! docker network inspect "$network_name" &>/dev/null; then
+    if [[ "$network_name" == "perf-network" ]]; then
+      # Perf network needs subnet for static listener IP (10.5.0.10)
+      docker network create "$network_name" \
+        --subnet 10.5.0.0/24 \
+        --gateway 10.5.0.1 > /dev/null
     else
-        print_message_indented "Network already exists: $network_name"
+      # Other networks don't need specific subnet
+      docker network create "$network_name" > /dev/null
     fi
+    print_success "Created network: $network_name"
+  else
+    print_message "Network already exists: $network_name"
+  fi
 
-    # Start Redis if not running
-    if ! docker ps -q -f name="^${redis_name}$" | grep -q .; then
-        echo -n "  → Starting Redis..."
-        docker run -d \
-            --name "$redis_name" \
-            --network "$network_name" \
-            --rm \
-            redis:7-alpine \
-            redis-server --save "" --appendonly no > /dev/null
+  # Start Redis if not running
+  indent
+  if ! docker ps -q -f name="^${redis_name}$" | grep -q .; then
+    echo_message "Starting Redis..."
+    docker run -d \
+      --name "$redis_name" \
+      --network "$network_name" \
+      --rm \
+      redis:7-alpine \
+      redis-server --save "" --appendonly no > /dev/null
 
-        # Wait for Redis to be ready
-        for i in {1..10}; do
-            if docker exec "$redis_name" redis-cli ping &>/dev/null 2>&1; then
-                echo "started"
-                break
-            fi
-            echo -n "."
-            sleep 1
-        done
-    else
-        print_message_indented "Redis already running"
-    fi
+    # Wait for Redis to be ready
+    for i in {1..10}; do
+      if docker exec "$redis_name" redis-cli ping &>/dev/null 2>&1; then
+        echo "started"
+        break
+      fi
+      echo -n "."
+      sleep 1
+    done
+  else
+    print_message "Redis already running"
+  fi
+  unindent
+  echo ""
 
-    print_success_indented "Global services ready"
+  print_success "Global services ready"
 }
 
 # Stop Redis service
@@ -70,31 +73,28 @@ start_redis_service() {
 #   stop_redis_service "perf-network" "perf-redis"
 #   stop_redis_service "hole-punch-network" "hole-punch-redis"
 stop_redis_service() {
-    local network_name="$1"
-    local redis_name="$2"
+  local network_name="$1"
+  local redis_name="$2"
 
-    # Source formatting library if not already loaded
-    if ! type print_success_indented &>/dev/null; then
-        local script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-        source "$script_dir/lib-output-formatting.sh"
-    fi
+  # Stop Redis
+  indent
+  if docker ps -q -f name="^${redis_name}$" | grep -q .; then
+    echo_message "Stopping Redis..."
+    docker stop "$redis_name" &>/dev/null || true
+    echo "stopped"
+  else
+    print_message "Redis not running"
+  fi
+  unindent
 
-    # Stop Redis
-    if docker ps -q -f name="^${redis_name}$" | grep -q .; then
-        echo -n "  → Stopping Redis..."
-        docker stop "$redis_name" &>/dev/null || true
-        echo "stopped"
-    else
-        print_message_indented "Redis not running"
-    fi
+  # Remove network
+  if docker network inspect "$network_name" &>/dev/null; then
+    docker network rm "$network_name" &>/dev/null || true
+    print_success "Network removed: $network_name"
+  else
+    print_message "Network not found"
+  fi
+  echo ""
 
-    # Remove network
-    if docker network inspect "$network_name" &>/dev/null; then
-        docker network rm "$network_name" &>/dev/null || true
-        print_success_indented "Network removed: $network_name"
-    else
-        print_message_indented "Network not found"
-    fi
-
-    print_success_indented "Global services stopped"
+  print_success "Global services stopped"
 }

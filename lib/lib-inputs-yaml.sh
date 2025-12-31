@@ -1,9 +1,11 @@
 #!/bin/bash
 # inputs.yaml generation and modification functions
-# NOTE: Loading functions (load_inputs_yaml, get_yaml_args) are now inlined in run.sh
-# to avoid bootstrap problems. This file only contains generation/modification functions.
 
-set -euo pipefail
+# Source formatting library if not already loaded
+if ! type indent &>/dev/null; then
+  _this_script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  source "$_this_script_dir/lib-output-formatting.sh"
+fi
 
 # Generate inputs.yaml file capturing all test run configuration
 # Args:
@@ -19,7 +21,7 @@ generate_inputs_yaml() {
     local original_args=("$@")
 
     cat > "$output_file" <<EOF
-# Generated inputs.yaml for test run
+# Generated inputs.yaml for a "$test_type" test run
 # This file captures all configuration for reproducibility
 # Created: $(date -u +%Y-%m-%dT%H:%M:%SZ)
 
@@ -36,27 +38,27 @@ EOF
     cat >> "$output_file" <<EOF
 
 environmentVariables:
+  IMAGES_YAML: "$IMAGES_YAML"
   CACHE_DIR: "$CACHE_DIR"
   TEST_RUN_DIR: "$TEST_RUN_DIR"
+  SCRIPT_DIR: "$SCRIPT_DIR"
   SCRIPT_LIB_DIR: "$SCRIPT_LIB_DIR"
   DEBUG: "$DEBUG"
   WORKER_COUNT: "$WORKER_COUNT"
+  TEST_SELECT: "$TEST_SELECT"
+  TEST_IGNORE: "$TEST_IGNORE"
+  FORCE_MATRIX_REBUILD: "$FORCE_MATRIX_REBUILD"
+  FORCE_IMAGE_REBUILD: "$FORCE_IMAGE_REBUILD"
 EOF
 
     # Add test-type-specific environment variables
     case "$test_type" in
         transport)
             cat >> "$output_file" <<EOF
-  TEST_SELECT: "$TEST_SELECT"
-  TEST_IGNORE: "$TEST_IGNORE"
-  FORCE_MATRIX_REBUILD: "$FORCE_MATRIX_REBUILD"
-  FORCE_IMAGE_REBUILD: "$FORCE_IMAGE_REBUILD"
 EOF
             ;;
         perf)
             cat >> "$output_file" <<EOF
-  TEST_SELECT: "$TEST_SELECT"
-  TEST_IGNORE: "$TEST_IGNORE"
   BASELINE_SELECT: "${BASELINE_SELECT:-}"
   BASELINE_IGNORE: "${BASELINE_IGNORE:-}"
   ITERATIONS: "${ITERATIONS:-10}"
@@ -64,25 +66,19 @@ EOF
   DOWNLOAD_BYTES: "${DOWNLOAD_BYTES:-}"
   DURATION: "${DURATION:-}"
   LATENCY_ITERATIONS: "${LATENCY_ITERATIONS:-}"
-  FORCE_MATRIX_REBUILD: "$FORCE_MATRIX_REBUILD"
-  FORCE_IMAGE_REBUILD: "$FORCE_IMAGE_REBUILD"
 EOF
             ;;
         hole-punch)
             cat >> "$output_file" <<EOF
-  TEST_SELECT: "$TEST_SELECT"
-  TEST_IGNORE: "$TEST_IGNORE"
   RELAY_SELECT: "${RELAY_SELECT:-}"
   RELAY_IGNORE: "${RELAY_IGNORE:-}"
   ROUTER_SELECT: "${ROUTER_SELECT:-}"
   ROUTER_IGNORE: "${ROUTER_IGNORE:-}"
-  FORCE_MATRIX_REBUILD: "$FORCE_MATRIX_REBUILD"
-  FORCE_IMAGE_REBUILD: "$FORCE_IMAGE_REBUILD"
 EOF
             ;;
     esac
 
-    echo "  ✓ Generated inputs.yaml: $output_file"
+    print_success "Generated inputs.yaml: $output_file"
 }
 
 # Modify inputs.yaml for snapshot context
@@ -92,23 +88,25 @@ EOF
 modify_inputs_for_snapshot() {
     local snapshot_dir="$1"
     local inputs_file="$snapshot_dir/inputs.yaml"
+    indent
 
     if [ ! -f "$inputs_file" ]; then
-        echo "  ✗ Warning: inputs.yaml not found, skipping modification"
+        print_error "Warning: inputs.yaml not found, skipping modification"
+        unindent
         return 1
     fi
 
     # Override paths for snapshot context
+    yq eval -i '.environmentVariables.IMAGES_YAML = "./images.yaml"' "$inputs_file"
     yq eval -i '.environmentVariables.CACHE_DIR = "./"' "$inputs_file"
     yq eval -i '.environmentVariables.TEST_RUN_DIR = "./re-run"' "$inputs_file"
+    yq eval -i '.environmentVariables.SCRIPT_DIR = "./lib"' "$inputs_file"
     yq eval -i '.environmentVariables.SCRIPT_LIB_DIR = "./lib"' "$inputs_file"
-
-    # Add DOCKER_IMAGES variable for snapshot image loading
-    yq eval -i '.environmentVariables.DOCKER_IMAGES = "./images"' "$inputs_file"
 
     # Remove snapshot flag from command line args if present
     yq eval -i 'del(.commandLineArgs[] | select(. == "--snapshot"))' "$inputs_file"
 
-    echo "  ✓ Modified inputs.yaml for snapshot context"
+    print_success "Modified inputs.yaml for snapshot context"
+    unindent
     return 0
 }

@@ -4,8 +4,8 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR/.."
+# Source common libraries
+source "${SCRIPT_LIB_DIR}/lib-output-formatting.sh"
 
 # Use TEST_PASS_DIR results.yaml (created by run_tests.sh)
 RESULTS_FILE="${TEST_PASS_DIR}/results.yaml"
@@ -14,8 +14,8 @@ OUTPUT_HTML="${TEST_PASS_DIR}/results.html"
 LATEST_RESULTS_FILE="${TEST_PASS_DIR}/LATEST_TEST_RESULTS.md"
 
 if [ ! -f "$RESULTS_FILE" ]; then
-    echo "✗ Error: $RESULTS_FILE not found"
-    exit 1
+  print_error "Error: $RESULTS_FILE not found"
+  exit 1
 fi
 
 # Extract metadata
@@ -39,9 +39,9 @@ failed_all=$(yq eval '.summary.failedAll' "$RESULTS_FILE")
 
 # Calculate pass rate
 if [ "$total_all" -gt 0 ]; then
-    pass_rate=$(awk "BEGIN {printf \"%.1f\", ($passed_all / $total_all) * 100}")
+  pass_rate=$(awk "BEGIN {printf \"%.1f\", ($passed_all / $total_all) * 100}")
 else
-    pass_rate="0.0"
+  pass_rate="0.0"
 fi
 
 # Generate LATEST_TEST_RESULTS.md (detailed results with box plot statistics)
@@ -96,14 +96,14 @@ EOF
 # Extract upload stats from each test (without Outliers column)
 test_count=$(yq eval '.testResults | length' "$RESULTS_FILE" 2>/dev/null || echo "0")
 for ((i=0; i<test_count; i++)); do
-    name=$(yq eval ".testResults[$i].name" "$RESULTS_FILE" 2>/dev/null || echo "N/A")
-    min=$(yq eval ".testResults[$i].upload.min" "$RESULTS_FILE" 2>/dev/null || echo "null")
-    q1=$(yq eval ".testResults[$i].upload.q1" "$RESULTS_FILE" 2>/dev/null || echo "null")
-    median=$(yq eval ".testResults[$i].upload.median" "$RESULTS_FILE" 2>/dev/null || echo "null")
-    q3=$(yq eval ".testResults[$i].upload.q3" "$RESULTS_FILE" 2>/dev/null || echo "null")
-    max=$(yq eval ".testResults[$i].upload.max" "$RESULTS_FILE" 2>/dev/null || echo "null")
+  name=$(yq eval ".testResults[$i].name" "$RESULTS_FILE" 2>/dev/null || echo "N/A")
+  min=$(yq eval ".testResults[$i].upload.min" "$RESULTS_FILE" 2>/dev/null || echo "null")
+  q1=$(yq eval ".testResults[$i].upload.q1" "$RESULTS_FILE" 2>/dev/null || echo "null")
+  median=$(yq eval ".testResults[$i].upload.median" "$RESULTS_FILE" 2>/dev/null || echo "null")
+  q3=$(yq eval ".testResults[$i].upload.q3" "$RESULTS_FILE" 2>/dev/null || echo "null")
+  max=$(yq eval ".testResults[$i].upload.max" "$RESULTS_FILE" 2>/dev/null || echo "null")
 
-    echo "| $name | $min | $q1 | $median | $q3 | $max |" >> "$LATEST_RESULTS_FILE"
+  echo "| $name | $min | $q1 | $median | $q3 | $max |" >> "$LATEST_RESULTS_FILE"
 done
 
 cat >> "$LATEST_RESULTS_FILE" <<'EOF'
@@ -116,14 +116,14 @@ EOF
 
 # Extract download stats from each test (without Outliers column)
 for ((i=0; i<test_count; i++)); do
-    name=$(yq eval ".testResults[$i].name" "$RESULTS_FILE" 2>/dev/null || echo "N/A")
-    min=$(yq eval ".testResults[$i].download.min" "$RESULTS_FILE" 2>/dev/null || echo "null")
-    q1=$(yq eval ".testResults[$i].download.q1" "$RESULTS_FILE" 2>/dev/null || echo "null")
-    median=$(yq eval ".testResults[$i].download.median" "$RESULTS_FILE" 2>/dev/null || echo "null")
-    q3=$(yq eval ".testResults[$i].download.q3" "$RESULTS_FILE" 2>/dev/null || echo "null")
-    max=$(yq eval ".testResults[$i].download.max" "$RESULTS_FILE" 2>/dev/null || echo "null")
+  name=$(yq eval ".testResults[$i].name" "$RESULTS_FILE" 2>/dev/null || echo "N/A")
+  min=$(yq eval ".testResults[$i].download.min" "$RESULTS_FILE" 2>/dev/null || echo "null")
+  q1=$(yq eval ".testResults[$i].download.q1" "$RESULTS_FILE" 2>/dev/null || echo "null")
+  median=$(yq eval ".testResults[$i].download.median" "$RESULTS_FILE" 2>/dev/null || echo "null")
+  q3=$(yq eval ".testResults[$i].download.q3" "$RESULTS_FILE" 2>/dev/null || echo "null")
+  max=$(yq eval ".testResults[$i].download.max" "$RESULTS_FILE" 2>/dev/null || echo "null")
 
-    echo "| $name | $min | $q1 | $median | $q3 | $max |" >> "$LATEST_RESULTS_FILE"
+  echo "| $name | $min | $q1 | $median | $q3 | $max |" >> "$LATEST_RESULTS_FILE"
 done
 
 cat >> "$LATEST_RESULTS_FILE" <<'EOF'
@@ -136,14 +136,14 @@ EOF
 
 # Extract latency stats from each test (without Outliers column)
 for ((i=0; i<test_count; i++)); do
-    name=$(yq eval ".testResults[$i].name" "$RESULTS_FILE" 2>/dev/null || echo "N/A")
-    min=$(yq eval ".testResults[$i].latency.min" "$RESULTS_FILE" 2>/dev/null || echo "null")
-    q1=$(yq eval ".testResults[$i].latency.q1" "$RESULTS_FILE" 2>/dev/null || echo "null")
-    median=$(yq eval ".testResults[$i].latency.median" "$RESULTS_FILE" 2>/dev/null || echo "null")
-    q3=$(yq eval ".testResults[$i].latency.q3" "$RESULTS_FILE" 2>/dev/null || echo "null")
-    max=$(yq eval ".testResults[$i].latency.max" "$RESULTS_FILE" 2>/dev/null || echo "null")
+  name=$(yq eval ".testResults[$i].name" "$RESULTS_FILE" 2>/dev/null || echo "N/A")
+  min=$(yq eval ".testResults[$i].latency.min" "$RESULTS_FILE" 2>/dev/null || echo "null")
+  q1=$(yq eval ".testResults[$i].latency.q1" "$RESULTS_FILE" 2>/dev/null || echo "null")
+  median=$(yq eval ".testResults[$i].latency.median" "$RESULTS_FILE" 2>/dev/null || echo "null")
+  q3=$(yq eval ".testResults[$i].latency.q3" "$RESULTS_FILE" 2>/dev/null || echo "null")
+  max=$(yq eval ".testResults[$i].latency.max" "$RESULTS_FILE" 2>/dev/null || echo "null")
 
-    echo "| $name | $min | $q1 | $median | $q3 | $max |" >> "$LATEST_RESULTS_FILE"
+  echo "| $name | $min | $q1 | $median | $q3 | $max |" >> "$LATEST_RESULTS_FILE"
 done
 
 cat >> "$LATEST_RESULTS_FILE" <<'EOF'
@@ -259,6 +259,6 @@ cat > "$OUTPUT_HTML" <<EOF
 </html>
 EOF
 
-echo "  ✓ Generated $OUTPUT_HTML"
+print_success "Generated $OUTPUT_HTML"
 
 exit 0

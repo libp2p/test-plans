@@ -77,6 +77,7 @@ validate_github_sources_cached() {
 copy_github_sources_to_snapshot() {
     local snapshot_dir="$1"
     local cache_dir="$2"
+    indent
 
     mkdir -p "$snapshot_dir/snapshots"
     mkdir -p "$snapshot_dir/git-repos"
@@ -95,7 +96,7 @@ copy_github_sources_to_snapshot() {
                 cp -r "$git_dir" "$snapshot_dir/git-repo/"
                 copied_git=$((copied_git + 1))
             else
-                echo "  ✗ Warning: Missing git clone for $repo_name (commit: ${commit:0:8})" >&2
+                print_error "Warning: Missing git clone for $repo_name (commit: ${commit:0:8})" >&2
                 missing=$((missing + 1))
             fi
         else
@@ -104,7 +105,7 @@ copy_github_sources_to_snapshot() {
                 cp "$cache_dir/snapshots/${commit}.zip" "$snapshot_dir/snapshots/"
                 copied_zips=$((copied_zips + 1))
             else
-                echo "  ✗ Warning: Missing ZIP snapshot for commit ${commit:0:8}" >&2
+                print_error "Warning: Missing ZIP snapshot for commit ${commit:0:8}" >&2
                 missing=$((missing + 1))
             fi
         fi
@@ -112,18 +113,20 @@ copy_github_sources_to_snapshot() {
 
     # Report results
     if [ $copied_zips -gt 0 ]; then
-        echo "  ✓ Copied $copied_zips ZIP snapshots"
+        print_success "Copied $copied_zips ZIP snapshots"
     fi
 
     if [ $copied_git -gt 0 ]; then
-        echo "  ✓ Copied $copied_git git clones (with submodules)"
+        print_success "Copied $copied_git git clones (with submodules)"
     fi
 
     if [ $missing -gt 0 ]; then
-        echo "  ⚠ Warning: $missing sources missing from cache" >&2
+        print_error "Warning: $missing sources missing from cache" >&2
+        unindent
         return 1
     fi
 
+    unindent
     return 0
 }
 
