@@ -152,19 +152,17 @@ Options:
   --debug                       Enable debug mode
   --force-matrix-rebuild        Force test matrix regeneration (bypass cache)
   --force-image-rebuild         Force Docker image rebuilds (bypass cache)
-  -y, --yes                     Skip confirmation prompts
+  --yes, -y                     Skip confirmation prompts
   --check-deps                  Only check dependencies and exit
   --list-images                 List all image types used by this test suite and exit
   --list-tests                  List all selected tests and exit
   --help, -h                    Show this help message
 
 Examples:
-  $0 --test-select "go-v0.45" --iterations 3
-  $0 --test-select "~libp2p" --snapshot
   $0 --test-ignore "js-v3.x"
   $0 --upload-bytes 5368709120 --download-bytes 5368709120
   $0 --list-images
-  $0 --list-tests --test-select "~libp2p"
+  $0 --list-tests --test-ignore "!~rust"
   $0 --snapshot --force-image-rebuild
 
 Dependencies:
@@ -339,7 +337,7 @@ fi
 if [ "$CHECK_DEPS" = true ]; then
   print_header "Checking dependencies..."
   indent
-  bash "$SCRIPT_LIB_DIR/check-dependencies.sh" docker yq || {
+  bash "${SCRIPT_LIB_DIR}/check-dependencies.sh" docker yq || {
     echo ""
     print_error "Error: Missing required dependencies."
     print_message "Run '$0 --check-deps' to see details."
@@ -394,7 +392,7 @@ unindent
 # Check dependencies for normal execution
 print_header "Checking dependencies..."
 indent
-bash "$SCRIPT_LIB_DIR/check-dependencies.sh" docker yq || {
+bash "${SCRIPT_LIB_DIR}/check-dependencies.sh" docker yq || {
   echo ""
   print_error "Error: Missing required dependencies."
   print_message "Run '$0 --check-deps' to see details."
@@ -668,18 +666,19 @@ stop_redis_service "perf-network" "perf-redis" || {
 unindent
 echo ""
 
+TEST_END_TIME=$(date +%s)
+TEST_DURATION=$((TEST_END_TIME - TEST_START_TIME))
+
 # =============================================================================
 # STEP 10: COLLECT RESULTS
 # -----------------------------------------------------------------------------
-# 
+# This appends all of the results files to the single results.yaml in the
+# output directory and then displays a summary
 # =============================================================================
 
 # Collect results
 print_header "Collecting results..."
 indent
-
-TEST_END_TIME=$(date +%s)
-TEST_DURATION=$((TEST_END_TIME - TEST_START_TIME))
 
 # Count pass/fail from baseline results
 BASELINE_PASSED=0
@@ -787,7 +786,9 @@ echo ""
 # =============================================================================
 # STEP 11: GENERATE RESULTS DASHBOARD
 # -----------------------------------------------------------------------------
-# 
+# This creates the Markdown version for injecting into the README.md file for
+# this test. If `pandoc` is installed, an HTML version is gnerated. If
+# `gnuplot` is installed, box plot diagrams are also generated.
 # =============================================================================
 
 # Generate results dashboard
@@ -824,7 +825,11 @@ echo ""
 # =============================================================================
 # STEP 12: CREATE SNAPSHOT
 # -----------------------------------------------------------------------------
-# 
+# This copies all necessary scripts and input files to the output directory so
+# that it becomes a standalone version of this test that can be emitted as an
+# artifact when run as a CI/CD step. It then contains everything needed to
+# subsequently re-run the test exactly as it was run for debugging and
+# analysis.
 # =============================================================================
 
 # Create snapshot (if requested)
