@@ -54,7 +54,73 @@ get_entity_ids() {
     return 0
   fi
 
-  yq eval ".${entity_type}[].id" "$images_file" 2>/dev/null || echo ""
+  yq eval ".${entity_type}[].id" "$images_file" 2>/dev/null
+}
+
+# Generic function to get all unique transport names from images.yaml
+# Works for any entity type: implementations, baselines, relays, routers, etc.
+#
+# Args:
+#   $1: entity_type - Entity type key in images.yaml (e.g., "implementations", "baselines", "relays")
+#   $2: images_file - Path to images.yaml (default: images.yaml)
+# Returns:
+#   Array of transport names (one per line)
+# Usage:
+#   all_transport_names=($(get_transport_names "implementations"))
+#   all_relay_transport_names=($(get_transport_names "relays" "custom-images.yaml"))
+get_transport_names() {
+  local entity_type="$1"
+  local images_file="${2:-images.yaml}"
+
+  if [ ! -f "$images_file" ]; then
+    return 0
+  fi
+
+  yq eval ".${entity_type}[].transports[]" "$images_file" 2>/dev/null | sort -u
+}
+
+# Generic function to get all unique secure channel names from images.yaml
+# Works for any entity type: implementations, baselines, relays, routers, etc.
+#
+# Args:
+#   $1: entity_type - Entity type key in images.yaml (e.g., "implementations", "baselines", "relays")
+#   $2: images_file - Path to images.yaml (default: images.yaml)
+# Returns:
+#   Array of secure channel names (one per line)
+# Usage:
+#   all_secure_names=($(get_secure_names "implementations"))
+#   all_relay_secure_names=($(get_secure_names "relays" "custom-images.yaml"))
+get_secure_names() {
+  local entity_type="$1"
+  local images_file="${2:-images.yaml}"
+
+  if [ ! -f "$images_file" ]; then
+    return 0
+  fi
+
+  yq eval ".${entity_type}[].secureChannels[]" "$images_file" 2>/dev/null | sort -u
+}
+
+# Generic function to get all unique muxer names from images.yaml
+# Works for any entity type: implementations, baselines, relays, routers, etc.
+#
+# Args:
+#   $1: entity_type - Entity type key in images.yaml (e.g., "implementations", "baselines", "relays")
+#   $2: images_file - Path to images.yaml (default: images.yaml)
+# Returns:
+#   Array of muxer names (one per line)
+# Usage:
+#   all_muxer_names=($(get_muxer_names "implementations"))
+#   all_relay_muxer_names=($(get_muxer_names "relays" "custom-images.yaml"))
+get_muxer_names() {
+  local entity_type="$1"
+  local images_file="${2:-images.yaml}"
+
+  if [ ! -f "$images_file" ]; then
+    return 0
+  fi
+
+  yq eval ".${entity_type}[].muxers[]" "$images_file" 2>/dev/null | sort -u
 }
 
 # Generic function to get the source type for the given entity_type and id

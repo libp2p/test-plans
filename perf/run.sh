@@ -105,7 +105,6 @@ trap handle_shutdown INT
 WORKER_COUNT=1
 
 # Perf-specific variables
-export BASELINE_SELECT="${BASELINE_SELECT:-}"
 export BASELINE_IGNORE="${BASELINE_IGNORE:-}"
 export UPLOAD_BYTES=1073741824     # 1GB default
 export DOWNLOAD_BYTES=1073741824   # 1GB default
@@ -138,10 +137,11 @@ libp2p Performance Test Runner
 Usage: $0 [options]
 
 Options:
-  --test-select VALUE           Select implementations to test (pipe-separated)
   --test-ignore VALUE           Ignore implementations (pipe-separated)
-  --baseline-select VALUE       Select baseline tests (pipe-separated)
   --baseline-ignore VALUE       Ignore baseline tests (pipe-separated)
+  --transport-ignore VALUE      Ignore given transport (pipe-separated)
+  --secure-ignore VALUE         Ignore given secure channel (pipe-separated)
+  --muxer-ignore VALUE          Ignore given muxer (pipe-separated)
   --upload-bytes VALUE          Bytes to upload per test (default: 1GB)
   --download-bytes VALUE        Bytes to download per test (default: 1GB)
   --iterations VALUE            Number of iterations per test (default: 10)
@@ -177,10 +177,11 @@ EOF
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --test-select) TEST_SELECT="$2"; shift 2 ;;
     --test-ignore) TEST_IGNORE="$2"; shift 2 ;;
-    --baseline-select) BASELINE_SELECT="$2"; shift 2 ;;
     --baseline-ignore) BASELINE_IGNORE="$2"; shift 2 ;;
+    --transport-ignore) TRANSPORT_IGNORE="$2"; shift 2;;
+    --secure-ignore) SECURE_IGNORE="$2"; shift 2;;
+    --muxer-ignore) MUXER_IGNORE="$2"; shift 2;;
     --upload-bytes) UPLOAD_BYTES="$2"; shift 2 ;;
     --download-bytes) DOWNLOAD_BYTES="$2"; shift 2 ;;
     --iterations) ITERATIONS="$2"; shift 2 ;;
@@ -209,10 +210,11 @@ done
 export TEST_TYPE="perf"
 export TEST_RUN_KEY=$(compute_test_run_key \
   "$IMAGES_YAML" \
-  "$TEST_SELECT" \
   "$TEST_IGNORE" \
-  "$BASELINE_SELECT" \
   "$BASELINE_IGNORE" \
+  "$TRANSPORT_IGNORE" \
+  "$SECURE_IGNORE" \
+  "$MUXER_IGNORE" \
   "$DEBUG" \
 )
 export TEST_PASS_NAME="${TEST_TYPE}-${TEST_RUN_KEY}-$(date +%H%M%S-%d-%m-%Y)"
@@ -270,7 +272,7 @@ if [ "$LIST_TESTS" = true ]; then
   export TEST_PASS_NAME="temp-list"
   export CACHE_DIR
   export DEBUG
-  export TEST_SELECT TEST_IGNORE BASELINE_SELECT BASELINE_IGNORE
+  export TEST_IGNORE BASELINE_IGNORE TRANSPORT_IGNORE SECURE_IGNORE MUXER_IGNORE
   export UPLOAD_BYTES DOWNLOAD_BYTES
   export ITERATIONS DURATION_PER_ITERATION LATENCY_ITERATIONS
   export FORCE_MATRIX_REBUILD
@@ -365,8 +367,10 @@ print_message "Test Pass: $TEST_PASS_NAME"
 print_message "Test Pass Dir: ${TEST_PASS_DIR}"
 print_message "Cache Dir: $CACHE_DIR"
 print_message "Workers: $WORKER_COUNT"
-[ -n "$TEST_SELECT" ] && print_message "Test Select: $TEST_SELECT"
 [ -n "$TEST_IGNORE" ] && print_message "Test Ignore: $TEST_IGNORE"
+[ -n "$TRANSPORT_IGNORE" ] && print_message "Transport Ignore: $TRANSPORT_IGNORE"
+[ -n "$SECURE_IGNORE" ] && print_message "Secure Ignore: $SECURE_IGNORE"
+[ -n "$MUXER_IGNORE" ] && print_message "Muxer Ignore: $MUXER_IGNORE"
 print_message "Upload Bytes: $(numfmt --to=iec --suffix=B $UPLOAD_BYTES 2>/dev/null || echo "${UPLOAD_BYTES} bytes")"
 print_message "Download Bytes: $(numfmt --to=iec --suffix=B $DOWNLOAD_BYTES 2>/dev/null || echo "${DOWNLOAD_BYTES} bytes")"
 print_message "Iterations: $ITERATIONS"

@@ -1,45 +1,6 @@
 #!/bin/bash
 # Common filter engine for test/baseline/relay/router filtering
 # Provides recursive alias expansion with loop detection, proper inversion, and deduplication
-#
-# THIS IS THE PRIMARY FILTERING LIBRARY FOR ALL TEST SUITES
-# All test suites should use filter_names() or filter_entity_list() for entity filtering
-#
-# NOTE: This library requires ALIASES associative array to be loaded
-# Source lib-test-images.sh and call load_aliases() before using these functions
-#
-# RECOMMENDED USAGE PATTERN:
-#
-#   # 1. Load aliases
-#   source lib-test-images.sh
-#   load_aliases
-#
-#   # 2. Get all entity IDs
-#   all_impl_ids=($(get_entity_ids "implementations"))
-#
-#   # 3. Filter entities using the global function
-#   mapfile -t filtered_impls < <(filter_names all_impl_ids all_impl_ids "$TEST_SELECT" "$TEST_IGNORE")
-#
-#   # 4. Generate tests using only filtered entities
-#   for impl in "${filtered_impls[@]}"; do
-#       # No filtering checks needed here!
-#   done
-#
-# MULTI-ENTITY EXAMPLE (Perf test with impls + baselines):
-#
-#   load_aliases
-#   all_impl_ids=($(get_entity_ids "implementations"))
-#   all_baseline_ids=($(get_entity_ids "baselines"))
-#
-#   mapfile -t filtered_impls < <(filter_names all_impl_ids all_impl_ids "$TEST_SELECT" "$TEST_IGNORE")
-#   mapfile -t filtered_baselines < <(filter_names all_baseline_ids all_baseline_ids "$BASELINE_SELECT" "$BASELINE_IGNORE")
-#
-#   for impl in "${filtered_impls[@]}"; do
-#       # Generate impl tests
-#   done
-#   for baseline in "${filtered_baselines[@]}"; do
-#       # Generate baseline tests
-#   done
 
 # Source formatting library if not already loaded
 if ! type indent &>/dev/null; then
@@ -209,20 +170,6 @@ _expand_recursive() {
         return 1
       }
 
-      # Deduplicate
-      #readarray -t expanded_parts < <(printf '%s\n' "${expanded_parts[@]}" | sort -u)
-
-      # Add all expanded parts
-      #for expanded in "${expanded_parts[@]}"; do
-      #  #print_debug "${expanded}...including"
-      #  result_parts_ref+=("${expanded}")
-      #done
-
-      #local rp=$(printf '%s\n' "${result_parts_ref[@]}" | paste -sd'|')
-      #local ep=$(printf '%s\n' "${expanded_parts[@]}" | paste -sd'|')
-      #print_debug "result_parts_ref = ${rp}"
-      #print_debug "expanded_parts = ${ep}"
-
     elif [[ "$part" =~ ^!(.+)$ ]]; then
       # Inverted value: !pattern
       # Expand to all names that DON'T contain the pattern
@@ -255,12 +202,12 @@ _expand_recursive() {
 # Expand a full filter string with recursive alias expansion, inversion, and deduplication
 # Args:
 #   $1: filter_string - Raw filter string (e.g., "rust|!go|~stable|!~failing")
-#   $2: all_names_array - Name of array variable containing all possible names (for negation expansion)
+#   $2: all_names_ref - Name of array variable containing all possible names (for negation expansion)
 # Returns:
 #   Fully expanded, deduplicated pipe-separated string
 # Usage:
-#   all_impls=("rust-v0.56" "go-v0.45" "python-v0.4")
-#   result=$(expand_filter_string "~rust|!go" all_impls)
+#   all_names=("rust-v0.56" "go-v0.45" "python-v0.4")
+#   result=$(expand_filter_string "~rust|!go" all_names)
 expand_filter_string() {
   local filter_string="$1"
   local -n all_names_ref=$2  # Name reference to array
@@ -320,42 +267,24 @@ filter_matches() {
   return 1
 }
 
-# Generic filtering: filter a list of ids using select and ignore filters
+# Generic filtering: filter a list of ids using ignore filters
 # Implements the two-step pattern:
-#   1. Apply select filter to get selected set
-#   2. Apply ignore filter to selected set to get final set
-#
+#   1. Apply ignore filter to selected set to get final set
 # Args:
 #   $1: input_ids_ref - Name of array variable with ids to filter
-#   $2: select_filter - The select filter, expanded using expand_filter_string
-#   $3: ignore_filter - The ignore filter, expanded using expand_filter_string
+#   $2: ignore_filter - The ignore filter, expanded using expand_filter_string
 # Returns:
 #   Filtered ids, one per line
 # Usage:
 #   input_ids=("rust-v0.56" "rust-v0.55" "go-v0.45")
-#   select_filter="rust" selected: ("rust-v0.56" "rust-v0.55")
-#   ignore_filter="v0.56" final: ("rust-v0.55")
+#   ignore_filter="v0.56|v0.45"
 #   Returns: rust-v0.55
-filter_ids() {
+filter() {
   local -n input_ids_ref=$1
-  local select_filter=$2
-  local ignore_filter=$3
+  local ignore_filter=$2
+  local selected=("${input_ids_ref[@]}")
 
-  # Step 1: Apply SELECT filter
-  local selected=()
-  if [ -z "$select_filter" ]; then
-    # No select filter, include all ids
-    selected=("${input_ids_ref[@]}")
-  else
-    for id in "${input_ids_ref[@]}"; do
-      if filter_matches "${id}" "${select_filter}"; then
-        # Include the ID that matches one of the select filter substrings
-        selected+=("${id}")
-      fi
-    done
-  fi
-
-  # Step 2: Apply IGNORE filter
+  # Apply IGNORE filter
   local final=()
   if [ -z "$ignore_filter" ]; then
     # No ignore filter, include all selected ids

@@ -27,8 +27,10 @@ init_common_variables() {
   TEST_RUN_DIR="${TEST_RUN_DIR:-${CACHE_DIR}/test-run}"
 
   # Common filtering variables
-  TEST_SELECT="${TEST_SELECT:-}"
   TEST_IGNORE="${TEST_IGNORE:-}"
+  TRANSPORT_IGNORE="${TRANSPORT_IGNORE:-}"
+  SECURE_IGNORE="${SECURE_IGNORE:-}"
+  MUXER_IGNORE="${MUXER_IGNORE:-}"
 
   # Execution settings
   WORKER_COUNT="${WORKER_COUNT:-$(nproc 2>/dev/null || echo 4)}"
@@ -48,8 +50,10 @@ init_common_variables() {
   export IMAGES_YAML
   export CACHE_DIR
   export TEST_RUN_DIR
-  export TEST_SELECT
   export TEST_IGNORE
+  export TRANSPORT_IGNORE
+  export SECURE_IGNORE
+  export MUXER_IGNORE
   export WORKER_COUNT
   export DEBUG
   export CHECK_DEPS

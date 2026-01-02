@@ -57,6 +57,8 @@ baselines:
       dockerfile: Dockerfile
     server: local
     transports: [https]
+    secureChannels: []
+    muxers: []
     protocols: [perf]
     capabilities: [upload, download, latency]
     metadata:
@@ -73,6 +75,8 @@ baselines:
       dockerfile: Dockerfile
     server: local
     transports: [quic]
+    secureChannels: []
+    muxers: []
     protocols: [perf]
     capabilities: [upload, download, latency]
     metadata:
@@ -89,6 +93,8 @@ baselines:
       dockerfile: Dockerfile
     server: local
     transports: [tcp]
+    secureChannels: []
+    muxers: []
     protocols: [iperf3]
     capabilities: [upload, download, latency]
     metadata:

@@ -21,34 +21,31 @@ source "${SCRIPT_LIB_DIR}/lib-test-images.sh"
 load_aliases
 
 # Get common entity IDs for negation expansion and ignored test generation
-all_image_ids=($(get_entity_ids "implementations"))
+readarray -t all_image_ids < <(get_entity_ids "implementations")
 
 # Perf entity IDs
-all_baseline_ids=($(get_entity_ids "baselines"))
+readarray -t all_baseline_ids < <(get_entity_ids "baselines")
+
+# All transport names
+readarray -t all_transport_names < <(get_transport_names "implementations")
+
+# All secure channel names
+readarray -t all_secure_names < <(get_secure_names "implementations")
+
+# All muxer names
+readarray -t all_muxer_names < <(get_muxer_names "implementations")
 
 # Save original filters for display
-ORIGINAL_TEST_SELECT="${TEST_SELECT}"
 ORIGINAL_TEST_IGNORE="${TEST_IGNORE}"
-ORIGINAL_BASELINE_SELECT="${BASELINE_SELECT}"
 ORIGINAL_BASELINE_IGNORE="${BASELINE_IGNORE}"
-
-# Expand filters explicitly so we can display the expansions
-if [ -n "${TEST_SELECT}" ]; then
-  EXPANDED_TEST_SELECT=$(expand_filter_string "${TEST_SELECT}" all_image_ids)
-else
-  EXPANDED_TEST_SELECT=""
-fi
+ORIGINAL_TRANSPORT_IGNORE="${TRANSPORT_IGNORE}"
+ORIGINAL_SECURE_IGNORE="${SECURE_IGNORE}"
+ORIGINAL_MUXER_IGNORE="${MUXER_IGNORE}"
 
 if [ -n "${TEST_IGNORE}" ]; then
   EXPANDED_TEST_IGNORE=$(expand_filter_string "${TEST_IGNORE}" all_image_ids)
 else
   EXPANDED_TEST_IGNORE=""
-fi
-
-if [ -n "${BASELINE_SELECT}" ]; then
-  EXPANDED_BASELINE_SELECT=$(expand_filter_string "${BASELINE_SELECT}" all_baseline_ids)
-else
-  EXPANDED_BASELINE_SELECT=""
 fi
 
 if [ -n "${BASELINE_IGNORE}" ]; then
@@ -57,14 +54,25 @@ else
   EXPANDED_BASELINE_IGNORE=""
 fi
 
-##### 3. DISPLAY FILTER EXPANSION
+if [ -n "${TRANSPORT_IGNORE}" ]; then
+  EXPANDED_TRANSPORT_IGNORE=$(expand_filter_string "${TRANSPORT_IGNORE}" all_transport_names)
+else
+  EXPANDED_TRANSPORT_IGNORE=""
+fi
 
-# test select
-print_filter_expansion \
-  "ORIGINAL_TEST_SELECT" \
-  "EXPANDED_TEST_SELECT" \
-  "Test select" \
-  "No test-select specified (will include all implementations)"
+if [ -n "${SECURE_IGNORE}" ]; then
+  EXPANDED_SECURE_IGNORE=$(expand_filter_string "${SECURE_IGNORE}" all_secure_names)
+else
+  EXPANDED_SECURE_IGNORE=""
+fi
+
+if [ -n "${MUXER_IGNORE}" ]; then
+  EXPANDED_MUXER_IGNORE=$(expand_filter_string "${MUXER_IGNORE}" all_muxer_names)
+else
+  EXPANDED_MUXER_IGNORE=""
+fi
+
+##### 3. DISPLAY FILTER EXPANSION
 
 # test ignore
 print_filter_expansion \
@@ -73,19 +81,33 @@ print_filter_expansion \
   "Test ignore" \
   "No test-ignore specified (will ignore none)"
 
-# baseline select
-print_filter_expansion \
-  "ORIGINAL_BASELINE_SELECT" \
-  "EXPANDED_BASELINE_SELECT" \
-  "Baseline select" \
-  "No baseline-select specified (will include all baselines)"
-
 # baseline ignore
 print_filter_expansion \
   "ORIGINAL_BASELINE_IGNORE" \
   "EXPANDED_BASELINE_IGNORE" \
   "Baseline ignore" \
   "No baseline-ignore specified (will ignore none)"
+
+# transort ignore
+print_filter_expansion \
+  "ORIGINAL_TRANSPORT_IGNORE" \
+  "EXPANDED_TRANSPORT_IGNORE" \
+  "Transport ignore" \
+  "No transort-ignore specified (will ignore none)"
+
+# secure ignore
+print_filter_expansion \
+  "ORIGINAL_SECURE_IGNORE" \
+  "EXPANDED_SECURE_IGNORE" \
+  "Secure channel ignore" \
+  "No secure-ignore specified (will ignore none)"
+
+# muxer ignore
+print_filter_expansion \
+  "ORIGINAL_MUXER_IGNORE" \
+  "EXPANDED_MUXER_IGNORE" \
+  "Muxer ignore" \
+  "No muxer-ignore specified (will ignore none)"
 
 echo ""
 
@@ -106,17 +128,34 @@ echo ""
 
 ##### 5. FILTERING
 
-# Filter implementations and baselines using already-expanded strings
 print_message "Filtering implementations..."
-mapfile -t filtered_image_ids < <(filter_ids all_image_ids "${EXPANDED_TEST_SELECT}" "${EXPANDED_TEST_IGNORE}")
+readarray -t filtered_image_ids < <(filter all_image_ids "${EXPANDED_TEST_IGNORE}")
 indent
 print_success "Filtered to ${#filtered_image_ids[@]} implementations (${#all_image_ids[@]} total)"
 unindent
 
 print_message "Filtering baselines..."
-mapfile -t filtered_baseline_ids < <(filter_ids all_baseline_ids "${EXPANDED_BASELINE_SELECT}" "${EXPANDED_BASELINE_IGNORE}")
+readarray -t filtered_baseline_ids < <(filter all_baseline_ids "${EXPANDED_BASELINE_IGNORE}")
 indent
 print_success "Filtered to ${#filtered_baseline_ids[@]} baselines (${#all_baseline_ids[@]} total)"
+unindent
+
+print_message "Filtering transports..."
+readarray -t filtered_transport_names < <(filter all_transport_names "${EXPANDED_TRANSPORT_IGNORE}")
+indent
+print_success "Filtered to ${#filtered_transport_names[@]} transports (${#all_transport_names[@]} total)"
+unindent
+
+print_message "Filtering secure channels..."
+readarray -t filtered_secure_names < <(filter all_secure_names "${EXPANDED_SECURE_IGNORE}")
+indent
+print_success "Filtered to ${#filtered_secure_names[@]} secure channels (${#all_secure_names[@]} total)"
+unindent
+
+print_message "Filtering muxers..."
+readarray -t filtered_muxer_names < <(filter all_muxer_names "${EXPANDED_MUXER_IGNORE}")
+indent
+print_success "Filtered to ${#filtered_muxer_names[@]} muxers (${#all_muxer_names[@]} total)"
 unindent
 
 echo ""
@@ -155,13 +194,11 @@ for image_id in "${all_image_ids[@]}"; do
   secure=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .secureChannels | join(\" \")" images.yaml)
   muxers=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .muxers | join(\" \")" images.yaml)
   server=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .server" images.yaml)
-  dial_only=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .dialOnly | join(\" \")" images.yaml 2>/dev/null || echo "")
 
   image_transports["$image_id"]="$transports"
   image_secure["$image_id"]="$secure"
   image_muxers["$image_id"]="$muxers"
   image_server["$image_id"]="$server"
-  image_dial_only["$image_id"]="$dial_only"
 done
 
 indent
@@ -233,18 +270,26 @@ for dialer_id in "${all_image_ids[@]}"; do
   dialer_secure="${image_secure[$dialer_id]}"
   dialer_muxers="${image_muxers[$dialer_id]}"
   dialer_server="${image_server[$dialer_id]}"
+  
+  dialer_selected=true
+
+  if [[ ! " ${filtered_image_ids[*]} " =~ " ${dialer_id} " ]]; then
+    print_debug "${dialer_id} is an ignored id"
+    dialer_selected=false
+  fi
 
   for listener_id in "${all_image_ids[@]}"; do
-    # Check if BOTH dialer AND listener are in filtered implementation list
-    test_is_selected=false
-    if [[ " ${filtered_image_ids[*]} " =~ " ${dialer_id} " ]] && [[ " ${filtered_image_ids[*]} " =~ " ${listener_id} " ]]; then
-      test_is_selected=true
-    fi
-
     listener_transports="${image_transports[$listener_id]}"
     listener_secure="${image_secure[$listener_id]}"
     listener_muxers="${image_muxers[$listener_id]}"
     listener_server="${image_server[$listener_id]}"
+
+    listener_selected=true
+
+    if [[ ! " ${filtered_image_ids[*]} " =~ " ${listener_id} " ]]; then
+      print_debug "${listener_id} is an ignored id"
+      listener_selected=false
+    fi
 
     # Find common transports
     common_transports=$(get_common "$dialer_transports" "$listener_transports")
@@ -255,17 +300,28 @@ for dialer_id in "${all_image_ids[@]}"; do
     # Process each common transport
     for transport in $common_transports; do
 
+      transport_selected=true
+
+      if [[ ! " ${filtered_transport_names[*]} " =~ " ${transport} " ]]; then
+        print_debug "${transport} is an ignored transport"
+        transport_selected=false
+      fi
+
       if is_standalone_transport "$transport"; then
 
         # Integrated transport with built-in secure channel and muxer
         test_id="$dialer_id x $listener_id ($transport)"
 
         # Add to selected or ignored list
-        if [ "$test_is_selected" = true ]; then
+        if [[ "$dialer_selected" == true ]] && \
+           [[ "$listener_selected" == true ]] && \
+           [[ "$transport_selected" == true ]]; then
           # Select main test
+          print_debug "${test_id} is selected"
           main_tests+=("$test_id|$dialer_id|$listener_id|$dialer_server|$listener_server|$transport|null|null")
         else
           # Ignore main test
+          print_debug "${test_id} is ignored"
           ignored_main_tests+=("$test_id|$dialer_id|$listener_id|$dialer_server|$listener_server|$transport|null|null")
         fi
 
@@ -281,17 +337,38 @@ for dialer_id in "${all_image_ids[@]}"; do
 
         # Generate all combinations
         for secure in $common_secure; do
+
+          secure_selected=true
+
+          if [[ ! " ${filtered_secure_names[*]} " =~ " ${secure} " ]]; then
+            print_debug "${secure} is an ignored secure channel"
+            secure_selected=false
+          fi
+
           for muxer in $common_muxers; do
+
+            muxer_selected=true
+
+            if [[ ! " ${filtered_muxer_names[*]} " =~ " ${muxer} " ]]; then
+              print_debug "${muxer} is an ignored muxer"
+              muxer_selected=false
+            fi
 
             # Layered transport with secure channel and muxer
             test_id="$dialer_id x $listener_id ($transport, $secure, $muxer)"
 
             # Add to selected or ignored list
-            if [ "$test_is_selected" = true ]; then
+            if [[ "$dialer_selected" == true ]] && \
+               [[ "$listener_selected" == true ]] && \
+               [[ "$transport_selected" == true ]] && \
+               [[ "$secure_selected" == true ]] && \
+               [[ "$muxer_selected" == true ]]; then
               # Select main test
+              print_debug "${test_id} is selected"
               main_tests+=("$test_id|$dialer_id|$listener_id|$dialer_server|$listener_server|$transport|$secure|$muxer")
             else
               # Ignore main test
+              print_debug "${test_id} is ignored"
               ignored_main_tests+=("$test_id|$dialer_id|$listener_id|$dialer_server|$listener_server|$transport|$secure|$muxer")
             fi
           done
@@ -355,14 +432,16 @@ EOF
 # Generate test-matrix.yaml
 cat > "${TEST_PASS_DIR}/test-matrix.yaml" <<EOF
 metadata:
-  select: |-
-    ${TEST_SELECT}
   ignore: |-
     ${TEST_IGNORE}
-  baselineSelect: |-
-    ${BASELINE_SELECT}
   baselineIgnore: |-
     ${BASELINE_IGNORE}
+  transportIgnore: |-
+    ${TRANSPORT_IGNORE}
+  secureIgnore: |-
+    ${SECURE_IGNORE}
+  muxerIgnore: |-
+    ${MUXER_IGNORE}
   uploadBytes: $UPLOAD_BYTES
   downloadBytes: $DOWNLOAD_BYTES
   iterations: $ITERATIONS
