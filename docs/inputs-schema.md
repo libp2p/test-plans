@@ -36,8 +36,10 @@ These variables are included for all test types:
 
 | Variable | Description |
 |----------|-------------|
+| `IMAGES_YAML` | The images YAML file used to run the tests (default: `./images.yaml`) |
 | `CACHE_DIR` | Cache directory path (default: `/srv/cache`) |
 | `TEST_RUN_DIR` | Test run directory path (default: `/srv/cache/test-run`) |
+| `SCRIPT_DIR` | Test-specific library scripts directory path |
 | `SCRIPT_LIB_DIR` | Shared library scripts directory path |
 | `DEBUG` | Debug mode flag (`true` or `false`) |
 | `WORKER_COUNT` | Number of parallel test workers |
@@ -48,8 +50,10 @@ These variables are included for all test types:
 
 | Variable | Description |
 |----------|-------------|
-| `TEST_SELECT` | Test selection filter (pipe-separated patterns) |
 | `TEST_IGNORE` | Test ignore filter (pipe-separated patterns) |
+| `TRANSPORT_IGNORE` | Transport ignore filter |
+| `SECURE_IGNORE` | Secure channel ignore filter |
+| `MUXER_IGNORE` | Muxer ignore filter |
 | `FORCE_MATRIX_REBUILD` | Force test matrix regeneration flag |
 | `FORCE_IMAGE_REBUILD` | Force Docker image rebuild flag |
 
@@ -57,68 +61,75 @@ These variables are included for all test types:
 
 | Variable | Description |
 |----------|-------------|
-| `TEST_SELECT` | Implementation selection filter |
 | `TEST_IGNORE` | Implementation ignore filter |
-| `BASELINE_SELECT` | Baseline test selection filter |
 | `BASELINE_IGNORE` | Baseline test ignore filter |
+| `TRANSPORT_IGNORE` | Transport ignore filter |
+| `SECURE_IGNORE` | Secure channel ignore filter |
+| `MUXER_IGNORE` | Muxer ignore filter |
+| `FORCE_MATRIX_REBUILD` | Force test matrix regeneration flag |
+| `FORCE_IMAGE_REBUILD` | Force Docker image rebuild flag |
 | `ITERATIONS` | Number of iterations per test (default: 10) |
 | `UPLOAD_BYTES` | Bytes to upload per test (default: 1073741824 = 1GB) |
 | `DOWNLOAD_BYTES` | Bytes to download per test (default: 1073741824 = 1GB) |
 | `DURATION` | Duration per iteration for throughput tests (seconds) |
 | `LATENCY_ITERATIONS` | Number of iterations for latency tests (default: 100) |
-| `FORCE_MATRIX_REBUILD` | Force test matrix regeneration flag |
-| `FORCE_IMAGE_REBUILD` | Force Docker image rebuild flag |
 
 #### Hole-Punch Tests
 
 | Variable | Description |
 |----------|-------------|
-| `TEST_SELECT` | Peer implementation selection filter |
 | `TEST_IGNORE` | Peer implementation ignore filter |
-| `RELAY_SELECT` | Relay implementation selection filter |
 | `RELAY_IGNORE` | Relay implementation ignore filter |
-| `ROUTER_SELECT` | Router implementation selection filter |
 | `ROUTER_IGNORE` | Router implementation ignore filter |
+| `TRANSPORT_IGNORE` | Transport ignore filter |
+| `SECURE_IGNORE` | Secure channel ignore filter |
+| `MUXER_IGNORE` | Muxer ignore filter |
 | `FORCE_MATRIX_REBUILD` | Force test matrix regeneration flag |
 | `FORCE_IMAGE_REBUILD` | Force Docker image rebuild flag |
 
 ## Example
 
 ```yaml
-# Generated inputs.yaml for test run
+# Generated inputs.yaml for a "perf" test run
 # This file captures all configuration for reproducibility
-# Created: 2025-12-29T01:59:31Z
+# Created: 2026-01-02T03:04:06Z
 
 testType: perf
 
 commandLineArgs:
-  - "--test-select"
-  - "rust-v0.56"
   - "--test-ignore"
   - "!rust-v0.56"
-  - "--baseline-select"
-  - "https"
   - "--baseline-ignore"
-  - "!https"
+  - "~all"
+  - "--transport-ignore"
+  - "quic-v1"
+  - "--secure-ignore"
+  - "tls"
+  - "--muxer-ignore"
+  - "mplex"
   - "--force-matrix-rebuild"
+  - "--yes"
 
 environmentVariables:
+  IMAGES_YAML: "./images.yaml"
   CACHE_DIR: "/srv/cache"
   TEST_RUN_DIR: "/srv/cache/test-run"
+  SCRIPT_DIR: "/srv/test-plans/perf/lib"
   SCRIPT_LIB_DIR: "/srv/test-plans/perf/lib/../../lib"
   DEBUG: "false"
   WORKER_COUNT: "1"
-  TEST_SELECT: "rust-v0.56"
   TEST_IGNORE: "!rust-v0.56"
-  BASELINE_SELECT: "https"
-  BASELINE_IGNORE: "!https"
+  TRANSPORT_IGNORE: "quic-v1"
+  SECURE_IGNORE: "tls"
+  MUXER_IGNORE: "mplex"
+  FORCE_MATRIX_REBUILD: "true"
+  FORCE_IMAGE_REBUILD: "false"
+  BASELINE_IGNORE: "~all"
   ITERATIONS: "10"
   UPLOAD_BYTES: "1073741824"
   DOWNLOAD_BYTES: "1073741824"
   DURATION: ""
   LATENCY_ITERATIONS: "100"
-  FORCE_MATRIX_REBUILD: "true"
-  FORCE_IMAGE_REBUILD: "false"
 ```
 
 ## Generation
@@ -139,8 +150,8 @@ generate_inputs_yaml "$TEST_PASS_DIR/inputs.yaml" "$TEST_TYPE" "${ORIGINAL_ARGS[
 ```
 
 **Implementation Details:**
-- **Source**: `lib/lib-inputs-yaml.sh:15-86`
-- **Called from**: `perf/run.sh:282` (and similar locations in other test suites)
+- **Source**: `lib/lib-inputs-yaml.sh:17-81`
+- **Called from**: `perf/run.sh:389` (and similar locations in other test suites)
 - **Parameters**:
   1. Output file path (where to write the file)
   2. Test type (`transport`, `perf`, or `hole-punch`)
@@ -148,7 +159,7 @@ generate_inputs_yaml "$TEST_PASS_DIR/inputs.yaml" "$TEST_TYPE" "${ORIGINAL_ARGS[
 
 ### Generation Process
 
-1. **Capture Original Args**: Before argument parsing, the script saves `ORIGINAL_ARGS=("$@")` (see `perf/run.sh:7`)
+1. **Capture Original Args**: Before argument parsing, the script saves `ORIGINAL_ARGS=("$@")` (see `perf/run.sh:24`)
 2. **Parse Arguments**: The test runner parses all arguments and sets environment variables
 3. **Create Test Pass Dir**: A unique test pass directory is created with format `<type>-<key>-<timestamp>`
 4. **Generate File**: The `generate_inputs_yaml()` function writes all configuration to `$TEST_PASS_DIR/inputs.yaml`
@@ -161,24 +172,28 @@ When an `inputs.yaml` file exists in the current directory, the test runner can 
 
 ### Loading Code
 
-The file is loaded by inline functions at the top of each test runner (e.g., `perf/run.sh:12-38`):
+The file is loaded by inline functions at the top of each test runner (e.g., `perf/run.sh:30-65`):
 
 ```bash
 load_inputs_yaml_inline() {
-  # Loads environment variables from inputs.yaml
+  local inputs_file="${1:-inputs.yaml}"
+  # Loads and exports environment variables from inputs.yaml using yq
+  # Source: perf/run.sh:30-48
 }
 
 get_yaml_args_inline() {
-  # Extracts command-line arguments from inputs.yaml
+  local inputs_file="${1:-inputs.yaml}"
+  # Extracts command-line arguments array from inputs.yaml
+  # Source: perf/run.sh:51-57
 }
 ```
 
 ### Loading Process
 
-1. **Bootstrap Phase**: Before any libraries are loaded, check if `inputs.yaml` exists in current directory
-2. **Load Variables**: Extract and export all environment variables from the file
-3. **Load Arguments**: Extract command-line arguments from the file
-4. **Merge with CLI**: Append any new command-line arguments (CLI args override inputs.yaml)
+1. **Bootstrap Phase**: Before any libraries are loaded, check if `inputs.yaml` exists in current directory (perf/run.sh:60-65)
+2. **Load Variables**: Extract and export all environment variables from `.environmentVariables` using `yq` (perf/run.sh:41-45)
+3. **Load Arguments**: Extract command-line arguments array from `.commandLineArgs[]` using `yq` (perf/run.sh:56)
+4. **Merge with CLI**: Append any new command-line arguments - CLI args take precedence and override inputs.yaml (perf/run.sh:68)
 5. **Continue Execution**: Proceed with test execution using merged configuration
 
 ### Usage Example
@@ -201,15 +216,26 @@ When creating a test pass snapshot (using `--snapshot`), the `inputs.yaml` file 
 
 ### Modifications
 
-The `modify_inputs_for_snapshot()` function (in `lib/lib-inputs-yaml.sh:88-114`) adjusts paths:
+The `modify_inputs_for_snapshot()` function (in `lib/lib-inputs-yaml.sh:87-111`) adjusts paths:
 
-| Original Path | Snapshot Path | Reason |
-|---------------|---------------|--------|
+| Original Variable | Snapshot Value | Reason |
+|------------------|----------------|--------|
+| `IMAGES_YAML` | `./images.yaml` | Images config is copied to snapshot root |
 | `CACHE_DIR` | `./` | Cache artifacts are packaged in snapshot root |
 | `TEST_RUN_DIR` | `./re-run` | Test re-runs go to local directory |
+| `SCRIPT_DIR` | `./lib` | Test-specific scripts are packaged in snapshot |
 | `SCRIPT_LIB_DIR` | `./lib` | Shared libraries are packaged in snapshot |
-| N/A | `DOCKER_IMAGES` → `./images` | Docker images are exported to snapshot |
-| `--snapshot` flag removed | | Prevents recursive snapshot creation |
+| `--snapshot` flag | Removed from commandLineArgs | Prevents recursive snapshot creation |
+
+Implementation uses `yq eval -i` to modify the YAML in-place:
+```bash
+yq eval -i '.environmentVariables.IMAGES_YAML = "./images.yaml"' "$inputs_file"
+yq eval -i '.environmentVariables.CACHE_DIR = "./"' "$inputs_file"
+yq eval -i '.environmentVariables.TEST_RUN_DIR = "./re-run"' "$inputs_file"
+yq eval -i '.environmentVariables.SCRIPT_DIR = "./lib"' "$inputs_file"
+yq eval -i '.environmentVariables.SCRIPT_LIB_DIR = "./lib"' "$inputs_file"
+yq eval -i 'del(.commandLineArgs[] | select(. == "--snapshot"))' "$inputs_file"
+```
 
 ### Snapshot Usage
 
@@ -272,5 +298,13 @@ yq eval '.commandLineArgs[]' /srv/cache/test-run/perf-abc123/inputs.yaml
 ## Related Files
 
 - **Generation**: `lib/lib-inputs-yaml.sh` - Functions to generate and modify inputs.yaml
-- **Loading**: Inline in each test runner's bootstrap section (e.g., `perf/run.sh:12-56`)
-- **Usage**: `perf/run.sh`, `transport/run.sh`, `hole-punch/run.sh`
+  - `generate_inputs_yaml()` function at lines 17-81
+  - `modify_inputs_for_snapshot()` function at lines 87-111
+- **Loading**: Inline functions in each test runner's bootstrap section
+  - `perf/run.sh:30-48` - `load_inputs_yaml_inline()`
+  - `perf/run.sh:51-57` - `get_yaml_args_inline()`
+  - `perf/run.sh:60-71` - Bootstrap logic
+- **Usage**:
+  - `perf/run.sh:389` - Calls `generate_inputs_yaml()`
+  - Similar patterns in `transport/run.sh` and `hole-punch/run.sh`
+- **Snapshot Creation**: `lib/lib-snapshot-creation.sh` - Creates snapshots and modifies inputs.yaml
