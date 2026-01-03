@@ -216,10 +216,10 @@ Given you have provisioned your infrastructure, you can now build and run the li
 <!-- TEST_RESULTS_START -->
 # Performance Test Results
 
-**Test Pass:** perf-034750-02-01-2026
-**Started:** 2026-01-02T03:47:50Z
-**Completed:** 2026-01-02T04:08:58Z
-**Duration:** 1268s
+**Test Pass:** perf-034245-03-01-2026
+**Started:** 2026-01-03T03:42:45Z
+**Completed:** 2026-01-03T04:03:46Z
+**Duration:** 1261s
 **Platform:** x86_64 (Linux)
 
 ## Summary
@@ -244,15 +244,15 @@ Given you have provisioned your infrastructure, you can now build and run the li
 
 | Test | Min | Q1 | Median | Q3 | Max | Outliers |
 |------|-----|-------|--------|-------|-----|----------|
-| rust-v0.56 x rust-v0.56 (tcp, noise, yamux) | 2.99 | 3.16 | 3.53 | 3.58 | 3.66 | 0 |
-| rust-v0.56 x rust-v0.56 (tcp, noise, mplex) | 3.21 | 3.35 | 3.54 | 3.56 | 3.65 | 1 |
-| rust-v0.56 x rust-v0.56 (tcp, tls, yamux) | 3.06 | 3.17 | 3.26 | 3.45 | 3.52 | 1 |
-| rust-v0.56 x rust-v0.56 (tcp, tls, mplex) | 3.27 | 3.30 | 3.47 | 3.51 | 3.62 | 2 |
-| rust-v0.56 x rust-v0.56 (quic-v1) | 0.95 | 0.97 | 1.14 | 1.37 | 1.74 | 0 |
-| rust-v0.56 x dotnet-v1.0 (tcp, noise, yamux) | 0.88 | 0.90 | 0.92 | 0.95 | 0.97 | 0 |
-| rust-v0.56 x dotnet-v1.0 (tcp, noise, mplex) | 0.93 | 0.93 | 0.93 | 0.93 | 0.93 | 0 |
+| rust-v0.56 x rust-v0.56 (tcp, noise, yamux) | 3.12 | 3.31 | 3.59 | 3.64 | 3.71 | 0 |
+| rust-v0.56 x rust-v0.56 (tcp, noise, mplex) | 3.29 | 3.30 | 3.34 | 3.37 | 3.40 | 1 |
+| rust-v0.56 x rust-v0.56 (tcp, tls, yamux) | 2.95 | 3.18 | 3.29 | 3.48 | 3.58 | 0 |
+| rust-v0.56 x rust-v0.56 (tcp, tls, mplex) | 3.16 | 3.22 | 3.53 | 3.57 | 3.63 | 0 |
+| rust-v0.56 x rust-v0.56 (quic-v1) | 0.89 | 1.01 | 1.43 | 1.90 | 2.24 | 0 |
+| rust-v0.56 x dotnet-v1.0 (tcp, noise, yamux) | 0.91 | 0.92 | 0.94 | 0.96 | 0.98 | 0 |
+| rust-v0.56 x dotnet-v1.0 (tcp, noise, mplex) | 0.89 | 0.89 | 0.89 | 0.89 | 0.89 | 0 |
 | rust-v0.56 x dotnet-v1.0 (tcp, tls, yamux) | 0.94 | 0.94 | 0.94 | 0.94 | 0.94 | 0 |
-| rust-v0.56 x dotnet-v1.0 (tcp, tls, mplex) | 0.86 | 0.89 | 0.92 | 0.95 | 0.98 | 0 |
+| rust-v0.56 x dotnet-v1.0 (tcp, tls, mplex) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0 |
 | rust-v0.56 x dotnet-v1.0 (quic-v1) | null | null | null | null | null | 0 |
 | dotnet-v1.0 x rust-v0.56 (tcp, noise, yamux) | null | null | null | null | null | 0 |
 | dotnet-v1.0 x rust-v0.56 (tcp, noise, mplex) | null | null | null | null | null | 0 |
@@ -269,15 +269,15 @@ Given you have provisioned your infrastructure, you can now build and run the li
 
 | Test | Min | Q1 | Median | Q3 | Max | Outliers |
 |------|-----|-------|--------|-------|-----|----------|
-| rust-v0.56 x rust-v0.56 (tcp, noise, yamux) | 3.56 | 3.57 | 3.60 | 3.67 | 3.74 | 0 |
-| rust-v0.56 x rust-v0.56 (tcp, noise, mplex) | 3.50 | 3.57 | 3.63 | 3.66 | 3.70 | 0 |
-| rust-v0.56 x rust-v0.56 (tcp, tls, yamux) | 3.54 | 3.60 | 3.62 | 3.67 | 3.74 | 0 |
-| rust-v0.56 x rust-v0.56 (tcp, tls, mplex) | 3.48 | 3.52 | 3.61 | 3.62 | 3.65 | 1 |
-| rust-v0.56 x rust-v0.56 (quic-v1) | 1.89 | 2.03 | 2.12 | 2.14 | 2.17 | 0 |
-| rust-v0.56 x dotnet-v1.0 (tcp, noise, yamux) | 189.26 | 190.82 | 194.12 | 195.21 | 196.85 | 2 |
-| rust-v0.56 x dotnet-v1.0 (tcp, noise, mplex) | 190.60 | 192.57 | 194.66 | 195.37 | 196.13 | 1 |
-| rust-v0.56 x dotnet-v1.0 (tcp, tls, yamux) | 180.10 | 180.64 | 189.44 | 194.70 | 196.06 | 2 |
-| rust-v0.56 x dotnet-v1.0 (tcp, tls, mplex) | 189.97 | 190.04 | 191.37 | 196.77 | 198.90 | 2 |
+| rust-v0.56 x rust-v0.56 (tcp, noise, yamux) | 3.57 | 3.58 | 3.59 | 3.63 | 3.68 | 1 |
+| rust-v0.56 x rust-v0.56 (tcp, noise, mplex) | 3.54 | 3.60 | 3.64 | 3.67 | 3.76 | 0 |
+| rust-v0.56 x rust-v0.56 (tcp, tls, yamux) | 3.54 | 3.56 | 3.57 | 3.58 | 3.61 | 0 |
+| rust-v0.56 x rust-v0.56 (tcp, tls, mplex) | 3.57 | 3.60 | 3.61 | 3.67 | 3.69 | 0 |
+| rust-v0.56 x rust-v0.56 (quic-v1) | 1.92 | 1.93 | 2.04 | 2.07 | 2.14 | 2 |
+| rust-v0.56 x dotnet-v1.0 (tcp, noise, yamux) | 190.71 | 192.96 | 194.43 | 196.01 | 198.59 | 1 |
+| rust-v0.56 x dotnet-v1.0 (tcp, noise, mplex) | 191.10 | 191.63 | 193.74 | 195.10 | 195.82 | 2 |
+| rust-v0.56 x dotnet-v1.0 (tcp, tls, yamux) | 193.04 | 193.13 | 194.14 | 194.88 | 195.68 | 2 |
+| rust-v0.56 x dotnet-v1.0 (tcp, tls, mplex) | 190.21 | 190.24 | 193.25 | 195.15 | 197.31 | 3 |
 | rust-v0.56 x dotnet-v1.0 (quic-v1) | null | null | null | null | null | 0 |
 | dotnet-v1.0 x rust-v0.56 (tcp, noise, yamux) | null | null | null | null | null | 0 |
 | dotnet-v1.0 x rust-v0.56 (tcp, noise, mplex) | null | null | null | null | null | 0 |
@@ -294,15 +294,15 @@ Given you have provisioned your infrastructure, you can now build and run the li
 
 | Test | Min | Q1 | Median | Q3 | Max | Outliers |
 |------|-----|-------|--------|-------|-----|----------|
-| rust-v0.56 x rust-v0.56 (tcp, noise, yamux) | 0.337 | 0.357 | 0.365 | 0.374 | 0.393 | 3 |
-| rust-v0.56 x rust-v0.56 (tcp, noise, mplex) | 0.337 | 0.359 | 0.367 | 0.376 | 0.396 | 3 |
-| rust-v0.56 x rust-v0.56 (tcp, tls, yamux) | 0.336 | 0.361 | 0.368 | 0.382 | 0.408 | 4 |
-| rust-v0.56 x rust-v0.56 (tcp, tls, mplex) | 0.340 | 0.358 | 0.368 | 0.380 | 0.411 | 3 |
-| rust-v0.56 x rust-v0.56 (quic-v1) | 0.348 | 0.369 | 0.376 | 0.386 | 0.411 | 4 |
-| rust-v0.56 x dotnet-v1.0 (tcp, noise, yamux) | 87.764 | 87.903 | 87.952 | 87.998 | 88.115 | 16 |
-| rust-v0.56 x dotnet-v1.0 (tcp, noise, mplex) | 87.770 | 87.907 | 87.952 | 88.020 | 88.105 | 22 |
-| rust-v0.56 x dotnet-v1.0 (tcp, tls, yamux) | 87.798 | 87.909 | 87.952 | 88.013 | 88.157 | 8 |
-| rust-v0.56 x dotnet-v1.0 (tcp, tls, mplex) | 87.798 | 87.918 | 87.958 | 88.012 | 88.145 | 12 |
+| rust-v0.56 x rust-v0.56 (tcp, noise, yamux) | 0.334 | 0.357 | 0.365 | 0.376 | 0.403 | 5 |
+| rust-v0.56 x rust-v0.56 (tcp, noise, mplex) | 0.333 | 0.358 | 0.366 | 0.377 | 0.404 | 6 |
+| rust-v0.56 x rust-v0.56 (tcp, tls, yamux) | 0.339 | 0.360 | 0.369 | 0.381 | 0.411 | 3 |
+| rust-v0.56 x rust-v0.56 (tcp, tls, mplex) | 0.343 | 0.362 | 0.369 | 0.377 | 0.397 | 6 |
+| rust-v0.56 x rust-v0.56 (quic-v1) | 0.364 | 0.380 | 0.388 | 0.396 | 0.417 | 6 |
+| rust-v0.56 x dotnet-v1.0 (tcp, noise, yamux) | 87.816 | 87.911 | 87.953 | 88.003 | 88.124 | 15 |
+| rust-v0.56 x dotnet-v1.0 (tcp, noise, mplex) | 87.754 | 87.903 | 87.953 | 88.007 | 88.161 | 21 |
+| rust-v0.56 x dotnet-v1.0 (tcp, tls, yamux) | 87.796 | 87.916 | 87.964 | 88.021 | 88.126 | 13 |
+| rust-v0.56 x dotnet-v1.0 (tcp, tls, mplex) | 87.674 | 87.917 | 87.977 | 88.081 | 88.270 | 23 |
 | rust-v0.56 x dotnet-v1.0 (quic-v1) | null | null | null | null | null | 0 |
 | dotnet-v1.0 x rust-v0.56 (tcp, noise, yamux) | null | null | null | null | null | 0 |
 | dotnet-v1.0 x rust-v0.56 (tcp, noise, mplex) | null | null | null | null | null | 0 |
