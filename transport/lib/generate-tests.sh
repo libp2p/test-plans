@@ -3,245 +3,501 @@
 # Outputs test-matrix.yaml with content-addressed caching
 # Permutations: dialer × listener × transport × secureChannel × muxer
 
-set -uo pipefail  # Removed -e to allow continuation on errors
+##### 1. SETUP
 
-# Set SCRIPT_LIB_DIR if not already set (for snapshot context)
-SCRIPT_LIB_DIR="${SCRIPT_LIB_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/lib}"
+set -euo pipefail
 
 # Source common libraries
-source "$SCRIPT_LIB_DIR/lib-filter-engine.sh"
-source "$SCRIPT_LIB_DIR/lib-generate-tests.sh"
-source "$SCRIPT_LIB_DIR/lib-output-formatting.sh"
-source "$SCRIPT_LIB_DIR/lib-test-aliases.sh"
-source "$SCRIPT_LIB_DIR/lib-test-filtering.sh"
-source "$SCRIPT_LIB_DIR/lib-test-caching.sh"
+source "${SCRIPT_LIB_DIR}/lib-filter-engine.sh"
+source "${SCRIPT_LIB_DIR}/lib-generate-tests.sh"
+source "${SCRIPT_LIB_DIR}/lib-output-formatting.sh"
+source "${SCRIPT_LIB_DIR}/lib-test-caching.sh"
+source "${SCRIPT_LIB_DIR}/lib-test-filtering.sh"
+source "${SCRIPT_LIB_DIR}/lib-test-images.sh"
 
-# Common parameters
-CACHE_DIR="${CACHE_DIR:-/srv/cache}"
-TEST_SELECT="${TEST_SELECT:-}"
-TEST_IGNORE="${TEST_IGNORE:-}"
-DEBUG="${DEBUG:-false}"
-FORCE_MATRIX_REBUILD="${FORCE_MATRIX_REBUILD:-false}"
-OUTPUT_DIR="${TEST_PASS_DIR:-.}"  # Use TEST_PASS_DIR if set, otherwise current directory
+##### 2. FILTER EXPANSION
 
-# Transport parameters
-
-# Load test aliases from images.yaml
+# Load test aliases
 load_aliases
 
 # Get common entity IDs for negation expansion and ignored test generation
-all_image_ids=($(get_entity_ids "implementations"))
+readarray -t all_image_ids < <(get_entity_ids "implementations")
+
+# All transport names
+readarray -t all_transport_names < <(get_transport_names "implementations")
+
+# All secure channel names
+readarray -t all_secure_names < <(get_secure_names "implementations")
+
+# All muxer names
+readarray -t all_muxer_names < <(get_muxer_names "implementations")
+
+# Save original filters for display
+ORIGINAL_TEST_IGNORE="${TEST_IGNORE}"
+ORIGINAL_TRANSPORT_IGNORE="${TRANSPORT_IGNORE}"
+ORIGINAL_SECURE_IGNORE="${SECURE_IGNORE}"
+ORIGINAL_MUXER_IGNORE="${MUXER_IGNORE}"
+
+if [ -n "${TEST_IGNORE}" ]; then
+  EXPANDED_TEST_IGNORE=$(expand_filter_string "${TEST_IGNORE}" all_image_ids)
+else
+  EXPANDED_TEST_IGNORE=""
+fi
+
+if [ -n "${TRANSPORT_IGNORE}" ]; then
+  EXPANDED_TRANSPORT_IGNORE=$(expand_filter_string "${TRANSPORT_IGNORE}" all_transport_names)
+else
+  EXPANDED_TRANSPORT_IGNORE=""
+fi
+
+if [ -n "${SECURE_IGNORE}" ]; then
+  EXPANDED_SECURE_IGNORE=$(expand_filter_string "${SECURE_IGNORE}" all_secure_names)
+else
+  EXPANDED_SECURE_IGNORE=""
+fi
+
+if [ -n "${MUXER_IGNORE}" ]; then
+  EXPANDED_MUXER_IGNORE=$(expand_filter_string "${MUXER_IGNORE}" all_muxer_names)
+else
+  EXPANDED_MUXER_IGNORE=""
+fi
+
+##### 3. DISPLAY FILTER EXPANSION
+
+# test ignore
+print_filter_expansion \
+  "ORIGINAL_TEST_IGNORE" \
+  "EXPANDED_TEST_IGNORE" \
+  "Test ignore" \
+  "No test-ignore specified (will ignore none)"
+
+# transport ignore
+print_filter_expansion \
+  "ORIGINAL_TRANSPORT_IGNORE" \
+  "EXPANDED_TRANSPORT_IGNORE" \
+  "Transport ignore" \
+  "No transport-ignore specified (will ignore none)"
+
+# secure ignore
+print_filter_expansion \
+  "ORIGINAL_SECURE_IGNORE" \
+  "EXPANDED_SECURE_IGNORE" \
+  "Secure channel ignore" \
+  "No secure-ignore specified (will ignore none)"
+
+# muxer ignore
+print_filter_expansion \
+  "ORIGINAL_MUXER_IGNORE" \
+  "EXPANDED_MUXER_IGNORE" \
+  "Muxer ignore" \
+  "No muxer-ignore specified (will ignore none)"
 
 echo ""
-print_header "Test Matrix Generation"
 
-# Display filters (will expand during filtering)
-if [ -n "$TEST_SELECT" ]; then
-    echo "→ Test select: $TEST_SELECT"
-else
-    echo "→ No test-select specified (will include all implementations)"
-fi
-
-if [ -n "$TEST_IGNORE" ]; then
-    echo "→ Test ignore: $TEST_IGNORE"
-else
-    echo "→ No test-ignore specified"
-fi
-
-# Use TEST_RUN_KEY from parent (run.sh) if available
-# Otherwise compute cache key from images.yaml + select + ignore + debug
-if [ -n "${TEST_RUN_KEY:-}" ]; then
-    cache_key="$TEST_RUN_KEY"
-    echo "→ Using test run key: $cache_key"
-else
-    # Fallback for standalone execution
-    cache_key=$(compute_cache_key "$TEST_SELECT" "$TEST_IGNORE" "" "" "" "" "$DEBUG")
-    echo "→ Computed cache key: ${cache_key:0:8}"
-fi
+##### 4. CACHE CHECK AND EARLY EXIT
 
 # Check cache (with optional force rebuild)
-if check_and_load_cache "$cache_key" "$CACHE_DIR" "$OUTPUT_DIR" "$FORCE_MATRIX_REBUILD" "transport"; then
-    exit 0
+# Use TEST_RUN_KEY from parent (run.sh) if available
+print_message "Checking for cached test-matrix.yaml file"
+indent
+if check_and_load_cache "${TEST_RUN_KEY}" "${CACHE_DIR}/test-run-matrix" "${TEST_PASS_DIR}/test-matrix.yaml" "${FORCE_MATRIX_REBUILD}" "${TEST_TYPE}"; then
+  unindent
+  exit 0
 fi
+unindent
 
 echo ""
 
-# Filter implementations upfront using global filter_names function
+##### 5. FILTERING
+
+print_message "Filtering implementations..."
+readarray -t filtered_image_ids < <(filter all_image_ids "${EXPANDED_TEST_IGNORE}")
+indent
+print_success "Filtered to ${#filtered_image_ids[@]} implementations (${#all_image_ids[@]} total)"
+unindent
+
+print_message "Filtering transports..."
+readarray -t filtered_transport_names < <(filter all_transport_names "${EXPANDED_TRANSPORT_IGNORE}")
+indent
+print_success "Filtered to ${#filtered_transport_names[@]} transports (${#all_transport_names[@]} total)"
+unindent
+
+print_message "Filtering secure channels..."
+readarray -t filtered_secure_names < <(filter all_secure_names "${EXPANDED_SECURE_IGNORE}")
+indent
+print_success "Filtered to ${#filtered_secure_names[@]} secure channels (${#all_secure_names[@]} total)"
+unindent
+
+print_message "Filtering muxers..."
+readarray -t filtered_muxer_names < <(filter all_muxer_names "${EXPANDED_MUXER_IGNORE}")
+indent
+print_success "Filtered to ${#filtered_muxer_names[@]} muxers (${#all_muxer_names[@]} total)"
+unindent
+
 echo ""
-echo "→ Filtering implementations..."
-mapfile -t filtered_image_ids < <(filter_entity_list "implementations" "$TEST_SELECT" "$TEST_IGNORE")
-echo "  ✓ Filtered to ${#filtered_image_ids[@]} implementations"
 
-# Display filtered implementations if small list
-if [ ${#filtered_image_ids[@]} -le 10 ]; then
-    for image_id in "${filtered_image_ids[@]}"; do
-        echo "    - $image_id"
-    done
-fi
+##### 6. LOAD PARAMETER LISTS
 
-# Load implementation data only for filtered implementations
-echo "→ Loading implementation data into memory..."
-declare -A image_transports    # image_transports[rust-v0.56]="tcp ws quic-v1"
-declare -A image_secure        # image_secure[rust-v0.56]="tls noise"
-declare -A image_muxers        # image_muxers[rust-v0.56]="yamux mplex"
-declare -A image_dial_only     # image_dial_only[chromium-rust-v0.54]="webtransport webrtc-direct ws"
+# Load main implementation data for ALL implementations (needed for ignored test generation)
+print_message "Loading implementation data into memory..."
 
-# Load data for each filtered implementation
-for image_id in "${filtered_image_ids[@]}"; do
-    transports=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .transports | join(\" \")" images.yaml)
-    secure=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .secureChannels | join(\" \")" images.yaml)
-    muxers=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .muxers | join(\" \")" images.yaml)
-    dial_only=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .dialOnly | join(\" \")" images.yaml 2>/dev/null || echo "")
+declare -A image_transports
+declare -A image_secure
+declare -A image_muxers
+declare -A image_dial_only
 
-    image_transports["$image_id"]="$transports"
-    image_secure["$image_id"]="$secure"
-    image_muxers["$image_id"]="$muxers"
-    image_dial_only["$image_id"]="$dial_only"
+for image_id in "${all_image_ids[@]}"; do
+  transports=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .transports | join(\" \")" images.yaml)
+  secure=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .secureChannels | join(\" \")" images.yaml)
+  muxers=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .muxers | join(\" \")" images.yaml)
+  dial_only=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .dialOnly | join(\" \")" images.yaml 2>/dev/null || echo "")
+
+  image_transports["$image_id"]="$transports"
+  image_secure["$image_id"]="$secure"
+  image_muxers["$image_id"]="$muxers"
+  image_dial_only["$image_id"]="$dial_only"
 done
 
-echo "  ✓ Loaded data for ${#filtered_image_ids[@]} filtered implementations"
-
-# Check if a transport can be used with an implementation as listener
-# Returns 0 (true) if transport can be used as listener, 1 (false) if dialOnly
-can_be_listener_for_transport() {
-    local image_id="$1"
-    local transport="$2"
-    local dial_only_transports="${image_dial_only[$image_id]:-}"
-
-    # If no dialOnly restrictions, can always be listener
-    [ -z "$dial_only_transports" ] && return 0
-
-    # Check if transport is in dialOnly list
-    if [[ " $dial_only_transports " == *" $transport "* ]]; then
-        return 1  # Cannot be listener for this transport
-    fi
-
-    return 0  # Can be listener
-}
+indent
+print_success "Loaded data for ${#all_image_ids[@]} implementations"
+unindent
 
 echo ""
-echo "╲ Generating test combinations..."
+
+##### 7. GENERATE TEST MATRIX
 
 # Initialize test lists
-tests=()
-test_num=0
+main_tests=()
+ignored_main_tests=()
 
-# Iterate through FILTERED implementations only (no inline filtering needed!)
-for dialer_id in "${filtered_image_ids[@]}"; do
+# Determine worker count (from environment, defaults to nproc)
+WORKER_COUNT="${WORKER_COUNT:-$(nproc 2>/dev/null || echo 4)}"
+
+# Worker function to generate tests for a chunk of dialers
+# Args: worker_id dialer_id1 dialer_id2 ...
+generate_tests_worker() {
+  local worker_id=$1
+  shift
+  local dialer_chunk=("$@")
+
+  local worker_selected="${TEST_PASS_DIR}/worker-${worker_id}-selected.tmp"
+  local worker_ignored="${TEST_PASS_DIR}/worker-${worker_id}-ignored.tmp"
+
+  > "$worker_selected"
+  > "$worker_ignored"
+
+  # Debug: log worker start time
+  echo "$(date +%s%3N)" > "${TEST_PASS_DIR}/worker-${worker_id}-start.time"
+
+  # Load associative arrays from serialized files
+  declare -A image_transports
+  declare -A image_secure
+  declare -A image_muxers
+  declare -A image_dial_only
+
+  while IFS='|' read -r key value; do
+    image_transports["$key"]="$value"
+  done < "$WORKER_DATA_DIR/transports.dat"
+
+  while IFS='|' read -r key value; do
+    image_secure["$key"]="$value"
+  done < "$WORKER_DATA_DIR/secure.dat"
+
+  while IFS='|' read -r key value; do
+    image_muxers["$key"]="$value"
+  done < "$WORKER_DATA_DIR/muxers.dat"
+
+  if [ -f "$WORKER_DATA_DIR/dial_only.dat" ]; then
+    while IFS='|' read -r key value; do
+      image_dial_only["$key"]="$value"
+    done < "$WORKER_DATA_DIR/dial_only.dat"
+  fi
+
+  for dialer_id in "${dialer_chunk[@]}"; do
     dialer_transports="${image_transports[$dialer_id]}"
     dialer_secure="${image_secure[$dialer_id]}"
     dialer_muxers="${image_muxers[$dialer_id]}"
 
-    for listener_id in "${filtered_image_ids[@]}"; do
-        # No filtering needed - already filtered upfront!
+    dialer_selected=true
 
-        listener_transports="${image_transports[$listener_id]}"
-        listener_secure="${image_secure[$listener_id]}"
-        listener_muxers="${image_muxers[$listener_id]}"
+    if [[ ! " ${filtered_image_ids[*]} " =~ " ${dialer_id} " ]]; then
+      print_debug "${dialer_id} is an ignored id"
+      dialer_selected=false
+    fi
 
-        # Find common transports (much faster than grep)
-        common_transports=$(get_common "$dialer_transports" "$listener_transports")
+    for listener_id in "${all_image_ids[@]}"; do
+      listener_transports="${image_transports[$listener_id]}"
+      listener_secure="${image_secure[$listener_id]}"
+      listener_muxers="${image_muxers[$listener_id]}"
 
-        # Skip if no common transports
-        [ -z "$common_transports" ] && continue
+      listener_selected=true
 
-        # Process each common transport
-        for transport in $common_transports; do
-            # Check if listener can handle this transport (not in dialOnly list)
-            if ! can_be_listener_for_transport "$listener_id" "$transport"; then
-                continue  # Skip: listener has this transport in dialOnly
+      if [[ ! " ${filtered_image_ids[*]} " =~ " ${listener_id} " ]]; then
+        print_debug "${listener_id} is an ignored id"
+        listener_selected=false
+      fi
+
+      # Find common transports
+      common_transports=$(get_common "$dialer_transports" "$listener_transports")
+
+      # Skip if no common transports
+      [ -z "$common_transports" ] && continue
+
+      # Process each common transport
+      for transport in $common_transports; do
+
+        transport_selected=true
+
+        if [[ ! " ${filtered_transport_names[*]} " =~ " ${transport} " ]]; then
+          print_debug "${transport} is an ignored transport"
+          transport_selected=false
+        fi
+
+        # Check if listener can handle this transport (not in dialOnly list)
+        dial_only_transports="${image_dial_only[$listener_id]:-}"
+        if [[ " $dial_only_transports " == *" $transport "* ]]; then
+          continue  # Skip: listener has this transport in dialOnly
+        fi
+
+        if is_standalone_transport "$transport"; then
+
+          # Integrated transport with built-in secure channel and muxer
+          test_id="$dialer_id x $listener_id ($transport)"
+
+          # Add to selected or ignored list
+          if [[ "$dialer_selected" == true ]] && \
+             [[ "$listener_selected" == true ]] && \
+             [[ "$transport_selected" == true ]]; then
+            # Select main test
+            print_debug "${test_id} is selected"
+            echo "$test_id|$dialer_id|$listener_id|$transport|null|null" >> "$worker_selected"
+          else
+            # Ignore main test
+            print_debug "${test_id} is ignored"
+            echo "$test_id|$dialer_id|$listener_id|$transport|null|null" >> "$worker_ignored"
+          fi
+
+        else
+
+          # Find common secure channels and muxers
+          common_secure=$(get_common "$dialer_secure" "$listener_secure")
+          common_muxers=$(get_common "$dialer_muxers" "$listener_muxers")
+
+          # Skip if no common secureChannel or muxer
+          [ -z "$common_secure" ] && continue
+          [ -z "$common_muxers" ] && continue
+
+          # Generate all combinations
+          for secure in $common_secure; do
+
+            secure_selected=true
+
+            if [[ ! " ${filtered_secure_names[*]} " =~ " ${secure} " ]]; then
+              print_debug "${secure} is an ignored secure channel"
+              secure_selected=false
             fi
 
-            if is_standalone_transport "$transport"; then
-                # Standalone transport
-                test_name="$dialer_id x $listener_id ($transport)"
+            for muxer in $common_muxers; do
 
-                # No filtering needed - implementations already filtered upfront
-                test_num=$((test_num + 1))
-                tests+=("$test_name|$dialer_id|$listener_id|$transport|null|null")
+              muxer_selected=true
 
-            else
-                # Non-standalone: need secure + muxer combinations
-                common_secure=$(get_common "$dialer_secure" "$listener_secure")
-                common_muxers=$(get_common "$dialer_muxers" "$listener_muxers")
+              if [[ ! " ${filtered_muxer_names[*]} " =~ " ${muxer} " ]]; then
+                print_debug "${muxer} is an ignored muxer"
+                muxer_selected=false
+              fi
 
-                # Skip if no common secure channels or muxers
-                [ -z "$common_secure" ] && continue
-                [ -z "$common_muxers" ] && continue
+              # Layered transport with secure channel and muxer
+              test_id="$dialer_id x $listener_id ($transport, $secure, $muxer)"
 
-                # Generate all valid combinations
-                for secure in $common_secure; do
-                    for muxer in $common_muxers; do
-                        test_name="$dialer_id x $listener_id ($transport, $secure, $muxer)"
-
-                        # No filtering needed - implementations already filtered upfront
-                        test_num=$((test_num + 1))
-                        tests+=("$test_name|$dialer_id|$listener_id|$transport|$secure|$muxer")
-                    done
-                done
-            fi
-        done
+              # Add to selected or ignored list
+              if [[ "$dialer_selected" == true ]] && \
+                 [[ "$listener_selected" == true ]] && \
+                 [[ "$transport_selected" == true ]] && \
+                 [[ "$secure_selected" == true ]] && \
+                 [[ "$muxer_selected" == true ]]; then
+                # Select main test
+                print_debug "${test_id} is selected"
+                echo "$test_id|$dialer_id|$listener_id|$transport|$secure|$muxer" >> "$worker_selected"
+              else
+                # Ignore main test
+                print_debug "${test_id} is ignored"
+                echo "$test_id|$dialer_id|$listener_id|$transport|$secure|$muxer" >> "$worker_ignored"
+              fi
+            done
+          done
+        fi
+      done
     done
+  done
+
+  # Debug: log worker end time
+  echo "$(date +%s%3N)" > "${TEST_PASS_DIR}/worker-${worker_id}-end.time"
+}
+
+# Serialize associative arrays to temp files for workers
+# (Bash can't export associative array contents to subshells)
+WORKER_DATA_DIR="${TEST_PASS_DIR}/worker-data"
+mkdir -p "$WORKER_DATA_DIR"
+
+# Serialize image data
+for key in "${!image_transports[@]}"; do
+  echo "$key|${image_transports[$key]}" >> "$WORKER_DATA_DIR/transports.dat"
 done
 
-echo "✓ Generated ${#tests[@]} tests"
+for key in "${!image_secure[@]}"; do
+  echo "$key|${image_secure[$key]}" >> "$WORKER_DATA_DIR/secure.dat"
+done
 
+for key in "${!image_muxers[@]}"; do
+  echo "$key|${image_muxers[$key]}" >> "$WORKER_DATA_DIR/muxers.dat"
+done
+
+for key in "${!image_dial_only[@]}"; do
+  echo "$key|${image_dial_only[$key]}" >> "$WORKER_DATA_DIR/dial_only.dat"
+done
+
+# Export necessary variables and functions for workers
+export -f generate_tests_worker
+export -f get_common
+export -f is_standalone_transport
+export -f print_debug
+export TEST_PASS_DIR
+export WORKER_DATA_DIR
+export filtered_image_ids
+export all_image_ids
+export filtered_transport_names
+export filtered_secure_names
+export filtered_muxer_names
+
+print_message "Generating main test combinations (using ${WORKER_COUNT} workers)..."
+
+# Shard dialers across workers
+total_dialers=${#all_image_ids[@]}
+chunk_size=$(( (total_dialers + WORKER_COUNT - 1) / WORKER_COUNT ))
+
+pids=()
+for ((w=0; w<WORKER_COUNT; w++)); do
+  start=$((w * chunk_size))
+
+  # Break if we've exceeded the array bounds
+  if [ $start -ge $total_dialers ]; then
+    break
+  fi
+
+  # Get chunk of dialers for this worker
+  chunk=("${all_image_ids[@]:$start:$chunk_size}")
+
+  # Skip if chunk is empty
+  if [ ${#chunk[@]} -eq 0 ]; then
+    continue
+  fi
+
+  # Launch worker in background
+  generate_tests_worker "$w" "${chunk[@]}" &
+  pids+=($!)
+done
+
+# Wait for all workers to complete
+for pid in "${pids[@]}"; do
+  wait "$pid"
+done
+
+# Combine results from all workers
+for ((w=0; w<WORKER_COUNT; w++)); do
+  if [ -f "${TEST_PASS_DIR}/worker-${w}-selected.tmp" ]; then
+    while IFS= read -r line; do
+      main_tests+=("$line")
+    done < "${TEST_PASS_DIR}/worker-${w}-selected.tmp"
+    rm -f "${TEST_PASS_DIR}/worker-${w}-selected.tmp"
+  fi
+
+  if [ -f "${TEST_PASS_DIR}/worker-${w}-ignored.tmp" ]; then
+    while IFS= read -r line; do
+      ignored_main_tests+=("$line")
+    done < "${TEST_PASS_DIR}/worker-${w}-ignored.tmp"
+    rm -f "${TEST_PASS_DIR}/worker-${w}-ignored.tmp"
+  fi
+done
+
+# Cleanup worker data directory
+rm -rf "$WORKER_DATA_DIR"
+
+indent
+print_success "${#main_tests[@]} Selected"
+print_error "${#ignored_main_tests[@]} Ignored"
+unindent
 echo ""
 
-# Generate test-matrix.yaml
-cat > "$OUTPUT_DIR/test-matrix.yaml" <<EOF
-metadata:
-  generatedAt: $(date -u +%Y-%m-%dT%H:%M:%SZ)
-  select: $TEST_SELECT
-  ignore: $TEST_IGNORE
-  totalTests: ${#tests[@]}
-  ignoredTests: 0
-  debug: $DEBUG
+##### 8. OUTPUT TEST MATRIX
 
-tests:
+output_tests() {
+  local name=$1
+  local entity_type=$2
+  local -n tests=$3
+
+  # Add list of tests
+  cat >> "${TEST_PASS_DIR}/test-matrix.yaml" <<EOF
+
+$name:
 EOF
 
-for test in "${tests[@]}"; do
-    IFS='|' read -r name dialer listener transport secure muxer <<< "$test"
+  for test in "${tests[@]}"; do
+    IFS='|' read -r id dialer listener transport secure_channel muxer <<< "$test"
 
-    # Get source types and commits (only for github-type implementations)
-    dialer_source_type=$(yq eval ".implementations[] | select(.id == \"$dialer\") | .source.type" images.yaml)
-    listener_source_type=$(yq eval ".implementations[] | select(.id == \"$listener\") | .source.type" images.yaml)
+    # Get commits, if they exist
+    local dialer_commit=$(get_source_commit "$entity_type" "$dialer")
+    local listener_commit=$(get_source_commit "$entity_type" "$listener")
 
-    # Only get commits for github-type sources
-    if [ "$dialer_source_type" = "github" ]; then
-        dialer_commit=$(yq eval ".implementations[] | select(.id == \"$dialer\") | .source.commit" images.yaml)
-        dialer_snapshot="snapshots/$dialer_commit.zip"
-    else
-        dialer_snapshot="null"
-    fi
-
-    if [ "$listener_source_type" = "github" ]; then
-        listener_commit=$(yq eval ".implementations[] | select(.id == \"$listener\") | .source.commit" images.yaml)
-        listener_snapshot="snapshots/$listener_commit.zip"
-    else
-        listener_snapshot="null"
-    fi
-
-    cat >> "$OUTPUT_DIR/test-matrix.yaml" <<EOF
-  - name: $name
-    dialer: $dialer
-    listener: $listener
+    cat >> "${TEST_PASS_DIR}/test-matrix.yaml" <<EOF
+  - id: "$id"
     transport: $transport
-    secureChannel: $secure
+    secureChannel: $secure_channel
     muxer: $muxer
-    dialerSnapshot: $dialer_snapshot
-    listenerSnapshot: $listener_snapshot
-EOF
-done
-
-# Add empty ignored tests section (filtering done upfront, so no ignored tests tracked)
-cat >> "$OUTPUT_DIR/test-matrix.yaml" <<EOF
-
-ignoredTests: []
+    dialer:
+      id: $dialer
 EOF
 
-# Cache the generated matrix
-save_to_cache "$OUTPUT_DIR" "$cache_key" "$CACHE_DIR" "transport"
+    if [ ! -z "$dialer_commit" ]; then
+      echo "      snapshot: snapshots/$dialer_commit.zip" >> "${TEST_PASS_DIR}/test-matrix.yaml"
+    fi
 
-print_success "Generated test matrix with ${#tests[@]} tests"
+    cat >> "${TEST_PASS_DIR}/test-matrix.yaml" <<EOF
+    listener:
+      id: $listener
+EOF
+    if [ ! -z "$listener_commit" ]; then
+      echo "      snapshot: snapshots/$listener_commit.zip" >> "${TEST_PASS_DIR}/test-matrix.yaml"
+    fi
+  done
+}
+
+# Generate test-matrix.yaml
+cat > "${TEST_PASS_DIR}/test-matrix.yaml" <<EOF
+metadata:
+  ignore: |-
+    ${TEST_IGNORE}
+  transportIgnore: |-
+    ${TRANSPORT_IGNORE}
+  secureIgnore: |-
+    ${SECURE_IGNORE}
+  muxerIgnore: |-
+    ${MUXER_IGNORE}
+  totalTests: ${#main_tests[@]}
+  ignoredTests: ${#ignored_main_tests[@]}
+  debug: $DEBUG
+EOF
+
+# output selected tests
+output_tests "tests" "implementations" main_tests
+
+# output ignored tests
+output_tests "ignoredTests" "implementations" ignored_main_tests
+
+# Copy images.yaml for reference and cache the test-matrix.yaml file
+cp images.yaml "${TEST_PASS_DIR}/"
+print_success "Copied images.yaml: ${TEST_PASS_DIR}/images.yaml"
+print_success "Generated test-matrix.yaml: ${TEST_PASS_DIR}/test-matrix.yaml"
+indent
+save_to_cache "${TEST_PASS_DIR}/test-matrix.yaml" "${TEST_RUN_KEY}" "${CACHE_DIR}/test-run-matrix" "${TEST_TYPE}"
+unindent
+exit 0

@@ -101,10 +101,13 @@ init_cache_dirs
 # Hook up ctrl+c handler
 trap handle_shutdown INT
 
-# Override for perf: Must run 1 test at a time (sequential) to get accurate performance results
-WORKER_COUNT=1
+# WORKER_COUNT defaults to nproc (set in lib-common-init.sh)
+# Can be overridden with --workers command line argument
+# Used for both:
+#   1. Test generation parallelization (in generate-tests.sh)
+#   2. Test execution parallelization (in run.sh via xargs -P)
 
-# Perf-specific variables
+# Transport-specific variables (note: no BASELINE_IGNORE for transport)
 export BASELINE_IGNORE="${BASELINE_IGNORE:-}"
 export UPLOAD_BYTES=1073741824     # 1GB default
 export DOWNLOAD_BYTES=1073741824   # 1GB default
