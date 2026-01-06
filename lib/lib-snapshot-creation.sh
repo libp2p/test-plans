@@ -91,29 +91,29 @@ validate_snapshot_inputs() {
 
   # Check test pass directory exists
   if [ ! -d "$test_pass_dir" ]; then
-    print_error "Error: Test pass directory not found: $test_pass_dir" >&2
+    print_error "Error: Test pass directory not found: $test_pass_dir"
     return 1
   fi
 
   # Check required files exist
   if [ ! -f images.yaml ]; then
-    print_error "Error: images.yaml not found in current directory" >&2
+    print_error "Error: images.yaml not found in current directory"
     return 1
   fi
 
   if [ ! -f "$test_pass_dir/test-matrix.yaml" ]; then
-    print_error "Error: test-matrix.yaml not found in $test_pass_dir" >&2
+    print_error "Error: test-matrix.yaml not found in $test_pass_dir"
     return 1
   fi
 
   if [ ! -f "$test_pass_dir/results.yaml" ]; then
-    print_error "Error: results.yaml not found in $test_pass_dir" >&2
+    print_error "Error: results.yaml not found in $test_pass_dir"
     return 1
   fi
 
   # Check cache directory
   if [ ! -d "$cache_dir" ]; then
-    print_error "Error: Cache directory not found: $cache_dir" >&2
+    print_error "Error: Cache directory not found: $cache_dir"
     return 1
   fi
 

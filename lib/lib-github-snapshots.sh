@@ -96,7 +96,7 @@ copy_github_sources_to_snapshot() {
                 cp -r "$git_dir" "$snapshot_dir/git-repo/"
                 copied_git=$((copied_git + 1))
             else
-                print_error "Warning: Missing git clone for $repo_name (commit: ${commit:0:8})" >&2
+                print_error "Warning: Missing git clone for $repo_name (commit: ${commit:0:8})"
                 missing=$((missing + 1))
             fi
         else
@@ -105,7 +105,7 @@ copy_github_sources_to_snapshot() {
                 cp "$cache_dir/snapshots/${commit}.zip" "$snapshot_dir/snapshots/"
                 copied_zips=$((copied_zips + 1))
             else
-                print_error "Warning: Missing ZIP snapshot for commit ${commit:0:8}" >&2
+                print_error "Warning: Missing ZIP snapshot for commit ${commit:0:8}"
                 missing=$((missing + 1))
             fi
         fi
@@ -121,7 +121,7 @@ copy_github_sources_to_snapshot() {
     fi
 
     if [ $missing -gt 0 ]; then
-        print_error "Warning: $missing sources missing from cache" >&2
+        print_error "Warning: $missing sources missing from cache"
         unindent
         return 1
     fi

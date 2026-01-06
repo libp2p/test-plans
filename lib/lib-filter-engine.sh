@@ -44,7 +44,7 @@ _resolve_alias() {
 
   # Check for circular reference
   if [[ " ${processed_aliases_ref} " == *" ${alias_name} "* ]]; then
-    print_error "Circular alias reference detected in chain: ${processed_aliases_ref} -> ${alias_name}" >&2
+    print_error "Circular alias reference detected in chain: ${processed_aliases_ref} -> ${alias_name}"
     unindent
     return 1
   fi

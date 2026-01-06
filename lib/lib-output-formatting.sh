@@ -118,14 +118,14 @@ log_debug() {
 #   print_message "Workers: 4"
 print_message() {
   local message="$1"
-  print_iem "→" "$message"
+  print_iem "→" "$message" >&2
   return 0
 }
 
 # Same as above but uses echo -n instead
 echo_message() {
   local message="$1"
-  print_iem "→" "$message" "true"
+  print_iem "→" "$message" "true" >&2
   return 0
 }
 
@@ -150,14 +150,14 @@ log_message() {
 #   print_success "Loaded 30 implementations"
 print_success() {
   local message="$1"
-  print_iem "✓" "$message"
+  print_iem "✓" "$message" >&2
   return 0
 }
 
 # Same as above but uses echo -n instead
 echo_success() {
   local message="$1"
-  print_iem "✓" "$message" "true"
+  print_iem "✓" "$message" "true" >&2
   return 0
 }
 
@@ -169,14 +169,14 @@ echo_success() {
 #   print_error "File not found"
 print_error() {
   local message="$1"
-  print_iem "✗" "$message"
+  print_iem "✗" "$message" >&2
   return 0
 }
 
 # Same as above but uses echo -n instead
 echo_error() {
   local message="$1"
-  print_iem "✗" "$message" "true"
+  print_iem "✗" "$message" "true" >&2
   return 0
 }
 

@@ -46,7 +46,7 @@ compute_test_key() {
     local test_name="$1"
 
     if [ -z "$test_name" ]; then
-        print_error "Error: test_name is required" >&2
+        print_error "Error: test_name is required"
         return 1
     fi
 
