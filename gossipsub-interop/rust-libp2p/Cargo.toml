@@ -36,12 +36,12 @@ features = [
     "yamux",
 ]
 # version = "0.56.0"
-# git = "https://github.com/jxs/rust-libp2p/"
-# branch = "gossipsub-partial-messages"
-path = "../../../rust-libp2p/libp2p"
+git = "https://github.com/jxs/rust-libp2p/"
+branch = "gossipsub-partial-messages"
+# path = "../../../rust-libp2p/libp2p"
 
 [dependencies.libp2p-gossipsub]
-# git = "https://github.com/jxs/rust-libp2p/"
-# branch = "gossipsub-partial-messages"
-path = "../../../rust-libp2p/protocols/gossipsub"
+git = "https://github.com/jxs/rust-libp2p/"
+branch = "gossipsub-partial-messages"
+# path = "../../../rust-libp2p/protocols/gossipsub"
 features = ["partial_messages"]
