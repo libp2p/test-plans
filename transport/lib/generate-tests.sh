@@ -180,8 +180,8 @@ generate_tests_worker() {
   shift
   local dialer_chunk=("$@")
 
-  local worker_selected="${TEST_PASS_DIR}/worker-${worker_id}-selected.tmp"
-  local worker_ignored="${TEST_PASS_DIR}/worker-${worker_id}-ignored.tmp"
+  local worker_selected="${TEST_PASS_DIR}/worker-${worker_id}-selected.yaml"
+  local worker_ignored="${TEST_PASS_DIR}/worker-${worker_id}-ignored.yaml"
 
   > "$worker_selected"
   > "$worker_ignored"
@@ -270,11 +270,57 @@ generate_tests_worker() {
              [[ "$transport_selected" == true ]]; then
             # Select main test
             print_debug "${test_id} is selected"
-            echo "$test_id|$dialer_id|$listener_id|$transport|null|null" >> "$worker_selected"
+
+            # Get commits for snapshot references
+            local dialer_commit=$(get_source_commit "implementations" "$dialer_id")
+            local listener_commit=$(get_source_commit "implementations" "$listener_id")
+
+            # Write YAML block
+            cat >> "$worker_selected" <<EOF
+  - id: "$test_id"
+    transport: $transport
+    secureChannel: null
+    muxer: null
+    dialer:
+      id: $dialer_id
+EOF
+            if [ -n "$dialer_commit" ]; then
+              echo "      snapshot: snapshots/$dialer_commit.zip" >> "$worker_selected"
+            fi
+            cat >> "$worker_selected" <<EOF
+    listener:
+      id: $listener_id
+EOF
+            if [ -n "$listener_commit" ]; then
+              echo "      snapshot: snapshots/$listener_commit.zip" >> "$worker_selected"
+            fi
           else
             # Ignore main test
             print_debug "${test_id} is ignored"
-            echo "$test_id|$dialer_id|$listener_id|$transport|null|null" >> "$worker_ignored"
+
+            # Get commits for snapshot references
+            local dialer_commit=$(get_source_commit "implementations" "$dialer_id")
+            local listener_commit=$(get_source_commit "implementations" "$listener_id")
+
+            # Write YAML block
+            cat >> "$worker_ignored" <<EOF
+  - id: "$test_id"
+    transport: $transport
+    secureChannel: null
+    muxer: null
+    dialer:
+      id: $dialer_id
+EOF
+            if [ -n "$dialer_commit" ]; then
+              echo "      snapshot: snapshots/$dialer_commit.zip" >> "$worker_ignored"
+            fi
+            cat >> "$worker_ignored" <<EOF
+    listener:
+      id: $listener_id
+EOF
+            if [ -n "$listener_commit" ]; then
+              echo "      snapshot: snapshots/$listener_commit.zip" >> "$worker_ignored"
+            fi
           fi
 
         else
@@ -317,11 +363,57 @@ generate_tests_worker() {
                  [[ "$muxer_selected" == true ]]; then
                 # Select main test
                 print_debug "${test_id} is selected"
-                echo "$test_id|$dialer_id|$listener_id|$transport|$secure|$muxer" >> "$worker_selected"
+
+                # Get commits for snapshot references
+                local dialer_commit=$(get_source_commit "implementations" "$dialer_id")
+                local listener_commit=$(get_source_commit "implementations" "$listener_id")
+
+                # Write YAML block
+                cat >> "$worker_selected" <<EOF
+  - id: "$test_id"
+    transport: $transport
+    secureChannel: $secure
+    muxer: $muxer
+    dialer:
+      id: $dialer_id
+EOF
+                if [ -n "$dialer_commit" ]; then
+                  echo "      snapshot: snapshots/$dialer_commit.zip" >> "$worker_selected"
+                fi
+                cat >> "$worker_selected" <<EOF
+    listener:
+      id: $listener_id
+EOF
+                if [ -n "$listener_commit" ]; then
+                  echo "      snapshot: snapshots/$listener_commit.zip" >> "$worker_selected"
+                fi
               else
                 # Ignore main test
                 print_debug "${test_id} is ignored"
-                echo "$test_id|$dialer_id|$listener_id|$transport|$secure|$muxer" >> "$worker_ignored"
+
+                # Get commits for snapshot references
+                local dialer_commit=$(get_source_commit "implementations" "$dialer_id")
+                local listener_commit=$(get_source_commit "implementations" "$listener_id")
+
+                # Write YAML block
+                cat >> "$worker_ignored" <<EOF
+  - id: "$test_id"
+    transport: $transport
+    secureChannel: $secure
+    muxer: $muxer
+    dialer:
+      id: $dialer_id
+EOF
+                if [ -n "$dialer_commit" ]; then
+                  echo "      snapshot: snapshots/$dialer_commit.zip" >> "$worker_ignored"
+                fi
+                cat >> "$worker_ignored" <<EOF
+    listener:
+      id: $listener_id
+EOF
+                if [ -n "$listener_commit" ]; then
+                  echo "      snapshot: snapshots/$listener_commit.zip" >> "$worker_ignored"
+                fi
               fi
             done
           done
@@ -361,6 +453,8 @@ export -f generate_tests_worker
 export -f get_common
 export -f is_standalone_transport
 export -f print_debug
+export -f get_source_commit
+export -f get_source_type
 export TEST_PASS_DIR
 export WORKER_DATA_DIR
 export filtered_image_ids
@@ -402,20 +496,19 @@ for pid in "${pids[@]}"; do
   wait "$pid"
 done
 
-# Combine results from all workers
+# Count tests from worker YAML files
+total_selected=0
+total_ignored=0
+
 for ((w=0; w<WORKER_COUNT; w++)); do
-  if [ -f "${TEST_PASS_DIR}/worker-${w}-selected.tmp" ]; then
-    while IFS= read -r line; do
-      main_tests+=("$line")
-    done < "${TEST_PASS_DIR}/worker-${w}-selected.tmp"
-    rm -f "${TEST_PASS_DIR}/worker-${w}-selected.tmp"
+  if [ -f "${TEST_PASS_DIR}/worker-${w}-selected.yaml" ]; then
+    count=$(grep -c "^  - id:" "${TEST_PASS_DIR}/worker-${w}-selected.yaml" 2>/dev/null || echo 0)
+    total_selected=$((total_selected + count))
   fi
 
-  if [ -f "${TEST_PASS_DIR}/worker-${w}-ignored.tmp" ]; then
-    while IFS= read -r line; do
-      ignored_main_tests+=("$line")
-    done < "${TEST_PASS_DIR}/worker-${w}-ignored.tmp"
-    rm -f "${TEST_PASS_DIR}/worker-${w}-ignored.tmp"
+  if [ -f "${TEST_PASS_DIR}/worker-${w}-ignored.yaml" ]; then
+    count=$(grep -c "^  - id:" "${TEST_PASS_DIR}/worker-${w}-ignored.yaml" 2>/dev/null || echo 0)
+    total_ignored=$((total_ignored + count))
   fi
 done
 
@@ -423,55 +516,14 @@ done
 rm -rf "$WORKER_DATA_DIR"
 
 indent
-print_success "${#main_tests[@]} Selected"
-print_error "${#ignored_main_tests[@]} Ignored"
+print_success "${total_selected} Selected"
+print_error "${total_ignored} Ignored"
 unindent
 echo ""
 
 ##### 8. OUTPUT TEST MATRIX
 
-output_tests() {
-  local name=$1
-  local entity_type=$2
-  local -n tests=$3
-
-  # Add list of tests
-  cat >> "${TEST_PASS_DIR}/test-matrix.yaml" <<EOF
-
-$name:
-EOF
-
-  for test in "${tests[@]}"; do
-    IFS='|' read -r id dialer listener transport secure_channel muxer <<< "$test"
-
-    # Get commits, if they exist
-    local dialer_commit=$(get_source_commit "$entity_type" "$dialer")
-    local listener_commit=$(get_source_commit "$entity_type" "$listener")
-
-    cat >> "${TEST_PASS_DIR}/test-matrix.yaml" <<EOF
-  - id: "$id"
-    transport: $transport
-    secureChannel: $secure_channel
-    muxer: $muxer
-    dialer:
-      id: $dialer
-EOF
-
-    if [ ! -z "$dialer_commit" ]; then
-      echo "      snapshot: snapshots/$dialer_commit.zip" >> "${TEST_PASS_DIR}/test-matrix.yaml"
-    fi
-
-    cat >> "${TEST_PASS_DIR}/test-matrix.yaml" <<EOF
-    listener:
-      id: $listener
-EOF
-    if [ ! -z "$listener_commit" ]; then
-      echo "      snapshot: snapshots/$listener_commit.zip" >> "${TEST_PASS_DIR}/test-matrix.yaml"
-    fi
-  done
-}
-
-# Generate test-matrix.yaml
+# Generate metadata section
 cat > "${TEST_PASS_DIR}/test-matrix.yaml" <<EOF
 metadata:
   ignore: |-
@@ -482,16 +534,34 @@ metadata:
     ${SECURE_IGNORE}
   muxerIgnore: |-
     ${MUXER_IGNORE}
-  totalTests: ${#main_tests[@]}
-  ignoredTests: ${#ignored_main_tests[@]}
+  totalTests: ${total_selected}
+  ignoredTests: ${total_ignored}
   debug: $DEBUG
+
+tests:
 EOF
 
-# output selected tests
-output_tests "tests" "implementations" main_tests
+# Concatenate selected test YAML files from workers
+for ((w=0; w<WORKER_COUNT; w++)); do
+  if [ -f "${TEST_PASS_DIR}/worker-${w}-selected.yaml" ]; then
+    cat "${TEST_PASS_DIR}/worker-${w}-selected.yaml" >> "${TEST_PASS_DIR}/test-matrix.yaml"
+    rm -f "${TEST_PASS_DIR}/worker-${w}-selected.yaml"
+  fi
+done
 
-# output ignored tests
-output_tests "ignoredTests" "implementations" ignored_main_tests
+# Add ignoredTests section
+cat >> "${TEST_PASS_DIR}/test-matrix.yaml" <<EOF
+
+ignoredTests:
+EOF
+
+# Concatenate ignored test YAML files from workers
+for ((w=0; w<WORKER_COUNT; w++)); do
+  if [ -f "${TEST_PASS_DIR}/worker-${w}-ignored.yaml" ]; then
+    cat "${TEST_PASS_DIR}/worker-${w}-ignored.yaml" >> "${TEST_PASS_DIR}/test-matrix.yaml"
+    rm -f "${TEST_PASS_DIR}/worker-${w}-ignored.yaml"
+  fi
+done
 
 # Copy images.yaml for reference and cache the test-matrix.yaml file
 cp images.yaml "${TEST_PASS_DIR}/"
