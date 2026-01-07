@@ -45,20 +45,26 @@ trap 'rm -f "$TEMP_FILE"' EXIT
 # Read README line by line and build new content
 IN_SECTION=false
 while IFS= read -r line; do
-    if [[ "$line" == *"$START_MARKER"* ]]; then
-        # Write start marker
-        echo "$line" >> "$TEMP_FILE"
-        # Write results content
-        cat "$RESULTS_PATH" >> "$TEMP_FILE"
-        IN_SECTION=true
-    elif [[ "$line" == *"$END_MARKER"* ]]; then
-        # Write end marker
-        echo "$line" >> "$TEMP_FILE"
-        IN_SECTION=false
-    elif [ "$IN_SECTION" = false ]; then
-        # Write line if not in the section we're replacing
-        echo "$line" >> "$TEMP_FILE"
-    fi
+    case "$line" in
+        *"$START_MARKER"*)
+            # Write start marker
+            echo "$line" >> "$TEMP_FILE"
+            # Write results content
+            cat "$RESULTS_PATH" >> "$TEMP_FILE"
+            IN_SECTION=true
+            ;;
+        *"$END_MARKER"*)
+            # Write end marker
+            echo "$line" >> "$TEMP_FILE"
+            IN_SECTION=false
+            ;;
+        *)
+            if [ "$IN_SECTION" == "false" ]; then
+                # Write line if not in the section we're replacing
+                echo "$line" >> "$TEMP_FILE"
+            fi
+            ;;
+    esac
 done < "$README_PATH"
 
 # Check if content changed

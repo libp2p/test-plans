@@ -81,7 +81,7 @@ print_list() {
 #   print_debug "Cache Dir: /srv/cache"
 #   print_debug "Workers: 4"
 print_debug() {
-  if [ "${DEBUG:-false}" = "true" ]; then
+  if [ "${DEBUG:-false}" == "true" ]; then
     local message="$1"
     print_iem "DEBUG:" "$message" >&2
   fi
@@ -98,7 +98,7 @@ echo_debug() {
 # Log debug (only if DEBUG=true)
 # Usage: log_debug "message"
 log_debug() {
-  if [ "${DEBUG:-false}" = "true" ]; then
+  if [ "${DEBUG:-false}" == "true" ]; then
     local msg="[$(date +'%Y-%m-%d %H:%M:%S')] DEBUG: $*"
     # Write to log file if available, otherwise to stderr
     if [ -n "${LOG_FILE:-}" ]; then
@@ -211,7 +211,7 @@ print_iem() {
 
   # Build the prefix: emoji + space only if emoji is non-empty
   local prefix=""
-  if [[ -n "$emoji" ]]; then
+  if [ -n "$emoji" ]; then
     prefix="$emoji "
   fi
 
@@ -225,7 +225,7 @@ print_iem() {
   fi
 
   # Print with or without newline
-  if [[ -n "$no_newline" ]]; then
+  if [ -n "$no_newline" ]; then
     echo -n "$output"
   else
     echo "$output"

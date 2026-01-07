@@ -22,7 +22,7 @@ echo "  → Cache directory: $CACHE_DIR"
 [ -n "$RELAY_FILTER" ] && echo "  → Relay filter: $RELAY_FILTER"
 [ -n "$ROUTER_FILTER" ] && echo "  → Router filter: $ROUTER_FILTER"
 [ -n "$IMPL_FILTER" ] && echo "  → Implementation filter: $IMPL_FILTER"
-[ "$FORCE_REBUILD" = "true" ] && echo "  → Force rebuild: enabled"
+[ "$FORCE_REBUILD" == "true" ] && echo "  → Force rebuild: enabled"
 echo ""
 
 # Ensure cache directories exist
@@ -47,12 +47,14 @@ build_image_type() {
             match_found=false
             IFS='|' read -ra FILTER_PATTERNS <<< "$filter"
             for pattern in "${FILTER_PATTERNS[@]}"; do
-                if [[ "$id" == *"$pattern"* ]]; then
-                    match_found=true
-                    break
-                fi
+                case "$id" in
+                    *"$pattern"*)
+                        match_found=true
+                        break
+                        ;;
+                esac
             done
-            if [ "$match_found" = false ]; then
+            if [ "$match_found" == "false" ]; then
                 continue
             fi
         fi
@@ -61,7 +63,7 @@ build_image_type() {
         local source_type=$(yq eval ".${yaml_section}[$i].source.type" images.yaml)
 
         # Check if image already exists (skip if not forcing rebuild)
-        if [ "$FORCE_REBUILD" = "false" ] && docker image inspect "$image_name" &>/dev/null; then
+        if [ "$FORCE_REBUILD" == "false" ] && docker image inspect "$image_name" &>/dev/null; then
             echo "  ✓ $image_name (already built)"
             continue
         fi

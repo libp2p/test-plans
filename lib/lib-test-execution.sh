@@ -22,7 +22,7 @@ get_required_image_count() {
     yq eval '.tests[].listener' "$test_matrix_file" 2>/dev/null >> "$temp_file" || true
 
     # For perf tests, also include baselines
-    if [ "$include_baselines" = "true" ]; then
+    if [ "$include_baselines" == "true" ]; then
         yq eval '.baselines[].dialer' "$test_matrix_file" 2>/dev/null >> "$temp_file" || true
         yq eval '.baselines[].listener' "$test_matrix_file" 2>/dev/null >> "$temp_file" || true
     fi
@@ -53,7 +53,7 @@ get_required_images() {
     yq eval '.tests[].listener' "$test_matrix_file" 2>/dev/null >> "$temp_file" || true
 
     # Include baselines if requested
-    if [ "$include_baselines" = "true" ]; then
+    if [ "$include_baselines" == "true" ]; then
         yq eval '.baselines[].dialer' "$test_matrix_file" 2>/dev/null >> "$temp_file" || true
         yq eval '.baselines[].listener' "$test_matrix_file" 2>/dev/null >> "$temp_file" || true
     fi

@@ -118,7 +118,7 @@ EOF
 }
 
 # Parse arguments
-while [[ $# -gt 0 ]]; do
+while [ $# -gt 0 ]; do
     case "$1" in
         --test-select) TEST_SELECT="$2"; shift 2 ;;
         --test-ignore) TEST_IGNORE="$2"; shift 2 ;;
@@ -147,7 +147,7 @@ source "$SCRIPT_LIB_DIR/lib-test-caching.sh"
 source "$SCRIPT_LIB_DIR/lib-image-naming.sh"
 
 # List images
-if [ "$LIST_IMAGES" = true ]; then
+if [ "$LIST_IMAGES" == "true" ]; then
     if [ ! -f "images.yaml" ]; then
         print_error "images.yaml not found"
         exit 1
@@ -179,7 +179,7 @@ fi
 
 
 # List tests
-if [ "$LIST_TESTS" = true ]; then
+if [ "$LIST_TESTS" == "true" ]; then
     # Create temporary directory for test matrix generation
     TEMP_DIR=$(mktemp -d)
     trap "rm -rf $TEMP_DIR" EXIT
@@ -223,7 +223,7 @@ if [ "$LIST_TESTS" = true ]; then
 fi
 
 # Check dependencies
-if [ "$CHECK_DEPS_ONLY" = true ]; then
+if [ "$CHECK_DEPS_ONLY" == "true" ]; then
     bash "$SCRIPT_LIB_DIR/check-dependencies.sh"
     exit $?
 fi
@@ -337,7 +337,7 @@ else
     while IFS= read -r image_id; do
         # Check if this is a browser-type implementation
         source_type=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .source.type" images.yaml)
-        if [ "$source_type" = "browser" ]; then
+        if [ "$source_type" == "browser" ]; then
             # Add its base image as a dependency
             base_image=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .source.baseImage" images.yaml)
             echo "$base_image" >> "$REQUIRED_IMPLS_WITH_DEPS"
@@ -394,7 +394,7 @@ echo ""
 print_message "Total: $test_count tests to execute, $ignored_count ignored"
 
 # Prompt user for confirmation (unless -y flag was set)
-if [ "$AUTO_YES" = false ]; then
+if [ "$AUTO_YES" == "false" ]; then
     read -p "Execute $test_count tests? (Y/n): " response
     response=${response:-Y}  # Default to Y if user just presses enter
 
@@ -447,7 +447,7 @@ run_test() {
     # Extract metrics from log file if test passed
     handshake_ms=""
     ping_ms=""
-    if [ "$status" = "pass" ]; then
+    if [ "$status" == "pass" ]; then
         test_slug=$(echo "$name" | sed 's/[^a-zA-Z0-9-]/_/g')
         log_file="$TEST_PASS_DIR/logs/${test_slug}.log"
         if [ -f "$log_file" ]; then
@@ -563,7 +563,7 @@ else
 fi
 
 # 7. Create snapshot (optional)
-if [ "$CREATE_SNAPSHOT" = true ]; then
+if [ "$CREATE_SNAPSHOT" == "true" ]; then
     print_header "Creating test pass snapshot..."
     bash lib/create-snapshot.sh
 fi

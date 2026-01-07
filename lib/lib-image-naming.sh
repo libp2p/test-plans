@@ -65,11 +65,11 @@ get_router_image_name() {
 detect_test_type() {
     local pwd_basename=$(basename "$(pwd)")
 
-    if [ "$pwd_basename" = "transport" ]; then
+    if [ "$pwd_basename" == "transport" ]; then
         echo "transport"
-    elif [ "$pwd_basename" = "hole-punch" ]; then
+    elif [ "$pwd_basename" == "hole-punch" ]; then
         echo "hole-punch"
-    elif [ "$pwd_basename" = "perf" ]; then
+    elif [ "$pwd_basename" == "perf" ]; then
         echo "perf"
     else
         # Try to detect from parent directory structure

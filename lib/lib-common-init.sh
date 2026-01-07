@@ -40,6 +40,7 @@ init_common_variables() {
   CHECK_DEPS="${CHECK_DEPS:-false}"
   LIST_IMAGES="${LIST_IMAGES:-false}"
   LIST_TESTS="${LIST_TESTS:-false}"
+  SHOW_IGNORED="${SHOW_IGNORED:-false}"
   CREATE_SNAPSHOT="${CREATE_SNAPSHOT:-false}"
   AUTO_YES="${AUTO_YES:-false}"
   FORCE_MATRIX_REBUILD="${FORCE_MATRIX_REBUILD:-false}"
@@ -59,6 +60,7 @@ init_common_variables() {
   export CHECK_DEPS
   export LIST_IMAGES
   export LIST_TESTS
+  export SHOW_IGNORED
   export CREATE_SNAPSHOT
   export AUTO_YES
   export FORCE_MATRIX_REBUILD

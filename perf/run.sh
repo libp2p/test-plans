@@ -156,6 +156,7 @@ Options:
   --check-deps                  Only check dependencies and exit
   --list-images                 List all image types used by this test suite and exit
   --list-tests                  List all selected tests and exit
+  --show-ignored                Shows the list of ignored tests
   --help, -h                    Show this help message
 
 Examples:
@@ -173,7 +174,7 @@ EOF
 }
 
 # Parse command line arguments
-while [[ $# -gt 0 ]]; do
+while [ $# -gt 0 ]; do
   case "$1" in
     --test-ignore) TEST_IGNORE="$2"; shift 2 ;;
     --baseline-ignore) BASELINE_IGNORE="$2"; shift 2 ;;
@@ -194,6 +195,7 @@ while [[ $# -gt 0 ]]; do
     --check-deps) CHECK_DEPS=true; shift ;;
     --list-images) LIST_IMAGES=true; shift ;;
     --list-tests) LIST_TESTS=true; shift ;;
+    --show-ignored) SHOW_IGNORED=true; shift ;;
     --help|-h) show_help; exit 0 ;;
     *)
       echo "Unknown option: $1"
@@ -227,7 +229,7 @@ export TEST_PASS_DIR="$TEST_RUN_DIR/$TEST_PASS_NAME"
 # =============================================================================
 
 # List images
-if [ "$LIST_IMAGES" = true ]; then
+if [ "$LIST_IMAGES" == "true" ]; then
   if [ ! -f "${IMAGES_YAML}" ]; then
     print_error "${IMAGES_YAML} not found"
     exit 1
@@ -261,7 +263,7 @@ fi
 # =============================================================================
 
 # List tests
-if [ "$LIST_TESTS" = true ]; then
+if [ "$LIST_TESTS" == "true" ]; then
   # Create temporary directory for test matrix generation
   TEMP_DIR=$(mktemp -d)
   trap "rm -rf $TEMP_DIR" EXIT
@@ -300,11 +302,12 @@ if [ "$LIST_TESTS" = true ]; then
 
   echo ""
 
-  # Get and print the ignored baseline tests
+  # Get and maybe print the ignored baseline tests
   readarray -t ignored_baseline_tests < <(get_entity_ids "ignoredBaselines" "$TEMP_DIR/test-matrix.yaml")
-  print_list "Ignored baseline tests" ignored_baseline_tests
-
-  echo ""
+  if [ "$SHOW_IGNORED" == "true" ]; then
+    print_list "Ignored baseline tests" ignored_baseline_tests
+    echo ""
+  fi
 
   # Get and print the selected main tests
   readarray -t selected_main_tests < <(get_entity_ids "tests" "$TEMP_DIR/test-matrix.yaml")
@@ -312,11 +315,12 @@ if [ "$LIST_TESTS" = true ]; then
 
   echo ""
 
-  # Get and print the ignored main tests
+  # Get and maybe print the ignored main tests
   readarray -t ignored_main_tests < <(get_entity_ids "ignoredTests" "$TEMP_DIR/test-matrix.yaml")
-  print_list "Ignored main tests" ignored_main_tests
-
-  echo ""
+  if [ "$SHOW_IGNORED" == "true" ]; then
+    print_list "Ignored main tests" ignored_main_tests
+    echo ""
+  fi
 
   print_message "Total selected: ${#selected_baseline_tests[@]} baseline + ${#selected_main_tests[@]} main = $((${#selected_baseline_tests[@]} + ${#selected_main_tests[@]})) tests"
   print_message "Total ignored: ${#ignored_baseline_tests[@]} baseline + ${#ignored_main_tests[@]} main = $((${#ignored_baseline_tests[@]} + ${#ignored_main_tests[@]})) tests"
@@ -334,7 +338,7 @@ fi
 # =============================================================================
 
 # Check dependencies
-if [ "$CHECK_DEPS" = true ]; then
+if [ "$CHECK_DEPS" == "true" ]; then
   print_header "Checking dependencies..."
   indent
   bash "${SCRIPT_LIB_DIR}/check-dependencies.sh" docker yq || {
@@ -477,11 +481,12 @@ print_list "Selected baseline tests" selected_baseline_tests
 
 echo ""
 
-# Get and print the ignored baseline tests
+# Get and maybe print the ignored baseline tests
 readarray -t ignored_baseline_tests < <(get_entity_ids "ignoredBaselines" "${TEST_PASS_DIR}/test-matrix.yaml")
-print_list "Ignored baseline tests" ignored_baseline_tests
-
-echo ""
+if [ "$SHOW_IGNORED" == "true" ]; then
+  print_list "Ignored baseline tests" ignored_baseline_tests
+  echo ""
+fi
 
 # Get and print the selected main tests
 readarray -t selected_main_tests < <(get_entity_ids "tests" "${TEST_PASS_DIR}/test-matrix.yaml")
@@ -489,11 +494,12 @@ print_list "Selected main tests" selected_main_tests
 
 echo ""
 
-# Get and print the ignored main tests
+# Get and maybe print the ignored main tests
 readarray -t ignored_main_tests < <(get_entity_ids "ignoredTests" "${TEST_PASS_DIR}/test-matrix.yaml")
-print_list "Ignored main tests" ignored_main_tests
-
-echo ""
+if [ "$SHOW_IGNORED" == "true" ]; then
+  print_list "Ignored main tests" ignored_main_tests
+  echo ""
+fi
 
 baseline_count=${#selected_baseline_tests[@]}
 test_count=${#selected_main_tests[@]}
@@ -587,7 +593,7 @@ else
   > "${BASELINE_RESULTS_FILE}"
   for ((i=0; i<baseline_count; i++)); do
     # Check for shutdown
-    if [[ "${SHUTDOWN}" == true ]]; then
+    if [ "${SHUTDOWN}" == "true" ]; then
       break
     fi
 
@@ -595,7 +601,7 @@ else
     baseline_name=$(yq eval ".baselines[$i].id" "${TEST_PASS_DIR}/test-matrix.yaml")
 
     # Show progress (same format as main tests)
-    if [ "${DEBUG:-false}" = "true" ]; then
+    if [ "${DEBUG:-false}" == "true" ]; then
       print_message "[$((i + 1))/$baseline_count] $baseline_name..."
     else
       echo_message "[$((i + 1))/$baseline_count] $baseline_name..."
@@ -624,7 +630,7 @@ else
   > "${TEST_RESULTS_FILE}"
   for ((i=0; i<test_count; i++)); do
     # Check for shutdown
-    if [[ "${SHUTDOWN}" == true ]]; then
+    if [ "${SHUTDOWN}" == "true" ]; then
       break
     fi
 
@@ -632,7 +638,7 @@ else
     test_name=$(yq eval ".tests[$i].id" "${TEST_PASS_DIR}/test-matrix.yaml")
 
     # Show test progress (matching transport format)
-    if [ "${DEBUG:-false}" = "true" ]; then
+    if [ "${DEBUG:-false}" == "true" ]; then
       print_message "[$((i + 1))/$test_count] $test_name..."
       indent
     else
@@ -646,7 +652,7 @@ else
       echo "[FAILED]"
     fi
 
-    if [ "${DEBUG:-false}" = "true" ]; then
+    if [ "${DEBUG:-false}" == "true" ]; then
       unindent
     fi
   done
@@ -833,7 +839,7 @@ echo ""
 # =============================================================================
 
 # Create snapshot (if requested)
-if [ "$CREATE_SNAPSHOT" = true ]; then
+if [ "$CREATE_SNAPSHOT" == "true" ]; then
   print_header "Creating test pass snapshot..."
   indent
   create_snapshot || {

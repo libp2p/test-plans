@@ -255,9 +255,11 @@ generate_tests_worker() {
 
         # Check if listener can handle this transport (not in dialOnly list)
         dial_only_transports="${image_dial_only[$listener_id]:-}"
-        if [[ " $dial_only_transports " == *" $transport "* ]]; then
-          continue  # Skip: listener has this transport in dialOnly
-        fi
+        case " $dial_only_transports " in
+          *" $transport "*)
+            continue  # Skip: listener has this transport in dialOnly
+            ;;
+        esac
 
         if is_standalone_transport "$transport"; then
 
@@ -265,9 +267,9 @@ generate_tests_worker() {
           test_id="$dialer_id x $listener_id ($transport)"
 
           # Add to selected or ignored list
-          if [[ "$dialer_selected" == true ]] && \
-             [[ "$listener_selected" == true ]] && \
-             [[ "$transport_selected" == true ]]; then
+          if [ "$dialer_selected" == "true" ] && \
+             [ "$listener_selected" == "true" ] && \
+             [ "$transport_selected" == "true" ]; then
             # Select main test
             print_debug "${test_id} is selected"
 
@@ -356,11 +358,11 @@ EOF
               test_id="$dialer_id x $listener_id ($transport, $secure, $muxer)"
 
               # Add to selected or ignored list
-              if [[ "$dialer_selected" == true ]] && \
-                 [[ "$listener_selected" == true ]] && \
-                 [[ "$transport_selected" == true ]] && \
-                 [[ "$secure_selected" == true ]] && \
-                 [[ "$muxer_selected" == true ]]; then
+              if [ "$dialer_selected" == "true" ] && \
+                 [ "$listener_selected" == "true" ] && \
+                 [ "$transport_selected" == "true" ] && \
+                 [ "$secure_selected" == "true" ] && \
+                 [ "$muxer_selected" == "true" ]; then
                 # Select main test
                 print_debug "${test_id} is selected"
 

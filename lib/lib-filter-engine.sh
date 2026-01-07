@@ -22,7 +22,7 @@ print_filter_expansion() {
 
   if [ -n "${!orig_var}" ]; then
     print_message "${name}: ${!orig_var}"
-    if [[ "${!orig_var} != ${!exp_var} " ]]; then
+    if [ "${!orig_var}" != "${!exp_var}" ]; then
       indent
       print_success "Expanded to: ${!exp_var}"
       unindent
@@ -43,11 +43,13 @@ _resolve_alias() {
   print_debug "processed_aliases = ${processed_aliases_ref}"
 
   # Check for circular reference
-  if [[ " ${processed_aliases_ref} " == *" ${alias_name} "* ]]; then
-    print_error "Circular alias reference detected in chain: ${processed_aliases_ref} -> ${alias_name}"
-    unindent
-    return 1
-  fi
+  case " ${processed_aliases_ref} " in
+    *" ${alias_name} "*)
+      print_error "Circular alias reference detected in chain: ${processed_aliases_ref} -> ${alias_name}"
+      unindent
+      return 1
+      ;;
+  esac
 
   # Get alias value from global ALIASES array
   value_ref="${ALIASES[${alias_name}]:-}"
@@ -131,15 +133,17 @@ _expand_recursive() {
       for name in "${all_names_ref[@]}"; do
         local matches_any=false
         for pattern in "${expanded_parts[@]}"; do
-          if [[ "$name" == *"$pattern"* ]]; then
-            matches_any=true
-            #print_debug "${name} match...excluding"
-            break
-          fi
+          case "$name" in
+            *"$pattern"*)
+              matches_any=true
+              #print_debug "${name} match...excluding"
+              break
+              ;;
+          esac
         done
 
         # If name does NOT match any pattern, include it
-        if [ "$matches_any" = false ]; then
+        if [ "$matches_any" == "false" ]; then
           #print_debug "${name} no match...including"
           local rp=$(printf '%s\n' "${result_parts_ref[@]}" | paste -sd'|')
           print_debug "${rp} += ${name}"
@@ -176,12 +180,18 @@ _expand_recursive() {
       local pattern="${BASH_REMATCH[1]}"
 
       for name in "${all_names_ref[@]}"; do
-        if [[ "$name" != *"$pattern"* ]]; then
-          #print_debug "${name} no match...including"
-          local rp=$(printf '%s\n' "${result_parts_ref[@]}" | paste -sd'|')
-          print_debug "${rp} += ${name}"
-          result_parts_ref+=("${name}")
-        fi
+        case "$name" in
+          *"$pattern"*)
+            # Match found, skip this name
+            ;;
+          *)
+            # No match, include this name
+            #print_debug "${name} no match...including"
+            local rp=$(printf '%s\n' "${result_parts_ref[@]}" | paste -sd'|')
+            print_debug "${rp} += ${name}"
+            result_parts_ref+=("${name}")
+            ;;
+        esac
       done
 
     else
@@ -261,7 +271,11 @@ filter_matches() {
   IFS='|' read -ra patterns <<< "$filter_string"
   for pattern in "${patterns[@]}"; do
     [ -z "$pattern" ] && continue
-    [[ "$name" == *"$pattern"* ]] && return 0
+    case "$name" in
+      *"$pattern"*)
+        return 0
+        ;;
+    esac
   done
 
   return 1

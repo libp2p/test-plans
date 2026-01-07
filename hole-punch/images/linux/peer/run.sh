@@ -57,7 +57,7 @@ log "  Role:        $ROLE"
 log "  Transport:   $TRANSPORT"
 log "  Timeout:     ${TEST_TIMEOUT_SECONDS}s"
 log "  Debug:       $DEBUG"
-if [ "$ROLE" = "dial" ]; then
+if [ "$ROLE" == "dial" ]; then
     log "  Dialer IP:   ${DIALER_IP:-<not set>}"
 else
     log "  Listener IP: ${LISTENER_IP:-<not set>}"
@@ -79,7 +79,7 @@ if [ -n "$ROUTER_LAN_IP" ]; then
     log ""
 
     # Display routing table for debugging
-    if [ "$DEBUG" = "true" ]; then
+    if [ "$DEBUG" == "true" ]; then
         log "Current routing table:"
         ip route | while read line; do
             log "    $line"
@@ -100,9 +100,9 @@ wait_for_relay() {
     local role_key="${ROLE}"  # "dial" or "listen"
 
     # Map role to Redis key suffix
-    if [ "$role_key" = "listen" ]; then
+    if [ "$role_key" == "listen" ]; then
         role_key="listener"
-    elif [ "$role_key" = "dial" ]; then
+    elif [ "$role_key" == "dial" ]; then
         role_key="dialer"
     fi
 
@@ -124,7 +124,7 @@ wait_for_relay() {
             return 0
         fi
 
-        [ "$DEBUG" = "true" ] && log "  Retry $((retry_count+1))/$max_retries..."
+        [ "$DEBUG" == "true" ] && log "  Retry $((retry_count+1))/$max_retries..."
         sleep 1
         retry_count=$((retry_count + 1))
     done

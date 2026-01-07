@@ -22,7 +22,7 @@ start_redis_service() {
   # Create network if doesn't exist
   # For perf, create with subnet to support static IP assignment
   if ! docker network inspect "$network_name" &>/dev/null; then
-    if [[ "$network_name" == "perf-network" ]]; then
+    if [ "$network_name" == "perf-network" ]; then
       # Perf network needs subnet for static listener IP (10.5.0.10)
       docker network create "$network_name" \
         --subnet 10.5.0.0/24 \

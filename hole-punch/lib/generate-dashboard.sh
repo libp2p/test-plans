@@ -84,7 +84,7 @@ if [ "$test_count" -gt 0 ]; then
         test_transport_map["$name"]="$transport"
 
         # Status icon
-        if [ "$status" = "pass" ]; then
+        if [ "$status" == "pass" ]; then
             status_icon="✅"
         else
             status_icon="❌"
@@ -186,7 +186,7 @@ for dialer in $dialers; do
                 test_status="${test_status_map[$test_name]}"
                 test_transport="${test_transport_map[$test_name]}"
 
-                if [ "$test_status" = "pass" ]; then
+                if [ "$test_status" == "pass" ]; then
                     icon="✅"
                 else
                     icon="❌"

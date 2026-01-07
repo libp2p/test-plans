@@ -74,7 +74,7 @@ check_and_load_cache() {
   fi
 
   # If force rebuild requested, skip cache
-  if [ "$force_rebuild" = true ]; then
+  if [ "$force_rebuild" == "true" ]; then
     print_error "[MISS] Force rebuild requested"
     return 1
   fi

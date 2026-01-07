@@ -16,17 +16,27 @@ relay_should_ignore() {
     # Check if relay matches any ignore pattern
     for pattern in "${RELAY_IGNORE_PATTERNS[@]}"; do
         # Support inverted patterns with '!'
-        if [[ "$pattern" == !* ]]; then
-            inverted_pattern="${pattern:1}"  # Remove '!' prefix
-            if [[ "$relay_id" != *"$inverted_pattern"* ]]; then
-                return 0  # Ignore (doesn't match inverted pattern)
-            fi
-        else
-            # Normal pattern - ignore if matches
-            if [[ "$relay_id" == *"$pattern"* ]]; then
-                return 0  # Ignore this relay
-            fi
-        fi
+        case "$pattern" in
+            !*)
+                inverted_pattern="${pattern:1}"  # Remove '!' prefix
+                case "$relay_id" in
+                    *"$inverted_pattern"*)
+                        # Match found, skip
+                        ;;
+                    *)
+                        return 0  # Ignore (doesn't match inverted pattern)
+                        ;;
+                esac
+                ;;
+            *)
+                # Normal pattern - ignore if matches
+                case "$relay_id" in
+                    *"$pattern"*)
+                        return 0  # Ignore this relay
+                        ;;
+                esac
+                ;;
+        esac
     done
 
     return 1  # No ignore match

@@ -48,7 +48,7 @@ for iface in $(ls /sys/class/net | grep -v "^lo$"); do
     fi
 
     # Check if this IP matches WAN or LAN
-    if [ "$IP" = "$WAN_IP" ]; then
+    if [ "$IP" == "$WAN_IP" ]; then
         WAN_IF="$iface"
         echo "  WAN interface: $WAN_IF ($WAN_IP)"
     elif [[ "$IP" == "$LAN_IP" ]] || [[ "$IP" =~ ^${LAN_IP%/*} ]]; then

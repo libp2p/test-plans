@@ -241,7 +241,7 @@ for dialer_id in "${all_baseline_ids[@]}"; do
       test_id="$dialer_id x $listener_id ($transport)"
 
       # Add to selected or ignored list based on entity membership
-      if [ "$test_is_selected" = true ]; then
+      if [ "$test_is_selected" == "true" ]; then
         # Select baseline test
         baseline_tests+=("$test_id|$dialer_id|$listener_id|$dialer_server|$listener_server|$transport|null|null")
       else
@@ -313,9 +313,9 @@ for dialer_id in "${all_image_ids[@]}"; do
         test_id="$dialer_id x $listener_id ($transport)"
 
         # Add to selected or ignored list
-        if [[ "$dialer_selected" == true ]] && \
-           [[ "$listener_selected" == true ]] && \
-           [[ "$transport_selected" == true ]]; then
+        if [ "$dialer_selected" == "true" ] && \
+           [ "$listener_selected" == "true" ] && \
+           [ "$transport_selected" == "true" ]; then
           # Select main test
           print_debug "${test_id} is selected"
           main_tests+=("$test_id|$dialer_id|$listener_id|$dialer_server|$listener_server|$transport|null|null")
@@ -358,11 +358,11 @@ for dialer_id in "${all_image_ids[@]}"; do
             test_id="$dialer_id x $listener_id ($transport, $secure, $muxer)"
 
             # Add to selected or ignored list
-            if [[ "$dialer_selected" == true ]] && \
-               [[ "$listener_selected" == true ]] && \
-               [[ "$transport_selected" == true ]] && \
-               [[ "$secure_selected" == true ]] && \
-               [[ "$muxer_selected" == true ]]; then
+            if [ "$dialer_selected" == "true" ] && \
+               [ "$listener_selected" == "true" ] && \
+               [ "$transport_selected" == "true" ] && \
+               [ "$secure_selected" == "true" ] && \
+               [ "$muxer_selected" == "true" ]; then
               # Select main test
               print_debug "${test_id} is selected"
               main_tests+=("$test_id|$dialer_id|$listener_id|$dialer_server|$listener_server|$transport|$secure|$muxer")

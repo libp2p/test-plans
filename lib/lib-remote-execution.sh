@@ -73,7 +73,7 @@ test_all_remote_servers() {
 
     echo ""
 
-    if [ "$has_error" = true ]; then
+    if [ "$has_error" == "true" ]; then
         echo "╲ ✗ Some remote servers are unreachable"
         echo " ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔"
         return 1

@@ -34,9 +34,11 @@ can_be_listener_for_transport() {
   [ -z "$dial_only_transports" ] && return 0
 
   # Check if transport is in dialOnly list
-  if [[ " $dial_only_transports " == *" $transport "* ]]; then
-    return 1  # Cannot be listener for this transport
-  fi
+  case " $dial_only_transports " in
+    *" $transport "*)
+      return 1  # Cannot be listener for this transport
+      ;;
+  esac
 
   return 0  # Can be listener
 }

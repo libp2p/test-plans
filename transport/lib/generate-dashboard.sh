@@ -86,19 +86,19 @@ if [ "$test_count" -gt 0 ]; then
         test_muxer_map["$name"]="$muxer"
 
     # Status icon
-    if [ "$status" = "pass" ]; then
+    if [ "$status" == "pass" ]; then
         status_icon="✅"
     else
         status_icon="❌"
     fi
 
     # Handle null values for standalone transports
-    [ "$secure" = "null" ] && secure="-"
-    [ "$muxer" = "null" ] && muxer="-"
+    [ "$secure" == "null" ] && secure="-"
+    [ "$muxer" == "null" ] && muxer="-"
 
     # Handle null/missing metrics
-    [ "$handshake_ms" = "null" ] || [ -z "$handshake_ms" ] && handshake_ms="-"
-    [ "$ping_ms" = "null" ] || [ -z "$ping_ms" ] && ping_ms="-"
+    [ "$handshake_ms" == "null" ] || [ -z "$handshake_ms" ] && handshake_ms="-"
+    [ "$ping_ms" == "null" ] || [ -z "$ping_ms" ] && ping_ms="-"
 
     echo "| $name | $dialer | $listener | $transport | $secure | $muxer | $status_icon | $test_duration | $handshake_ms | $ping_ms |" >> "$LATEST_RESULTS_FILE"
 done <<< "$test_data"
@@ -158,7 +158,7 @@ if [ "$test_count" -gt 0 ]; then
         IFS='|' read -r transport secure muxer <<< "$combo"
 
         # Create table title based on combination
-        if [ "$secure" = "null" ] || [ "$muxer" = "null" ]; then
+        if [ "$secure" == "null" ] || [ "$muxer" == "null" ]; then
             echo "### $transport" >> "$OUTPUT_FILE"
         else
             echo "### $transport + $secure + $muxer" >> "$OUTPUT_FILE"
@@ -189,7 +189,7 @@ if [ "$test_count" -gt 0 ]; then
 
             for listener in $listeners; do
                 # Construct test name for this specific combination
-                if [ "$secure" = "null" ] || [ "$muxer" = "null" ]; then
+                if [ "$secure" == "null" ] || [ "$muxer" == "null" ]; then
                     test_name="$dialer x $listener ($transport)"
                 else
                     test_name="$dialer x $listener ($transport, $secure, $muxer)"
@@ -198,7 +198,7 @@ if [ "$test_count" -gt 0 ]; then
                 # Use O(1) hash map lookup
                 if [ -n "${test_status_map[$test_name]:-}" ]; then
                     test_status="${test_status_map[$test_name]}"
-                    if [ "$test_status" = "pass" ]; then
+                    if [ "$test_status" == "pass" ]; then
                         icon="✅"
                     else
                         icon="❌"

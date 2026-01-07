@@ -373,7 +373,7 @@ log "  REDIS_ADDR: $REDIS_ADDR"
 log "  LISTENER_IP: $LISTENER_IP"
 
 # Route to listener or dialer
-if [ "$IS_DIALER" = "true" ]; then
+if [ "$IS_DIALER" == "true" ]; then
     run_dialer
 else
     run_listener

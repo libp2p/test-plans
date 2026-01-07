@@ -22,7 +22,7 @@ load_aliases() {
   # Check if test-aliases exists
   local alias_count=$(yq eval '.test-aliases | length' "$images_file" 2>/dev/null || echo 0)
 
-  if [ "$alias_count" -eq 0 ] || [ "$alias_count" = "null" ]; then
+  if [ "$alias_count" -eq 0 ] || [ "$alias_count" == "null" ]; then
     return
   fi
 

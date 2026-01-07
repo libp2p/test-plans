@@ -37,17 +37,17 @@ RELAY_TYPE=$(yq eval ".tests[] | select(.name == \"$TEST_NAME\") | .relay" "${TE
 LISTENER_ROUTER_TYPE=$(yq eval ".tests[] | select(.name == \"$TEST_NAME\") | .listenerRouter" "${TEST_PASS_DIR:-.}/test-matrix.yaml" 2>/dev/null)
 
 # Validate
-if [ -z "$DIALER_ROUTER_TYPE" ] || [ "$DIALER_ROUTER_TYPE" = "null" ]; then
+if [ -z "$DIALER_ROUTER_TYPE" ] || [ "$DIALER_ROUTER_TYPE" == "null" ]; then
     echo "ERROR: Could not find dialerRouter for test: $TEST_NAME"
     exit 1
 fi
 
-if [ -z "$RELAY_TYPE" ] || [ "$RELAY_TYPE" = "null" ]; then
+if [ -z "$RELAY_TYPE" ] || [ "$RELAY_TYPE" == "null" ]; then
     echo "ERROR: Could not find relay for test: $TEST_NAME"
     exit 1
 fi
 
-if [ -z "$LISTENER_ROUTER_TYPE" ] || [ "$LISTENER_ROUTER_TYPE" = "null" ]; then
+if [ -z "$LISTENER_ROUTER_TYPE" ] || [ "$LISTENER_ROUTER_TYPE" == "null" ]; then
     echo "ERROR: Could not find listenerRouter for test: $TEST_NAME"
     exit 1
 fi

@@ -34,12 +34,12 @@ cacheDir=$(yq eval '.cacheDir' "$YAML_FILE")
 requiresSubmodules=$(yq eval '.requiresSubmodules // false' "$YAML_FILE")
 
 # Validate required parameters
-if [ -z "$imageName" ] || [ "$imageName" = "null" ]; then
+if [ -z "$imageName" ] || [ "$imageName" == "null" ]; then
   print_error "Error: imageName not specified in YAML"
   exit 1
 fi
 
-if [ -z "$sourceType" ] || [ "$sourceType" = "null" ]; then
+if [ -z "$sourceType" ] || [ "$sourceType" == "null" ]; then
   print_error "Error: sourceType not specified in YAML"
   exit 1
 fi
@@ -64,7 +64,7 @@ OUTPUT_FILTER=$(get_output_filter "$outputStyle")
 case "$sourceType" in
   github)
     # Check if submodules are required
-    if [ "$requiresSubmodules" = "true" ]; then
+    if [ "$requiresSubmodules" == "true" ]; then
       print_message "Submodules: required"
       build_from_github_with_submodules "$YAML_FILE" "$OUTPUT_FILTER" || {
         unindent

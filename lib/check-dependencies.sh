@@ -22,7 +22,7 @@ version_compare() {
   done
   # Compare each part
   for ((i=0; i<${#ver1[@]}; i++)); do
-    if [[ -z ${ver2[i]} ]]; then
+    if [ -z "${ver2[i]}" ]; then
       ver2[i]=0
     fi
     if ((10#${ver1[i]} > 10#${ver2[i]})); then
@@ -38,7 +38,7 @@ version_compare() {
 # Check bash
 if [ -n "${BASH_VERSION:-}" ]; then
   bash_version="${BASH_VERSION%.*}"
-  if [[ $(version_compare "$bash_version" "4.0") -ge 0 ]]; then
+  if [ $(version_compare "$bash_version" "4.0") -ge 0 ]; then
     print_success "bash $bash_version (minimum: 4.0)"
   else
     print_error "bash $bash_version is too old (minimum: 4.0)"
@@ -52,7 +52,7 @@ fi
 # Check docker
 if command -v docker &> /dev/null; then
   docker_version=$(docker --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-  if [[ $(version_compare "$docker_version" "20.10.0") -ge 0 ]]; then
+  if [ $(version_compare "$docker_version" "20.10.0") -ge 0 ]; then
     print_success "docker $docker_version (minimum: 20.10.0)"
   else
     print_error "docker $docker_version is too old (minimum: 20.10.0)"
@@ -102,7 +102,7 @@ fi
 if command -v yq &> /dev/null; then
   yq_version=$(yq --version 2>&1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
   if [ -n "$yq_version" ]; then
-    if [[ $(version_compare "$yq_version" "4.0.0") -ge 0 ]]; then
+    if [ $(version_compare "$yq_version" "4.0.0") -ge 0 ]; then
       print_success "yq $yq_version (minimum: 4.0.0)"
     else
       print_error "yq $yq_version is too old (minimum: 4.0.0)"
@@ -197,7 +197,7 @@ fi
 
 echo ""
 
-if [ "$has_error" = true ]; then
+if [ "$has_error" == "true" ]; then
   print_error "Some dependencies are missing or outdated"
   exit 1
 else

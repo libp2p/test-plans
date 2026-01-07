@@ -154,6 +154,7 @@ Options:
   --check-deps              Only check dependencies and exit
   --list-images             List all image types used by this test suite and exit
   --list-tests              List all selected tests and exit
+  --show-ignored            Shows the list of ignored tests
   --help, -h                Show this help message
 
 Examples:
@@ -171,7 +172,7 @@ EOF
 }
 
 # Parse arguments
-while [[ $# -gt 0 ]]; do
+while [ $# -gt 0 ]; do
   case "$1" in
     --test-ignore) TEST_IGNORE="$2"; shift 2 ;;
     --transport-ignore) TRANSPORT_IGNORE="$2"; shift 2;;
@@ -187,6 +188,7 @@ while [[ $# -gt 0 ]]; do
     --check-deps) CHECK_DEPS_ONLY=true; shift ;;
     --list-images) LIST_IMAGES=true; shift ;;
     --list-tests) LIST_TESTS=true; shift ;;
+    --show-ignored) SHOW_IGNORED=true; shift ;;
     --help|-h) show_help; exit 0 ;;
     *)
       echo "Unknown option: $1"
@@ -219,7 +221,7 @@ export TEST_PASS_DIR="$TEST_RUN_DIR/$TEST_PASS_NAME"
 # =============================================================================
 
 # List images
-if [ "$LIST_IMAGES" = true ]; then
+if [ "$LIST_IMAGES" == "true" ]; then
   if [ ! -f "${IMAGES_YAML}" ]; then
     print_error "${IMAGES_YAML} not found"
     exit 1
@@ -247,7 +249,7 @@ fi
 # =============================================================================
 
 # List tests
-if [ "$LIST_TESTS" = true ]; then
+if [ "$LIST_TESTS" == "true" ]; then
   # Create temporary directory for test matrix generation
   TEMP_DIR=$(mktemp -d)
   trap "rm -rf $TEMP_DIR" EXIT
@@ -284,11 +286,12 @@ if [ "$LIST_TESTS" = true ]; then
 
   echo ""
 
-  # Get and print the ignored main tests
+  # Get and maybe print the ignored main tests
   readarray -t ignored_main_tests < <(get_entity_ids "ignoredTests" "$TEMP_DIR/test-matrix.yaml")
-  print_list "Ignored main tests" ignored_main_tests
-
-  echo ""
+  if [ "$SHOW_IGNORED" == "true" ]; then
+    print_list "Ignored main tests" ignored_main_tests
+    echo ""
+  fi
 
   print_message "Total selected: ${#selected_main_tests[@]} tests"
   print_message "Total ignored: ${#ignored_main_tests[@]} tests"
@@ -306,7 +309,7 @@ fi
 # =============================================================================
 
 # Check dependencies
-if [ "$CHECK_DEPS" = true ]; then
+if [ "$CHECK_DEPS" == "true" ]; then
   print_header "Checking dependencies..."
   indent
   bash "${SCRIPT_LIB_DIR}/check-dependencies.sh" docker yq || {
@@ -418,11 +421,12 @@ print_list "Selected main tests" selected_main_tests
 
 echo ""
 
-# Get and print the ignored main tests
+# Get and maybe print the ignored main tests
 readarray -t ignored_main_tests < <(get_entity_ids "ignoredTests" "${TEST_PASS_DIR}/test-matrix.yaml")
-print_list "Ignored main tests" ignored_main_tests
-
-echo ""
+if [ "$SHOW_IGNORED" == "true" ]; then
+  print_list "Ignored main tests" ignored_main_tests
+  echo ""
+fi
 
 test_count=${#selected_main_tests[@]}
 total_tests=${test_count}
@@ -531,7 +535,7 @@ run_test() {
   # Extract metrics from log file if test passed
   handshake_ms=""
   ping_ms=""
-  if [ "$status" = "pass" ]; then
+  if [ "$status" == "pass" ]; then
     test_slug=$(echo "$name" | sed 's/[^a-zA-Z0-9-]/_/g')
     log_file="${TEST_PASS_DIR}/logs/${test_slug}.log"
     if [ -f "$log_file" ]; then
@@ -712,7 +716,7 @@ echo ""
 # =============================================================================
 
 # Create snapshot (if requested)
-if [ "$CREATE_SNAPSHOT" = true ]; then
+if [ "$CREATE_SNAPSHOT" == "true" ]; then
   print_header "Creating test pass snapshot..."
   indent
   create_snapshot || {

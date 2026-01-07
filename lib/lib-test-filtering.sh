@@ -22,9 +22,11 @@ get_common() {
     local result=""
 
     for item in $list1; do
-        if [[ " $list2 " == *" $item "* ]]; then
-            result="$result $item"
-        fi
+        case " $list2 " in
+            *" $item "*)
+                result="$result $item"
+                ;;
+        esac
     done
 
     echo "$result"

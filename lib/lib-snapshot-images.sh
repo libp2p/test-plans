@@ -28,7 +28,7 @@ save_docker_images_for_tests() {
   done < <(yq eval '.tests[] | [.dialer.id, .listener.id][]' "$snapshot_dir/test-matrix.yaml" | sort -u)
 
   # For perf, also get baseline implementations
-  if [ "$test_type" = "perf" ]; then
+  if [ "$test_type" == "perf" ]; then
     while read -r impl_id; do
       if [ -n "$impl_id" ] && [ "$impl_id" != "null" ]; then
         local img_name=$(get_impl_image_name "$impl_id" "$test_type")
@@ -38,7 +38,7 @@ save_docker_images_for_tests() {
   fi
 
   # For hole-punch tests, also collect relays and routers
-  if [ "$test_type" = "hole-punch" ]; then
+  if [ "$test_type" == "hole-punch" ]; then
     # Get unique relays
     while read -r relay_id; do
       if [ -n "$relay_id" ]; then
@@ -57,7 +57,7 @@ save_docker_images_for_tests() {
   fi
 
   # Also add base images for browser-type implementations (transport only)
-  if [ "$test_type" = "transport" ]; then
+  if [ "$test_type" == "transport" ]; then
     local impl_count=$(yq eval '.implementations | length' images.yaml)
     for ((i=0; i<impl_count; i++)); do
       local impl_id=$(yq eval ".implementations[$i].id" images.yaml)
@@ -66,7 +66,7 @@ save_docker_images_for_tests() {
       # Check if this implementation is used in tests
       if echo "${!unique_images[@]}" | grep -q "transport-interop-${impl_id}"; then
         # If it's a browser type, add its base image
-        if [ "$source_type" = "browser" ]; then
+        if [ "$source_type" == "browser" ]; then
           local base_image=$(yq eval ".implementations[$i].source.baseImage" images.yaml)
           if [ -n "$base_image" ] && [ "$base_image" != "null" ]; then
             local base_img_name=$(get_impl_image_name "$base_image" "$test_type")

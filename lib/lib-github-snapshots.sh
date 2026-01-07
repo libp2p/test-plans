@@ -42,7 +42,7 @@ validate_github_sources_cached() {
     while IFS=$'\t' read -r commit repo requires_submodules; do
         local repo_name=$(basename "$repo")
 
-        if [ "$requires_submodules" = "true" ]; then
+        if [ "$requires_submodules" == "true" ]; then
             # Check for git clone
             local git_dir="$cache_dir/git-repo/${repo_name}-${commit}"
             if [ ! -d "$git_dir" ]; then
@@ -60,7 +60,7 @@ validate_github_sources_cached() {
         fi
     done < <(get_required_github_sources)
 
-    if [ "$missing" = true ]; then
+    if [ "$missing" == "true" ]; then
         echo "✗ Total missing sources: $missing_count" >&2
         return 1
     fi
@@ -89,7 +89,7 @@ copy_github_sources_to_snapshot() {
     while IFS=$'\t' read -r commit repo requires_submodules; do
         local repo_name=$(basename "$repo")
 
-        if [ "$requires_submodules" = "true" ]; then
+        if [ "$requires_submodules" == "true" ]; then
             # Copy git clone (includes submodules)
             local git_dir="$cache_dir/git-repo/${repo_name}-${commit}"
             if [ -d "$git_dir" ]; then
@@ -226,7 +226,7 @@ validate_snapshot_github_sources() {
     while IFS=$'\t' read -r commit repo requires_submodules; do
         local repo_name=$(basename "$repo")
 
-        if [ "$requires_submodules" = "true" ]; then
+        if [ "$requires_submodules" == "true" ]; then
             expected_gits=$((expected_gits + 1))
             # Check for git clone in snapshot
             if [ -d "$snapshot_dir/git-repo/${repo_name}-${commit}" ]; then
@@ -247,7 +247,7 @@ validate_snapshot_github_sources() {
         fi
     done < <(cd "$snapshot_dir" && get_required_github_sources)
 
-    if [ "$missing" = true ]; then
+    if [ "$missing" == "true" ]; then
         echo "  ✗ Snapshot incomplete: found $found_zips/$expected_zips ZIPs, $found_gits/$expected_gits git clones" >&2
         return 1
     fi
@@ -272,9 +272,9 @@ download_missing_github_sources() {
     while IFS=$'\t' read -r commit repo requires_submodules; do
         local repo_name=$(basename "$repo")
 
-        if [ "$requires_submodules" = "true" ]; then
+        if [ "$requires_submodules" == "true" ]; then
             # Handle git clone
-            if [ "$source_type" = "all" ] || [ "$source_type" = "git" ]; then
+            if [ "$source_type" == "all" ] || [ "$source_type" == "git" ]; then
                 local git_dir="$cache_dir/git-repo/${repo_name}-${commit}"
                 if [ ! -d "$git_dir" ]; then
                     echo "  → Cloning $repo (commit: ${commit:0:8}) with submodules..."
@@ -296,7 +296,7 @@ download_missing_github_sources() {
             fi
         else
             # Handle ZIP download
-            if [ "$source_type" = "all" ] || [ "$source_type" = "zip" ]; then
+            if [ "$source_type" == "all" ] || [ "$source_type" == "zip" ]; then
                 if [ ! -f "$cache_dir/snapshots/${commit}.zip" ]; then
                     echo "  → Downloading $repo (commit: ${commit:0:8}) as ZIP..."
 
@@ -366,7 +366,7 @@ impl_requires_git_clone() {
         select(.id == \"$impl_id\") |
         .source.requiresSubmodules // false" images.yaml)
 
-    [ "$requires" = "true" ]
+    [ "$requires" == "true" ]
 }
 
 # Get source type for implementation
@@ -380,7 +380,7 @@ get_impl_source_type() {
         select(.id == \"$impl_id\") |
         .source.type" images.yaml)
 
-    if [ "$source_type" = "github" ]; then
+    if [ "$source_type" == "github" ]; then
         if impl_requires_git_clone "$impl_id"; then
             echo "git"
         else
@@ -486,17 +486,17 @@ load_github_sources() {
         echo "  ✓ Found $git_count git clones (with submodules)"
     fi
 
-    if [ "$has_snapshots" = false ] && [ "$has_git_repos" = false ]; then
+    if [ "$has_snapshots" == "false" ] && [ "$has_git_repos" == "false" ]; then
         echo "  ⚠ No GitHub sources found in snapshot"
         echo "  → Images must be rebuilt or loaded from docker-images/"
     fi
 
     # Make sources available to build system
-    if [ "$has_git_repos" = true ]; then
+    if [ "$has_git_repos" == "true" ]; then
         prepare_git_clones_for_build_internal
     fi
 
-    if [ "$has_snapshots" = true ]; then
+    if [ "$has_snapshots" == "true" ]; then
         prepare_zip_snapshots_for_build_internal
     fi
 }

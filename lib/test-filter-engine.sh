@@ -32,7 +32,7 @@ assert_equals() {
   local expected="$2"
   local message="${3:-}"
 
-  if [ "$actual" = "$expected" ]; then
+  if [ "$actual" == "$expected" ]; then
     return 0
   else
     if [ -n "$message" ]; then
@@ -48,15 +48,18 @@ assert_contains() {
   local needle="$2"
   local message="${3:-}"
 
-  if [[ "$haystack" == *"$needle"* ]]; then
-    return 0
-  else
-    if [ -n "$message" ]; then
-      fail "$message (expected '$haystack' to contain '$needle')"
-    else
-      fail "Expected '$haystack' to contain '$needle'"
-    fi
-  fi
+  case "$haystack" in
+    *"$needle"*)
+      return 0
+      ;;
+    *)
+      if [ -n "$message" ]; then
+        fail "$message (expected '$haystack' to contain '$needle')"
+      else
+        fail "Expected '$haystack' to contain '$needle'"
+      fi
+      ;;
+  esac
 }
 
 assert_not_contains() {
@@ -64,15 +67,18 @@ assert_not_contains() {
   local needle="$2"
   local message="${3:-}"
 
-  if [[ "$haystack" != *"$needle"* ]]; then
-    return 0
-  else
-    if [ -n "$message" ]; then
-      fail "$message (expected '$haystack' to NOT contain '$needle')"
-    else
-      fail "Expected '$haystack' to NOT contain '$needle'"
-    fi
-  fi
+  case "$haystack" in
+    *"$needle"*)
+      if [ -n "$message" ]; then
+        fail "$message (expected '$haystack' to NOT contain '$needle')"
+      else
+        fail "Expected '$haystack' to NOT contain '$needle'"
+      fi
+      ;;
+    *)
+      return 0
+      ;;
+  esac
 }
 
 run_test() {

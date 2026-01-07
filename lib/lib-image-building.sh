@@ -27,12 +27,14 @@ build_images_from_section() {
       match_found=false
       IFS='|' read -ra FILTER_PATTERNS <<< "$filter"
       for pattern in "${FILTER_PATTERNS[@]}"; do
-        if [[ "$impl_id" == *"$pattern"* ]]; then
-          match_found=true
-          break
-        fi
+        case "$impl_id" in
+          *"$pattern"*)
+            match_found=true
+            break
+            ;;
+        esac
       done
-      if [ "$match_found" = false ]; then
+      if [ "$match_found" == "false" ]; then
         continue
       fi
     fi
@@ -50,7 +52,7 @@ build_images_from_section() {
     #fi
 
     # Check if image already exists (for local builds only)
-    if [ "$build_location" = "local" ]; then
+    if [ "$build_location" == "local" ]; then
       if [ "$force_image_rebuild" != "true" ] && docker_image_exists "$image_name"; then
         print_success "$image_name (already built)"
         continue
@@ -72,7 +74,7 @@ outputStyle: clean
 EOF
 
 # Add remote info if needed
-if [ "$build_location" = "remote" ]; then
+if [ "$build_location" == "remote" ]; then
   cat >> "$yaml_file" <<EOF
 
 remote:
@@ -138,7 +140,7 @@ EOF
 esac
 
 # Execute build (local or remote)
-if [ "$build_location" = "remote" ]; then
+if [ "$build_location" == "remote" ]; then
   # Copy lib-image-building.sh to remote for use by build script
   local lib_script="${SCRIPT_LIB_DIR}/lib-image-building.sh"
 
@@ -308,7 +310,7 @@ build_from_github() {
 
   # Determine build context
   local context_dir
-  if [ "$build_context" = "." ]; then
+  if [ "$build_context" == "." ]; then
     context_dir="$extracted_dir"
   else
     context_dir="$extracted_dir/$build_context"
@@ -318,7 +320,7 @@ build_from_github() {
   print_message "Building Docker image..."
 
   # Run docker directly (no eval/pipe) for clean output to preserve aesthetic
-  if [ "$output_filter" = "cat" ]; then
+  if [ "$output_filter" == "cat" ]; then
     if ! docker build -f "$extracted_dir/$dockerfile" -t "$image_name" "$context_dir"; then
       print_error "Docker build failed"
       rm -rf "$work_dir"
@@ -360,7 +362,7 @@ build_from_github_with_submodules() {
 
   # Determine build context
   local context_dir
-  if [ "$build_context" = "." ]; then
+  if [ "$build_context" == "." ]; then
     context_dir="$cloned_dir"
   else
     context_dir="$cloned_dir/$build_context"
@@ -370,7 +372,7 @@ build_from_github_with_submodules() {
   print_message "Building Docker image..."
 
   # Run docker directly (no eval/pipe) for clean output to preserve aesthetic
-  if [ "$output_filter" = "cat" ]; then
+  if [ "$output_filter" == "cat" ]; then
     if ! docker build -f "$cloned_dir/$dockerfile" -t "$image_name" "$context_dir"; then
       print_error "Docker build failed"
       rm -rf "$work_dir"
@@ -408,7 +410,7 @@ build_from_local() {
   print_message "Building Docker image..."
 
   # Run docker directly (no eval/pipe) for clean output to preserve aesthetic
-  if [ "$output_filter" = "cat" ]; then
+  if [ "$output_filter" == "cat" ]; then
     if ! docker build -f "$local_path/$dockerfile" -t "$image_name" "$local_path"; then
       print_error "Docker build failed"
       return 1
@@ -456,7 +458,7 @@ build_browser_image() {
   print_message "Building browser Docker image..."
 
   # Run docker directly (no eval/pipe) for clean output to preserve aesthetic
-  if [ "$output_filter" = "cat" ]; then
+  if [ "$output_filter" == "cat" ]; then
     if ! docker build -f "$dockerfile" --build-arg BASE_IMAGE="node-$base_image" --build-arg BROWSER="$browser" -t "$image_name" "$build_context"; then
       print_error "Docker build failed"
       return 1

@@ -161,7 +161,7 @@ copy_config_files() {
 
   # Check if source and destination are the same directory
   local same_dir=false
-  if [ "$(cd "$test_pass_dir" 2>/dev/null && pwd)" = "$(cd "$snapshot_dir" 2>/dev/null && pwd)" ]; then
+  if [ "$(cd "$test_pass_dir" 2>/dev/null && pwd)" == "$(cd "$snapshot_dir" 2>/dev/null && pwd)" ]; then
     same_dir=true
   fi
 
@@ -176,7 +176,7 @@ copy_config_files() {
   fi
 
   # Only copy files if directories are different
-  if [ "$same_dir" = false ]; then
+  if [ "$same_dir" == "false" ]; then
     # Copy test matrix
     cp "$test_pass_dir/test-matrix.yaml" "$snapshot_dir/" 2>/dev/null || true
 
@@ -187,7 +187,7 @@ copy_config_files() {
     cp "$test_pass_dir/LATEST_TEST_RESULTS.md" "$snapshot_dir/" 2>/dev/null || true
 
     # Copy test-type-specific files
-    if [ "$test_type" = "perf" ]; then
+    if [ "$test_type" == "perf" ]; then
       # Copy box plot images
       cp "$test_pass_dir"/*_boxplot.png "$snapshot_dir/" 2>/dev/null || true
     fi
@@ -502,7 +502,7 @@ get_test_pass_name() {
 
   local test_pass=$(yq eval '.metadata.testPass' "$results_file" 2>/dev/null)
 
-  if [ -z "$test_pass" ] || [ "$test_pass" = "null" ]; then
+  if [ -z "$test_pass" ] || [ "$test_pass" == "null" ]; then
     # Generate name from timestamp
     test_pass="snapshot-$(date +%H%M%S-%d-%m-%Y)"
   fi

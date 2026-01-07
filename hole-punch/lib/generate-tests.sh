@@ -262,7 +262,7 @@ for relay_id in "${all_relay_ids[@]}"; do
               test_name="$dialer_id x $listener_id ($transport) [dr: $dialer_router_id, rly: $relay_id, lr: $listener_router_id]"
 
               # Add to selected or ignored list based on entity membership
-              if [ "$test_is_selected" = true ]; then
+              if [ "$test_is_selected" == "true" ]; then
                 # Add to selected tests
                 tests+=("$test_name|$dialer_id|$listener_id|$transport|null|null|$relay_id|$dialer_router_id|$listener_router_id")
                 ((test_num++))
@@ -286,7 +286,7 @@ for relay_id in "${all_relay_ids[@]}"; do
                   test_name="$dialer_id x $listener_id ($transport, $secure, $muxer) [dr: $dialer_router_id, rly: $relay_id, lr: $listener_router_id]"
 
                   # Add to selected or ignored list based on entity membership
-                  if [ "$test_is_selected" = true ]; then
+                  if [ "$test_is_selected" == "true" ]; then
                     # Add to selected tests
                     tests+=("$test_name|$dialer_id|$listener_id|$transport|$secure|$muxer|$relay_id|$dialer_router_id|$listener_router_id")
                     ((test_num++))
@@ -327,8 +327,8 @@ EOF
     listener_commit=$(yq eval ".implementations[] | select(.id == \"$listener\") | .source.commit" images.yaml 2>/dev/null || echo "local")
 
     # Normalize null values to "local"
-    [ "$dialer_commit" = "null" ] && dialer_commit="local"
-    [ "$listener_commit" = "null" ] && listener_commit="local"
+    [ "$dialer_commit" == "null" ] && dialer_commit="local"
+    [ "$listener_commit" == "null" ] && listener_commit="local"
 
       cat >> "$OUTPUT_DIR/test-matrix.yaml" <<EOF
   - name: "$name"
