@@ -371,6 +371,8 @@ def random_network_mesh(
             target = random.randint(0, node_count - 1)
             if target == node_id:
                 continue
+            if target in connections[node_id] or node_id in connections[target]:
+                continue
             connections[node_id].add(target)
             connections[target].add(node_id)
 
