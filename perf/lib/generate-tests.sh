@@ -1,5 +1,5 @@
 #!/bin/bash
-# Generate test matrix from images.yaml with filtering
+# Generate test matrix from ${IMAGES_YAML} with filtering
 # Outputs test-matrix.yaml with content-addressed caching
 # Permutations: dialer × listener × transport × secureChannel × muxer
 
@@ -169,8 +169,8 @@ declare -A baseline_transports
 declare -A baseline_server
 
 for baseline_id in "${all_baseline_ids[@]}"; do
-  transports=$(yq eval ".baselines[] | select(.id == \"$baseline_id\") | .transports | join(\" \")" images.yaml)
-  server=$(yq eval ".baselines[] | select(.id == \"$baseline_id\") | .server" images.yaml)
+  transports=$(yq eval ".baselines[] | select(.id == \"$baseline_id\") | .transports | join(\" \")" ${IMAGES_YAML})
+  server=$(yq eval ".baselines[] | select(.id == \"$baseline_id\") | .server" ${IMAGES_YAML})
 
   baseline_transports["$baseline_id"]="$transports"
   baseline_server["$baseline_id"]="$server"
@@ -190,10 +190,10 @@ declare -A image_server
 declare -A image_dial_only
 
 for image_id in "${all_image_ids[@]}"; do
-  transports=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .transports | join(\" \")" images.yaml)
-  secure=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .secureChannels | join(\" \")" images.yaml)
-  muxers=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .muxers | join(\" \")" images.yaml)
-  server=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .server" images.yaml)
+  transports=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .transports | join(\" \")" ${IMAGES_YAML})
+  secure=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .secureChannels | join(\" \")" ${IMAGES_YAML})
+  muxers=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .muxers | join(\" \")" ${IMAGES_YAML})
+  server=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .server" ${IMAGES_YAML})
 
   image_transports["$image_id"]="$transports"
   image_secure["$image_id"]="$secure"
@@ -466,9 +466,9 @@ output_tests "tests" "implementations" main_tests
 # output ignored tests
 output_tests "ignoredTests" "implementations" ignored_main_tests
 
-# Copy images.yaml for reference and cache the test-matrix.yaml file
-cp images.yaml "${TEST_PASS_DIR}/"
-print_success "Copied images.yaml: ${TEST_PASS_DIR}/images.yaml"
+# Copy ${IMAGES_YAML} for reference and cache the test-matrix.yaml file
+cp ${IMAGES_YAML} "${TEST_PASS_DIR}/"
+print_success "Copied ${IMAGES_YAML}: ${TEST_PASS_DIR}/${IMAGES_YAML}"
 print_success "Generated test-matrix.yaml: ${TEST_PASS_DIR}/test-matrix.yaml"
 indent
 save_to_cache "${TEST_PASS_DIR}/test-matrix.yaml" "${TEST_RUN_KEY}" "${CACHE_DIR}/test-run-matrix" "${TEST_TYPE}"

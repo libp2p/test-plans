@@ -1,88 +1,99 @@
 #!/bin/bash
-# Run a single transport interop test using docker compose
-# Args: test_name dialer_id listener_id transport [secure_channel] [muxer]
+# Run a single transport interop test using docker-compose
+# Uses same pattern as perf/lib/run-single-test.sh
 
 set -euo pipefail
 
-# Use the docker compose command passed via environment variable
-# Default to 'docker compose' if not set
-DOCKER_COMPOSE_CMD="${DOCKER_COMPOSE_CMD:-docker compose}"
+export LOG_FILE
 
-TEST_NAME="$1"
-DIALER_ID="$2"
-LISTENER_ID="$3"
-TRANSPORT="$4"
-SECURE_CHANNEL="${5:-null}"  # Optional for standalone transports
-MUXER="${6:-null}"           # Optional for standalone transports
+source "${SCRIPT_LIB_DIR}/lib-output-formatting.sh"
+source "${SCRIPT_LIB_DIR}/lib-test-caching.sh"
 
-# Compute TEST_KEY for Redis key namespacing (8-char hex)
-SCRIPT_LIB_DIR="${SCRIPT_LIB_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/lib}"
-source "$SCRIPT_LIB_DIR/lib-test-keys.sh"
-TEST_KEY=$(compute_test_key "$TEST_NAME")
+TEST_INDEX=$1
+TEST_PASS="${2:-tests}"  # "tests" (no baselines in transport)
+RESULTS_FILE="${3:-"${TEST_PASS_DIR}/results.yaml.tmp"}"
 
-# Construct Docker image names with transport-interop prefix
-DIALER_IMAGE="transport-interop-${DIALER_ID}"
-LISTENER_IMAGE="transport-interop-${LISTENER_ID}"
+print_debug "test index: ${TEST_INDEX}"
+print_debug "test_pass: ${TEST_PASS}"
 
-# Read debug flag from test-matrix.yaml
-DEBUG=$(yq eval '.metadata.debug' "${TEST_PASS_DIR:-.}/test-matrix.yaml" 2>/dev/null || echo "false")
+# Read test configuration from matrix
+dialer_id=$(yq eval ".${TEST_PASS}[${TEST_INDEX}].dialer.id" "${TEST_PASS_DIR}/test-matrix.yaml")
+listener_id=$(yq eval ".${TEST_PASS}[${TEST_INDEX}].listener.id" "${TEST_PASS_DIR}/test-matrix.yaml")
+transport=$(yq eval ".${TEST_PASS}[${TEST_INDEX}].transport" "${TEST_PASS_DIR}/test-matrix.yaml")
+secure=$(yq eval ".${TEST_PASS}[${TEST_INDEX}].secureChannel" "${TEST_PASS_DIR}/test-matrix.yaml")
+muxer=$(yq eval ".${TEST_PASS}[${TEST_INDEX}].muxer" "${TEST_PASS_DIR}/test-matrix.yaml")
+test_name=$(yq eval ".${TEST_PASS}[${TEST_INDEX}].id" "${TEST_PASS_DIR}/test-matrix.yaml")
 
-# Sanitize test name for file names
-TEST_SLUG=$(echo "$TEST_NAME" | sed 's/[^a-zA-Z0-9-]/_/g')
+print_debug "test_name: $test_name"
+print_debug "dialer id: $dialer_id"
+print_debug "listener id: $listener_id"
+print_debug "transport: $transport"
+print_debug "secure: $secure"
+print_debug "muxer: $muxer"
 
-# Use TEST_PASS_DIR if set, otherwise fall back to local logs directory
-LOGS_DIR="${TEST_PASS_DIR:-.}/logs"
-COMPOSE_DIR="${TEST_PASS_DIR:-.}/docker-compose"
+# Compute TEST_KEY for Redis key namespacing (8-char hex hash)
+TEST_KEY=$(compute_test_key "$test_name")
+TEST_SLUG=$(echo "$test_name" | sed 's/[^a-zA-Z0-9-]/_/g')
+LOG_FILE="${TEST_PASS_DIR}/logs/${TEST_SLUG}.log"
+> "${LOG_FILE}"
 
-LOG_FILE="$LOGS_DIR/${TEST_SLUG}.log"
+print_debug "test key: $TEST_KEY"
+print_debug "test slug: $TEST_SLUG"
+print_debug "log file: $LOG_FILE"
 
-# Only log to file, no console output
-echo "Running: $TEST_NAME (key: $TEST_KEY)" >> "$LOG_FILE"
+log_message "[$((TEST_INDEX + 1))] $test_name (key: $TEST_KEY)"
 
-# Generate docker-compose file for this test
-COMPOSE_FILE="$COMPOSE_DIR/${TEST_SLUG}-compose.yaml"
+# Construct Docker image names
+DIALER_IMAGE="transport-interop-${dialer_id}"
+LISTENER_IMAGE="transport-interop-${listener_id}"
 
-# Build environment variables for dialer
-DIALER_ENV="      - version=$DIALER_ID
-      - transport=$TRANSPORT
-      - is_dialer=true
-      - ip=0.0.0.0
-      - REDIS_ADDR=transport-redis:6379
-      - TEST_KEY=$TEST_KEY
-      - debug=$DEBUG"
+print_debug "dialer image: $DIALER_IMAGE"
+print_debug "listener image: $LISTENER_IMAGE"
 
-# Add optional muxer and security for dialer
-if [ "$MUXER" != "null" ]; then
-    DIALER_ENV="$DIALER_ENV
-      - muxer=$MUXER"
-fi
+# Generate docker-compose file
+COMPOSE_FILE="${TEST_PASS_DIR}/docker-compose/${TEST_SLUG}-compose.yaml"
 
-if [ "$SECURE_CHANNEL" != "null" ]; then
-    DIALER_ENV="$DIALER_ENV
-      - security=$SECURE_CHANNEL"
-fi
+print_debug "docker compose file: $COMPOSE_FILE"
 
 # Build environment variables for listener
-LISTENER_ENV="      - version=$LISTENER_ID
-      - transport=$TRANSPORT
+LISTENER_ENV="      - version=$listener_id
+      - transport=$transport
       - is_dialer=false
       - ip=0.0.0.0
       - REDIS_ADDR=transport-redis:6379
       - TEST_KEY=$TEST_KEY
-      - debug=$DEBUG"
+      - debug=${DEBUG:-false}"
 
-# Add optional muxer and security for listener
-if [ "$MUXER" != "null" ]; then
+if [ "$muxer" != "null" ]; then
     LISTENER_ENV="$LISTENER_ENV
-      - muxer=$MUXER"
+      - muxer=$muxer"
 fi
 
-if [ "$SECURE_CHANNEL" != "null" ]; then
+if [ "$secure" != "null" ]; then
     LISTENER_ENV="$LISTENER_ENV
-      - security=$SECURE_CHANNEL"
+      - security=$secure"
 fi
 
-# Generate compose file (without deprecated 'version' field)
+# Build environment variables for dialer
+DIALER_ENV="      - version=$dialer_id
+      - transport=$transport
+      - is_dialer=true
+      - ip=0.0.0.0
+      - REDIS_ADDR=transport-redis:6379
+      - TEST_KEY=$TEST_KEY
+      - debug=${DEBUG:-false}"
+
+if [ "$muxer" != "null" ]; then
+    DIALER_ENV="$DIALER_ENV
+      - muxer=$muxer"
+fi
+
+if [ "$secure" != "null" ]; then
+    DIALER_ENV="$DIALER_ENV
+      - security=$secure"
+fi
+
+# Generate docker-compose file
 cat > "$COMPOSE_FILE" <<EOF
 name: ${TEST_SLUG}
 
@@ -111,19 +122,83 @@ $LISTENER_ENV
 $DIALER_ENV
 EOF
 
-# Run the test (all output goes to log file only)
-echo "  → Starting containers..." >> "$LOG_FILE"
+# Run the test
+log_debug "  Starting containers..."
+log_message "Running: $test_name" > "$LOG_FILE"
 
-# Start containers and wait for dialer to exit
-if $DOCKER_COMPOSE_CMD -f "$COMPOSE_FILE" up --exit-code-from dialer --abort-on-container-exit >> "$LOG_FILE" 2>&1; then
+# Set timeout (180 seconds / 3 minutes for transport tests)
+TEST_TIMEOUT=180
+
+# Track test duration
+TEST_START=$(date +%s)
+
+# Start containers and wait for dialer to exit (with timeout)
+if timeout $TEST_TIMEOUT $DOCKER_COMPOSE_CMD -f "$COMPOSE_FILE" up --exit-code-from dialer --abort-on-container-exit >> "$LOG_FILE" 2>&1; then
     EXIT_CODE=0
+    log_message "  ✓ Test complete"
 else
-    EXIT_CODE=1
+    TEST_EXIT=$?
+    # Check if it was a timeout (exit code 124)
+    if [ $TEST_EXIT -eq 124 ]; then
+        EXIT_CODE=1
+        log_error "  ✗ Test timed out after ${TEST_TIMEOUT}s"
+        echo "" >> "$LOG_FILE"
+        log_error "Test timed out after ${TEST_TIMEOUT} seconds" >> "$LOG_FILE"
+    else
+        EXIT_CODE=1
+        log_error "  ✗ Test failed"
+    fi
 fi
 
+TEST_END=$(date +%s)
+TEST_DURATION=$((TEST_END - TEST_START))
+
+# Extract metrics from log file if test passed
+handshake_ms=""
+ping_ms=""
+if [ $EXIT_CODE -eq 0 ]; then
+    # Extract JSON metrics from log (dialer outputs metrics)
+    metrics=$(grep -o '{"handshakePlusOneRTTMillis":[0-9.]*,"pingRTTMilllis":[0-9.]*}' "$LOG_FILE" 2>/dev/null | tail -1 || echo "")
+
+    if [ -n "$metrics" ]; then
+        handshake_ms=$(echo "$metrics" | grep -o '"handshakePlusOneRTTMillis":[0-9.]*' | cut -d':' -f2)
+        ping_ms=$(echo "$metrics" | grep -o '"pingRTTMilllis":[0-9.]*' | cut -d':' -f2)
+    fi
+fi
+
+# Save complete result to individual file
+cat > "${TEST_PASS_DIR}/results/${test_name}.yaml" <<EOF
+test: $test_name
+dialer: $dialer_id
+listener: $listener_id
+transport: $transport
+secureChannel: $secure
+muxer: $muxer
+status: $([ $EXIT_CODE -eq 0 ] && echo "pass" || echo "fail")
+duration: ${TEST_DURATION}s
+handshakePlusOneRTTMs: ${handshake_ms:-null}
+pingRTTMs: ${ping_ms:-null}
+EOF
+
+# Append to combined results file with file locking
+(
+    flock -x 200
+    cat >> "$RESULTS_FILE" <<EOF
+  - name: $test_name
+    dialer: $dialer_id
+    listener: $listener_id
+    transport: $transport
+    secureChannel: $secure
+    muxer: $muxer
+    status: $([ $EXIT_CODE -eq 0 ] && echo "pass" || echo "fail")
+    duration: ${TEST_DURATION}s
+    handshakePlusOneRTTMs: ${handshake_ms:-null}
+    pingRTTMs: ${ping_ms:-null}
+EOF
+) 200>/tmp/results.lock
+
 # Cleanup
-echo "  → Cleaning up..." >> "$LOG_FILE"
+log_debug "  Cleaning up containers..."
 $DOCKER_COMPOSE_CMD -f "$COMPOSE_FILE" down --volumes --remove-orphans >> "$LOG_FILE" 2>&1 || true
 
-# Compose directory will be cleaned up by trap
 exit $EXIT_CODE

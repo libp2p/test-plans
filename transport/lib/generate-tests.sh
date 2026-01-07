@@ -1,11 +1,13 @@
 #!/bin/bash
-# Generate test matrix from images.yaml with filtering
+# Generate test matrix from ${IMAGES_YAML} with filtering
 # Outputs test-matrix.yaml with content-addressed caching
 # Permutations: dialer × listener × transport × secureChannel × muxer
 
 ##### 1. SETUP
 
 set -euo pipefail
+
+trap 'echo "ERROR in generate-tests.sh at line $LINENO: Command exited with status $?" >&2' ERR
 
 # Source common libraries
 source "${SCRIPT_LIB_DIR}/lib-filter-engine.sh"
@@ -145,17 +147,22 @@ declare -A image_transports
 declare -A image_secure
 declare -A image_muxers
 declare -A image_dial_only
+declare -A image_commit
 
 for image_id in "${all_image_ids[@]}"; do
-  transports=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .transports | join(\" \")" images.yaml)
-  secure=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .secureChannels | join(\" \")" images.yaml)
-  muxers=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .muxers | join(\" \")" images.yaml)
-  dial_only=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .dialOnly | join(\" \")" images.yaml 2>/dev/null || echo "")
+  transports=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .transports | join(\" \")" ${IMAGES_YAML})
+  secure=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .secureChannels | join(\" \")" ${IMAGES_YAML})
+  muxers=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .muxers | join(\" \")" ${IMAGES_YAML})
+  dial_only=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .dialOnly | join(\" \")" ${IMAGES_YAML} 2>/dev/null || echo "")
+  commit=$(yq eval ".implementations[] | select (.id == \"$image_id\") | .source.commit" ${IMAGES_YAML} 2>/dev/null || echo "")
 
   image_transports["$image_id"]="$transports"
   image_secure["$image_id"]="$secure"
   image_muxers["$image_id"]="$muxers"
   image_dial_only["$image_id"]="$dial_only"
+  if [ -n "$commit" ]; then
+    image_commit["$image_id"]="$commit"
+  fi
 done
 
 indent
@@ -194,6 +201,7 @@ generate_tests_worker() {
   declare -A image_secure
   declare -A image_muxers
   declare -A image_dial_only
+  declare -A image_commit
 
   while IFS='|' read -r key value; do
     image_transports["$key"]="$value"
@@ -211,6 +219,12 @@ generate_tests_worker() {
     while IFS='|' read -r key value; do
       image_dial_only["$key"]="$value"
     done < "$WORKER_DATA_DIR/dial_only.dat"
+  fi
+
+  if [ -f "$WORKER_DATA_DIR/commits.dat" ]; then
+    while IFS='|' read -r key value; do
+      image_commit["$key"]="$value"
+    done < "$WORKER_DATA_DIR/commits.dat"
   fi
 
   for dialer_id in "${dialer_chunk[@]}"; do
@@ -274,8 +288,8 @@ generate_tests_worker() {
             print_debug "${test_id} is selected"
 
             # Get commits for snapshot references
-            local dialer_commit=$(get_source_commit "implementations" "$dialer_id")
-            local listener_commit=$(get_source_commit "implementations" "$listener_id")
+            local dialer_commit="${image_commit[$dialer_id]:-}"
+            local listener_commit="${image_commit[$listener_id]:-}"
 
             # Write YAML block
             cat >> "$worker_selected" <<EOF
@@ -301,8 +315,8 @@ EOF
             print_debug "${test_id} is ignored"
 
             # Get commits for snapshot references
-            local dialer_commit=$(get_source_commit "implementations" "$dialer_id")
-            local listener_commit=$(get_source_commit "implementations" "$listener_id")
+            local dialer_commit="${image_commit[$dialer_id]:-}"
+            local listener_commit="${image_commit[$listener_id]:-}"
 
             # Write YAML block
             cat >> "$worker_ignored" <<EOF
@@ -367,8 +381,8 @@ EOF
                 print_debug "${test_id} is selected"
 
                 # Get commits for snapshot references
-                local dialer_commit=$(get_source_commit "implementations" "$dialer_id")
-                local listener_commit=$(get_source_commit "implementations" "$listener_id")
+                local dialer_commit="${image_commit[$dialer_id]:-}"
+                local listener_commit="${image_commit[$listener_id]:-}"
 
                 # Write YAML block
                 cat >> "$worker_selected" <<EOF
@@ -394,8 +408,8 @@ EOF
                 print_debug "${test_id} is ignored"
 
                 # Get commits for snapshot references
-                local dialer_commit=$(get_source_commit "implementations" "$dialer_id")
-                local listener_commit=$(get_source_commit "implementations" "$listener_id")
+                local dialer_commit="${image_commit[$dialer_id]:-}"
+                local listener_commit="${image_commit[$listener_id]:-}"
 
                 # Write YAML block
                 cat >> "$worker_ignored" <<EOF
@@ -448,6 +462,10 @@ done
 
 for key in "${!image_dial_only[@]}"; do
   echo "$key|${image_dial_only[$key]}" >> "$WORKER_DATA_DIR/dial_only.dat"
+done
+
+for key in "${!image_commit[@]}"; do
+  echo "$key|${image_commit[$key]}" >> "$WORKER_DATA_DIR/commits.dat"
 done
 
 # Export necessary variables and functions for workers
@@ -504,12 +522,12 @@ total_ignored=0
 
 for ((w=0; w<WORKER_COUNT; w++)); do
   if [ -f "${TEST_PASS_DIR}/worker-${w}-selected.yaml" ]; then
-    count=$(grep -c "^  - id:" "${TEST_PASS_DIR}/worker-${w}-selected.yaml" 2>/dev/null || echo 0)
+    count=$(grep -c "^  - id:" "${TEST_PASS_DIR}/worker-${w}-selected.yaml" 2>/dev/null || true)
     total_selected=$((total_selected + count))
   fi
 
   if [ -f "${TEST_PASS_DIR}/worker-${w}-ignored.yaml" ]; then
-    count=$(grep -c "^  - id:" "${TEST_PASS_DIR}/worker-${w}-ignored.yaml" 2>/dev/null || echo 0)
+    count=$(grep -c "^  - id:" "${TEST_PASS_DIR}/worker-${w}-ignored.yaml" 2>/dev/null || true)
     total_ignored=$((total_ignored + count))
   fi
 done
@@ -565,9 +583,9 @@ for ((w=0; w<WORKER_COUNT; w++)); do
   fi
 done
 
-# Copy images.yaml for reference and cache the test-matrix.yaml file
-cp images.yaml "${TEST_PASS_DIR}/"
-print_success "Copied images.yaml: ${TEST_PASS_DIR}/images.yaml"
+# Copy ${IMAGES_YAML} for reference and cache the test-matrix.yaml file
+cp ${IMAGES_YAML} "${TEST_PASS_DIR}/"
+print_success "Copied ${IMAGES_YAML}: ${TEST_PASS_DIR}/${IMAGES_YAML}"
 print_success "Generated test-matrix.yaml: ${TEST_PASS_DIR}/test-matrix.yaml"
 indent
 save_to_cache "${TEST_PASS_DIR}/test-matrix.yaml" "${TEST_RUN_KEY}" "${CACHE_DIR}/test-run-matrix" "${TEST_TYPE}"

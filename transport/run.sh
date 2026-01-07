@@ -509,79 +509,40 @@ echo ""
 print_header "Running tests... (${WORKER_COUNT} workers)"
 indent
 
+# Initialize results file
+TEST_RESULTS_FILE="${TEST_PASS_DIR}/results.yaml.tmp"
+> "${TEST_RESULTS_FILE}"
+
 # Run tests with parallel workers
 run_test() {
   local index=$1
-  local name=$(yq eval ".tests[$index].name" "${TEST_PASS_DIR}/test-matrix.yaml")
-  local dialer=$(yq eval ".tests[$index].dialer" "${TEST_PASS_DIR}/test-matrix.yaml")
-  local listener=$(yq eval ".tests[$index].listener" "${TEST_PASS_DIR}/test-matrix.yaml")
-  local transport=$(yq eval ".tests[$index].transport" "${TEST_PASS_DIR}/test-matrix.yaml")
-  local secure=$(yq eval ".tests[$index].secureChannel" "${TEST_PASS_DIR}/test-matrix.yaml")
-  local muxer=$(yq eval ".tests[$index].muxer" "${TEST_PASS_DIR}/test-matrix.yaml")
+  local name=$(yq eval ".tests[$index].id" "${TEST_PASS_DIR}/test-matrix.yaml")
 
-  echo "[$((index + 1))/$test_count] $name"
+  source "${SCRIPT_LIB_DIR}/lib-output-formatting.sh"
 
-  start=$(date +%s)
-  if bash ${SCRIPT_LIB_DIR}/run-single-test.sh "$name" "$dialer" "$listener" "$transport" "$secure" "$muxer"; then
-    status="pass"
-    exit_code=0
+  print_message "[$((index + 1))/$test_count] $name..."
+
+  # Run test using run-single-test.sh (now reads from test-matrix.yaml)
+  # Results are written to results.yaml.tmp by the script
+  if bash ${SCRIPT_DIR}/run-single-test.sh "$index" "tests" "${TEST_PASS_DIR}/results.yaml.tmp"; then
+    echo "[SUCCESS]"
+    return 0
   else
-    status="fail"
-    exit_code=1
+    echo "[FAILED]"
+    return 1
   fi
-  end=$(date +%s)
-  duration=$((end - start))
-
-  # Extract metrics from log file if test passed
-  handshake_ms=""
-  ping_ms=""
-  if [ "$status" == "pass" ]; then
-    test_slug=$(echo "$name" | sed 's/[^a-zA-Z0-9-]/_/g')
-    log_file="${TEST_PASS_DIR}/logs/${test_slug}.log"
-    if [ -f "$log_file" ]; then
-      # Extract JSON metrics from log
-      metrics=$(grep -o '{"handshakePlusOneRTTMillis":[0-9.]*,"pingRTTMilllis":[0-9.]*}' "$log_file" 2>/dev/null | tail -1)
-      if [ -n "$metrics" ]; then
-        handshake_ms=$(echo "$metrics" | grep -o '"handshakePlusOneRTTMillis":[0-9.]*' | cut -d: -f2)
-        ping_ms=$(echo "$metrics" | grep -o '"pingRTTMilllis":[0-9.]*' | cut -d: -f2)
-      fi
-    fi
-  fi
-
-  # Compute test key for this individual test
-  source "${SCRIPT_LIB_DIR}/lib-test-keys.sh"
-  TEST_KEY=$(compute_test_key "$name")
-
-  # Save individual test result
-  cat > "${TEST_PASS_DIR}/results/${TEST_KEY}.yaml" <<EOF
-name: $name
-status: $status
-exitCode: $exit_code
-duration: ${duration}s
-dialer: $dialer
-listener: $listener
-transport: $transport
-secureChannel: $secure
-muxer: $muxer
-EOF
-
-  # Add metrics if available
-  if [ -n "$handshake_ms" ]; then
-    echo "handshakePlusOneRTTMs: $handshake_ms" >> "${TEST_PASS_DIR}/results/${TEST_KEY}.yaml"
-  fi
-  if [ -n "$ping_ms" ]; then
-    echo "pingRTTMs: $ping_ms" >> "${TEST_PASS_DIR}/results/${TEST_KEY}.yaml"
-  fi
-
-  return $exit_code
 }
 
+export test_count
 export -f run_test
 
 # Run tests in parallel using xargs
 # Note: Some tests may fail, but we want to continue to collect results
 # So we use || true to ensure xargs exit code doesn't stop the script
 seq 0 $((test_count - 1)) | xargs -P "$WORKER_COUNT" -I {} bash -c 'run_test {}' || true
+
+unindent
+echo ""
 
 # Stop global services
 print_header "Stopping global services..."
@@ -620,7 +581,6 @@ fi
 PASSED=${PASSED:-0}
 FAILED=${FAILED:-0}
 
-
 # Generate final results.yaml
 cat > "$TEST_PASS_DIR/results.yaml" <<EOF
 metadata:
@@ -640,15 +600,11 @@ summary:
 tests:
 EOF
 
-# Aggregate individual result files into results.yaml
-for result_file in "$TEST_PASS_DIR"/results/*.yaml; do
-  if [ -f "$result_file" ]; then
-    # Read first line and add as array item
-    echo "  - name: $(yq eval '.name' "$result_file")" >> "$TEST_PASS_DIR/results.yaml"
-    # Add remaining fields with proper indentation
-    yq eval 'del(.name) | to_entries | .[] | "    " + .key + ": " + (.value | @json)' "$result_file" | sed 's/"//g' >> "$TEST_PASS_DIR/results.yaml"
-  fi
-done
+# Append test results if they exist
+if [ -f "${TEST_PASS_DIR}/results.yaml.tmp" ]; then
+    cat "${TEST_PASS_DIR}/results.yaml.tmp" >> "${TEST_PASS_DIR}/results.yaml"
+    rm "${TEST_PASS_DIR}/results.yaml.tmp"
+fi
 
 print_message "Results:"
 indent
@@ -674,7 +630,7 @@ print_message "$(printf "Total time: %02d:%02d:%02d\n" $HOURS $MINUTES $SECONDS)
 echo""
 
 # Display status message
-if [ "$TOTAL_FAILED" -eq 0 ]; then
+if [ "$FAILED" -eq 0 ]; then
   print_success "All tests passed!"
   EXIT_FINAL=0
 else
