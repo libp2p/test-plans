@@ -358,6 +358,18 @@ def composition(preset_name: str) -> List[Binary]:
                 ),
                 Binary("go-libp2p/gossipsub-bin", percent_of_nodes=50),
             ]
+        case "all-jvm":
+            return [Binary("jvm-libp2p/gossipsub-bin", percent_of_nodes=100)]
+        case "jvm-and-go":
+            return [
+                Binary("jvm-libp2p/gossipsub-bin", percent_of_nodes=50),
+                Binary("go-libp2p/gossipsub-bin", percent_of_nodes=50),
+            ]
+        case "jvm-and-rust":
+            return [
+                Binary("jvm-libp2p/gossipsub-bin", percent_of_nodes=50),
+                Binary("rust-libp2p/target/debug/rust-libp2p-gossip", percent_of_nodes=50),
+            ]
     raise ValueError(f"Unknown preset name: {preset_name}")
 
 

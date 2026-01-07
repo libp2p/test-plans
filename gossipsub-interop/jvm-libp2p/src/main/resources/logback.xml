@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <appender name="STDERR" class="ch.qos.logback.core.ConsoleAppender">
+        <target>System.err</target>
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Keep other loggers at WARN to reduce noise -->
+    <logger name="io.netty" level="WARN"/>
+    <logger name="io.libp2p.mux" level="WARN"/>
+    <logger name="io.libp2p.security" level="WARN"/>
+    <logger name="io.libp2p.transport" level="WARN"/>
+
+    <!-- Enable DEBUG for pubsub to see partial subscription processing -->
+    <logger name="io.libp2p.pubsub" level="DEBUG"/>
+
+    <root level="WARN">
+        <appender-ref ref="STDERR"/>
+    </root>
+</configuration>

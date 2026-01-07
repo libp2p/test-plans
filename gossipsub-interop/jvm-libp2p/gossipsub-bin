@@ -1,0 +1,4 @@
+#!/bin/bash
+# Wrapper script to run the JVM gossipsub interop binary
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+exec /home/ubuntu/.sdkman/candidates/java/current/bin/java -jar "$SCRIPT_DIR/build/libs/gossipsub-bin.jar" "$@"

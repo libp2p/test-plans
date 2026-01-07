@@ -1,0 +1,42 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '2.0.0'
+    id 'org.jetbrains.kotlin.plugin.serialization' version '2.0.0'
+    id 'application'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
+}
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven { url 'https://jitpack.io' }
+    maven { url 'https://artifacts.consensys.net/public/maven/maven/' }
+}
+
+dependencies {
+    implementation 'io.libp2p:jvm-libp2p:develop'
+    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3'
+    implementation 'io.netty:netty-all:4.1.100.Final'
+    implementation 'org.slf4j:slf4j-simple:2.0.9'
+    implementation 'org.bouncycastle:bcprov-jdk18on:1.77'
+}
+
+application {
+    mainClass = 'io.libp2p.interop.MainKt'
+}
+
+shadowJar {
+    archiveBaseName.set('gossipsub-bin')
+    archiveClassifier.set('')
+    archiveVersion.set('')
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+kotlin {
+    jvmToolchain(21)
+}
