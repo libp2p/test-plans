@@ -221,7 +221,7 @@ export TEST_PASS_NAME="${TEST_TYPE}-${TEST_RUN_KEY}-$(date +%H%M%S-%d-%m-%Y)"
 export TEST_PASS_DIR="$TEST_RUN_DIR/$TEST_PASS_NAME"
 
 # =============================================================================
-# STEP 3.A: LIST IMAGES
+# STEP 3.A: LIST IMAGES AND EXIT
 # -----------------------------------------------------------------------------
 # This loads the implementations and baselines from the images.yaml file and 
 # prints them out nicely and exits. This is triggered by the `--list-images`
@@ -254,7 +254,7 @@ if [ "$LIST_IMAGES" == "true" ]; then
 fi
 
 # =============================================================================
-# STEP 3.B: LIST TESTS
+# STEP 3.B: LIST TESTS AND EXIT
 # -----------------------------------------------------------------------------
 # This creates a temporary folder, runs the test matrix generation, then lists
 # the baseline and main tests that are selected to run and which ones are
@@ -331,7 +331,7 @@ if [ "$LIST_TESTS" == "true" ]; then
 fi
 
 # =============================================================================
-# STEP 3.C: CHECK DEPS
+# STEP 3.C: CHECK DEPS AND EXIT
 # -----------------------------------------------------------------------------
 # This runs the dependency checking and returns its results. This is triggered
 # by the `--list-deps` command line argument
