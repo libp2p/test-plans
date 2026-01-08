@@ -48,5 +48,12 @@ test-rust-only:
 	@uv run run.py --node_count 2 --composition "all-rust" --scenario "partial-messages-fanout" && uv run checks/partial_messages.py latest/
 
 
+blocks-data-columns-race: binaries
+	@uv run run.py --node_count 128 --composition "all-go" --scenario "two-topics"
+	@echo "Block received timings"
+	@rg --no-filename "Received Mess.*blocks" latest/hosts/node*/*.stdout -m 1 | jq -r '.time' | python3 ./checks/stats_ts.py --relative-to "2000-01-01T00:00:30Z"
+	@echo "Data Column received timings"
+	@rg --no-filename "Received Mess.*data_columns" latest/hosts/node*/*.stdout -m 1 | jq -r '.time' | python3 ./checks/stats_ts.py --relative-to "2000-01-01T00:00:30.00000000Z"
 
-.PHONY: binaries all clean test
+
+.PHONY: binaries all clean test blocks-data-columns-race

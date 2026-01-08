@@ -246,6 +246,74 @@ def partial_message_fanout_scenario(
     return instructions
 
 
+def two_topics_scenario(
+    disable_gossip: bool, node_count: int
+) -> List[ScriptInstruction]:
+    """
+    Scenario with two topics:
+    - 'blocks': 128KB messages
+    - 'data_columns': 20KB messages
+
+    All nodes subscribe to both topics. Publishes one message to each topic.
+    """
+    instructions: List[ScriptInstruction] = []
+    gs_params = GossipSubParams()
+    if disable_gossip:
+        gs_params.Dlazy = 0
+        gs_params.GossipFactor = 0
+    instructions.extend(spread_heartbeat_delay(node_count, gs_params))
+
+    # Create random mesh topology
+    number_of_conns_per_node = min(20, node_count - 1)
+    instructions.extend(random_network_mesh(node_count, number_of_conns_per_node))
+
+    # Define topics
+    blocks_topic = "blocks"
+    data_columns_topic = "data_columns"
+
+    # Message sizes
+    blocks_msg_size = 128 * 1024  # 128KB
+    data_columns_msg_size = 20 * 1024  # 20KB
+
+    # All nodes subscribe to both topics
+    instructions.append(script_instruction.SubscribeToTopic(topicID=blocks_topic))
+    instructions.append(script_instruction.SubscribeToTopic(topicID=data_columns_topic))
+
+    # Wait for setup
+    elapsed_seconds = 30
+    instructions.append(script_instruction.WaitUntil(elapsedSeconds=elapsed_seconds))
+
+    # Publish to blocks topic (message ID 0) from node 0
+    instructions.append(
+        script_instruction.IfNodeIDEquals(
+            nodeID=0,
+            instruction=script_instruction.Publish(
+                messageID=0,
+                topicID=blocks_topic,
+                messageSizeBytes=blocks_msg_size,
+            ),
+        )
+    )
+
+    # Publish to data_columns topic (message ID 1) from node 0 (back to back)
+    instructions.append(
+        script_instruction.IfNodeIDEquals(
+            nodeID=0,
+            instruction=script_instruction.Publish(
+                messageID=1,
+                topicID=data_columns_topic,
+                messageSizeBytes=data_columns_msg_size,
+            ),
+        )
+    )
+
+    # Wait for propagation
+    elapsed_seconds += 30
+    instructions.append(script_instruction.WaitUntil(elapsedSeconds=elapsed_seconds))
+
+    return instructions
+
+
 def scenario(
     scenario_name: str, node_count: int, disable_gossip: bool
 ) -> ExperimentParams:
@@ -333,6 +401,9 @@ def scenario(
                     node_count, num_messages, message_size, [topic_a, topic_b]
                 )
             )
+
+        case "two-topics":
+            instructions = two_topics_scenario(disable_gossip, node_count)
 
         case _:
             raise ValueError(f"Unknown scenario name: {scenario_name}")
