@@ -26,31 +26,35 @@ struct PerfBehaviour {
 #[tokio::main]
 async fn main() {
     // Read configuration from environment variables
+    let debug = env::var("DEBUG").unwrap_or_else(|_| "false".to_string()) == "true";
     let is_dialer = env::var("IS_DIALER").unwrap_or_else(|_| "false".to_string()) == "true";
     let redis_addr = env::var("REDIS_ADDR").unwrap_or_else(|_| "redis:6379".to_string());
     let test_key = env::var("TEST_KEY").unwrap_or_else(|_| "default".to_string());
-    let transport = env::var("TRANSPORT").unwrap_or_else(|_| "tcp".to_string());
+    let transport = env::var("TRANSPORT").unwrap_or_else(|_| "quic-v1".to_string());
     let secure = env::var("SECURE_CHANNEL").ok();
     let muxer = env::var("MUXER").ok();
 
-    eprintln!("TEST_KEY: {}", test_key);
+    eprintln!("DEBUG: {debug}");
+    eprintln!("IS_DIALER: {is_dialer}");
+    eprintln!("REDIS_ADDR: {redis_addr}");
+    eprintln!("TEST_KEY: {test_key}");
+    eprintln!("TRANSPORT: {transport}");
+    eprintln!("SECURE_CHANNEL: {:?}", secure);
+    eprintln!("MUXER: {:?}", muxer);
 
     if is_dialer {
-        run_dialer(redis_addr, test_key, transport, secure, muxer).await;
+        run_dialer(redis_addr, test_key, transport, secure, muxer, debug).await;
     } else {
-        run_listener(redis_addr, test_key, transport, secure, muxer).await;
+        run_listener(redis_addr, test_key, transport, secure, muxer, debug).await;
     }
 }
 
-async fn run_listener(redis_addr: String, test_key: String, transport: String, secure: Option<String>, muxer: Option<String>) {
-    eprintln!("Starting perf listener...");
-    eprintln!("Transport: {}", transport);
-    eprintln!("Secure: {:?}", secure);
-    eprintln!("Muxer: {:?}", muxer);
+async fn run_listener(redis_addr: String, test_key: String, transport: String, secure: Option<String>, muxer: Option<String>, debug: bool) {
+    // Read LISTENER_IP from environment if set
+    let listener_ip = env::var("LISTENER_IP").unwrap_or_else(|_| "0.0.0.0".to_string());
 
-    // Read LISTENER_IP from environment
-    let listener_ip = env::var("LISTENER_IP").expect("LISTENER_IP environment variable not set");
-    eprintln!("Listener IP: {}", listener_ip);
+    eprintln!("Starting perf listener...");
+    eprintln!("LISTENER_IP: {listener_ip}");
 
     // Connect to Redis
     let redis_url = format!("redis://{}", redis_addr);
@@ -76,21 +80,28 @@ async fn run_listener(redis_addr: String, test_key: String, transport: String, s
     eprintln!("Will listen on: {}", listen_multiaddr);
 
     // Start listening
-    swarm.listen_on(listen_multiaddr.clone()).expect("Failed to listen");
+    let id = swarm.listen_on(listen_multiaddr.clone()).expect("Failed to listen");
 
     // Wait for listener to be ready and publish multiaddr
     loop {
-        if let Some(SwarmEvent::NewListenAddr { address, .. }) = swarm.next().await {
-            let full_multiaddr = format!("{}/p2p/{}", address, peer_id);
-            eprintln!("Listening on: {}", full_multiaddr);
+        if let Some(SwarmEvent::NewListenAddr { listener_id, address }) = swarm.next().await {
+            eprintln!("Listener_id: {listener_id}, address: {}", address.to_string());
+            if address.to_string().contains("127.0.0.1") {
+                eprintln!("Skipping localhost address");
+                continue;
+            }
+            if listener_id == id {
+                let full_multiaddr = format!("{}/p2p/{}", address, peer_id);
+                eprintln!("Listening on: {}", full_multiaddr);
 
-            // Publish to Redis with TEST_KEY namespacing
-            let listener_addr_key = format!("{}_listener_multiaddr", test_key);
-            let _: () = con.set(&listener_addr_key, full_multiaddr.clone()).await
-                .expect(&format!("Failed to publish multiaddr to Redis (key: {})", listener_addr_key));
+                // Publish to Redis with TEST_KEY namespacing
+                let listener_addr_key = format!("{}_listener_multiaddr", test_key);
+                let _: () = con.set(&listener_addr_key, full_multiaddr.clone()).await
+                    .expect(&format!("Failed to publish multiaddr to Redis (key: {})", listener_addr_key));
 
-            eprintln!("Published multiaddr to Redis (key: {})", listener_addr_key);
-            break;
+                eprintln!("Published multiaddr to Redis (key: {})", listener_addr_key);
+                break;
+            }
         }
     }
 
@@ -143,7 +154,7 @@ async fn run_listener(redis_addr: String, test_key: String, transport: String, s
     }
 }
 
-async fn run_dialer(redis_addr: String, test_key: String, transport: String, secure: Option<String>, muxer: Option<String>) {
+async fn run_dialer(redis_addr: String, test_key: String, transport: String, secure: Option<String>, muxer: Option<String>, debug: bool) {
     // Read test parameters from environment
     let upload_bytes: u64 = env::var("UPLOAD_BYTES")
         .unwrap_or_else(|_| "1073741824".to_string())
@@ -162,9 +173,11 @@ async fn run_dialer(redis_addr: String, test_key: String, transport: String, sec
         .parse().unwrap_or(100);
 
     eprintln!("Starting perf dialer...");
-    eprintln!("Transport: {}", transport);
-    eprintln!("Secure: {:?}", secure);
-    eprintln!("Muxer: {:?}", muxer);
+    eprintln!("UPLOAD_BYTES: {upload_bytes}");
+    eprintln!("DOWNLOAD_BYTES: {download_bytes}");
+    eprintln!("UPLOAD_ITERATIONS: {upload_iterations}");
+    eprintln!("DOWNLOAD_ITERATIONS: {download_iterations}");
+    eprintln!("LATENCY_ITERATIONS: {latency_iterations}");
 
     // Connect to Redis
     let redis_url = format!("redis://{}", redis_addr);

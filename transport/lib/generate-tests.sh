@@ -193,9 +193,6 @@ generate_tests_worker() {
   > "$worker_selected"
   > "$worker_ignored"
 
-  # Debug: log worker start time
-  echo "$(date +%s%3N)" > "${TEST_PASS_DIR}/worker-${worker_id}-start.time"
-
   # Load associative arrays from serialized files
   declare -A image_transports
   declare -A image_secure
@@ -437,9 +434,6 @@ EOF
       done
     done
   done
-
-  # Debug: log worker end time
-  echo "$(date +%s%3N)" > "${TEST_PASS_DIR}/worker-${worker_id}-end.time"
 }
 
 # Serialize associative arrays to temp files for workers

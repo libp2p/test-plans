@@ -68,14 +68,14 @@ COMPOSE_FILE="${TEST_PASS_DIR}/docker-compose/${TEST_SLUG}-compose.yaml"
 print_debug "docker compose file: $COMPOSE_FILE"
 
 # Assign static IP to listener
-LISTENER_IP="10.5.0.10"
+#LISTENER_IP="10.5.0.10"
 
 # Build environment variables for listener
 LISTENER_ENV="      - IS_DIALER=false
       - REDIS_ADDR=perf-redis:6379
       - TEST_KEY=$TEST_KEY
       - TRANSPORT=$transport
-      - LISTENER_IP=$LISTENER_IP"
+      - LISTENER_IP=0.0.0.0"
 
 if [ "$secure" != "null" ]; then
     LISTENER_ENV="$LISTENER_ENV
@@ -123,8 +123,7 @@ services:
     container_name: ${TEST_SLUG}_listener
     init: true
     networks:
-      perf-network:
-        ipv4_address: ${LISTENER_IP}
+      - perf-network
     environment:
 $LISTENER_ENV
 

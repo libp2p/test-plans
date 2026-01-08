@@ -520,17 +520,24 @@ run_test() {
 
   source "${SCRIPT_LIB_DIR}/lib-output-formatting.sh"
 
-  print_message "[$((index + 1))/$test_count] $name..."
-
   # Run test using run-single-test.sh (now reads from test-matrix.yaml)
   # Results are written to results.yaml.tmp by the script
+  # This executes in parallel without the lock
   if bash ${SCRIPT_DIR}/run-single-test.sh "$index" "tests" "${TEST_PASS_DIR}/results.yaml.tmp"; then
-    echo "[SUCCESS]"
-    return 0
+    result="[SUCCESS]"
+    exit_code=0
   else
-    echo "[FAILED]"
-    return 1
+    result="[FAILED]"
+    exit_code=1
   fi
+
+  # Serialize the message printing using flock (prevents interleaved output)
+  (
+    flock -x 200
+    print_message "[$((index + 1))/$test_count] $name...$result"
+  ) 200>/tmp/transport-test-output.lock
+
+  return $exit_code
 }
 
 export test_count
@@ -622,12 +629,16 @@ if [ "$FAILED" -gt 0 ]; then
   fi
 fi
 
+
+unindent
+echo ""
+
 # Display execution time
 HOURS=$((TEST_DURATION / 3600))
 MINUTES=$(((TEST_DURATION % 3600) / 60))
 SECONDS=$((TEST_DURATION % 60))
 print_message "$(printf "Total time: %02d:%02d:%02d\n" $HOURS $MINUTES $SECONDS)"
-echo""
+echo ""
 
 # Display status message
 if [ "$FAILED" -eq 0 ]; then

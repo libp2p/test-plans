@@ -56,9 +56,8 @@ COMPOSE_FILE="${TEST_PASS_DIR}/docker-compose/${TEST_SLUG}-compose.yaml"
 print_debug "docker compose file: $COMPOSE_FILE"
 
 # Build environment variables for listener
-LISTENER_ENV="      - version=$listener_id
-      - transport=$transport
-      - is_dialer=false
+LISTENER_ENV="      - IS_DIALER=false
+      - TRANSPORT=$transport
       - ip=0.0.0.0
       - REDIS_ADDR=transport-redis:6379
       - TEST_KEY=$TEST_KEY
