@@ -63,7 +63,7 @@ pub fn gossipsub_filter(
 
 #[test]
 fn test_layer_transforms_duplicate_trace() {
-    use libp2p::gossipsub::MessageId;
+    use libp2p_gossipsub::MessageId;
     use slog::{o, Drain, FnValue, PushFnValue, Record};
 
     let stdout_drain = slog_json::Json::new(std::io::stdout())
