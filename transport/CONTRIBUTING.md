@@ -4,9 +4,9 @@ Thank you for contributing to the libp2p transport interoperability tests!
 
 ## Adding a New Implementation
 
-### 1. Add to impls.yaml
+### 1. Add to images.yaml
 
-Add your implementation to `impls.yaml`:
+Add your implementation to `images.yaml`:
 
 ```yaml
 implementations:
@@ -43,13 +43,13 @@ export CACHE_DIR=/tmp/cache
 bash scripts/build-images.sh go-v0.35
 
 # Run tests filtered to your implementation
-./run_tests.sh --test-select "go-v0.35" --cache-dir /tmp/cache --workers 4
+./run.sh --test-ignore "!go-v0.35" --cache-dir /tmp/cache --workers 4
 ```
 
 ### 3. Submit Pull Request
 
 Include in your PR:
-- Updated `impls.yaml`
+- Updated `images.yaml`
 - Description of transport/secure/muxer support
 - Link to the commit in the implementation repo
 
@@ -110,43 +110,37 @@ fn main() {
 ### Filter Tests by Dimension
 
 ```bash
-# Test only TCP transport
-./run_tests.sh --test-select "tcp" --workers 8
+# Test only TCP transports
+./run.sh --transport-ignore "!tcp"
 
 # Test only noise secure channel
-./run_tests.sh --test-select "noise" --workers 4
+./run.sh --secure-ignore "!noise"
 
 # Test only yamux muxer
-./run_tests.sh --test-select "yamux" --workers 4
+./run.sh --muxer-ignore "!yamux"
 
 # Combine filters (OR logic)
-./run_tests.sh --test-select "tcp|quic" --workers 8
+./run.sh --transport-ignore "!tcp|!quic"
 ```
 
 ### Ignore Problematic Tests
 
 ```bash
 # Skip WebRTC tests
-./run_tests.sh --test-ignore "webrtc" --workers 4
-
-# Skip plaintext (insecure)
-./run_tests.sh --test-ignore "plaintext" --workers 8
-
-# Skip self-tests
-./run_tests.sh --test-ignore "rust-v0.53 x rust-v0.53" --workers 4
+./run.sh --test-ignore "webrtc"
 ```
 
 ### Performance Tuning
 
 ```bash
 # Use all CPU cores
-./run_tests.sh --workers $(nproc)
+./run.sh --workers $(nproc)
 
 # Conservative (4 workers)
-./run_tests.sh --workers 4
+./run.sh --workers 4
 
 # Maximum (cores + 1)
-./run_tests.sh --workers $(($(nproc) + 1))
+./run.sh --workers $(($(nproc) + 1))
 ```
 
 ## Understanding the 3D Test Matrix
@@ -260,7 +254,7 @@ jobs:
       - name: Run tests
         run: |
           cd transport
-          ./run_tests.sh \
+          ./run.sh \
             --cache-dir /tmp/cache \
             --workers 4 \
             --snapshot
@@ -288,15 +282,15 @@ jobs:
 To update an implementation to a new commit:
 
 ```bash
-# 1. Update impls.yaml with new commit SHA
-vim impls.yaml
+# 1. Update images.yaml with new commit SHA
+vim images.yaml
 # Change commit for rust-v0.54
 
 # 2. Clear cached snapshot
 rm /srv/cache/snapshots/<old-commit>.zip
 
 # 3. Run tests
-./run_tests.sh --test-select "rust-v0.54" --cache-dir /srv/cache
+./run.sh --test-ignore "!rust-v0.54" --cache-dir /srv/cache
 ```
 
 ## Test Matrix Examples
@@ -336,7 +330,6 @@ rust-v0.53 × python-v0.4:
 
 ## Questions?
 
-- Check existing implementations in `impls.yaml`
+- Check existing implementations in `images.yaml`
 - Read the main README.md
-- Review ARCHITECTURE.md for internals
 - Open an issue for questions

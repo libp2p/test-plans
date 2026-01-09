@@ -70,92 +70,103 @@ sourceType: $source_type
 buildLocation: $build_location
 cacheDir: $CACHE_DIR
 forceRebuild: $force_image_rebuild
-outputStyle: clean
 EOF
 
-# Add remote info if needed
-if [ "$build_location" == "remote" ]; then
-  cat >> "$yaml_file" <<EOF
+    # Add remote info if needed
+    if [ "$build_location" == "remote" ]; then
+      cat >> "$yaml_file" <<EOF
 
 remote:
   server: $server_id
   hostname: $hostname
   username: $username
 EOF
-fi
+    fi
 
-# Add source-specific parameters
-case "$source_type" in
-  github)
-    local repo=$(yq eval ".${section}[$i].source.repo" "${IMAGES_YAML}")
-    local commit=$(yq eval ".${section}[$i].source.commit" "${IMAGES_YAML}")
-    local dockerfile=$(yq eval ".${section}[$i].source.dockerfile" "${IMAGES_YAML}")
-    local build_context=$(yq eval ".${section}[$i].source.buildContext // \".\"" "${IMAGES_YAML}")
-    local requires_submodules=$(yq eval ".${section}[$i].source.requiresSubmodules // false" "${IMAGES_YAML}")
+    # Add source-specific parameters
+    case "$source_type" in
+      github)
+        local repo=$(yq eval ".${section}[$i].source.repo" "${IMAGES_YAML}")
+        local commit=$(yq eval ".${section}[$i].source.commit" "${IMAGES_YAML}")
+        local dockerfile=$(yq eval ".${section}[$i].source.dockerfile" "${IMAGES_YAML}")
+        local build_context=$(yq eval ".${section}[$i].source.buildContext // \".\"" "${IMAGES_YAML}")
+        local requires_submodules=$(yq eval ".${section}[$i].source.requiresSubmodules // false" "${IMAGES_YAML}")
+        local patch_path=$(yq eval ".${section}[$i].source.patchPath // \"\"" "${IMAGES_YAML}")
+        local patch_file=$(yq eval ".${section}[$i].source.patchFile // \"\"" "${IMAGES_YAML}")
 
-    cat >> "$yaml_file" <<EOF
+        cat >> "$yaml_file" <<EOF
 
 github:
   repo: $repo
   commit: $commit
   dockerfile: $dockerfile
   buildContext: $build_context
+  patchPath: $patch_path
+  patchFile: $patch_file
 
 requiresSubmodules: $requires_submodules
 EOF
-;;
+      ;;
 
-local)
-  local local_path=$(yq eval ".${section}[$i].source.path" "${IMAGES_YAML}")
-  local dockerfile=$(yq eval ".${section}[$i].source.dockerfile // \"Dockerfile\"" "${IMAGES_YAML}")
+      local)
+        local local_path=$(yq eval ".${section}[$i].source.path" "${IMAGES_YAML}")
+        local dockerfile=$(yq eval ".${section}[$i].source.dockerfile // \"Dockerfile\"" "${IMAGES_YAML}")
+        local patch_path=$(yq eval ".${section}[$i].source.patchPath // \"\"" "${IMAGES_YAML}")
+        local patch_file=$(yq eval ".${section}[$i].source.patchFile // \"\"" "${IMAGES_YAML}")
 
-  cat >> "$yaml_file" <<EOF
+        cat >> "$yaml_file" <<EOF
 
 local:
   path: $local_path
   dockerfile: $dockerfile
+  patchPath: $patch_path
+  patchFile: $patch_file
 EOF
-;;
+      ;;
 
-browser)
-  local base_image=$(yq eval ".${section}[$i].source.baseImage" "${IMAGES_YAML}")
-  local browser=$(yq eval ".${section}[$i].source.browser" "${IMAGES_YAML}")
-  local dockerfile=$(yq eval ".${section}[$i].source.dockerfile" "${IMAGES_YAML}")
-  local build_context=$(dirname "$dockerfile")
+      browser)
+        local base_image=$(yq eval ".${section}[$i].source.baseImage" "${IMAGES_YAML}")
+        local browser=$(yq eval ".${section}[$i].source.browser" "${IMAGES_YAML}")
+        local dockerfile=$(yq eval ".${section}[$i].source.dockerfile" "${IMAGES_YAML}")
+        local build_context=$(dirname "$dockerfile")
+        local patch_path=$(yq eval ".${section}[$i].source.patchPath // \"\"" "${IMAGES_YAML}")
+        local patch_file=$(yq eval ".${section}[$i].source.patchFile // \"\"" "${IMAGES_YAML}")
 
-  cat >> "$yaml_file" <<EOF
+        cat >> "$yaml_file" <<EOF
 
 browser:
   baseImage: $base_image
   browser: $browser
   dockerfile: $dockerfile
   buildContext: $build_context
+  patchPath: $patch_path
+  patchFile: $patch_file
 EOF
-;;
+      ;;
 
-*)
-  print_error "Unknown source type: $source_type"
-  exit 1
-  ;;
-esac
+      *)
+        print_error "Unknown source type: $source_type"
+        exit 1
+      ;;
+    esac
 
-# Execute build (local or remote)
-if [ "$build_location" == "remote" ]; then
-  # Copy lib-image-building.sh to remote for use by build script
-  local lib_script="${SCRIPT_LIB_DIR}/lib-image-building.sh"
+    # Execute build (local or remote)
+    if [ "$build_location" == "remote" ]; then
+      # Copy lib-image-building.sh to remote for use by build script
+      local lib_script="${SCRIPT_LIB_DIR}/lib-image-building.sh"
 
-  build_on_remote "$yaml_file" "$username" "$hostname" "${SCRIPT_LIB_DIR}/build-single-image.sh" || {
-    print_error "Remote build failed for $impl_id"
-      exit 1
-    }
-else
-  # Local build
-  bash "${SCRIPT_LIB_DIR}/build-single-image.sh" "$yaml_file" || {
-    print_error "Local build failed for $impl_id"
-      exit 1
-    }
-fi
-done
+      build_on_remote "$yaml_file" "$username" "$hostname" "${SCRIPT_LIB_DIR}/build-single-image.sh" || {
+        print_error "Remote build failed for $impl_id"
+          exit 1
+        }
+    else
+      # Local build
+      bash "${SCRIPT_LIB_DIR}/build-single-image.sh" "$yaml_file" || {
+        print_error "Local build failed for $impl_id"
+          exit 1
+        }
+    fi
+  done
 }
 
 # Download GitHub snapshot to cache
@@ -191,9 +202,12 @@ extract_github_snapshot() {
 
   local work_dir=$(mktemp -d)
   print_message "Extracting snapshot..."
+  indent
+  print_message "$work_dir"
   unzip -q "$snapshot_file" -d "$work_dir" || {
     print_error "Failed to extract snapshot"
     rm -rf "$work_dir"
+    unindent
     return 1
   }
 
@@ -201,10 +215,92 @@ extract_github_snapshot() {
   if [ ! -d "$extracted_dir" ]; then
     print_error "Expected directory not found: $extracted_dir"
     rm -rf "$work_dir"
+    unindent
     return 1
   fi
 
+  unindent
   echo "$work_dir"  # Caller must clean up with: rm -rf "$work_dir"
+}
+
+# Apply patch file to build context if specified
+# Args:
+#   $1: target_dir - Directory to apply patch IN (the build context)
+#   $2: patch_path - Directory containing patch file (relative to run.sh PWD or absolute)
+#   $3: patch_file - Patch filename (no path separators allowed)
+# Returns: 0 on success, 1 on failure
+apply_patch_if_specified() {
+  local target_dir="$1"
+  local patch_path="$2"
+  local patch_file="$3"
+
+  print_message "Patching..."
+  indent
+
+  # Skip if no patch specified (both must be present)
+  if [ -z "$patch_path" ] || [ "$patch_path" == "null" ]; then
+    print_error "Patch path not specified"
+    unindent
+    return 0
+  fi
+  if [ -z "$patch_file" ] || [ "$patch_file" == "null" ]; then
+    print_error "Patch file not specified"
+    unindent
+    return 0
+  fi
+
+  # Validate patch_file doesn't contain path separators
+  if [[ "$patch_file" == *"/"* ]] || [[ "$patch_file" == *"\\"* ]]; then
+    print_error "Invalid patchFile: must be filename only: $patch_file"
+    unindent
+    return 1
+  fi
+
+  # Resolve patch_path (handle absolute vs relative to PWD)
+  local resolved_patch_path
+  if [[ "$patch_path" == /* ]]; then
+    resolved_patch_path="$patch_path"
+  else
+    resolved_patch_path="$(pwd)/$patch_path"
+  fi
+
+  # Full path to patch file
+  local full_patch_path="$resolved_patch_path/$patch_file"
+
+  # Validate patch file exists
+  if [ ! -f "$full_patch_path" ]; then
+    print_error "Patch file not found: $full_patch_path"
+    unindent
+    return 1
+  fi
+
+  # Validate target directory exists and is writable
+  if [ ! -d "$target_dir" ]; then
+    print_error "Target directory not found: $target_dir"
+    unindent
+    return 1
+  fi
+  if [ ! -w "$target_dir" ]; then
+    print_error "Target directory not writable: $target_dir"
+    unindent
+    return 1
+  fi
+
+  print_message "Applying patch: $patch_file"
+  print_message "From: $full_patch_path"
+  print_message "To: $target_dir"
+
+  # Apply patch from inside target directory
+  # Use: cd <target> && patch < <patchfile>
+  if ! (cd "$target_dir" && patch -p1 < "$full_patch_path") 2>&1 | sed 's/^/  /'; then
+    print_error "Failed to apply patch"
+    unindent
+    return 1
+  fi
+
+  print_success "Patch applied successfully"
+  unindent
+  return 0
 }
 
 # Clone GitHub repo with submodules
@@ -288,7 +384,8 @@ clone_github_repo_with_submodules() {
 # Build from GitHub source
 build_from_github() {
   local yaml_file="$1"
-  local output_filter="$2"
+
+  print_message "YAML: ${yaml_file}"
 
   local image_name=$(yq eval '.imageName' "$yaml_file")
   local repo=$(yq eval '.github.repo' "$yaml_file")
@@ -296,6 +393,8 @@ build_from_github() {
   local dockerfile=$(yq eval '.github.dockerfile' "$yaml_file")
   local build_context=$(yq eval '.github.buildContext' "$yaml_file")
   local cache_dir=$(yq eval '.cacheDir' "$yaml_file")
+  local patch_path=$(yq eval '.github.patchPath // ""' "$yaml_file")
+  local patch_file=$(yq eval '.github.patchFile // ""' "$yaml_file")
 
   print_message "Repo: $repo"
   print_message "Commit: ${commit:0:8}"
@@ -316,33 +415,27 @@ build_from_github() {
     context_dir="$extracted_dir/$build_context"
   fi
 
-  # Build
-  print_message "Building Docker image..."
-
-  # Run docker directly (no eval/pipe) for clean output to preserve aesthetic
-  if [ "$output_filter" == "cat" ]; then
-    if ! docker build -f "$extracted_dir/$dockerfile" -t "$image_name" "$context_dir"; then
-      print_error "Docker build failed"
-      rm -rf "$work_dir"
-      return 1
-    fi
-  else
-    # Use filtering for indented/filtered styles
-    if ! eval "docker build -f \"$extracted_dir/$dockerfile\" -t \"$image_name\" \"$context_dir\" 2>&1 | $output_filter"; then
-      print_error "Docker build failed"
-      rm -rf "$work_dir"
-      return 1
-    fi
+  # Apply patch if specified
+  if ! apply_patch_if_specified "$context_dir" "$patch_path" "$patch_file"; then
+    rm -rf "$work_dir"
+    return 1
   fi
 
-  rm -rf "$work_dir"
+  # Build
+  print_message "Building Docker image..."
+  if ! (cd "$context_dir" && docker build -f "$extracted_dir/$dockerfile" -t "$image_name" .); then
+    print_error "Docker build failed"
+    rm -rf "$work_dir"
+    return 1
+  fi
+
+  #rm -rf "$work_dir"
   return 0
 }
 
 # Build from GitHub source with submodules support
 build_from_github_with_submodules() {
   local yaml_file="$1"
-  local output_filter="$2"
 
   local image_name=$(yq eval '.imageName' "$yaml_file")
   local repo=$(yq eval '.github.repo' "$yaml_file")
@@ -350,6 +443,8 @@ build_from_github_with_submodules() {
   local dockerfile=$(yq eval '.github.dockerfile' "$yaml_file")
   local build_context=$(yq eval '.github.buildContext' "$yaml_file")
   local cache_dir=$(yq eval '.cacheDir' "$yaml_file")
+  local patch_path=$(yq eval '.github.patchPath // ""' "$yaml_file")
+  local patch_file=$(yq eval '.github.patchFile // ""' "$yaml_file")
 
   print_message "Repo: $repo"
   print_message "Commit: ${commit:0:8}"
@@ -368,23 +463,18 @@ build_from_github_with_submodules() {
     context_dir="$cloned_dir/$build_context"
   fi
 
+  # Apply patch if specified
+  if ! apply_patch_if_specified "$context_dir" "$patch_path" "$patch_file"; then
+    rm -rf "$work_dir"
+    return 1
+  fi
+
   # Build
   print_message "Building Docker image..."
-
-  # Run docker directly (no eval/pipe) for clean output to preserve aesthetic
-  if [ "$output_filter" == "cat" ]; then
-    if ! docker build -f "$cloned_dir/$dockerfile" -t "$image_name" "$context_dir"; then
-      print_error "Docker build failed"
-      rm -rf "$work_dir"
-      return 1
-    fi
-  else
-    # Use filtering for indented/filtered styles
-    if ! eval "docker build -f \"$cloned_dir/$dockerfile\" -t \"$image_name\" \"$context_dir\" 2>&1 | $output_filter"; then
-      print_error "Docker build failed"
-      rm -rf "$work_dir"
-      return 1
-    fi
+  if ! docker build -f "$cloned_dir/$dockerfile" -t "$image_name" "$context_dir"; then
+    print_error "Docker build failed"
+    rm -rf "$work_dir"
+    return 1
   fi
 
   rm -rf "$work_dir"
@@ -394,11 +484,12 @@ build_from_github_with_submodules() {
 # Build from local source
 build_from_local() {
   local yaml_file="$1"
-  local output_filter="$2"
 
   local image_name=$(yq eval '.imageName' "$yaml_file")
   local local_path=$(yq eval '.local.path' "$yaml_file")
   local dockerfile=$(yq eval '.local.dockerfile' "$yaml_file")
+  local patch_path=$(yq eval '.local.patchPath // ""' "$yaml_file")
+  local patch_file=$(yq eval '.local.patchFile // ""' "$yaml_file")
 
   print_message "Path: $local_path"
 
@@ -407,20 +498,37 @@ build_from_local() {
     return 1
   fi
 
-  print_message "Building Docker image..."
+  # If patch specified, create temporary copy (cannot modify user's source)
+  local build_path="$local_path"
+  local cleanup_temp=false
 
-  # Run docker directly (no eval/pipe) for clean output to preserve aesthetic
-  if [ "$output_filter" == "cat" ]; then
-    if ! docker build -f "$local_path/$dockerfile" -t "$image_name" "$local_path"; then
-      print_error "Docker build failed"
+  if [ -n "$patch_path" ] && [ "$patch_path" != "null" ] && \
+     [ -n "$patch_file" ] && [ "$patch_file" != "null" ]; then
+    print_message "Creating temporary copy for patching..."
+    local temp_dir=$(mktemp -d)
+    cp -r "$local_path/." "$temp_dir/"
+    build_path="$temp_dir"
+    cleanup_temp=true
+
+    # Apply patch to temporary copy
+    if ! apply_patch_if_specified "$build_path" "$patch_path" "$patch_file"; then
+      rm -rf "$temp_dir"
       return 1
     fi
-  else
-    # Use filtering for indented/filtered styles
-    if ! eval "docker build -f \"$local_path/$dockerfile\" -t \"$image_name\" \"$local_path\" 2>&1 | $output_filter"; then
-      print_error "Docker build failed"
-      return 1
+  fi
+
+  print_message "Building Docker image..."
+  if ! docker build -f "$build_path/$dockerfile" -t "$image_name" "$build_path"; then
+    print_error "Docker build failed"
+    if [ "$cleanup_temp" == "true" ]; then
+      rm -rf "$build_path"
     fi
+    return 1
+  fi
+
+  # Cleanup temporary directory if created
+  if [ "$cleanup_temp" == "true" ]; then
+    rm -rf "$build_path"
   fi
 
   return 0
@@ -429,7 +537,6 @@ build_from_local() {
 # Build browser image
 build_browser_image() {
   local yaml_file="$1"
-  local output_filter="$2"
 
   local image_name=$(yq eval '.imageName' "$yaml_file")
   local base_image=$(yq eval '.browser.baseImage' "$yaml_file")
@@ -437,6 +544,8 @@ build_browser_image() {
   local dockerfile=$(yq eval '.browser.dockerfile' "$yaml_file")
   local build_context=$(yq eval '.browser.buildContext' "$yaml_file")
   local image_prefix=$(yq eval '.imagePrefix' "$yaml_file")
+  local patch_path=$(yq eval '.browser.patchPath // ""' "$yaml_file")
+  local patch_file=$(yq eval '.browser.patchFile // ""' "$yaml_file")
 
   local base_image_name="${image_prefix}-${base_image}"
 
@@ -454,39 +563,47 @@ build_browser_image() {
   print_message "Tagging base image..."
   docker tag "$base_image_name" "node-$base_image"
 
-  # Build browser image
-  print_message "Building browser Docker image..."
+  # If patch specified, create temporary copy of build context
+  local actual_build_context="$build_context"
+  local actual_dockerfile="$dockerfile"
+  local cleanup_temp=false
 
-  # Run docker directly (no eval/pipe) for clean output to preserve aesthetic
-  if [ "$output_filter" == "cat" ]; then
-    if ! docker build -f "$dockerfile" --build-arg BASE_IMAGE="node-$base_image" --build-arg BROWSER="$browser" -t "$image_name" "$build_context"; then
-      print_error "Docker build failed"
-      return 1
+  if [ -n "$patch_path" ] && [ "$patch_path" != "null" ] && \
+     [ -n "$patch_file" ] && [ "$patch_file" != "null" ]; then
+    print_message "Creating temporary copy for patching..."
+    local temp_dir=$(mktemp -d)
+    cp -r "$build_context/." "$temp_dir/"
+    actual_build_context="$temp_dir"
+
+    # Dockerfile path needs to be updated if it's in build_context
+    if [[ "$dockerfile" == "$build_context"* ]]; then
+      actual_dockerfile="$temp_dir/$(basename "$dockerfile")"
     fi
-  else
-    # Use filtering for indented/filtered styles
-    if ! eval "docker build -f \"$dockerfile\" --build-arg BASE_IMAGE=\"node-$base_image\" --build-arg BROWSER=\"$browser\" -t \"$image_name\" \"$build_context\" 2>&1 | $output_filter"; then
-      print_error "Docker build failed"
+
+    cleanup_temp=true
+
+    # Apply patch to temporary copy
+    if ! apply_patch_if_specified "$actual_build_context" "$patch_path" "$patch_file"; then
+      rm -rf "$temp_dir"
       return 1
     fi
   fi
 
+  # Build browser image
+  print_message "Building browser Docker image..."
+  # Run docker directly (no eval/pipe) for clean output to preserve aesthetic
+  if ! docker build -f "$actual_dockerfile" --build-arg BASE_IMAGE="node-$base_image" --build-arg BROWSER="$browser" -t "$image_name" "$actual_build_context"; then
+    print_error "Docker build failed"
+    if [ "$cleanup_temp" == "true" ]; then
+      rm -rf "$actual_build_context"
+    fi
+    return 1
+  fi
+
+  # Cleanup temporary directory if created
+  if [ "$cleanup_temp" == "true" ]; then
+    rm -rf "$actual_build_context"
+  fi
+
   return 0
-}
-
-# Get output filter command based on style
-get_output_filter() {
-  local style="$1"
-
-  case "$style" in
-    indented)
-      echo "sed 's/^/    /'"
-      ;;
-    filtered)
-      echo "grep -E '^(#|Step|Successfully|ERROR)'"
-      ;;
-    clean|*)
-      echo "cat"
-      ;;
-  esac
 }

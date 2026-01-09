@@ -36,10 +36,10 @@ brew install yq
 cd test-plans/transport
 
 # Check dependencies
-./run_tests.sh --check-deps
+./run.sh --check-deps
 
 # Run tests (this will take a few minutes)
-./run_tests.sh --cache-dir /tmp/cache --workers 4
+./run.sh --cache-dir /tmp/cache --workers 4
 ```
 
 Expected output:
@@ -197,56 +197,56 @@ pandoc -f markdown -t html -s -o results.html results.md
 
 ```bash
 # Test only Rust
-./run_tests.sh --test-select "rust" --workers 4
+./run.sh --test-select "rust" --workers 4
 
 # Test only Python
-./run_tests.sh --test-select "python" --workers 2
+./run.sh --test-select "python" --workers 2
 
 # Test specific version
-./run_tests.sh --test-select "rust-v0.53" --workers 4
+./run.sh --test-select "rust-v0.53" --workers 4
 ```
 
 ### Test Specific Transports
 
 ```bash
 # Test only QUIC
-./run_tests.sh --test-select "quic" --workers 4
+./run.sh --test-select "quic" --workers 4
 
 # Test only TCP
-./run_tests.sh --test-select "tcp" --workers 8
+./run.sh --test-select "tcp" --workers 8
 
 # Skip WebRTC
-./run_tests.sh --test-ignore "webrtc" --workers 4
+./run.sh --test-ignore "webrtc" --workers 4
 ```
 
 ### Test Specific Protocols
 
 ```bash
 # Test only noise secure channel
-./run_tests.sh --test-select "noise" --workers 4
+./run.sh --test-select "noise" --workers 4
 
 # Test only yamux muxer
-./run_tests.sh --test-select "yamux" --workers 4
+./run.sh --test-select "yamux" --workers 4
 
 # Skip plaintext (insecure)
-./run_tests.sh --test-ignore "plaintext" --workers 8
+./run.sh --test-ignore "plaintext" --workers 8
 ```
 
 ### Debug Mode
 
 ```bash
 # Enable debug output in test containers
-./run_tests.sh --debug --workers 4
+./run.sh --debug --workers 4
 
 # Combine with filters
-./run_tests.sh --test-select "rust-v0.56" --debug --workers 2
+./run.sh --test-select "rust-v0.56" --debug --workers 2
 ```
 
 ### Create Debug Snapshot
 
 ```bash
 # Run with snapshot creation
-./run_tests.sh --snapshot --cache-dir /tmp/cache --workers 4
+./run.sh --snapshot --cache-dir /tmp/cache --workers 4
 
 # Snapshot saved to:
 # /tmp/cache/test-runs/transport-interop-full-<timestamp>.tar.gz
@@ -322,7 +322,7 @@ cat logs/<test-name>.log
 ```bash
 # Clear cache and rebuild
 rm -rf /tmp/cache/snapshots/*.zip
-./run_tests.sh --cache-dir /tmp/cache
+./run.sh --cache-dir /tmp/cache
 ```
 
 ### View Individual Test
@@ -340,22 +340,22 @@ cat logs/rust-v0.53_x_rust-v0.54_tcp_noise_yamux.log
 1. **Use persistent cache**
    ```bash
    mkdir -p /srv/cache
-   ./run_tests.sh --cache-dir /srv/cache
+   ./run.sh --cache-dir /srv/cache
    ```
 
 2. **Adjust worker count**
    ```bash
    # Use all cores
-   ./run_tests.sh --workers $(nproc)
+   ./run.sh --workers $(nproc)
 
    # Conservative
-   ./run_tests.sh --workers 4
+   ./run.sh --workers 4
    ```
 
 3. **Filter during development**
    ```bash
    # Only test what you're working on
-   ./run_tests.sh --test-select "rust-v0.54" --workers 2
+   ./run.sh --test-ignore "!rust-v0.54" --workers 2
    ```
 
 ## Debugging with Local Implementations
@@ -396,33 +396,32 @@ vim impls.yaml
 vim ~/rust-libp2p/transports/tcp/src/transport.rs
 
 # 4. Test with your changes
-./run_tests.sh --test-select "rust-v0.56" --force-rebuild --workers 2
+./run.sh --test-select "rust-v0.56" --force-rebuild --workers 2
 ```
 
 ## Next Steps
 
 - Read [CONTRIBUTING.md](CONTRIBUTING.md) to add implementations
-- Read [ARCHITECTURE.md](ARCHITECTURE.md) to understand internals
 - Check [README.md](README.md) for complete documentation
 
 ## Example Development Workflow
 
 ```bash
 # 1. Check dependencies
-./run_tests.sh --check-deps
+./run.sh --check-deps
 
 # 2. First run (downloads and builds everything)
-./run_tests.sh --cache-dir ~/.cache/libp2p --workers 4
+./run.sh --cache-dir ~/.cache/libp2p --workers 4
 
 # 3. Add new implementation to impls.yaml
 vim impls.yaml
 
 # 4. Test only new version (with debug output)
-./run_tests.sh --test-select "rust-v0.55" --debug --cache-dir ~/.cache/libp2p
+./run.sh --test-ignore "!rust-v0.55" --debug --cache-dir ~/.cache/libp2p
 
 # 5. Run full suite
-./run_tests.sh --cache-dir ~/.cache/libp2p --workers 8
+./run.sh --cache-dir ~/.cache/libp2p --workers 8
 
 # 6. Create snapshot for CI
-./run_tests.sh --snapshot --cache-dir ~/.cache/libp2p
+./run.sh --snapshot --cache-dir ~/.cache/libp2p
 ```

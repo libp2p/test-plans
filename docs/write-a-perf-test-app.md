@@ -6,7 +6,8 @@ Dockerfile so that it can be run by the `perf` test in this repo.
 
 ## The Goals of These Perf Tests
 
-The `perf` test (i.e. the test executed by the `perf/run.sh` script) seeks to measure the following:
+The `perf` test (i.e. the test executed by the `perf/run.sh` script) seeks to
+measure the following:
 
 1. Upload throughput
 2. Download throughput
@@ -278,7 +279,9 @@ of the raw samples. Since the results are calculated values, it is important to
 also report the raw samples so that the results may be checked and verified
 independently.
 
-NOTE: The `perf/lib/run-signle-test.sh` script handles adding the metadata for the results file in each test. It writes out something like the following and then appends the data your test application writes to stdout after it:
+NOTE: The `perf/lib/run-signle-test.sh` script handles adding the metadata for
+the results file in each test. It writes out something like the following and
+then appends the data your test application writes to stdout after it:
 
 ```yaml
 test: rust-v0.56 x rust-v0.56 (quic-v1)

@@ -145,6 +145,9 @@ log_message "Running: $test_name" > "$LOG_FILE"
 # Set timeout (300 seconds / 5 minutes)
 TEST_TIMEOUT=300
 
+# Track test duration
+TEST_START=$(date +%s)
+
 # Start containers and wait for dialer to exit (with timeout)
 if timeout $TEST_TIMEOUT $DOCKER_COMPOSE_CMD -f "$COMPOSE_FILE" up --exit-code-from dialer --abort-on-container-exit >> "$LOG_FILE" 2>&1; then
     EXIT_CODE=0
@@ -162,6 +165,9 @@ else
         log_error "  ✗ Test failed"
     fi
 fi
+
+TEST_END=$(date +%s)
+TEST_DURATION=$((TEST_END - TEST_START))
 
 # Extract results from dialer container logs
 # Dialer outputs YAML to stdout, which appears in docker logs
@@ -182,6 +188,7 @@ transport: $transport
 secureChannel: $secure
 muxer: $muxer
 status: $([ $EXIT_CODE -eq 0 ] && echo "pass" || echo "fail")
+duration: ${TEST_DURATION}
 
 # Measurements from dialer
 $DIALER_YAML

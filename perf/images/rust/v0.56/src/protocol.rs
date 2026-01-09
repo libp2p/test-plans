@@ -10,14 +10,14 @@ pub const BLOCK_SIZE: usize = 64 * 1024; // 64KB blocks
 // Perf protocol request
 #[derive(Debug, Clone)]
 pub struct PerfRequest {
-    pub send_bytes: u64,    // Bytes client will send to server
-    pub recv_bytes: u64,    // Bytes client wants to receive from server
+    pub send_bytes: u64, // Bytes client will send to server
+    pub recv_bytes: u64, // Bytes client wants to receive from server
 }
 
 // Perf protocol response
 #[derive(Debug, Clone)]
 pub struct PerfResponse {
-    pub bytes_sent: u64,     // Bytes server sent back
+    pub bytes_sent: u64,      // Bytes server sent back
     pub _bytes_received: u64, // Bytes server received from client
 }
 
@@ -31,8 +31,11 @@ impl libp2p::request_response::Codec for PerfCodec {
     type Request = PerfRequest;
     type Response = PerfResponse;
 
-    async fn read_request<T>(&mut self, _protocol: &Self::Protocol, io: &mut T)
-        -> std::io::Result<Self::Request>
+    async fn read_request<T>(
+        &mut self,
+        _protocol: &Self::Protocol,
+        io: &mut T,
+    ) -> std::io::Result<Self::Request>
     where
         T: futures::AsyncRead + Unpin + Send,
     {
@@ -56,16 +59,22 @@ impl libp2p::request_response::Codec for PerfCodec {
             let to_read = std::cmp::min(send_bytes - total_received, BLOCK_SIZE as u64) as usize;
             let n = io.read(&mut read_buf[..to_read]).await?;
             if n == 0 {
-                break;  // EOF
+                break; // EOF
             }
             total_received += n as u64;
         }
 
-        Ok(PerfRequest { send_bytes, recv_bytes })
+        Ok(PerfRequest {
+            send_bytes,
+            recv_bytes,
+        })
     }
 
-    async fn read_response<T>(&mut self, _protocol: &Self::Protocol, io: &mut T)
-        -> std::io::Result<Self::Response>
+    async fn read_response<T>(
+        &mut self,
+        _protocol: &Self::Protocol,
+        io: &mut T,
+    ) -> std::io::Result<Self::Response>
     where
         T: futures::AsyncRead + Unpin + Send,
     {
@@ -77,7 +86,7 @@ impl libp2p::request_response::Codec for PerfCodec {
 
         loop {
             match io.read(&mut buf).await? {
-                0 => break,  // EOF
+                0 => break, // EOF
                 n => total += n as u64,
             }
         }
@@ -88,8 +97,12 @@ impl libp2p::request_response::Codec for PerfCodec {
         })
     }
 
-    async fn write_request<T>(&mut self, _protocol: &Self::Protocol, io: &mut T, req: Self::Request)
-        -> std::io::Result<()>
+    async fn write_request<T>(
+        &mut self,
+        _protocol: &Self::Protocol,
+        io: &mut T,
+        req: Self::Request,
+    ) -> std::io::Result<()>
     where
         T: futures::AsyncWrite + Unpin + Send,
     {
@@ -115,8 +128,12 @@ impl libp2p::request_response::Codec for PerfCodec {
         Ok(())
     }
 
-    async fn write_response<T>(&mut self, _protocol: &Self::Protocol, io: &mut T, res: Self::Response)
-        -> std::io::Result<()>
+    async fn write_response<T>(
+        &mut self,
+        _protocol: &Self::Protocol,
+        io: &mut T,
+        res: Self::Response,
+    ) -> std::io::Result<()>
     where
         T: futures::AsyncWrite + Unpin + Send,
     {
@@ -136,4 +153,3 @@ impl libp2p::request_response::Codec for PerfCodec {
         Ok(())
     }
 }
-

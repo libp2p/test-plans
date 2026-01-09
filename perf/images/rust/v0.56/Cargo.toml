@@ -14,7 +14,7 @@ clap = { version = "4", features = ["derive"] }
 serde_yaml = "0.9"
 
 # Redis coordination
-redis = { version = "0.27", features = ["tokio-comp"] }
+redis = { version = "1.0", features = ["tokio-comp"] }
 
 # libp2p core and transports
 libp2p = { version = "0.56", features = [
@@ -35,4 +35,4 @@ futures = "0.3"
 async-trait = "0.1"
 
 # Efficient byte buffers
-bytes = "1.5"
+bytes = "1.11"

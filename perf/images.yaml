@@ -112,7 +112,7 @@ implementations:
       type: local
       path: images/go/v0.45
       dockerfile: Dockerfile
-    server: local              # Server to use: local, remote-1, etc.
+    server: local
     transports: [tcp, quic-v1, webtransport]
     secureChannels: [noise, tls]
     muxers: [yamux, mplex]
@@ -130,7 +130,7 @@ implementations:
       type: local
       path: images/rust/v0.56
       dockerfile: Dockerfile
-    server: local              # Change to remote-1 for remote testing
+    server: local
     transports: [tcp, quic-v1]
     secureChannels: [noise, tls]
     muxers: [yamux, mplex]

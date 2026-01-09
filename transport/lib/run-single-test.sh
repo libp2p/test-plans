@@ -44,8 +44,8 @@ print_debug "log file: $LOG_FILE"
 log_message "[$((TEST_INDEX + 1))] $test_name (key: $TEST_KEY)"
 
 # Construct Docker image names
-DIALER_IMAGE="transport-interop-${dialer_id}"
-LISTENER_IMAGE="transport-interop-${listener_id}"
+DIALER_IMAGE="transport-${dialer_id}"
+LISTENER_IMAGE="transport-${listener_id}"
 
 print_debug "dialer image: $DIALER_IMAGE"
 print_debug "listener image: $LISTENER_IMAGE"
@@ -57,39 +57,38 @@ print_debug "docker compose file: $COMPOSE_FILE"
 
 # Build environment variables for listener
 LISTENER_ENV="      - IS_DIALER=false
-      - TRANSPORT=$transport
-      - ip=0.0.0.0
       - REDIS_ADDR=transport-redis:6379
       - TEST_KEY=$TEST_KEY
-      - debug=${DEBUG:-false}"
-
-if [ "$muxer" != "null" ]; then
-    LISTENER_ENV="$LISTENER_ENV
-      - muxer=$muxer"
-fi
+      - TRANSPORT=$transport
+      - LISTENER_IP=0.0.0.0
+      - DEBUG=${DEBUG:-false}"
 
 if [ "$secure" != "null" ]; then
     LISTENER_ENV="$LISTENER_ENV
-      - security=$secure"
+      - SECURE_CHANNEL=$secure"
+fi
+
+if [ "$muxer" != "null" ]; then
+    LISTENER_ENV="$LISTENER_ENV
+      - MUXER=$muxer"
 fi
 
 # Build environment variables for dialer
-DIALER_ENV="      - version=$dialer_id
-      - transport=$transport
-      - is_dialer=true
-      - ip=0.0.0.0
+DIALER_ENV="      - IS_DIALER=true
       - REDIS_ADDR=transport-redis:6379
       - TEST_KEY=$TEST_KEY
-      - debug=${DEBUG:-false}"
-
-if [ "$muxer" != "null" ]; then
-    DIALER_ENV="$DIALER_ENV
-      - muxer=$muxer"
-fi
+      - TRANSPORT=$transport
+      - LISTENER_IP=0.0.0.0
+      - DEBUG=${DEBUG:-false}"
 
 if [ "$secure" != "null" ]; then
     DIALER_ENV="$DIALER_ENV
-      - security=$secure"
+      - SECURE_CHANNEL=$secure"
+fi
+
+if [ "$muxer" != "null" ]; then
+    DIALER_ENV="$DIALER_ENV
+      - MUXER=$muxer"
 fi
 
 # Generate docker-compose file
@@ -152,18 +151,15 @@ fi
 TEST_END=$(date +%s)
 TEST_DURATION=$((TEST_END - TEST_START))
 
-# Extract metrics from log file if test passed
-handshake_ms=""
-ping_ms=""
-if [ $EXIT_CODE -eq 0 ]; then
-    # Extract JSON metrics from log (dialer outputs metrics)
-    metrics=$(grep -o '{"handshakePlusOneRTTMillis":[0-9.]*,"pingRTTMilllis":[0-9.]*}' "$LOG_FILE" 2>/dev/null | tail -1 || echo "")
+# Extract results from dialer container logs
+# Dialer outputs YAML to stdout, which appears in docker logs
+DIALER_LOGS=$($DOCKER_COMPOSE_CMD -f "$COMPOSE_FILE" logs dialer 2>/dev/null || echo "")
 
-    if [ -n "$metrics" ]; then
-        handshake_ms=$(echo "$metrics" | grep -o '"handshakePlusOneRTTMillis":[0-9.]*' | cut -d':' -f2)
-        ping_ms=$(echo "$metrics" | grep -o '"pingRTTMilllis":[0-9.]*' | cut -d':' -f2)
-    fi
-fi
+# Extract the measurement YAML (including outliers and samples arrays)
+# Docker compose prefixes each line with: "container_name  | "
+# We need to strip this prefix and keep only the YAML content
+# Match only measurement sections and their fields (not logging output)
+DIALER_YAML=$(echo "$DIALER_LOGS" | grep -E "dialer.*\| (latency:|  (handshake_plus_one_rtt|ping_rtt|unit):)" | sed 's/^.*| //' || echo "")
 
 # Save complete result to individual file
 cat > "${TEST_PASS_DIR}/results/${test_name}.yaml" <<EOF
@@ -174,10 +170,14 @@ transport: $transport
 secureChannel: $secure
 muxer: $muxer
 status: $([ $EXIT_CODE -eq 0 ] && echo "pass" || echo "fail")
-duration: ${TEST_DURATION}s
-handshakePlusOneRTTMs: ${handshake_ms:-null}
-pingRTTMs: ${ping_ms:-null}
+duration: ${TEST_DURATION}
+
+# Measurements from dialer
+$DIALER_YAML
 EOF
+
+# Proper indentation for nested YAML (add 4 spaces to measurement lines)
+INDENTED_YAML=$(echo "$DIALER_YAML" | sed 's/^/    /')
 
 # Append to combined results file with file locking
 (
@@ -191,8 +191,7 @@ EOF
     muxer: $muxer
     status: $([ $EXIT_CODE -eq 0 ] && echo "pass" || echo "fail")
     duration: ${TEST_DURATION}s
-    handshakePlusOneRTTMs: ${handshake_ms:-null}
-    pingRTTMs: ${ping_ms:-null}
+$INDENTED_YAML
 EOF
 ) 200>/tmp/results.lock
 

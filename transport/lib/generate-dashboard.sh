@@ -75,7 +75,7 @@ declare -A test_muxer_map
 # Only process tests if there are any
 if [ "$test_count" -gt 0 ]; then
     # Export all test data as TSV in one yq call (much faster than individual calls)
-    test_data=$(yq eval '.tests[] | [.name, .status, .dialer, .listener, .transport, .secureChannel, .muxer, .duration, .handshakePlusOneRTTMs // "", .pingRTTMs // ""] | @tsv' "$RESULTS_FILE")
+    test_data=$(yq eval '.tests[] | [.name, .status, .dialer, .listener, .transport, .secureChannel, .muxer, .duration, .latency.handshake_plus_one_rtt, .latency.ping_rtt] | @tsv' "$RESULTS_FILE")
 
     # Process each test and build both the table and hash maps
     while IFS=$'\t' read -r name status dialer listener transport secure muxer test_duration handshake_ms ping_ms; do

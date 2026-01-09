@@ -108,7 +108,6 @@ trap handle_shutdown INT
 #   2. Test execution parallelization (in run.sh via xargs -P)
 
 # Transport-specific variables (note: no BASELINE_IGNORE for transport)
-export BASELINE_IGNORE="${BASELINE_IGNORE:-}"
 export UPLOAD_BYTES=1073741824     # 1GB default
 export DOWNLOAD_BYTES=1073741824   # 1GB default
 export ITERATIONS=10
@@ -351,7 +350,7 @@ print_message "Force Image Rebuild: $FORCE_IMAGE_REBUILD"
 echo ""
 
 # Set up the folder structure for the output
-mkdir -p "${TEST_PASS_DIR}"/{logs,results,baseline,docker-compose}
+mkdir -p "${TEST_PASS_DIR}"/{logs,results,docker-compose}
 
 # Generate inputs.yaml to capture the current environment and command line arguments
 generate_inputs_yaml "${TEST_PASS_DIR}/inputs.yaml" "$TEST_TYPE" "${ORIGINAL_ARGS[@]}"
@@ -436,7 +435,7 @@ print_message "Total ignored: ${#ignored_main_tests[@]} tests"
 echo ""
 unindent
 
-# Get unique implementations from both baselines and main tests
+# Get unique implementations from main tests
 REQUIRED_IMAGES=$(mktemp)
 yq eval '.tests[].dialer.id' "${TEST_PASS_DIR}/test-matrix.yaml" 2>/dev/null | sort -u >> "$REQUIRED_IMAGES" || true
 yq eval '.tests[].listener.id' "${TEST_PASS_DIR}/test-matrix.yaml" 2>/dev/null | sort -u >> "$REQUIRED_IMAGES" || true
@@ -478,7 +477,7 @@ echo ""
 # Build each required implementation using pipe-separated list
 IMAGE_FILTER=$(cat "${REQUIRED_IMAGES}" | paste -sd'|' -)
 
-# Build images from both baselines and implementations
+# Build images from implementations
 build_images_from_section "implementations" "${IMAGE_FILTER}" "${FORCE_IMAGE_REBUILD}"
 
 print_success "All images built successfully"
@@ -490,8 +489,8 @@ echo ""
 # =============================================================================
 # STEP 9: RUN TESTS
 # -----------------------------------------------------------------------------
-# This starts global services (e.g. Redis), then runs the baseline tests
-# followed by the main tests and then stops the global services.
+# This starts global services (e.g. Redis), then runs the main tests and then
+# stops the global services.
 # =============================================================================
 
 # Start global services

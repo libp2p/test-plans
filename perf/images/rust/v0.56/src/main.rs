@@ -10,9 +10,9 @@ use tokio::time::Duration;
 
 use libp2p::{
     futures::StreamExt,
-    swarm::{SwarmEvent, NetworkBehaviour},
     request_response::{self, ProtocolSupport},
-    Swarm, SwarmBuilder, Multiaddr, PeerId,
+    swarm::{NetworkBehaviour, SwarmEvent},
+    Multiaddr, PeerId, Swarm, SwarmBuilder,
 };
 
 use protocol::{PerfCodec, PerfRequest, PerfResponse, PERF_PROTOCOL};
@@ -49,7 +49,14 @@ async fn main() {
     }
 }
 
-async fn run_listener(redis_addr: String, test_key: String, transport: String, secure: Option<String>, muxer: Option<String>, debug: bool) {
+async fn run_listener(
+    redis_addr: String,
+    test_key: String,
+    transport: String,
+    secure: Option<String>,
+    muxer: Option<String>,
+    _debug: bool,
+) {
     // Read LISTENER_IP from environment if set
     let listener_ip = env::var("LISTENER_IP").unwrap_or_else(|_| "0.0.0.0".to_string());
 
@@ -59,7 +66,9 @@ async fn run_listener(redis_addr: String, test_key: String, transport: String, s
     // Connect to Redis
     let redis_url = format!("redis://{}", redis_addr);
     let client = redis::Client::open(redis_url).expect("Failed to create Redis client");
-    let mut con = client.get_multiplexed_async_connection().await
+    let mut con = client
+        .get_multiplexed_async_connection()
+        .await
         .expect("Failed to connect to Redis");
 
     eprintln!("Connected to Redis at {}", redis_addr);
@@ -72,20 +81,33 @@ async fn run_listener(redis_addr: String, test_key: String, transport: String, s
 
     // Construct listen multiaddr using LISTENER_IP
     let listen_multiaddr: Multiaddr = if transport == "quic-v1" {
-        format!("/ip4/{}/udp/4001/quic-v1", listener_ip).parse().expect("Invalid multiaddr")
+        format!("/ip4/{}/udp/4001/quic-v1", listener_ip)
+            .parse()
+            .expect("Invalid multiaddr")
     } else {
-        format!("/ip4/{}/tcp/4001", listener_ip).parse().expect("Invalid multiaddr")
+        format!("/ip4/{}/tcp/4001", listener_ip)
+            .parse()
+            .expect("Invalid multiaddr")
     };
 
     eprintln!("Will listen on: {}", listen_multiaddr);
 
     // Start listening
-    let id = swarm.listen_on(listen_multiaddr.clone()).expect("Failed to listen");
+    let id = swarm
+        .listen_on(listen_multiaddr.clone())
+        .expect("Failed to listen");
 
     // Wait for listener to be ready and publish multiaddr
     loop {
-        if let Some(SwarmEvent::NewListenAddr { listener_id, address }) = swarm.next().await {
-            eprintln!("Listener_id: {listener_id}, address: {}", address.to_string());
+        if let Some(SwarmEvent::NewListenAddr {
+            listener_id,
+            address,
+        }) = swarm.next().await
+        {
+            eprintln!(
+                "Listener_id: {listener_id}, address: {}",
+                address.to_string()
+            );
             if address.to_string().contains("127.0.0.1") {
                 eprintln!("Skipping localhost address");
                 continue;
@@ -96,8 +118,13 @@ async fn run_listener(redis_addr: String, test_key: String, transport: String, s
 
                 // Publish to Redis with TEST_KEY namespacing
                 let listener_addr_key = format!("{}_listener_multiaddr", test_key);
-                let _: () = con.set(&listener_addr_key, full_multiaddr.clone()).await
-                    .expect(&format!("Failed to publish multiaddr to Redis (key: {})", listener_addr_key));
+                let _: () = con
+                    .set(&listener_addr_key, full_multiaddr.clone())
+                    .await
+                    .expect(&format!(
+                        "Failed to publish multiaddr to Redis (key: {})",
+                        listener_addr_key
+                    ));
 
                 eprintln!("Published multiaddr to Redis (key: {})", listener_addr_key);
                 break;
@@ -111,8 +138,15 @@ async fn run_listener(redis_addr: String, test_key: String, transport: String, s
     loop {
         if let Some(event) = swarm.next().await {
             match event {
-                SwarmEvent::ConnectionEstablished { peer_id, connection_id, .. } => {
-                    eprintln!("Connection established with: {} (connection: {:?})", peer_id, connection_id);
+                SwarmEvent::ConnectionEstablished {
+                    peer_id,
+                    connection_id,
+                    ..
+                } => {
+                    eprintln!(
+                        "Connection established with: {} (connection: {:?})",
+                        peer_id, connection_id
+                    );
                 }
                 SwarmEvent::ConnectionClosed { peer_id, cause, .. } => {
                     eprintln!("Connection closed with {}: {:?}", peer_id, cause);
@@ -120,23 +154,26 @@ async fn run_listener(redis_addr: String, test_key: String, transport: String, s
                 SwarmEvent::Behaviour(PerfBehaviourEvent::RequestResponse(
                     request_response::Event::Message {
                         peer,
-                        message: request_response::Message::Request {
-                            request,
-                            channel,
-                            ..
-                        }, ..
+                        message:
+                            request_response::Message::Request {
+                                request, channel, ..
+                            },
+                        ..
                     },
                 )) => {
-                    eprintln!("Received perf request from {}: send {} bytes, recv {} bytes",
-                        peer, request.send_bytes, request.recv_bytes);
+                    eprintln!(
+                        "Received perf request from {}: send {} bytes, recv {} bytes",
+                        peer, request.send_bytes, request.recv_bytes
+                    );
 
                     // Respond with the requested bytes
                     let response = PerfResponse {
-                        bytes_sent: request.recv_bytes,  // Send what client wants to receive
-                        _bytes_received: request.send_bytes,  // Track what we received
+                        bytes_sent: request.recv_bytes, // Send what client wants to receive
+                        _bytes_received: request.send_bytes, // Track what we received
                     };
 
-                    swarm.behaviour_mut()
+                    swarm
+                        .behaviour_mut()
                         .request_response
                         .send_response(channel, response)
                         .ok();
@@ -144,7 +181,7 @@ async fn run_listener(redis_addr: String, test_key: String, transport: String, s
                     eprintln!("Sent response: {} bytes", request.recv_bytes);
                 }
                 SwarmEvent::Behaviour(PerfBehaviourEvent::RequestResponse(
-                    request_response::Event::ResponseSent { peer, .. }
+                    request_response::Event::ResponseSent { peer, .. },
                 )) => {
                     eprintln!("Response sent to {}", peer);
                 }
@@ -154,23 +191,35 @@ async fn run_listener(redis_addr: String, test_key: String, transport: String, s
     }
 }
 
-async fn run_dialer(redis_addr: String, test_key: String, transport: String, secure: Option<String>, muxer: Option<String>, debug: bool) {
+async fn run_dialer(
+    redis_addr: String,
+    test_key: String,
+    transport: String,
+    secure: Option<String>,
+    muxer: Option<String>,
+    _debug: bool,
+) {
     // Read test parameters from environment
     let upload_bytes: u64 = env::var("UPLOAD_BYTES")
         .unwrap_or_else(|_| "1073741824".to_string())
-        .parse().unwrap_or(1073741824);
+        .parse()
+        .unwrap_or(1073741824);
     let download_bytes: u64 = env::var("DOWNLOAD_BYTES")
         .unwrap_or_else(|_| "1073741824".to_string())
-        .parse().unwrap_or(1073741824);
+        .parse()
+        .unwrap_or(1073741824);
     let upload_iterations: u32 = env::var("UPLOAD_ITERATIONS")
         .unwrap_or_else(|_| "10".to_string())
-        .parse().unwrap_or(10);
+        .parse()
+        .unwrap_or(10);
     let download_iterations: u32 = env::var("DOWNLOAD_ITERATIONS")
         .unwrap_or_else(|_| "10".to_string())
-        .parse().unwrap_or(10);
+        .parse()
+        .unwrap_or(10);
     let latency_iterations: u32 = env::var("LATENCY_ITERATIONS")
         .unwrap_or_else(|_| "100".to_string())
-        .parse().unwrap_or(100);
+        .parse()
+        .unwrap_or(100);
 
     eprintln!("Starting perf dialer...");
     eprintln!("UPLOAD_BYTES: {upload_bytes}");
@@ -182,7 +231,9 @@ async fn run_dialer(redis_addr: String, test_key: String, transport: String, sec
     // Connect to Redis
     let redis_url = format!("redis://{}", redis_addr);
     let client = redis::Client::open(redis_url).expect("Failed to create Redis client");
-    let mut con = client.get_multiplexed_async_connection().await
+    let mut con = client
+        .get_multiplexed_async_connection()
+        .await
         .expect("Failed to connect to Redis");
 
     eprintln!("Connected to Redis at {}", redis_addr);
@@ -191,7 +242,9 @@ async fn run_dialer(redis_addr: String, test_key: String, transport: String, sec
     let listener_addr_str = wait_for_listener(&mut con, &test_key).await;
 
     // Parse listener multiaddr
-    let listener_addr: Multiaddr = listener_addr_str.parse().expect("Invalid multiaddr from Redis");
+    let listener_addr: Multiaddr = listener_addr_str
+        .parse()
+        .expect("Invalid multiaddr from Redis");
 
     // Build libp2p swarm
     let mut swarm = build_swarm(&transport, &secure, &muxer);
@@ -204,8 +257,15 @@ async fn run_dialer(redis_addr: String, test_key: String, transport: String, sec
     // Wait for connection to be established
     let connected_peer_id = loop {
         match swarm.next().await {
-            Some(SwarmEvent::ConnectionEstablished { peer_id, connection_id, .. }) => {
-                eprintln!("Connected to listener: {} (connection: {:?})", peer_id, connection_id);
+            Some(SwarmEvent::ConnectionEstablished {
+                peer_id,
+                connection_id,
+                ..
+            }) => {
+                eprintln!(
+                    "Connected to listener: {} (connection: {:?})",
+                    peer_id, connection_id
+                );
                 break peer_id;
             }
             Some(SwarmEvent::OutgoingConnectionError { error, .. }) => {
@@ -224,15 +284,36 @@ async fn run_dialer(redis_addr: String, test_key: String, transport: String, sec
 
     // Measurement 1: Upload
     eprintln!("Running upload test ({} iterations)...", upload_iterations);
-    let upload_stats = run_measurement(&mut swarm, connected_peer_id, upload_bytes, 0, upload_iterations).await;
+    let upload_stats = run_measurement(
+        &mut swarm,
+        connected_peer_id,
+        upload_bytes,
+        0,
+        upload_iterations,
+    )
+    .await;
 
     // Measurement 2: Download
-    eprintln!("Running download test ({} iterations)...", download_iterations);
-    let download_stats = run_measurement(&mut swarm, connected_peer_id, 0, download_bytes, download_iterations).await;
+    eprintln!(
+        "Running download test ({} iterations)...",
+        download_iterations
+    );
+    let download_stats = run_measurement(
+        &mut swarm,
+        connected_peer_id,
+        0,
+        download_bytes,
+        download_iterations,
+    )
+    .await;
 
     // Measurement 3: Latency
-    eprintln!("Running latency test ({} iterations)...", latency_iterations);
-    let latency_stats = run_measurement(&mut swarm, connected_peer_id, 1, 1, latency_iterations).await;
+    eprintln!(
+        "Running latency test ({} iterations)...",
+        latency_iterations
+    );
+    let latency_stats =
+        run_measurement(&mut swarm, connected_peer_id, 1, 1, latency_iterations).await;
 
     // Output complete results as YAML to stdout
     println!("# Upload measurement");
@@ -244,18 +325,28 @@ async fn run_dialer(redis_addr: String, test_key: String, transport: String, sec
     println!("  q3: {:.2}", upload_stats.q3);
     println!("  max: {:.2}", upload_stats.max);
     if !upload_stats.outliers.is_empty() {
-        println!("  outliers: [{}]", upload_stats.outliers.iter()
-            .map(|v| format!("{:.2}", v))
-            .collect::<Vec<_>>()
-            .join(", "));
+        println!(
+            "  outliers: [{}]",
+            upload_stats
+                .outliers
+                .iter()
+                .map(|v| format!("{:.2}", v))
+                .collect::<Vec<_>>()
+                .join(", ")
+        );
     } else {
         println!("  outliers: []");
     }
     if !upload_stats.samples.is_empty() {
-        println!("  samples: [{}]", upload_stats.samples.iter()
-            .map(|v| format!("{:.2}", v))
-            .collect::<Vec<_>>()
-            .join(", "));
+        println!(
+            "  samples: [{}]",
+            upload_stats
+                .samples
+                .iter()
+                .map(|v| format!("{:.2}", v))
+                .collect::<Vec<_>>()
+                .join(", ")
+        );
     } else {
         println!("  samples: []");
     }
@@ -270,18 +361,28 @@ async fn run_dialer(redis_addr: String, test_key: String, transport: String, sec
     println!("  q3: {:.2}", download_stats.q3);
     println!("  max: {:.2}", download_stats.max);
     if !download_stats.outliers.is_empty() {
-        println!("  outliers: [{}]", download_stats.outliers.iter()
-            .map(|v| format!("{:.2}", v))
-            .collect::<Vec<_>>()
-            .join(", "));
+        println!(
+            "  outliers: [{}]",
+            download_stats
+                .outliers
+                .iter()
+                .map(|v| format!("{:.2}", v))
+                .collect::<Vec<_>>()
+                .join(", ")
+        );
     } else {
         println!("  outliers: []");
     }
     if !download_stats.samples.is_empty() {
-        println!("  samples: [{}]", download_stats.samples.iter()
-            .map(|v| format!("{:.2}", v))
-            .collect::<Vec<_>>()
-            .join(", "));
+        println!(
+            "  samples: [{}]",
+            download_stats
+                .samples
+                .iter()
+                .map(|v| format!("{:.2}", v))
+                .collect::<Vec<_>>()
+                .join(", ")
+        );
     } else {
         println!("  samples: []");
     }
@@ -296,18 +397,28 @@ async fn run_dialer(redis_addr: String, test_key: String, transport: String, sec
     println!("  q3: {:.3}", latency_stats.q3);
     println!("  max: {:.3}", latency_stats.max);
     if !latency_stats.outliers.is_empty() {
-        println!("  outliers: [{}]", latency_stats.outliers.iter()
-            .map(|v| format!("{:.3}", v))
-            .collect::<Vec<_>>()
-            .join(", "));
+        println!(
+            "  outliers: [{}]",
+            latency_stats
+                .outliers
+                .iter()
+                .map(|v| format!("{:.3}", v))
+                .collect::<Vec<_>>()
+                .join(", ")
+        );
     } else {
         println!("  outliers: []");
     }
     if !latency_stats.samples.is_empty() {
-        println!("  samples: [{}]", latency_stats.samples.iter()
-            .map(|v| format!("{:.3}", v))
-            .collect::<Vec<_>>()
-            .join(", "));
+        println!(
+            "  samples: [{}]",
+            latency_stats
+                .samples
+                .iter()
+                .map(|v| format!("{:.3}", v))
+                .collect::<Vec<_>>()
+                .join(", ")
+        );
     } else {
         println!("  samples: []");
     }
@@ -318,7 +429,10 @@ async fn run_dialer(redis_addr: String, test_key: String, transport: String, sec
 
 async fn wait_for_listener(con: &mut redis::aio::MultiplexedConnection, test_key: &str) -> String {
     let listener_addr_key = format!("{}_listener_multiaddr", test_key);
-    eprintln!("Waiting for listener multiaddr from Redis (key: {})...", listener_addr_key);
+    eprintln!(
+        "Waiting for listener multiaddr from Redis (key: {})...",
+        listener_addr_key
+    );
     for _ in 0..30 {
         if let Ok(Some(addr)) = con.get::<_, Option<String>>(&listener_addr_key).await {
             eprintln!("Got listener multiaddr (key: {})", listener_addr_key);
@@ -326,7 +440,10 @@ async fn wait_for_listener(con: &mut redis::aio::MultiplexedConnection, test_key
         }
         tokio::time::sleep(Duration::from_millis(500)).await;
     }
-    panic!("Timeout waiting for listener multiaddr (key: {})", listener_addr_key);
+    panic!(
+        "Timeout waiting for listener multiaddr (key: {})",
+        listener_addr_key
+    );
 }
 
 struct Stats {
@@ -368,10 +485,12 @@ async fn run_measurement(
             match swarm.next().await {
                 Some(SwarmEvent::Behaviour(PerfBehaviourEvent::RequestResponse(
                     request_response::Event::Message {
-                        message: request_response::Message::Response {
-                            request_id: id,
-                            response,
-                        }, ..
+                        message:
+                            request_response::Message::Response {
+                                request_id: id,
+                                response,
+                            },
+                        ..
                     },
                 ))) if id == request_id => {
                     break Some(response);
@@ -405,7 +524,10 @@ async fn run_measurement(
         } else {
             // Latency in milliseconds
             let converted = elapsed * 1000.0;
-            eprintln!("DEBUG: Latency - elapsed={:.6}s, converted={:.3}ms", elapsed, converted);
+            eprintln!(
+                "DEBUG: Latency - elapsed={:.6}s, converted={:.3}ms",
+                elapsed, converted
+            );
             converted
         };
 
@@ -433,7 +555,8 @@ async fn run_measurement(
     let upper_fence = q3 + 1.5 * iqr;
 
     // Separate outliers from non-outliers
-    let (outliers, non_outliers): (Vec<f64>, Vec<f64>) = values.iter()
+    let (outliers, non_outliers): (Vec<f64>, Vec<f64>) = values
+        .iter()
         .partition(|&&v| v < lower_fence || v > upper_fence);
 
     // Calculate min/max from non-outliers (if any exist)
@@ -444,7 +567,15 @@ async fn run_measurement(
         (values[0], values[n - 1])
     };
 
-    Stats { min, q1, median, q3, max, outliers, samples: values }
+    Stats {
+        min,
+        q1,
+        median,
+        q3,
+        max,
+        outliers,
+        samples: values,
+    }
 }
 
 // Helper function to calculate percentile
@@ -463,7 +594,11 @@ fn percentile(sorted_values: &[f64], p: f64) -> f64 {
 }
 
 // Build libp2p swarm with specified transport, security, and muxer
-fn build_swarm(transport: &str, _secure: &Option<String>, _muxer: &Option<String>) -> Swarm<PerfBehaviour> {
+fn build_swarm(
+    transport: &str,
+    _secure: &Option<String>,
+    _muxer: &Option<String>,
+) -> Swarm<PerfBehaviour> {
     let local_key = libp2p::identity::Keypair::generate_ed25519();
 
     // Create perf behaviour
@@ -472,10 +607,7 @@ fn build_swarm(transport: &str, _secure: &Option<String>, _muxer: &Option<String
         let cfg = request_response::Config::default();
 
         PerfBehaviour {
-            request_response: request_response::Behaviour::new(
-                protocols,
-                cfg,
-            ),
+            request_response: request_response::Behaviour::new(protocols, cfg),
         }
     };
 

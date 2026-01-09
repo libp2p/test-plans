@@ -73,6 +73,8 @@ implementations:
       repo: libp2p/rust-libp2p
       commit: 70082df7e6181722630eabc5de5373733aac9a21
       dockerfile: interop-tests/Dockerfile.native
+      patchPath: images/rust/v0.56
+      patchFile: transport-fix.patch
     transports: [ws, tcp, quic-v1, webrtc-direct]
     secureChannels: [tls, noise]
     muxers: [mplex, yamux]
