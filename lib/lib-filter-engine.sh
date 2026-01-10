@@ -5,7 +5,7 @@
 # Source formatting library if not already loaded
 if ! type indent &>/dev/null; then
   _this_script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  source "$_this_script_dir/lib-output-formatting.sh"
+  source "${_this_script_dir}/lib-output-formatting.sh"
 fi
 
 # Prints a filter expansion
@@ -15,10 +15,10 @@ fi
 #   $3: name - The name of the filter string (e.g. "Test select")
 #   $4: empty - The string to display if the filter was not given (e.g. "No test-select specified (will include all implementations)")
 print_filter_expansion() {
-  local orig_var=$1
-  local exp_var=$2
-  local name=$3
-  local empty=$4
+  local orig_var="${1}"
+  local exp_var="${2}"
+  local name="${3}"
+  local empty="${4}"
 
   if [ -n "${!orig_var}" ]; then
     print_message "${name}: ${!orig_var}"
@@ -33,9 +33,9 @@ print_filter_expansion() {
 }
 
 _resolve_alias() {
-  local alias_name=$1
-  local -n processed_aliases_ref=$2
-  local -n value_ref=$3
+  local alias_name="${1}"
+  local -n processed_aliases_ref="${2}"
+  local -n value_ref="${3}"
 
   print_debug "_resolve_alias()"
   indent
@@ -69,10 +69,10 @@ _resolve_alias() {
 }
 
 _expand_recursive() {
-  local filter_string=$1
-  local -n all_names_ref=$2
-  local -n processed_aliases_ref=$3
-  local -n result_parts_ref=$4
+  local filter_string="${1}"
+  local -n all_names_ref="${2}"
+  local -n processed_aliases_ref="${3}"
+  local -n result_parts_ref="${4}"
 
   print_debug "_expand_recursive()"
   indent
@@ -80,10 +80,10 @@ _expand_recursive() {
   local rp=$(printf '%s\n' "${result_parts_ref[@]}" | paste -sd'|')
   print_debug "result_parts_ref = ${rp}"
 
-  IFS='|' read -ra parts <<< "$filter_string"
+  IFS='|' read -ra parts <<< "${filter_string}"
   for part in "${parts[@]}"; do
     # Skip empty parts
-    [ -z "$part" ] && continue
+    [ -z "${part}" ] && continue
 
     # Remove shell escaping from ! if present
     part="${part#\\}"
@@ -91,12 +91,12 @@ _expand_recursive() {
     print_debug "part: ${part}"
     indent
 
-    if [[ "$part" =~ ^!~(.+)$ ]]; then
+    if [[ "${part}" =~ ^!~(.+)$ ]]; then
       # Inverted alias: !~alias
       # Step 1: Recursively expand the alias
       local alias_name="${BASH_REMATCH[1]}"
       local value=""
-      _resolve_alias "$alias_name" "${!processed_aliases_ref}" value || {
+      _resolve_alias "${alias_name}" "${!processed_aliases_ref}" value || {
         unindent
         unindent
         return 1
@@ -133,8 +133,8 @@ _expand_recursive() {
       for name in "${all_names_ref[@]}"; do
         local matches_any=false
         for pattern in "${expanded_parts[@]}"; do
-          case "$name" in
-            *"$pattern"*)
+          case "${name}" in
+            *"${pattern}"*)
               matches_any=true
               #print_debug "${name} match...excluding"
               break
@@ -143,7 +143,7 @@ _expand_recursive() {
         done
 
         # If name does NOT match any pattern, include it
-        if [ "$matches_any" == "false" ]; then
+        if [ "${matches_any}" == "false" ]; then
           #print_debug "${name} no match...including"
           local rp=$(printf '%s\n' "${result_parts_ref[@]}" | paste -sd'|')
           print_debug "${rp} += ${name}"
@@ -157,7 +157,7 @@ _expand_recursive() {
       print_debug "result_parts_ref = ${rp}"
       print_debug "expanded_parts = ${ep}"
 
-    elif [[ "$part" =~ ^~(.+)$ ]]; then
+    elif [[ "${part}" =~ ^~(.+)$ ]]; then
       # Regular alias: ~alias
       local alias_name="${BASH_REMATCH[1]}"
       local value=""
@@ -174,14 +174,14 @@ _expand_recursive() {
         return 1
       }
 
-    elif [[ "$part" =~ ^!(.+)$ ]]; then
+    elif [[ "${part}" =~ ^!(.+)$ ]]; then
       # Inverted value: !pattern
       # Expand to all names that DON'T contain the pattern
       local pattern="${BASH_REMATCH[1]}"
 
       for name in "${all_names_ref[@]}"; do
-        case "$name" in
-          *"$pattern"*)
+        case "${name}" in
+          *"${pattern}"*)
             # Match found, skip this name
             ;;
           *)
@@ -219,8 +219,8 @@ _expand_recursive() {
 #   all_names=("rust-v0.56" "go-v0.45" "python-v0.4")
 #   result=$(expand_filter_string "~rust|!go" all_names)
 expand_filter_string() {
-  local filter_string="$1"
-  local -n all_names_ref=$2  # Name reference to array
+  local filter_string="${1}"
+  local -n all_names_ref="${2}"  # Name reference to array
 
   print_debug "expand_filter_string()"
   indent
@@ -229,20 +229,20 @@ expand_filter_string() {
   print_debug "all_names_ref = ${all_names}"
 
   # Empty filter returns empty
-  if [ -z "$filter_string" ]; then
+  if [ -z "${filter_string}" ]; then
     unindent
     return 0
   fi
 
   local result_parts=()
   local processed_aliases=""
-  _expand_recursive "$filter_string" "${!all_names_ref}" processed_aliases result_parts || {
+  _expand_recursive "${filter_string}" "${!all_names_ref}" processed_aliases result_parts || {
     unindent
     return 1
   }
 
   # Deduplicate and join
-  if [ ${#result_parts[@]} -eq 0 ]; then
+  if [ "${#result_parts[@]}" -eq 0 ]; then
     result=""
   else
     result=$(printf '%s\n' "${result_parts[@]}" | sort -u | paste -sd'|')
@@ -262,17 +262,17 @@ expand_filter_string() {
 # Usage:
 #   filter_matches "rust-v0.56" "rust|go" && echo "matches"
 filter_matches() {
-  local name="$1"
-  local filter_string="$2"
+  local name="${1}"
+  local filter_string="${2}"
 
   # Empty filter matches nothing (return false)
-  [ -z "$filter_string" ] && return 1
+  [ -z "${filter_string}" ] && return 1
 
-  IFS='|' read -ra patterns <<< "$filter_string"
+  IFS='|' read -ra patterns <<< "${filter_string}"
   for pattern in "${patterns[@]}"; do
-    [ -z "$pattern" ] && continue
-    case "$name" in
-      *"$pattern"*)
+    [ -z "${pattern}" ] && continue
+    case "${name}" in
+      *"${pattern}"*)
         return 0
         ;;
     esac
@@ -294,13 +294,13 @@ filter_matches() {
 #   ignore_filter="v0.56|v0.45"
 #   Returns: rust-v0.55
 filter() {
-  local -n input_ids_ref=$1
-  local ignore_filter=$2
+  local -n input_ids_ref="${1}"
+  local ignore_filter="${2}"
   local selected=("${input_ids_ref[@]}")
 
   # Apply IGNORE filter
   local final=()
-  if [ -z "$ignore_filter" ]; then
+  if [ -z "${ignore_filter}" ]; then
     # No ignore filter, include all selected ids
     final=("${selected[@]}")
   else

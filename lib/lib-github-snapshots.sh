@@ -5,7 +5,7 @@
 # Source formatting library if not already loaded
 if ! type indent &>/dev/null; then
   _this_script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  source "$_this_script_dir/lib-output-formatting.sh"
+  source "${_this_script_dir}/lib-output-formatting.sh"
 fi
 
 # Get list of required GitHub sources from images.yaml
@@ -46,28 +46,28 @@ validate_github_sources_cached() {
   local missing_count=0
 
   while IFS=$'\t' read -r commit repo requires_submodules; do
-    local repo_name=$(basename "$repo")
+    local repo_name=$(basename "${repo}")
 
-    if [ "$requires_submodules" == "true" ]; then
+    if [ "${requires_submodules}" == "true" ]; then
       # Check for git clone
-      local git_dir="$cache_dir/git-repo/${repo_name}-${commit}"
-      if [ ! -d "$git_dir" ]; then
+      local git_dir="${cache_dir}/git-repo/${repo_name}-${commit}"
+      if [ ! -d "${git_dir}" ]; then
         print_error "Missing git clone: ${repo_name}-${commit:0:8} (requires submodules)" >&2
         missing=true
-        missing_count=$((missing_count + 1))
+        missing_count=$((${missing_count} + 1))
       fi
     else
       # Check for zip snapshot
-      if [ ! -f "$cache_dir/snapshots/${commit}.zip" ]; then
+      if [ ! -f "${cache_dir}/snapshots/${commit}.zip" ]; then
         print_error "Missing ZIP snapshot: ${commit:0:8}" >&2
         missing=true
-        missing_count=$((missing_count + 1))
+        missing_count=$((${missing_count} + 1))
       fi
     fi
   done < <(get_required_github_sources)
 
-  if [ "$missing" == "true" ]; then
-    print_error "Total missing sources: $missing_count" >&2
+  if [ "${missing}" == "true" ]; then
+    print_error "Total missing sources: ${missing_count}" >&2
     return 1
   fi
 
@@ -85,49 +85,49 @@ copy_github_sources_to_snapshot() {
   local cache_dir="$2"
   indent
 
-  mkdir -p "$snapshot_dir/snapshots"
-  mkdir -p "$snapshot_dir/git-repos"
+  mkdir -p "${snapshot_dir}/snapshots"
+  mkdir -p "${snapshot_dir}/git-repos"
 
   local copied_zips=0
   local copied_git=0
   local missing=0
 
   while IFS=$'\t' read -r commit repo requires_submodules; do
-    local repo_name=$(basename "$repo")
+    local repo_name=$(basename "${repo}")
 
-    if [ "$requires_submodules" == "true" ]; then
+    if [ "${requires_submodules}" == "true" ]; then
       # Copy git clone (includes submodules)
-      local git_dir="$cache_dir/git-repo/${repo_name}-${commit}"
-      if [ -d "$git_dir" ]; then
-        cp -r "$git_dir" "$snapshot_dir/git-repo/"
-        copied_git=$((copied_git + 1))
+      local git_dir="${cache_dir}/git-repo/${repo_name}-${commit}"
+      if [ -d "${git_dir}" ]; then
+        cp -r "${git_dir}" "${snapshot_dir}/git-repo/"
+        copied_git=$((${copied_git} + 1))
       else
-        print_error "Warning: Missing git clone for $repo_name (commit: ${commit:0:8})"
-        missing=$((missing + 1))
+        print_error "Warning: Missing git clone for ${repo_name} (commit: ${commit:0:8})"
+        missing=$((${missing} + 1))
       fi
     else
       # Copy ZIP snapshot
-      if [ -f "$cache_dir/snapshots/${commit}.zip" ]; then
-        cp "$cache_dir/snapshots/${commit}.zip" "$snapshot_dir/snapshots/"
-        copied_zips=$((copied_zips + 1))
+      if [ -f "${cache_dir}/snapshots/${commit}.zip" ]; then
+        cp "${cache_dir}/snapshots/${commit}.zip" "${snapshot_dir}/snapshots/"
+        copied_zips=$((${copied_zips} + 1))
       else
         print_error "Warning: Missing ZIP snapshot for commit ${commit:0:8}"
-        missing=$((missing + 1))
+        missing=$((${missing} + 1))
       fi
     fi
   done < <(get_required_github_sources)
 
   # Report results
-  if [ $copied_zips -gt 0 ]; then
-    print_success "Copied $copied_zips ZIP snapshots"
+  if [ ${copied_zips} -gt 0 ]; then
+    print_success "Copied ${copied_zips} ZIP snapshots"
   fi
 
-  if [ $copied_git -gt 0 ]; then
-    print_success "Copied $copied_git git clones (with submodules)"
+  if [ ${copied_git} -gt 0 ]; then
+    print_success "Copied ${copied_git} git clones (with submodules)"
   fi
 
-  if [ $missing -gt 0 ]; then
-    print_error "Warning: $missing sources missing from cache"
+  if [ ${missing} -gt 0 ]; then
+    print_error "Warning: ${missing} sources missing from cache"
     unindent
     return 1
   fi
@@ -146,31 +146,31 @@ prepare_git_clones_for_build() {
   local cache_dir="$2"
 
   # Check if git-repos/ exists in snapshot
-  if [ ! -d "$snapshot_dir/git-repos" ]; then
+  if [ ! -d "${snapshot_dir}/git-repos" ]; then
     return 0  # No git clones, nothing to do
   fi
 
-  local git_dirs=$(ls -d "$snapshot_dir/git-repo/"*/ 2>/dev/null || echo "")
-  if [ -z "$git_dirs" ]; then
+  local git_dirs=$(ls -d "${snapshot_dir}/git-repo/"*/ 2>/dev/null || echo "")
+  if [ -z "${git_dirs}" ]; then
     return 0  # Empty directory
   fi
 
   # Create cache git-repos directory
-  mkdir -p "$cache_dir/git-repos"
+  mkdir -p "${cache_dir}/git-repos"
 
   local copied=0
-  for git_dir in $git_dirs; do
-    local dir_name=$(basename "$git_dir")
+  for git_dir in ${git_dirs}; do
+    local dir_name=$(basename "${git_dir}")
 
     # Only copy if not already in cache
-    if [ ! -d "$cache_dir/git-repo/$dir_name" ]; then
-      cp -r "$git_dir" "$cache_dir/git-repo/"
-      copied=$((copied + 1))
+    if [ ! -d "${cache_dir}/git-repo/${dir_name}" ]; then
+      cp -r "${git_dir}" "${cache_dir}/git-repo/"
+      copied=$((${copied} + 1))
     fi
   done
 
-  if [ $copied -gt 0 ]; then
-    print_success "Prepared $copied git clones for building"
+  if [ ${copied} -gt 0 ]; then
+    print_success "Prepared ${copied} git clones for building"
   fi
 
   return 0
@@ -186,31 +186,31 @@ prepare_zip_snapshots_for_build() {
   local cache_dir="$2"
 
   # Check if snapshots/ exists
-  if [ ! -d "$snapshot_dir/snapshots" ]; then
+  if [ ! -d "${snapshot_dir}/snapshots" ]; then
     return 0
   fi
 
-  local zip_files=$(ls "$snapshot_dir/snapshots/"*.zip 2>/dev/null || echo "")
-  if [ -z "$zip_files" ]; then
+  local zip_files=$(ls "${snapshot_dir}/snapshots/"*.zip 2>/dev/null || echo "")
+  if [ -z "${zip_files}" ]; then
     return 0
   fi
 
   # Create cache snapshots directory
-  mkdir -p "$cache_dir/snapshots"
+  mkdir -p "${cache_dir}/snapshots"
 
   local copied=0
-  for zip_file in $zip_files; do
-    local zip_name=$(basename "$zip_file")
+  for zip_file in ${zip_files}; do
+    local zip_name=$(basename "${zip_file}")
 
     # Only copy if not already in cache
-    if [ ! -f "$cache_dir/snapshots/$zip_name" ]; then
-      cp "$zip_file" "$cache_dir/snapshots/"
-      copied=$((copied + 1))
+    if [ ! -f "${cache_dir}/snapshots/${zip_name}" ]; then
+      cp "${zip_file}" "${cache_dir}/snapshots/"
+      copied=$((${copied} + 1))
     fi
   done
 
-  if [ $copied -gt 0 ]; then
-    print_success "Prepared $copied ZIP snapshots for building"
+  if [ ${copied} -gt 0 ]; then
+    print_success "Prepared ${copied} ZIP snapshots for building"
   fi
 
   return 0
@@ -230,35 +230,35 @@ validate_snapshot_github_sources() {
   local found_gits=0
 
   while IFS=$'\t' read -r commit repo requires_submodules; do
-    local repo_name=$(basename "$repo")
+    local repo_name=$(basename "${repo}")
 
-    if [ "$requires_submodules" == "true" ]; then
-      expected_gits=$((expected_gits + 1))
+    if [ "${requires_submodules}" == "true" ]; then
+      expected_gits=$((${expected_gits} + 1))
       # Check for git clone in snapshot
-      if [ -d "$snapshot_dir/git-repo/${repo_name}-${commit}" ]; then
-        found_gits=$((found_gits + 1))
+      if [ -d "${snapshot_dir}/git-repo/${repo_name}-${commit}" ]; then
+        found_gits=$((${found_gits} + 1))
       else
         print_error "Missing git clone in snapshot: ${repo_name}-${commit:0:8}" >&2
         missing=true
       fi
     else
-      expected_zips=$((expected_zips + 1))
+      expected_zips=$((${expected_zips} + 1))
       # Check for ZIP in snapshot
-      if [ -f "$snapshot_dir/snapshots/${commit}.zip" ]; then
-        found_zips=$((found_zips + 1))
+      if [ -f "${snapshot_dir}/snapshots/${commit}.zip" ]; then
+        found_zips=$((${found_zips} + 1))
       else
         print_error "Missing ZIP in snapshot: ${commit:0:8}" >&2
         missing=true
       fi
     fi
-  done < <(cd "$snapshot_dir" && get_required_github_sources)
+  done < <(cd "${snapshot_dir}" && get_required_github_sources)
 
-  if [ "$missing" == "true" ]; then
-    print_error "Snapshot incomplete: found $found_zips/$expected_zips ZIPs, $found_gits/$expected_gits git clones" >&2
+  if [ "${missing}" == "true" ]; then
+    print_error "Snapshot incomplete: found ${found_zips}/${expected_zips} ZIPs, ${found_gits}/${expected_gits} git clones" >&2
     return 1
   fi
 
-  print_success "Snapshot has all sources: $found_zips ZIPs, $found_gits git clones"
+  print_success "Snapshot has all sources: ${found_zips} ZIPs, ${found_gits} git clones"
   return 0
 }
 
@@ -276,47 +276,47 @@ download_missing_github_sources() {
   local FAILED=0
 
   while IFS=$'\t' read -r commit repo requires_submodules; do
-    local repo_name=$(basename "$repo")
+    local repo_name=$(basename "${repo}")
 
-    if [ "$requires_submodules" == "true" ]; then
+    if [ "${requires_submodules}" == "true" ]; then
       # Handle git clone
-      if [ "$source_type" == "all" ] || [ "$source_type" == "git" ]; then
-        local git_dir="$cache_dir/git-repo/${repo_name}-${commit}"
-        if [ ! -d "$git_dir" ]; then
-          print_message "Cloning $repo (commit: ${commit:0:8}) with submodules..."
+      if [ "${source_type}" == "all" ] || [ "${source_type}" == "git" ]; then
+        local git_dir="${cache_dir}/git-repo/${repo_name}-${commit}"
+        if [ ! -d "${git_dir}" ]; then
+          print_message "Cloning ${repo} (commit: ${commit:0:8}) with submodules..."
 
           # Use the existing clone_github_repo_with_submodules from lib-image-building.sh
           # This requires lib-image-building.sh to be sourced
           if type clone_github_repo_with_submodules &>/dev/null; then
-            if clone_github_repo_with_submodules "$repo" "$commit" "$cache_dir" >/dev/null 2>&1; then
-              downloaded_gits=$((downloaded_gits + 1))
+            if clone_github_repo_with_submodules "${repo}" "${commit}" "${cache_dir}" >/dev/null 2>&1; then
+              downloaded_gits=$((${downloaded_gits} + 1))
             else
-              print_error "Failed to clone $repo" >&2
-              FAILED=$((FAILED + 1))
+              print_error "Failed to clone ${repo}" >&2
+              FAILED=$((${FAILED} + 1))
             fi
           else
             print_error "clone_github_repo_with_submodules not available (source lib-image-building.sh)"
-            FAILED=$((FAILED + 1))
+            FAILED=$((${FAILED} + 1))
           fi
         fi
       fi
     else
       # Handle ZIP download
-      if [ "$source_type" == "all" ] || [ "$source_type" == "zip" ]; then
-        if [ ! -f "$cache_dir/snapshots/${commit}.zip" ]; then
-          print_message "Downloading $repo (commit: ${commit:0:8}) as ZIP..."
+      if [ "${source_type}" == "all" ] || [ "${source_type}" == "zip" ]; then
+        if [ ! -f "${cache_dir}/snapshots/${commit}.zip" ]; then
+          print_message "Downloading ${repo} (commit: ${commit:0:8}) as ZIP..."
 
           # Use the existing download_github_snapshot from lib-image-building.sh
           if type download_github_snapshot &>/dev/null; then
-            if download_github_snapshot "$repo" "$commit" "$cache_dir" >/dev/null 2>&1; then
-              downloaded_zips=$((downloaded_zips + 1))
+            if download_github_snapshot "${repo}" "${commit}" "${cache_dir}" >/dev/null 2>&1; then
+              downloaded_zips=$((${downloaded_zips} + 1))
             else
               print_error "Failed to download ZIP for ${commit:0:8}" >&2
-              FAILED=$((FAILED + 1))
+              FAILED=$((${FAILED} + 1))
             fi
           else
             print_error "download_github_snapshot not available (source lib-image-building.sh)" >&2
-            FAILED=$((FAILED + 1))
+            FAILED=$((${FAILED} + 1))
           fi
         fi
       fi
@@ -324,16 +324,16 @@ download_missing_github_sources() {
   done < <(get_required_github_sources)
 
   # Report results
-  if [ $downloaded_zips -gt 0 ]; then
-    print_success "Downloaded $downloaded_zips ZIP snapshots"
+  if [ ${downloaded_zips} -gt 0 ]; then
+    print_success "Downloaded ${downloaded_zips} ZIP snapshots"
   fi
 
-  if [ $downloaded_gits -gt 0 ]; then
-    print_success "Cloned $downloaded_gits repositories with submodules"
+  if [ ${downloaded_gits} -gt 0 ]; then
+    print_success "Cloned ${downloaded_gits} repositories with submodules"
   fi
 
-  if [ $FAILED -gt 0 ]; then
-    print_error "Failed to download $FAILED sources" >&2
+  if [ ${FAILED} -gt 0 ]; then
+    print_error "Failed to download ${FAILED} sources" >&2
     return 1
   fi
 
@@ -350,15 +350,15 @@ count_github_sources_in_snapshot() {
   local zip_count=0
   local git_count=0
 
-  if [ -d "$snapshot_dir/snapshots" ]; then
-    zip_count=$(ls -1 "$snapshot_dir/snapshots/"*.zip 2>/dev/null | wc -l)
+  if [ -d "${snapshot_dir}/snapshots" ]; then
+    zip_count=$(ls -1 "${snapshot_dir}/snapshots/"*.zip 2>/dev/null | wc -l)
   fi
 
-  if [ -d "$snapshot_dir/git-repos" ]; then
-    git_count=$(ls -d "$snapshot_dir/git-repo/"*/ 2>/dev/null | wc -l)
+  if [ -d "${snapshot_dir}/git-repos" ]; then
+    git_count=$(ls -d "${snapshot_dir}/git-repo/"*/ 2>/dev/null | wc -l)
   fi
 
-  echo "zip:$zip_count git:$git_count"
+  echo "zip:${zip_count} git:${git_count}"
 }
 
 # Check if implementation requires git clone (has submodules)
@@ -369,10 +369,10 @@ impl_requires_git_clone() {
   local impl_id="$1"
 
   local requires=$(yq eval ".implementations[] |
-    select(.id == \"$impl_id\") |
+    select(.id == \"${impl_id}\") |
     .source.requiresSubmodules // false" images.yaml)
 
-  [ "$requires" == "true" ]
+  [ "${requires}" == "true" ]
 }
 
 # Get source type for implementation
@@ -383,17 +383,17 @@ get_impl_source_type() {
   local impl_id="$1"
 
   local source_type=$(yq eval ".implementations[] |
-    select(.id == \"$impl_id\") |
+    select(.id == \"${impl_id}\") |
     .source.type" images.yaml)
 
-  if [ "$source_type" == "github" ]; then
-    if impl_requires_git_clone "$impl_id"; then
+  if [ "${source_type}" == "github" ]; then
+    if impl_requires_git_clone "${impl_id}"; then
       echo "git"
     else
       echo "zip"
     fi
   else
-    echo "$source_type"
+    echo "${source_type}"
   fi
 }
 
@@ -404,26 +404,26 @@ get_impl_source_type() {
 verify_git_submodules() {
   local git_clone_dir="$1"
 
-  if [ ! -d "$git_clone_dir" ]; then
+  if [ ! -d "${git_clone_dir}" ]; then
     return 1
   fi
 
   # Check if .gitmodules exists
-  if [ ! -f "$git_clone_dir/.gitmodules" ]; then
+  if [ ! -f "${git_clone_dir}/.gitmodules" ]; then
     return 0  # No submodules defined, that's okay
   fi
 
   # Check if submodules are initialized (look for .git/modules/)
-  if [ -d "$git_clone_dir/.git/modules" ]; then
+  if [ -d "${git_clone_dir}/.git/modules" ]; then
     return 0  # Submodules initialized
   fi
 
   # Alternative check: see if submodule directories have content
-  local submodule_count=$(git -C "$git_clone_dir" config --file .gitmodules --get-regexp path | wc -l)
-  if [ $submodule_count -gt 0 ]; then
+  local submodule_count=$(git -C "${git_clone_dir}" config --file .gitmodules --get-regexp path | wc -l)
+  if [ ${submodule_count} -gt 0 ]; then
     # Check if first submodule directory has files
-    local first_submodule=$(git -C "$git_clone_dir" config --file .gitmodules --get-regexp path | head -1 | { read first second rest; echo "$second"; })
-    if [ -d "$git_clone_dir/$first_submodule" ] && [ "$(ls -A "$git_clone_dir/$first_submodule" 2>/dev/null)" ]; then
+    local first_submodule=$(git -C "${git_clone_dir}" config --file .gitmodules --get-regexp path | head -1 | { read first second rest; echo "${second}"; })
+    if [ -d "${git_clone_dir}/${first_submodule}" ] && [ "$(ls -A "${git_clone_dir}/${first_submodule}" 2>/dev/null)" ]; then
       return 0  # Submodule has content
     fi
   fi
@@ -440,9 +440,9 @@ list_github_sources_in_snapshot() {
 
   print_message "ZIP Snapshots:"
   indent
-  if [ -d "$snapshot_dir/snapshots" ]; then
-    ls -1 "$snapshot_dir/snapshots/"*.zip 2>/dev/null | while read -r zip_file; do
-    local zip_name=$(basename "$zip_file")
+  if [ -d "${snapshot_dir}/snapshots" ]; then
+    ls -1 "${snapshot_dir}/snapshots/"*.zip 2>/dev/null | while read -r zip_file; do
+    local zip_name=$(basename "${zip_file}")
     local commit="${zip_name%.zip}"
     print_message "${commit:0:8}.zip"
   done
@@ -452,14 +452,14 @@ list_github_sources_in_snapshot() {
 
   print_message "Git Clones (with submodules):"
   indent
-  if [ -d "$snapshot_dir/git-repos" ]; then
-    ls -d "$snapshot_dir/git-repo/"*/ 2>/dev/null | while read -r git_dir; do
-    local dir_name=$(basename "$git_dir")
+  if [ -d "${snapshot_dir}/git-repos" ]; then
+    ls -d "${snapshot_dir}/git-repo/"*/ 2>/dev/null | while read -r git_dir; do
+    local dir_name=$(basename "${git_dir}")
     local has_submodules="no"
-    if [ -f "$git_dir/.gitmodules" ]; then
+    if [ -f "${git_dir}/.gitmodules" ]; then
       has_submodules="yes"
     fi
-    print_message "$dir_name (submodules: $has_submodules)"
+    print_message "${dir_name} (submodules: ${has_submodules})"
   done
   fi
   unindent
@@ -475,15 +475,15 @@ get_github_sources_summary() {
   local zip_cached=0
   local git_cached=0
 
-  if [ -d "$cache_dir/snapshots" ]; then
-    zip_cached=$(ls -1 "$cache_dir/snapshots/"*.zip 2>/dev/null | wc -l)
+  if [ -d "${cache_dir}/snapshots" ]; then
+    zip_cached=$(ls -1 "${cache_dir}/snapshots/"*.zip 2>/dev/null | wc -l)
   fi
 
-  if [ -d "$cache_dir/git-repos" ]; then
-    git_cached=$(ls -d "$cache_dir/git-repo/"*/ 2>/dev/null | wc -l)
+  if [ -d "${cache_dir}/git-repos" ]; then
+    git_cached=$(ls -d "${cache_dir}/git-repo/"*/ 2>/dev/null | wc -l)
   fi
 
-  echo "Cached: $zip_cached ZIPs, $git_cached git clones"
+  echo "Cached: ${zip_cached} ZIPs, ${git_cached} git clones"
 }
 
 # Clean up empty source directories in snapshot
@@ -493,12 +493,12 @@ cleanup_empty_source_dirs() {
   local snapshot_dir="$1"
 
   # Remove empty snapshots/ directory
-  if [ -d "$snapshot_dir/snapshots" ] && [ ! "$(ls -A "$snapshot_dir/snapshots" 2>/dev/null)" ]; then
-    rmdir "$snapshot_dir/snapshots"
+  if [ -d "${snapshot_dir}/snapshots" ] && [ ! "$(ls -A "${snapshot_dir}/snapshots" 2>/dev/null)" ]; then
+    rmdir "${snapshot_dir}/snapshots"
   fi
 
   # Remove empty git-repos/ directory
-  if [ -d "$snapshot_dir/git-repos" ] && [ ! "$(ls -A "$snapshot_dir/git-repos" 2>/dev/null)" ]; then
-    rmdir "$snapshot_dir/git-repos"
+  if [ -d "${snapshot_dir}/git-repos" ] && [ ! "$(ls -A "${snapshot_dir}/git-repos" 2>/dev/null)" ]; then
+    rmdir "${snapshot_dir}/git-repos"
   fi
 }

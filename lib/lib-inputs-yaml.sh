@@ -4,7 +4,7 @@
 # Source formatting library if not already loaded
 if ! type indent &>/dev/null; then
   _this_script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  source "$_this_script_dir/lib-output-formatting.sh"
+  source "${_this_script_dir}/lib-output-formatting.sh"
 fi
 
 # Generate inputs.yaml file capturing all test run configuration
@@ -20,47 +20,47 @@ generate_inputs_yaml() {
     shift 2
     local original_args=("$@")
 
-    cat > "$output_file" <<EOF
-# Generated inputs.yaml for a "$test_type" test run
+    cat > "${output_file}" <<EOF
+# Generated inputs.yaml for a "${test_type}" test run
 # This file captures all configuration for reproducibility
 # Created: $(date -u +%Y-%m-%dT%H:%M:%SZ)
 
-testType: $test_type
+testType: ${test_type}
 
 commandLineArgs:
 EOF
 
     # Add command line arguments
     for arg in "${original_args[@]}"; do
-        echo "  - \"$arg\"" >> "$output_file"
+        echo "  - \"${arg}\"" >> "${output_file}"
     done
 
-    cat >> "$output_file" <<EOF
+    cat >> "${output_file}" <<EOF
 
 environmentVariables:
-  IMAGES_YAML: "$IMAGES_YAML"
-  CACHE_DIR: "$CACHE_DIR"
-  TEST_RUN_DIR: "$TEST_RUN_DIR"
-  SCRIPT_DIR: "$SCRIPT_DIR"
-  SCRIPT_LIB_DIR: "$SCRIPT_LIB_DIR"
-  DEBUG: "$DEBUG"
-  WORKER_COUNT: "$WORKER_COUNT"
-  TEST_IGNORE: "$TEST_IGNORE"
-  TRANSPORT_IGNORE: "$TRANSPORT_IGNORE"
-  SECURE_IGNORE: "$SECURE_IGNORE"
-  MUXER_IGNORE: "$MUXER_IGNORE"
-  FORCE_MATRIX_REBUILD: "$FORCE_MATRIX_REBUILD"
-  FORCE_IMAGE_REBUILD: "$FORCE_IMAGE_REBUILD"
+  IMAGES_YAML: "${IMAGES_YAML}"
+  CACHE_DIR: "${CACHE_DIR}"
+  TEST_RUN_DIR: "${TEST_RUN_DIR}"
+  SCRIPT_DIR: "${SCRIPT_DIR}"
+  SCRIPT_LIB_DIR: "${SCRIPT_LIB_DIR}"
+  DEBUG: "${DEBUG}"
+  WORKER_COUNT: "${WORKER_COUNT}"
+  TEST_IGNORE: "${TEST_IGNORE}"
+  TRANSPORT_IGNORE: "${TRANSPORT_IGNORE}"
+  SECURE_IGNORE: "${SECURE_IGNORE}"
+  MUXER_IGNORE: "${MUXER_IGNORE}"
+  FORCE_MATRIX_REBUILD: "${FORCE_MATRIX_REBUILD}"
+  FORCE_IMAGE_REBUILD: "${FORCE_IMAGE_REBUILD}"
 EOF
 
     # Add test-type-specific environment variables
-    case "$test_type" in
+    case "${test_type}" in
         transport)
-            cat >> "$output_file" <<EOF
+            cat >> "${output_file}" <<EOF
 EOF
             ;;
         perf)
-            cat >> "$output_file" <<EOF
+            cat >> "${output_file}" <<EOF
   BASELINE_IGNORE: "${BASELINE_IGNORE:-}"
   ITERATIONS: "${ITERATIONS:-10}"
   UPLOAD_BYTES: "${UPLOAD_BYTES:-}"
@@ -70,14 +70,14 @@ EOF
 EOF
             ;;
         hole-punch)
-            cat >> "$output_file" <<EOF
+            cat >> "${output_file}" <<EOF
   RELAY_IGNORE: "${RELAY_IGNORE:-}"
   ROUTER_IGNORE: "${ROUTER_IGNORE:-}"
 EOF
             ;;
     esac
 
-    print_success "Generated inputs.yaml: $output_file"
+    print_success "Generated inputs.yaml: ${output_file}"
 }
 
 # Modify inputs.yaml for snapshot context
@@ -86,24 +86,24 @@ EOF
 #   $1: snapshot_dir - Snapshot directory path
 modify_inputs_for_snapshot() {
     local snapshot_dir="$1"
-    local inputs_file="$snapshot_dir/inputs.yaml"
+    local inputs_file="${snapshot_dir}/inputs.yaml"
     indent
 
-    if [ ! -f "$inputs_file" ]; then
+    if [ ! -f "${inputs_file}" ]; then
         print_error "Warning: inputs.yaml not found, skipping modification"
         unindent
         return 1
     fi
 
     # Override paths for snapshot context
-    yq eval -i '.environmentVariables.IMAGES_YAML = "./images.yaml"' "$inputs_file"
-    yq eval -i '.environmentVariables.CACHE_DIR = "./"' "$inputs_file"
-    yq eval -i '.environmentVariables.TEST_RUN_DIR = "./re-run"' "$inputs_file"
-    yq eval -i '.environmentVariables.SCRIPT_DIR = "./lib"' "$inputs_file"
-    yq eval -i '.environmentVariables.SCRIPT_LIB_DIR = "./lib"' "$inputs_file"
+    yq eval -i '.environmentVariables.IMAGES_YAML = "./images.yaml"' "${inputs_file}"
+    yq eval -i '.environmentVariables.CACHE_DIR = "./"' "${inputs_file}"
+    yq eval -i '.environmentVariables.TEST_RUN_DIR = "./re-run"' "${inputs_file}"
+    yq eval -i '.environmentVariables.SCRIPT_DIR = "./lib"' "${inputs_file}"
+    yq eval -i '.environmentVariables.SCRIPT_LIB_DIR = "./lib"' "${inputs_file}"
 
     # Remove snapshot flag from command line args if present
-    yq eval -i 'del(.commandLineArgs[] | select(. == "--snapshot"))' "$inputs_file"
+    yq eval -i 'del(.commandLineArgs[] | select(. == "--snapshot"))' "${inputs_file}"
 
     print_success "Modified inputs.yaml for snapshot context"
     unindent

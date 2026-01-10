@@ -6,10 +6,10 @@
 # Usage: get_impl_image_name <impl_id> <test_type>
 # test_type: "transport", "hole-punch", or "perf"
 get_impl_image_name() {
-    local impl_id="$1"
-    local test_type="$2"
+    local impl_id="${1}"
+    local test_type="${2}"
 
-    case "$test_type" in
+    case "${test_type}" in
         transport)
             echo "transport-interop-${impl_id}"
             ;;
@@ -20,7 +20,7 @@ get_impl_image_name() {
             echo "perf-${impl_id}"
             ;;
         *)
-            echo "Error: Unknown test type: $test_type" >&2
+            echo "Error: Unknown test type: ${test_type}" >&2
             return 1
             ;;
     esac
@@ -29,15 +29,15 @@ get_impl_image_name() {
 # Get the Docker image name for a relay
 # Usage: get_relay_image_name <relay_id> <test_type>
 get_relay_image_name() {
-    local relay_id="$1"
-    local test_type="$2"
+    local relay_id="${1}"
+    local test_type="${2}"
 
-    case "$test_type" in
+    case "${test_type}" in
         hole-punch)
             echo "hole-punch-relay-${relay_id}"
             ;;
         *)
-            echo "Error: Relays not supported for test type: $test_type" >&2
+            echo "Error: Relays not supported for test type: ${test_type}" >&2
             return 1
             ;;
     esac
@@ -46,15 +46,15 @@ get_relay_image_name() {
 # Get the Docker image name for a router
 # Usage: get_router_image_name <router_id> <test_type>
 get_router_image_name() {
-    local router_id="$1"
-    local test_type="$2"
+    local router_id="${1}"
+    local test_type="${2}"
 
-    case "$test_type" in
+    case "${test_type}" in
         hole-punch)
             echo "hole-punch-router-${router_id}"
             ;;
         *)
-            echo "Error: Routers not supported for test type: $test_type" >&2
+            echo "Error: Routers not supported for test type: ${test_type}" >&2
             return 1
             ;;
     esac
@@ -65,11 +65,11 @@ get_router_image_name() {
 detect_test_type() {
     local pwd_basename=$(basename "$(pwd)")
 
-    if [ "$pwd_basename" == "transport" ]; then
+    if [ "${pwd_basename}" == "transport" ]; then
         echo "transport"
-    elif [ "$pwd_basename" == "hole-punch" ]; then
+    elif [ "${pwd_basename}" == "hole-punch" ]; then
         echo "hole-punch"
-    elif [ "$pwd_basename" == "perf" ]; then
+    elif [ "${pwd_basename}" == "perf" ]; then
         echo "perf"
     else
         # Try to detect from parent directory structure

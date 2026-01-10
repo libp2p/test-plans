@@ -31,18 +31,18 @@ load_inputs_yaml_inline() {
   local inputs_file="${1:-inputs.yaml}"
 
   # Look for the inputs file if it exists
-  if [ ! -f "$inputs_file" ]; then
+  if [ ! -f "${inputs_file}" ]; then
     return 1
   fi
 
-  echo "→ Loading configuration from $inputs_file"
+  echo "→ Loading configuration from ${inputs_file}"
 
   # Load and export the environment variables from the inputs file
   while IFS='=' read -r key value; do
-    if [ -n "$key" ] && [ -n "$value" ]; then
-      export "$key"="$value"
+    if [ -n "${key}" ] && [ -n "${value}" ]; then
+      export "${key}"="${value}"
     fi
-  done < <(yq eval '.environmentVariables | to_entries | .[] | .key + "=" + .value' "$inputs_file" 2>/dev/null)
+  done < <(yq eval '.environmentVariables | to_entries | .[] | .key + "=" + .value' "${inputs_file}" 2>/dev/null)
 
   return 0
 }
@@ -50,10 +50,10 @@ load_inputs_yaml_inline() {
 # Loads the command line arguments from the inputs yaml file
 get_yaml_args_inline() {
   local inputs_file="${1:-inputs.yaml}"
-  if [ ! -f "$inputs_file" ]; then
+  if [ ! -f "${inputs_file}" ]; then
     return 1
   fi
-  yq eval '.commandLineArgs[]' "$inputs_file" 2>/dev/null || true
+  yq eval '.commandLineArgs[]' "${inputs_file}" 2>/dev/null || true
 }
 
 # Process inputs.yaml if it exists
@@ -135,7 +135,7 @@ show_help() {
   cat <<EOF
 libp2p Performance Test Runner
 
-Usage: $0 [options]
+Usage: ${0} [options]
 
 Options:
   --test-ignore VALUE           Ignore implementations (pipe-separated)
@@ -161,11 +161,11 @@ Options:
   --help, -h                    Show this help message
 
 Examples:
-  $0 --test-ignore "js-v3.x"
-  $0 --upload-bytes 5368709120 --download-bytes 5368709120
-  $0 --list-images
-  $0 --list-tests --test-ignore "!~rust"
-  $0 --snapshot --force-image-rebuild
+  ${0} --test-ignore "js-v3.x"
+  ${0} --upload-bytes 5368709120 --download-bytes 5368709120
+  ${0} --list-images
+  ${0} --list-tests --test-ignore "!~rust"
+  ${0} --snapshot --force-image-rebuild
 
 Dependencies:
   bash 4.0+, docker 20.10+, yq 4.0+, wget, zip, unzip, bc, sha256sum
@@ -176,18 +176,18 @@ EOF
 
 # Parse command line arguments
 while [ $# -gt 0 ]; do
-  case "$1" in
-    --test-ignore) TEST_IGNORE="$2"; shift 2 ;;
-    --baseline-ignore) BASELINE_IGNORE="$2"; shift 2 ;;
-    --transport-ignore) TRANSPORT_IGNORE="$2"; shift 2;;
-    --secure-ignore) SECURE_IGNORE="$2"; shift 2;;
-    --muxer-ignore) MUXER_IGNORE="$2"; shift 2;;
-    --upload-bytes) UPLOAD_BYTES="$2"; shift 2 ;;
-    --download-bytes) DOWNLOAD_BYTES="$2"; shift 2 ;;
-    --iterations) ITERATIONS="$2"; shift 2 ;;
-    --duration) DURATION_PER_ITERATION="$2"; shift 2 ;;
-    --latency-iterations) LATENCY_ITERATIONS="$2"; shift 2 ;;
-    --cache-dir) CACHE_DIR="$2"; shift 2 ;;
+  case "${1}" in
+    --test-ignore) TEST_IGNORE="${2}"; shift 2 ;;
+    --baseline-ignore) BASELINE_IGNORE="${2}"; shift 2 ;;
+    --transport-ignore) TRANSPORT_IGNORE="${2}"; shift 2;;
+    --secure-ignore) SECURE_IGNORE="${2}"; shift 2;;
+    --muxer-ignore) MUXER_IGNORE="${2}"; shift 2;;
+    --upload-bytes) UPLOAD_BYTES="${2}"; shift 2 ;;
+    --download-bytes) DOWNLOAD_BYTES="${2}"; shift 2 ;;
+    --iterations) ITERATIONS="${2}"; shift 2 ;;
+    --duration) DURATION_PER_ITERATION="${2}"; shift 2 ;;
+    --latency-iterations) LATENCY_ITERATIONS="${2}"; shift 2 ;;
+    --cache-dir) CACHE_DIR="${2}"; shift 2 ;;
     --snapshot) CREATE_SNAPSHOT=true; shift ;;
     --debug) DEBUG=true; shift ;;
     --force-matrix-rebuild) FORCE_MATRIX_REBUILD=true; shift ;;
@@ -199,7 +199,7 @@ while [ $# -gt 0 ]; do
     --show-ignored) SHOW_IGNORED=true; shift ;;
     --help|-h) show_help; exit 0 ;;
     *)
-      echo "Unknown option: $1"
+      echo "Unknown option: ${1}"
       echo ""
       show_help
       exit 1
@@ -210,16 +210,16 @@ done
 # Generate test run key and test pass name
 export TEST_TYPE="perf"
 export TEST_RUN_KEY=$(compute_test_run_key \
-  "$IMAGES_YAML" \
-  "$TEST_IGNORE" \
-  "$BASELINE_IGNORE" \
-  "$TRANSPORT_IGNORE" \
-  "$SECURE_IGNORE" \
-  "$MUXER_IGNORE" \
-  "$DEBUG" \
+  "${IMAGES_YAML}" \
+  "${TEST_IGNORE}" \
+  "${BASELINE_IGNORE}" \
+  "${TRANSPORT_IGNORE}" \
+  "${SECURE_IGNORE}" \
+  "${MUXER_IGNORE}" \
+  "${DEBUG}" \
 )
 export TEST_PASS_NAME="${TEST_TYPE}-${TEST_RUN_KEY}-$(date +%H%M%S-%d-%m-%Y)"
-export TEST_PASS_DIR="$TEST_RUN_DIR/$TEST_PASS_NAME"
+export TEST_PASS_DIR="${TEST_RUN_DIR}/${TEST_PASS_NAME}"
 
 # =============================================================================
 # STEP 3.A: LIST IMAGES AND EXIT
@@ -230,7 +230,7 @@ export TEST_PASS_DIR="$TEST_RUN_DIR/$TEST_PASS_NAME"
 # =============================================================================
 
 # List images
-if [ "$LIST_IMAGES" == "true" ]; then
+if [ "${LIST_IMAGES}" == "true" ]; then
   if [ ! -f "${IMAGES_YAML}" ]; then
     print_error "${IMAGES_YAML} not found"
     exit 1
@@ -264,12 +264,12 @@ fi
 # =============================================================================
 
 # List tests
-if [ "$LIST_TESTS" == "true" ]; then
+if [ "${LIST_TESTS}" == "true" ]; then
   # Create temporary directory for test matrix generation
   TEMP_DIR=$(mktemp -d)
-  trap "rm -rf $TEMP_DIR" EXIT
+  trap "rm -rf \"${TEMP_DIR}\"" EXIT
 
-  export TEST_PASS_DIR="$TEMP_DIR"
+  export TEST_PASS_DIR="${TEMP_DIR}"
   export TEST_PASS_NAME="temp-list"
   export CACHE_DIR
   export DEBUG
@@ -282,12 +282,12 @@ if [ "$LIST_TESTS" == "true" ]; then
   indent
 
   # Generate test matrix (don't suppress output to show Test Matrix Generation section)
-  bash ${SCRIPT_DIR}/generate-tests.sh || true
+  bash "${SCRIPT_DIR}/generate-tests.sh" || true
 
   # Check if matrix was created successfully
-  if [ ! -f "$TEMP_DIR/test-matrix.yaml" ]; then
+  if [ ! -f "${TEMP_DIR}/test-matrix.yaml" ]; then
     print_error "Failed to generate test matrix"
-    bash ${SCRIPT_DIR}/generate-tests.sh 2>&1 | tail -10  # Show error output
+    bash "${SCRIPT_DIR}/generate-tests.sh" 2>&1 | tail -10  # Show error output
     unindent
     exit 1
   fi
@@ -298,27 +298,27 @@ if [ "$LIST_TESTS" == "true" ]; then
   indent
 
   # Get and print the selected baseline tests
-  readarray -t selected_baseline_tests < <(get_entity_ids "baselines" "$TEMP_DIR/test-matrix.yaml")
+  readarray -t selected_baseline_tests < <(get_entity_ids "baselines" "${TEMP_DIR}/test-matrix.yaml")
   print_list "Selected baseline tests" selected_baseline_tests
 
   echo ""
 
   # Get and maybe print the ignored baseline tests
-  readarray -t ignored_baseline_tests < <(get_entity_ids "ignoredBaselines" "$TEMP_DIR/test-matrix.yaml")
-  if [ "$SHOW_IGNORED" == "true" ]; then
+  readarray -t ignored_baseline_tests < <(get_entity_ids "ignoredBaselines" "${TEMP_DIR}/test-matrix.yaml")
+  if [ "${SHOW_IGNORED}" == "true" ]; then
     print_list "Ignored baseline tests" ignored_baseline_tests
     echo ""
   fi
 
   # Get and print the selected main tests
-  readarray -t selected_main_tests < <(get_entity_ids "tests" "$TEMP_DIR/test-matrix.yaml")
+  readarray -t selected_main_tests < <(get_entity_ids "tests" "${TEMP_DIR}/test-matrix.yaml")
   print_list "Selected main tests" selected_main_tests
 
   echo ""
 
   # Get and maybe print the ignored main tests
-  readarray -t ignored_main_tests < <(get_entity_ids "ignoredTests" "$TEMP_DIR/test-matrix.yaml")
-  if [ "$SHOW_IGNORED" == "true" ]; then
+  readarray -t ignored_main_tests < <(get_entity_ids "ignoredTests" "${TEMP_DIR}/test-matrix.yaml")
+  if [ "${SHOW_IGNORED}" == "true" ]; then
     print_list "Ignored main tests" ignored_main_tests
     echo ""
   fi
@@ -340,13 +340,13 @@ fi
 # =============================================================================
 
 # Check dependencies
-if [ "$CHECK_DEPS" == "true" ]; then
+if [ "${CHECK_DEPS}" == "true" ]; then
   print_header "Checking dependencies..."
   indent
   bash "${SCRIPT_LIB_DIR}/check-dependencies.sh" docker yq || {
     echo ""
     print_error "Error: Missing required dependencies."
-    print_message "Run '$0 --check-deps' to see details."
+    print_message "Run '${0} --check-deps' to see details."
     unindent
     exit 1
   }
@@ -365,25 +365,25 @@ fi
 print_header "Performance Test"
 indent
 
-print_message "Test Type: $TEST_TYPE"
-print_message "Test Run Key: $TEST_RUN_KEY"
-print_message "Test Pass: $TEST_PASS_NAME"
+print_message "Test Type: ${TEST_TYPE}"
+print_message "Test Run Key: ${TEST_RUN_KEY}"
+print_message "Test Pass: ${TEST_PASS_NAME}"
 print_message "Test Pass Dir: ${TEST_PASS_DIR}"
-print_message "Cache Dir: $CACHE_DIR"
-print_message "Workers: $WORKER_COUNT"
-[ -n "$TEST_IGNORE" ] && print_message "Test Ignore: $TEST_IGNORE"
-[ -n "$TRANSPORT_IGNORE" ] && print_message "Transport Ignore: $TRANSPORT_IGNORE"
-[ -n "$SECURE_IGNORE" ] && print_message "Secure Ignore: $SECURE_IGNORE"
-[ -n "$MUXER_IGNORE" ] && print_message "Muxer Ignore: $MUXER_IGNORE"
-print_message "Upload Bytes: $(numfmt --to=iec --suffix=B $UPLOAD_BYTES 2>/dev/null || echo "${UPLOAD_BYTES} bytes")"
-print_message "Download Bytes: $(numfmt --to=iec --suffix=B $DOWNLOAD_BYTES 2>/dev/null || echo "${DOWNLOAD_BYTES} bytes")"
-print_message "Iterations: $ITERATIONS"
+print_message "Cache Dir: ${CACHE_DIR}"
+print_message "Workers: ${WORKER_COUNT}"
+[ -n "${TEST_IGNORE}" ] && print_message "Test Ignore: ${TEST_IGNORE}"
+[ -n "${TRANSPORT_IGNORE}" ] && print_message "Transport Ignore: ${TRANSPORT_IGNORE}"
+[ -n "${SECURE_IGNORE}" ] && print_message "Secure Ignore: ${SECURE_IGNORE}"
+[ -n "${MUXER_IGNORE}" ] && print_message "Muxer Ignore: ${MUXER_IGNORE}"
+print_message "Upload Bytes: $(numfmt --to=iec --suffix=B "${UPLOAD_BYTES}" 2>/dev/null || echo "${UPLOAD_BYTES} bytes")"
+print_message "Download Bytes: $(numfmt --to=iec --suffix=B "${DOWNLOAD_BYTES}" 2>/dev/null || echo "${DOWNLOAD_BYTES} bytes")"
+print_message "Iterations: ${ITERATIONS}"
 print_message "Duration per Iteration: ${DURATION_PER_ITERATION}s"
-print_message "Latency Iterations: $LATENCY_ITERATIONS"
-print_message "Create Snapshot: $CREATE_SNAPSHOT"
-print_message "Debug: $DEBUG"
-print_message "Force Matrix Rebuild: $FORCE_MATRIX_REBUILD"
-print_message "Force Image Rebuild: $FORCE_IMAGE_REBUILD"
+print_message "Latency Iterations: ${LATENCY_ITERATIONS}"
+print_message "Create Snapshot: ${CREATE_SNAPSHOT}"
+print_message "Debug: ${DEBUG}"
+print_message "Force Matrix Rebuild: ${FORCE_MATRIX_REBUILD}"
+print_message "Force Image Rebuild: ${FORCE_IMAGE_REBUILD}"
 echo ""
 
 # Set up the folder structure for the output
@@ -401,7 +401,7 @@ indent
 bash "${SCRIPT_LIB_DIR}/check-dependencies.sh" docker yq || {
   echo ""
   print_error "Error: Missing required dependencies."
-  print_message "Run '$0 --check-deps' to see details."
+  print_message "Run '${0} --check-deps' to see details."
   unindent
   exit 1
 }
@@ -432,7 +432,7 @@ TEST_START_TIME=$(date +%s)
 print_header "Generating test matrix..."
 indent
 
-bash ${SCRIPT_DIR}/generate-tests.sh || {
+bash "${SCRIPT_DIR}/generate-tests.sh" || {
   print_error "Test matrix generation failed"
   unindent
   exit 1
@@ -459,7 +459,7 @@ echo ""
 
 # Get and maybe print the ignored baseline tests
 readarray -t ignored_baseline_tests < <(get_entity_ids "ignoredBaselines" "${TEST_PASS_DIR}/test-matrix.yaml")
-if [ "$SHOW_IGNORED" == "true" ]; then
+if [ "${SHOW_IGNORED}" == "true" ]; then
   print_list "Ignored baseline tests" ignored_baseline_tests
   echo ""
 fi
@@ -472,36 +472,36 @@ echo ""
 
 # Get and maybe print the ignored main tests
 readarray -t ignored_main_tests < <(get_entity_ids "ignoredTests" "${TEST_PASS_DIR}/test-matrix.yaml")
-if [ "$SHOW_IGNORED" == "true" ]; then
+if [ "${SHOW_IGNORED}" == "true" ]; then
   print_list "Ignored main tests" ignored_main_tests
   echo ""
 fi
 
 BASELINE_COUNT=${#selected_baseline_tests[@]}
 TEST_COUNT=${#selected_main_tests[@]}
-TOTAL_TESTS=$(($BASELINE_COUNT + $TEST_COUNT))
+TOTAL_TESTS=$(("${BASELINE_COUNT}" + "${TEST_COUNT}"))
 
-print_message "Total selected: $BASELINE_COUNT baseline + $TEST_COUNT main = $TOTAL_TESTS tests"
+print_message "Total selected: ${BASELINE_COUNT} baseline + ${TEST_COUNT} main = ${TOTAL_TESTS} tests"
 print_message "Total ignored: ${#ignored_baseline_tests[@]} baseline + ${#ignored_main_tests[@]} main = $((${#ignored_baseline_tests[@]} + ${#ignored_main_tests[@]})) tests"
 echo ""
 unindent
 
 # Get unique implementations from both baselines and main tests
 REQUIRED_IMAGES=$(mktemp)
-yq eval '.baselines[].dialer.id' "${TEST_PASS_DIR}/test-matrix.yaml" 2>/dev/null | sort -u > "$REQUIRED_IMAGES" || true
-yq eval '.baselines[].listener.id' "${TEST_PASS_DIR}/test-matrix.yaml" 2>/dev/null | sort -u >> "$REQUIRED_IMAGES" || true
-yq eval '.tests[].dialer.id' "${TEST_PASS_DIR}/test-matrix.yaml" 2>/dev/null | sort -u >> "$REQUIRED_IMAGES" || true
-yq eval '.tests[].listener.id' "${TEST_PASS_DIR}/test-matrix.yaml" 2>/dev/null | sort -u >> "$REQUIRED_IMAGES" || true
-sort -u "$REQUIRED_IMAGES" -o "$REQUIRED_IMAGES"
-IMAGE_COUNT=$(wc -l < "$REQUIRED_IMAGES")
+yq eval '.baselines[].dialer.id' "${TEST_PASS_DIR}/test-matrix.yaml" 2>/dev/null | sort -u > "${REQUIRED_IMAGES}" || true
+yq eval '.baselines[].listener.id' "${TEST_PASS_DIR}/test-matrix.yaml" 2>/dev/null | sort -u >> "${REQUIRED_IMAGES}" || true
+yq eval '.tests[].dialer.id' "${TEST_PASS_DIR}/test-matrix.yaml" 2>/dev/null | sort -u >> "${REQUIRED_IMAGES}" || true
+yq eval '.tests[].listener.id' "${TEST_PASS_DIR}/test-matrix.yaml" 2>/dev/null | sort -u >> "${REQUIRED_IMAGES}" || true
+sort -u "${REQUIRED_IMAGES}" -o "${REQUIRED_IMAGES}"
+IMAGE_COUNT=$(wc -l < "${REQUIRED_IMAGES}")
 
 # Prompt for confirmation unless auto-approved
 indent
-if [ "$AUTO_YES" != true ]; then
-  read -p "  Build $IMAGE_COUNT Docker images and execute $TOTAL_TESTS tests ($BASELINE_COUNT baseline + $TEST_COUNT main)? (Y/n): " response
+if [ "${AUTO_YES}" != true ]; then
+  read -p "  Build ${IMAGE_COUNT} Docker images and execute ${TOTAL_TESTS} tests (${BASELINE_COUNT} baseline + ${TEST_COUNT} main)? (Y/n): " response
   response=${response:-Y}
 
-  if [[ ! "$response" =~ ^[Yy]$ ]]; then
+  if [[ ! "${response}" =~ ^[Yy]$ ]]; then
     echo ""
     print_error "Test execution cancelled."
     unindent
@@ -536,7 +536,7 @@ build_images_from_section "implementations" "${IMAGE_FILTER}" "${FORCE_IMAGE_REB
 
 print_success "All images built successfully"
 
-rm -f "$REQUIRED_IMAGES"
+rm -f "${REQUIRED_IMAGES}"
 unindent
 echo ""
 
@@ -562,7 +562,7 @@ echo ""
 print_header "Running baseline tests... (1 worker)"
 indent
 
-if [ "$BASELINE_COUNT" -eq 0 ]; then
+if [ "${BASELINE_COUNT}" -eq 0 ]; then
     print_message "No baseline tests selected"
 else
   BASELINE_RESULTS_FILE="${TEST_PASS_DIR}/baseline-results.yaml.tmp"
@@ -574,17 +574,17 @@ else
     fi
 
     # Get test name from matrix
-    baseline_name=$(yq eval ".baselines[$i].id" "${TEST_PASS_DIR}/test-matrix.yaml")
+    baseline_name=$(yq eval ".baselines[${i}].id" "${TEST_PASS_DIR}/test-matrix.yaml")
 
     # Show progress (same format as main tests)
     if [ "${DEBUG:-false}" == "true" ]; then
-      print_message "[$((i + 1))/$BASELINE_COUNT] $baseline_name..."
+      print_message "[$((i + 1))/${BASELINE_COUNT}] ${baseline_name}..."
     else
-      echo_message "[$((i + 1))/$BASELINE_COUNT] $baseline_name..."
+      echo_message "[$((i + 1))/${BASELINE_COUNT}] ${baseline_name}..."
     fi
 
     # Run baseline test using same script, passing "baseline" as test type >/dev/null 2>&1
-    if bash ${SCRIPT_DIR}/run-single-test.sh "$i" "baselines" "${BASELINE_RESULTS_FILE}"; then
+    if bash "${SCRIPT_DIR}/run-single-test.sh" "${i}" "baselines" "${BASELINE_RESULTS_FILE}"; then
       echo "[SUCCESS]"
     else
       echo "[FAILED]"
@@ -599,7 +599,7 @@ echo ""
 print_header "Running tests... (1 worker)"
 indent
 
-if [ "$TEST_COUNT" -eq 0 ]; then
+if [ "${TEST_COUNT}" -eq 0 ]; then
     print_message "No tests selected"
 else
   TEST_RESULTS_FILE="${TEST_PASS_DIR}/results.yaml.tmp"
@@ -611,18 +611,18 @@ else
     fi
 
     # Get test name from matrix
-    test_name=$(yq eval ".tests[$i].id" "${TEST_PASS_DIR}/test-matrix.yaml")
+    test_name=$(yq eval ".tests[${i}].id" "${TEST_PASS_DIR}/test-matrix.yaml")
 
     # Show test progress (matching transport format)
     if [ "${DEBUG:-false}" == "true" ]; then
-      print_message "[$((i + 1))/$TEST_COUNT] $test_name..."
+      print_message "[$((i + 1))/${TEST_COUNT}] ${test_name}..."
       indent
     else
-      echo_message "[$((i + 1))/$TEST_COUNT] $test_name..."
+      echo_message "[$((i + 1))/${TEST_COUNT}] ${test_name}..."
     fi
 
     # Run test, suppress terminal output (still writes to log file)
-    if bash ${SCRIPT_DIR}/run-single-test.sh "$i" "tests" "${TEST_RESULTS_FILE}"; then
+    if bash "${SCRIPT_DIR}/run-single-test.sh" "${i}" "tests" "${TEST_RESULTS_FILE}"; then
       echo "[SUCCESS]"
     else
       echo "[FAILED]"
@@ -688,24 +688,24 @@ TOTAL_FAILED=$((BASELINE_FAILED + FAILED))
 # Generate final results.yaml
 cat > "${TEST_PASS_DIR}/results.yaml" <<EOF
 metadata:
-  testPass: $TEST_PASS_NAME
-  startedAt: $(date -d @$TEST_START_TIME -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -r $TEST_START_TIME -u +%Y-%m-%dT%H:%M:%SZ)
+  testPass: ${TEST_PASS_NAME}
+  startedAt: $(date -d @"${TEST_START_TIME}" -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -r "${TEST_START_TIME}" -u +%Y-%m-%dT%H:%M:%SZ)
   completedAt: $(date -u +%Y-%m-%dT%H:%M:%SZ)
   duration: ${TEST_DURATION}s
   platform: $(uname -m)
   os: $(uname -s)
-  workerCount: $WORKER_COUNT
+  workerCount: ${WORKER_COUNT}
 
 summary:
-  totalBaselines: $BASELINE_COUNT
-  baselinesPassed: $BASELINE_PASSED
-  baselinesFailed: $BASELINE_FAILED
-  totalTests: $TEST_COUNT
-  testsPassed: $PASSED
-  testsFailed: $FAILED
-  totalAll: $TOTAL_TESTS
-  passedAll: $TOTAL_PASSED
-  failedAll: $TOTAL_FAILED
+  totalBaselines: ${BASELINE_COUNT}
+  baselinesPassed: ${BASELINE_PASSED}
+  baselinesFailed: ${BASELINE_FAILED}
+  totalTests: ${TEST_COUNT}
+  testsPassed: ${PASSED}
+  testsFailed: ${FAILED}
+  totalAll: ${TOTAL_TESTS}
+  passedAll: ${TOTAL_PASSED}
+  failedAll: ${TOTAL_FAILED}
 
 baselineResults:
 EOF
@@ -729,16 +729,16 @@ fi
 
 print_message "Results:"
 indent
-print_message "Total: $TOTAL_TESTS ($BASELINE_COUNT baseline + $TEST_COUNT main)"
-print_success "Passed: $TOTAL_PASSED"
-print_error "Failed: $TOTAL_FAILED"
+print_message "Total: ${TOTAL_TESTS} (${BASELINE_COUNT} baseline + ${TEST_COUNT} main)"
+print_success "Passed: ${TOTAL_PASSED}"
+print_error "Failed: ${TOTAL_FAILED}"
 
 # List failed tests if any
-if [ "$TOTAL_FAILED" -gt 0 ]; then
+if [ "${TOTAL_FAILED}" -gt 0 ]; then
   readarray -t FAILED_TESTS < <(yq eval '.baselineResults[]?, .testResults[]? | select(.status == "fail") | .name' "${TEST_PASS_DIR}/results.yaml" 2>/dev/null || true)
   if [ ${#FAILED_TESTS[@]} -gt 0 ]; then
     for test_name in "${FAILED_TESTS[@]}"; do
-      echo "    - $test_name"
+      echo "    - ${test_name}"
     done
   fi
 fi
@@ -750,15 +750,15 @@ echo ""
 HOURS=$((TEST_DURATION / 3600))
 MINUTES=$(((TEST_DURATION % 3600) / 60))
 SECONDS=$((TEST_DURATION % 60))
-print_message "$(printf "Total time: %02d:%02d:%02d\n" $HOURS $MINUTES $SECONDS)"
+print_message "$(printf "Total time: %02d:%02d:%02d\n" "${HOURS}" "${MINUTES}" "${SECONDS}")"
 echo ""
 
 # Display status message
-if [ "$TOTAL_FAILED" -eq 0 ]; then
+if [ "${TOTAL_FAILED}" -eq 0 ]; then
   print_success "All tests passed!"
   EXIT_FINAL=0
 else
-  print_error "$FAILED test(s) failed"
+  print_error "${FAILED} test(s) failed"
   EXIT_FINAL=1
 fi
 
@@ -778,7 +778,7 @@ print_header "Generating results dashboard..."
 indent
 
 print_success "Generated ${TEST_PASS_DIR}/results.yaml"
-bash ${SCRIPT_DIR}/generate-dashboard.sh || {
+bash "${SCRIPT_DIR}/generate-dashboard.sh" || {
   print_error "Dashboard generation failed"
 }
 echo ""
@@ -792,7 +792,7 @@ indent
 
 # Check if gnuplot is available
 if command -v gnuplot &> /dev/null; then
-  bash ${SCRIPT_DIR}/generate-boxplot.sh "${TEST_PASS_DIR}/results.yaml" "${TEST_PASS_DIR}" || {
+  bash "${SCRIPT_DIR}/generate-boxplot.sh" "${TEST_PASS_DIR}/results.yaml" "${TEST_PASS_DIR}" || {
     print_error "Box plot generation failed"
   }
 else
@@ -815,7 +815,7 @@ echo ""
 # =============================================================================
 
 # Create snapshot (if requested)
-if [ "$CREATE_SNAPSHOT" == "true" ]; then
+if [ "${CREATE_SNAPSHOT}" == "true" ]; then
   print_header "Creating test pass snapshot..."
   indent
   create_snapshot || {
@@ -824,4 +824,4 @@ if [ "$CREATE_SNAPSHOT" == "true" ]; then
   unindent
 fi
 
-exit $EXIT_FINAL
+exit "${EXIT_FINAL}"

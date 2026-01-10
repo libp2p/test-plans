@@ -67,7 +67,7 @@ print_list() {
   print_iem "" "${list_name}:"
   indent
   for item in "${items[@]}"; do
-    print_iem "-" "$item"
+    print_iem "-" "${item}"
   done
   unindent
   return 0
@@ -83,7 +83,7 @@ print_list() {
 print_debug() {
   if [ "${DEBUG:-false}" == "true" ]; then
     local message="$1"
-    print_iem "DEBUG:" "$message" >&2
+    print_iem "DEBUG:" "${message}" >&2
   fi
   return 0
 }
@@ -91,7 +91,7 @@ print_debug() {
 # Same as above but uses echo -n instead
 echo_debug() {
   local message="$1"
-  print_iem "DEBUG:" "$message" "true" >&2
+  print_iem "DEBUG:" "${message}" "true" >&2
   return 0
 }
 
@@ -102,9 +102,9 @@ log_debug() {
     local msg="[$(date +'%Y-%m-%d %H:%M:%S')] DEBUG: $*"
     # Write to log file if available, otherwise to stderr
     if [ -n "${LOG_FILE:-}" ]; then
-      echo "$msg" >> "$LOG_FILE"
+      echo "${msg}" >> "${LOG_FILE}"
     else
-      echo "$msg" >&2
+      echo "${msg}" >&2
     fi
   fi
 }
@@ -118,14 +118,14 @@ log_debug() {
 #   print_message "Workers: 4"
 print_message() {
   local message="$1"
-  print_iem "→" "$message" >&2
+  print_iem "→" "${message}" >&2
   return 0
 }
 
 # Same as above but uses echo -n instead
 echo_message() {
   local message="$1"
-  print_iem "→" "$message" "true" >&2
+  print_iem "→" "${message}" "true" >&2
   return 0
 }
 
@@ -136,9 +136,9 @@ log_message() {
 
   # Write to log file if available, otherwise to stderr
   if [ -n "${LOG_FILE:-}" ]; then
-    echo "$msg" >> "$LOG_FILE"
+    echo "${msg}" >> "${LOG_FILE}"
   else
-    echo "$msg" >&2
+    echo "${msg}" >&2
   fi
 }
 
@@ -150,14 +150,14 @@ log_message() {
 #   print_success "Loaded 30 implementations"
 print_success() {
   local message="$1"
-  print_iem "✓" "$message" >&2
+  print_iem "✓" "${message}" >&2
   return 0
 }
 
 # Same as above but uses echo -n instead
 echo_success() {
   local message="$1"
-  print_iem "✓" "$message" "true" >&2
+  print_iem "✓" "${message}" "true" >&2
   return 0
 }
 
@@ -169,14 +169,14 @@ echo_success() {
 #   print_error "File not found"
 print_error() {
   local message="$1"
-  print_iem "✗" "$message" >&2
+  print_iem "✗" "${message}" >&2
   return 0
 }
 
 # Same as above but uses echo -n instead
 echo_error() {
   local message="$1"
-  print_iem "✗" "$message" "true" >&2
+  print_iem "✗" "${message}" "true" >&2
   return 0
 }
 
@@ -187,9 +187,9 @@ log_error() {
 
   # Write to log file if available, otherwise to stderr
   if [ -n "${LOG_FILE:-}" ]; then
-    echo "$msg" >> "$LOG_FILE"
+    echo "${msg}" >> "${LOG_FILE}"
   else
-    echo "$msg" >&2
+    echo "${msg}" >&2
   fi
 }
 
@@ -207,12 +207,12 @@ print_iem() {
   local no_newline="${3:-}" # if set/non-empty, use -n
 
   # Default of 0 indentation if unset or empty
-  local indent_levels=${INDENT:-0}
+  local indent_levels="${INDENT:-0}"
 
   # Build the prefix: emoji + space only if emoji is non-empty
   local prefix=""
-  if [ -n "$emoji" ]; then
-    prefix="$emoji "
+  if [ -n "${emoji}" ]; then
+    prefix="${emoji} "
   fi
 
   # Build the full text
@@ -225,10 +225,10 @@ print_iem() {
   fi
 
   # Print with or without newline
-  if [ -n "$no_newline" ]; then
-    echo -n "$output"
+  if [ -n "${no_newline}" ]; then
+    echo -n "${output}"
   else
-    echo "$output"
+    echo "${output}"
   fi
   return 0
 }

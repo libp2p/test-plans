@@ -150,18 +150,18 @@ declare -A image_dial_only
 declare -A image_commit
 
 for image_id in "${all_image_ids[@]}"; do
-  transports=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .transports | join(\" \")" ${IMAGES_YAML})
-  secure=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .secureChannels | join(\" \")" ${IMAGES_YAML})
-  muxers=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .muxers | join(\" \")" ${IMAGES_YAML})
-  dial_only=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .dialOnly | join(\" \")" ${IMAGES_YAML} 2>/dev/null || echo "")
-  commit=$(yq eval ".implementations[] | select (.id == \"$image_id\") | .source.commit" ${IMAGES_YAML} 2>/dev/null || echo "")
+  transports=$(yq eval ".implementations[] | select(.id == \"${image_id}\") | .transports | join(\" \")" "${IMAGES_YAML}")
+  secure=$(yq eval ".implementations[] | select(.id == \"${image_id}\") | .secureChannels | join(\" \")" "${IMAGES_YAML}")
+  muxers=$(yq eval ".implementations[] | select(.id == \"${image_id}\") | .muxers | join(\" \")" "${IMAGES_YAML}")
+  dial_only=$(yq eval ".implementations[] | select(.id == \"${image_id}\") | .dialOnly | join(\" \")" "${IMAGES_YAML}" 2>/dev/null || echo "")
+  commit=$(yq eval ".implementations[] | select (.id == \"${image_id}\") | .source.commit" "${IMAGES_YAML}" 2>/dev/null || echo "")
 
-  image_transports["$image_id"]="$transports"
-  image_secure["$image_id"]="$secure"
-  image_muxers["$image_id"]="$muxers"
-  image_dial_only["$image_id"]="$dial_only"
-  if [ -n "$commit" ]; then
-    image_commit["$image_id"]="$commit"
+  image_transports["${image_id}"]="${transports}"
+  image_secure["${image_id}"]="${secure}"
+  image_muxers["${image_id}"]="${muxers}"
+  image_dial_only["${image_id}"]="${dial_only}"
+  if [ -n "${commit}" ]; then
+    image_commit["${image_id}"]="${commit}"
   fi
 done
 
@@ -190,8 +190,8 @@ generate_tests_worker() {
   local worker_selected="${TEST_PASS_DIR}/worker-${worker_id}-selected.yaml"
   local worker_ignored="${TEST_PASS_DIR}/worker-${worker_id}-ignored.yaml"
 
-  > "$worker_selected"
-  > "$worker_ignored"
+  > "${worker_selected}"
+  > "${worker_ignored}"
 
   # Load associative arrays from serialized files
   declare -A image_transports
@@ -201,33 +201,33 @@ generate_tests_worker() {
   declare -A image_commit
 
   while IFS='|' read -r key value; do
-    image_transports["$key"]="$value"
-  done < "$WORKER_DATA_DIR/transports.dat"
+    image_transports["${key}"]="${value}"
+  done < "${WORKER_DATA_DIR}/transports.dat"
 
   while IFS='|' read -r key value; do
-    image_secure["$key"]="$value"
-  done < "$WORKER_DATA_DIR/secure.dat"
+    image_secure["${key}"]="${value}"
+  done < "${WORKER_DATA_DIR}/secure.dat"
 
   while IFS='|' read -r key value; do
-    image_muxers["$key"]="$value"
-  done < "$WORKER_DATA_DIR/muxers.dat"
+    image_muxers["${key}"]="${value}"
+  done < "${WORKER_DATA_DIR}/muxers.dat"
 
-  if [ -f "$WORKER_DATA_DIR/dial_only.dat" ]; then
+  if [ -f "${WORKER_DATA_DIR}/dial_only.dat" ]; then
     while IFS='|' read -r key value; do
-      image_dial_only["$key"]="$value"
-    done < "$WORKER_DATA_DIR/dial_only.dat"
+      image_dial_only["${key}"]="${value}"
+    done < "${WORKER_DATA_DIR}/dial_only.dat"
   fi
 
-  if [ -f "$WORKER_DATA_DIR/commits.dat" ]; then
+  if [ -f "${WORKER_DATA_DIR}/commits.dat" ]; then
     while IFS='|' read -r key value; do
-      image_commit["$key"]="$value"
-    done < "$WORKER_DATA_DIR/commits.dat"
+      image_commit["${key}"]="${value}"
+    done < "${WORKER_DATA_DIR}/commits.dat"
   fi
 
   for dialer_id in "${dialer_chunk[@]}"; do
-    dialer_transports="${image_transports[$dialer_id]}"
-    dialer_secure="${image_secure[$dialer_id]}"
-    dialer_muxers="${image_muxers[$dialer_id]}"
+    dialer_transports="${image_transports[${dialer_id}]}"
+    dialer_secure="${image_secure[${dialer_id}]}"
+    dialer_muxers="${image_muxers[${dialer_id}]}"
 
     dialer_selected=true
 
@@ -237,9 +237,9 @@ generate_tests_worker() {
     fi
 
     for listener_id in "${all_image_ids[@]}"; do
-      listener_transports="${image_transports[$listener_id]}"
-      listener_secure="${image_secure[$listener_id]}"
-      listener_muxers="${image_muxers[$listener_id]}"
+      listener_transports="${image_transports[${listener_id}]}"
+      listener_secure="${image_secure[${listener_id}]}"
+      listener_muxers="${image_muxers[${listener_id}]}"
 
       listener_selected=true
 
@@ -249,13 +249,13 @@ generate_tests_worker() {
       fi
 
       # Find common transports
-      common_transports=$(get_common "$dialer_transports" "$listener_transports")
+      common_transports=$(get_common "${dialer_transports}" "${listener_transports}")
 
       # Skip if no common transports
-      [ -z "$common_transports" ] && continue
+      [ -z "${common_transports}" ] && continue
 
       # Process each common transport
-      for transport in $common_transports; do
+      for transport in ${common_transports}; do
 
         transport_selected=true
 
@@ -265,89 +265,89 @@ generate_tests_worker() {
         fi
 
         # Check if listener can handle this transport (not in dialOnly list)
-        dial_only_transports="${image_dial_only[$listener_id]:-}"
-        case " $dial_only_transports " in
-          *" $transport "*)
+        dial_only_transports="${image_dial_only[${listener_id}]:-}"
+        case " ${dial_only_transports} " in
+          *" ${transport} "*)
             continue  # Skip: listener has this transport in dialOnly
             ;;
         esac
 
-        if is_standalone_transport "$transport"; then
+        if is_standalone_transport "${transport}"; then
 
           # Integrated transport with built-in secure channel and muxer
-          test_id="$dialer_id x $listener_id ($transport)"
+          test_id="${dialer_id} x ${listener_id} (${transport})"
 
           # Add to selected or ignored list
-          if [ "$dialer_selected" == "true" ] && \
-             [ "$listener_selected" == "true" ] && \
-             [ "$transport_selected" == "true" ]; then
+          if [ "${dialer_selected}" == "true" ] && \
+             [ "${listener_selected}" == "true" ] && \
+             [ "${transport_selected}" == "true" ]; then
             # Select main test
             print_debug "${test_id} is selected"
 
             # Get commits for snapshot references
-            local dialer_commit="${image_commit[$dialer_id]:-}"
-            local listener_commit="${image_commit[$listener_id]:-}"
+            local dialer_commit="${image_commit[${dialer_id}]:-}"
+            local listener_commit="${image_commit[${listener_id}]:-}"
 
             # Write YAML block
-            cat >> "$worker_selected" <<EOF
-  - id: "$test_id"
-    transport: $transport
+            cat >> "${worker_selected}" <<EOF
+  - id: "${test_id}"
+    transport: ${transport}
     secureChannel: null
     muxer: null
     dialer:
-      id: $dialer_id
+      id: ${dialer_id}
 EOF
-            if [ -n "$dialer_commit" ]; then
-              echo "      snapshot: snapshots/$dialer_commit.zip" >> "$worker_selected"
+            if [ -n "${dialer_commit}" ]; then
+              echo "      snapshot: snapshots/${dialer_commit}.zip" >> "${worker_selected}"
             fi
-            cat >> "$worker_selected" <<EOF
+            cat >> "${worker_selected}" <<EOF
     listener:
-      id: $listener_id
+      id: ${listener_id}
 EOF
-            if [ -n "$listener_commit" ]; then
-              echo "      snapshot: snapshots/$listener_commit.zip" >> "$worker_selected"
+            if [ -n "${listener_commit}" ]; then
+              echo "      snapshot: snapshots/${listener_commit}.zip" >> "${worker_selected}"
             fi
           else
             # Ignore main test
             print_debug "${test_id} is ignored"
 
             # Get commits for snapshot references
-            local dialer_commit="${image_commit[$dialer_id]:-}"
-            local listener_commit="${image_commit[$listener_id]:-}"
+            local dialer_commit="${image_commit[${dialer_id}]:-}"
+            local listener_commit="${image_commit[${listener_id}]:-}"
 
             # Write YAML block
-            cat >> "$worker_ignored" <<EOF
-  - id: "$test_id"
-    transport: $transport
+            cat >> "${worker_ignored}" <<EOF
+  - id: "${test_id}"
+    transport: ${transport}
     secureChannel: null
     muxer: null
     dialer:
-      id: $dialer_id
+      id: ${dialer_id}
 EOF
-            if [ -n "$dialer_commit" ]; then
-              echo "      snapshot: snapshots/$dialer_commit.zip" >> "$worker_ignored"
+            if [ -n "${dialer_commit}" ]; then
+              echo "      snapshot: snapshots/${dialer_commit}.zip" >> "${worker_ignored}"
             fi
-            cat >> "$worker_ignored" <<EOF
+            cat >> "${worker_ignored}" <<EOF
     listener:
-      id: $listener_id
+      id: ${listener_id}
 EOF
-            if [ -n "$listener_commit" ]; then
-              echo "      snapshot: snapshots/$listener_commit.zip" >> "$worker_ignored"
+            if [ -n "${listener_commit}" ]; then
+              echo "      snapshot: snapshots/${listener_commit}.zip" >> "${worker_ignored}"
             fi
           fi
 
         else
 
           # Find common secure channels and muxers
-          common_secure=$(get_common "$dialer_secure" "$listener_secure")
-          common_muxers=$(get_common "$dialer_muxers" "$listener_muxers")
+          common_secure=$(get_common "${dialer_secure}" "${listener_secure}")
+          common_muxers=$(get_common "${dialer_muxers}" "${listener_muxers}")
 
           # Skip if no common secureChannel or muxer
-          [ -z "$common_secure" ] && continue
-          [ -z "$common_muxers" ] && continue
+          [ -z "${common_secure}" ] && continue
+          [ -z "${common_muxers}" ] && continue
 
           # Generate all combinations
-          for secure in $common_secure; do
+          for secure in ${common_secure}; do
 
             secure_selected=true
 
@@ -356,7 +356,7 @@ EOF
               secure_selected=false
             fi
 
-            for muxer in $common_muxers; do
+            for muxer in ${common_muxers}; do
 
               muxer_selected=true
 
@@ -366,66 +366,66 @@ EOF
               fi
 
               # Layered transport with secure channel and muxer
-              test_id="$dialer_id x $listener_id ($transport, $secure, $muxer)"
+              test_id="${dialer_id} x ${listener_id} (${transport}, ${secure}, ${muxer})"
 
               # Add to selected or ignored list
-              if [ "$dialer_selected" == "true" ] && \
-                 [ "$listener_selected" == "true" ] && \
-                 [ "$transport_selected" == "true" ] && \
-                 [ "$secure_selected" == "true" ] && \
-                 [ "$muxer_selected" == "true" ]; then
+              if [ "${dialer_selected}" == "true" ] && \
+                 [ "${listener_selected}" == "true" ] && \
+                 [ "${transport_selected}" == "true" ] && \
+                 [ "${secure_selected}" == "true" ] && \
+                 [ "${muxer_selected}" == "true" ]; then
                 # Select main test
                 print_debug "${test_id} is selected"
 
                 # Get commits for snapshot references
-                local dialer_commit="${image_commit[$dialer_id]:-}"
-                local listener_commit="${image_commit[$listener_id]:-}"
+                local dialer_commit="${image_commit[${dialer_id}]:-}"
+                local listener_commit="${image_commit[${listener_id}]:-}"
 
                 # Write YAML block
-                cat >> "$worker_selected" <<EOF
-  - id: "$test_id"
-    transport: $transport
-    secureChannel: $secure
-    muxer: $muxer
+                cat >> "${worker_selected}" <<EOF
+  - id: "${test_id}"
+    transport: ${transport}
+    secureChannel: ${secure}
+    muxer: ${muxer}
     dialer:
-      id: $dialer_id
+      id: ${dialer_id}
 EOF
-                if [ -n "$dialer_commit" ]; then
-                  echo "      snapshot: snapshots/$dialer_commit.zip" >> "$worker_selected"
+                if [ -n "${dialer_commit}" ]; then
+                  echo "      snapshot: snapshots/${dialer_commit}.zip" >> "${worker_selected}"
                 fi
-                cat >> "$worker_selected" <<EOF
+                cat >> "${worker_selected}" <<EOF
     listener:
-      id: $listener_id
+      id: ${listener_id}
 EOF
-                if [ -n "$listener_commit" ]; then
-                  echo "      snapshot: snapshots/$listener_commit.zip" >> "$worker_selected"
+                if [ -n "${listener_commit}" ]; then
+                  echo "      snapshot: snapshots/${listener_commit}.zip" >> "${worker_selected}"
                 fi
               else
                 # Ignore main test
                 print_debug "${test_id} is ignored"
 
                 # Get commits for snapshot references
-                local dialer_commit="${image_commit[$dialer_id]:-}"
-                local listener_commit="${image_commit[$listener_id]:-}"
+                local dialer_commit="${image_commit[${dialer_id}]:-}"
+                local listener_commit="${image_commit[${listener_id}]:-}"
 
                 # Write YAML block
-                cat >> "$worker_ignored" <<EOF
-  - id: "$test_id"
-    transport: $transport
-    secureChannel: $secure
-    muxer: $muxer
+                cat >> "${worker_ignored}" <<EOF
+  - id: "${test_id}"
+    transport: ${transport}
+    secureChannel: ${secure}
+    muxer: ${muxer}
     dialer:
-      id: $dialer_id
+      id: ${dialer_id}
 EOF
-                if [ -n "$dialer_commit" ]; then
-                  echo "      snapshot: snapshots/$dialer_commit.zip" >> "$worker_ignored"
+                if [ -n "${dialer_commit}" ]; then
+                  echo "      snapshot: snapshots/${dialer_commit}.zip" >> "${worker_ignored}"
                 fi
-                cat >> "$worker_ignored" <<EOF
+                cat >> "${worker_ignored}" <<EOF
     listener:
-      id: $listener_id
+      id: ${listener_id}
 EOF
-                if [ -n "$listener_commit" ]; then
-                  echo "      snapshot: snapshots/$listener_commit.zip" >> "$worker_ignored"
+                if [ -n "${listener_commit}" ]; then
+                  echo "      snapshot: snapshots/${listener_commit}.zip" >> "${worker_ignored}"
                 fi
               fi
             done
@@ -439,27 +439,27 @@ EOF
 # Serialize associative arrays to temp files for workers
 # (Bash can't export associative array contents to subshells)
 WORKER_DATA_DIR="${TEST_PASS_DIR}/worker-data"
-mkdir -p "$WORKER_DATA_DIR"
+mkdir -p "${WORKER_DATA_DIR}"
 
 # Serialize image data
 for key in "${!image_transports[@]}"; do
-  echo "$key|${image_transports[$key]}" >> "$WORKER_DATA_DIR/transports.dat"
+  echo "${key}|${image_transports[${key}]}" >> "${WORKER_DATA_DIR}/transports.dat"
 done
 
 for key in "${!image_secure[@]}"; do
-  echo "$key|${image_secure[$key]}" >> "$WORKER_DATA_DIR/secure.dat"
+  echo "${key}|${image_secure[${key}]}" >> "${WORKER_DATA_DIR}/secure.dat"
 done
 
 for key in "${!image_muxers[@]}"; do
-  echo "$key|${image_muxers[$key]}" >> "$WORKER_DATA_DIR/muxers.dat"
+  echo "${key}|${image_muxers[${key}]}" >> "${WORKER_DATA_DIR}/muxers.dat"
 done
 
 for key in "${!image_dial_only[@]}"; do
-  echo "$key|${image_dial_only[$key]}" >> "$WORKER_DATA_DIR/dial_only.dat"
+  echo "${key}|${image_dial_only[${key}]}" >> "${WORKER_DATA_DIR}/dial_only.dat"
 done
 
 for key in "${!image_commit[@]}"; do
-  echo "$key|${image_commit[$key]}" >> "$WORKER_DATA_DIR/commits.dat"
+  echo "${key}|${image_commit[${key}]}" >> "${WORKER_DATA_DIR}/commits.dat"
 done
 
 # Export necessary variables and functions for workers
@@ -481,19 +481,19 @@ print_message "Generating main test combinations (using ${WORKER_COUNT} workers)
 
 # Shard dialers across workers
 total_dialers=${#all_image_ids[@]}
-chunk_size=$(( (total_dialers + WORKER_COUNT - 1) / WORKER_COUNT ))
+chunk_size=$(( (${total_dialers} + ${WORKER_COUNT} - 1) / ${WORKER_COUNT} ))
 
 pids=()
-for ((w=0; w<WORKER_COUNT; w++)); do
-  start=$((w * chunk_size))
+for ((w=0; w<${WORKER_COUNT}; w++)); do
+  start=$((${w} * ${chunk_size}))
 
   # Break if we've exceeded the array bounds
-  if [ $start -ge $total_dialers ]; then
+  if [ ${start} -ge ${total_dialers} ]; then
     break
   fi
 
   # Get chunk of dialers for this worker
-  chunk=("${all_image_ids[@]:$start:$chunk_size}")
+  chunk=("${all_image_ids[@]:${start}:${chunk_size}}")
 
   # Skip if chunk is empty
   if [ ${#chunk[@]} -eq 0 ]; then
@@ -501,33 +501,33 @@ for ((w=0; w<WORKER_COUNT; w++)); do
   fi
 
   # Launch worker in background
-  generate_tests_worker "$w" "${chunk[@]}" &
+  generate_tests_worker "${w}" "${chunk[@]}" &
   pids+=($!)
 done
 
 # Wait for all workers to complete
 for pid in "${pids[@]}"; do
-  wait "$pid"
+  wait "${pid}"
 done
 
 # Count tests from worker YAML files
 total_selected=0
 total_ignored=0
 
-for ((w=0; w<WORKER_COUNT; w++)); do
+for ((w=0; w<${WORKER_COUNT}; w++)); do
   if [ -f "${TEST_PASS_DIR}/worker-${w}-selected.yaml" ]; then
     count=$(grep -c "^  - id:" "${TEST_PASS_DIR}/worker-${w}-selected.yaml" 2>/dev/null || true)
-    total_selected=$((total_selected + count))
+    total_selected=$((${total_selected} + ${count}))
   fi
 
   if [ -f "${TEST_PASS_DIR}/worker-${w}-ignored.yaml" ]; then
     count=$(grep -c "^  - id:" "${TEST_PASS_DIR}/worker-${w}-ignored.yaml" 2>/dev/null || true)
-    total_ignored=$((total_ignored + count))
+    total_ignored=$((${total_ignored} + ${count}))
   fi
 done
 
 # Cleanup worker data directory
-rm -rf "$WORKER_DATA_DIR"
+rm -rf "${WORKER_DATA_DIR}"
 
 indent
 print_success "${total_selected} Selected"
@@ -550,13 +550,13 @@ metadata:
     ${MUXER_IGNORE}
   totalTests: ${total_selected}
   ignoredTests: ${total_ignored}
-  debug: $DEBUG
+  debug: ${DEBUG}
 
 tests:
 EOF
 
 # Concatenate selected test YAML files from workers
-for ((w=0; w<WORKER_COUNT; w++)); do
+for ((w=0; w<${WORKER_COUNT}; w++)); do
   if [ -f "${TEST_PASS_DIR}/worker-${w}-selected.yaml" ]; then
     cat "${TEST_PASS_DIR}/worker-${w}-selected.yaml" >> "${TEST_PASS_DIR}/test-matrix.yaml"
     rm -f "${TEST_PASS_DIR}/worker-${w}-selected.yaml"
@@ -570,7 +570,7 @@ ignoredTests:
 EOF
 
 # Concatenate ignored test YAML files from workers
-for ((w=0; w<WORKER_COUNT; w++)); do
+for ((w=0; w<${WORKER_COUNT}; w++)); do
   if [ -f "${TEST_PASS_DIR}/worker-${w}-ignored.yaml" ]; then
     cat "${TEST_PASS_DIR}/worker-${w}-ignored.yaml" >> "${TEST_PASS_DIR}/test-matrix.yaml"
     rm -f "${TEST_PASS_DIR}/worker-${w}-ignored.yaml"
@@ -578,7 +578,7 @@ for ((w=0; w<WORKER_COUNT; w++)); do
 done
 
 # Copy ${IMAGES_YAML} for reference and cache the test-matrix.yaml file
-cp ${IMAGES_YAML} "${TEST_PASS_DIR}/"
+cp "${IMAGES_YAML}" "${TEST_PASS_DIR}/"
 print_success "Copied ${IMAGES_YAML}: ${TEST_PASS_DIR}/${IMAGES_YAML}"
 print_success "Generated test-matrix.yaml: ${TEST_PASS_DIR}/test-matrix.yaml"
 indent

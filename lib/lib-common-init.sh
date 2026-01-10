@@ -20,7 +20,7 @@ init_common_variables() {
   SHUTDOWN=false
 
   # Files
-  IMAGES_YAML=${IMAGES_YAML:-${TEST_ROOT}/images.yaml}
+  IMAGES_YAML="${IMAGES_YAML:-${TEST_ROOT}/images.yaml}"
 
   # Paths
   CACHE_DIR="${CACHE_DIR:-/srv/cache}"

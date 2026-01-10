@@ -31,18 +31,18 @@ load_inputs_yaml_inline() {
   local inputs_file="${1:-inputs.yaml}"
 
   # Look for the inputs file if it exists
-  if [ ! -f "$inputs_file" ]; then
+  if [ ! -f "${inputs_file}" ]; then
     return 1
   fi
 
-  echo "→ Loading configuration from $inputs_file"
+  echo "→ Loading configuration from ${inputs_file}"
 
   # Load and export the environment variables from the inputs file
   while IFS='=' read -r key value; do
-    if [ -n "$key" ] && [ -n "$value" ]; then
-      export "$key"="$value"
+    if [ -n "${key}" ] && [ -n "${value}" ]; then
+      export "${key}"="${value}"
     fi
-  done < <(yq eval '.environmentVariables | to_entries | .[] | .key + "=" + .value' "$inputs_file" 2>/dev/null)
+  done < <(yq eval '.environmentVariables | to_entries | .[] | .key + "=" + .value' "${inputs_file}" 2>/dev/null)
 
   return 0
 }
@@ -50,10 +50,10 @@ load_inputs_yaml_inline() {
 # Loads the command line arguments from the inputs yaml file
 get_yaml_args_inline() {
   local inputs_file="${1:-inputs.yaml}"
-  if [ ! -f "$inputs_file" ]; then
+  if [ ! -f "${inputs_file}" ]; then
     return 1
   fi
-  yq eval '.commandLineArgs[]' "$inputs_file" 2>/dev/null || true
+  yq eval '.commandLineArgs[]' "${inputs_file}" 2>/dev/null || true
 }
 
 # Process inputs.yaml if it exists
@@ -136,7 +136,7 @@ show_help() {
   cat <<EOF
 libp2p Transport Interoperability Test Runner
 
-Usage: $0 [options]
+Usage: ${0} [options]
 
 Options:
   --test-ignore VALUE       Ignore tests (pipe-separated substrings)
@@ -157,11 +157,11 @@ Options:
   --help, -h                Show this help message
 
 Examples:
-  $0 --cache-dir /srv/cache --workers 4
-  $0 --transport-ignore "webrtc"
-  $0 --list-images
-  $0 --list-tests --test-ignore "!~go"
-  $0 --snapshot --force-image-rebuild
+  ${0} --cache-dir /srv/cache --workers 4
+  ${0} --transport-ignore "webrtc"
+  ${0} --list-images
+  ${0} --list-tests --test-ignore "!~go"
+  ${0} --snapshot --force-image-rebuild
 
 Dependencies:
   bash 4.0+, docker 20.10+, yq 4.0+, wget, zip, unzip, bc
@@ -172,13 +172,13 @@ EOF
 
 # Parse arguments
 while [ $# -gt 0 ]; do
-  case "$1" in
-    --test-ignore) TEST_IGNORE="$2"; shift 2 ;;
-    --transport-ignore) TRANSPORT_IGNORE="$2"; shift 2;;
-    --secure-ignore) SECURE_IGNORE="$2"; shift 2;;
-    --muxer-ignore) MUXER_IGNORE="$2"; shift 2;;
-    --workers) WORKER_COUNT="$2"; shift 2 ;;
-    --cache-dir) CACHE_DIR="$2"; shift 2 ;;
+  case "${1}" in
+    --test-ignore) TEST_IGNORE="${2}"; shift 2 ;;
+    --transport-ignore) TRANSPORT_IGNORE="${2}"; shift 2;;
+    --secure-ignore) SECURE_IGNORE="${2}"; shift 2;;
+    --muxer-ignore) MUXER_IGNORE="${2}"; shift 2;;
+    --workers) WORKER_COUNT="${2}"; shift 2 ;;
+    --cache-dir) CACHE_DIR="${2}"; shift 2 ;;
     --snapshot) CREATE_SNAPSHOT=true; shift ;;
     --debug) DEBUG=true; shift ;;
     --force-matrix-rebuild) FORCE_MATRIX_REBUILD=true; shift ;;
@@ -190,7 +190,7 @@ while [ $# -gt 0 ]; do
     --show-ignored) SHOW_IGNORED=true; shift ;;
     --help|-h) show_help; exit 0 ;;
     *)
-      echo "Unknown option: $1"
+      echo "Unknown option: ${1}"
       echo ""
       show_help
       exit 1
@@ -201,15 +201,15 @@ done
 # Generate test run key and test pass name
 export TEST_TYPE="transport"
 export TEST_RUN_KEY=$(compute_test_run_key \
-  "$IMAGES_YAML" \
-  "$TEST_IGNORE" \
-  "$TRANSPORT_IGNORE" \
-  "$SECURE_IGNORE" \
-  "$MUXER_IGNORE" \
-  "$DEBUG" \
+  "${IMAGES_YAML}" \
+  "${TEST_IGNORE}" \
+  "${TRANSPORT_IGNORE}" \
+  "${SECURE_IGNORE}" \
+  "${MUXER_IGNORE}" \
+  "${DEBUG}" \
 )
 export TEST_PASS_NAME="${TEST_TYPE}-${TEST_RUN_KEY}-$(date +%H%M%S-%d-%m-%Y)"
-export TEST_PASS_DIR="$TEST_RUN_DIR/$TEST_PASS_NAME"
+export TEST_PASS_DIR="${TEST_RUN_DIR}/${TEST_PASS_NAME}"
 
 # =============================================================================
 # STEP 3.A: LIST IMAGES
@@ -220,7 +220,7 @@ export TEST_PASS_DIR="$TEST_RUN_DIR/$TEST_PASS_NAME"
 # =============================================================================
 
 # List images
-if [ "$LIST_IMAGES" == "true" ]; then
+if [ "${LIST_IMAGES}" == "true" ]; then
   if [ ! -f "${IMAGES_YAML}" ]; then
     print_error "${IMAGES_YAML} not found"
     exit 1
@@ -248,12 +248,12 @@ fi
 # =============================================================================
 
 # List tests
-if [ "$LIST_TESTS" == "true" ]; then
+if [ "${LIST_TESTS}" == "true" ]; then
   # Create temporary directory for test matrix generation
   TEMP_DIR=$(mktemp -d)
-  trap "rm -rf $TEMP_DIR" EXIT
+  trap "rm -rf \"${TEMP_DIR}\"" EXIT
 
-  export TEST_PASS_DIR="$TEMP_DIR"
+  export TEST_PASS_DIR="${TEMP_DIR}"
   export TEST_PASS_NAME="temp-list"
   export CACHE_DIR
   export DEBUG
@@ -264,12 +264,12 @@ if [ "$LIST_TESTS" == "true" ]; then
   indent
 
   # Generate test matrix (don't suppress output to show Test Matrix Generation section)
-  bash ${SCRIPT_DIR}/generate-tests.sh || true
+  bash "${SCRIPT_DIR}/generate-tests.sh" || true
 
   # Check if matrix was created successfully
-  if [ ! -f "$TEMP_DIR/test-matrix.yaml" ]; then
+  if [ ! -f "${TEMP_DIR}/test-matrix.yaml" ]; then
     print_error "Failed to generate test matrix"
-    bash ${SCRIPT_DIR}/generate-tests.sh 2>&1 | tail -10  # Show error output
+    bash "${SCRIPT_DIR}/generate-tests.sh" 2>&1 | tail -10  # Show error output
     unindent
     exit 1
   fi
@@ -280,14 +280,14 @@ if [ "$LIST_TESTS" == "true" ]; then
   indent
 
   # Get and print the selected main tests
-  readarray -t selected_main_tests < <(get_entity_ids "tests" "$TEMP_DIR/test-matrix.yaml")
+  readarray -t selected_main_tests < <(get_entity_ids "tests" "${TEMP_DIR}/test-matrix.yaml")
   print_list "Selected main tests" selected_main_tests
 
   echo ""
 
   # Get and maybe print the ignored main tests
-  readarray -t ignored_main_tests < <(get_entity_ids "ignoredTests" "$TEMP_DIR/test-matrix.yaml")
-  if [ "$SHOW_IGNORED" == "true" ]; then
+  readarray -t ignored_main_tests < <(get_entity_ids "ignoredTests" "${TEMP_DIR}/test-matrix.yaml")
+  if [ "${SHOW_IGNORED}" == "true" ]; then
     print_list "Ignored main tests" ignored_main_tests
     echo ""
   fi
@@ -308,13 +308,13 @@ fi
 # =============================================================================
 
 # Check dependencies
-if [ "$CHECK_DEPS" == "true" ]; then
+if [ "${CHECK_DEPS}" == "true" ]; then
   print_header "Checking dependencies..."
   indent
   bash "${SCRIPT_LIB_DIR}/check-dependencies.sh" docker yq || {
     echo ""
     print_error "Error: Missing required dependencies."
-    print_message "Run '$0 --check-deps' to see details."
+    print_message "Run '${0}' --check-deps to see details."
     unindent
     exit 1
   }
@@ -333,27 +333,27 @@ fi
 print_header "Transport Test"
 indent
 
-print_message "Test Type: $TEST_TYPE"
-print_message "Test Run Key: $TEST_RUN_KEY"
-print_message "Test Pass: $TEST_PASS_NAME"
+print_message "Test Type: ${TEST_TYPE}"
+print_message "Test Run Key: ${TEST_RUN_KEY}"
+print_message "Test Pass: ${TEST_PASS_NAME}"
 print_message "Test Pass Dir: ${TEST_PASS_DIR}"
-print_message "Cache Dir: $CACHE_DIR"
-print_message "Workers: $WORKER_COUNT"
-[ -n "$TEST_IGNORE" ] && print_message "Test Ignore: $TEST_IGNORE"
-[ -n "$TRANSPORT_IGNORE" ] && print_message "Transport Ignore: $TRANSPORT_IGNORE"
-[ -n "$SECURE_IGNORE" ] && print_message "Secure Ignore: $SECURE_IGNORE"
-[ -n "$MUXER_IGNORE" ] && print_message "Muxer Ignore: $MUXER_IGNORE"
-print_message "Create Snapshot: $CREATE_SNAPSHOT"
-print_message "Debug: $DEBUG"
-print_message "Force Matrix Rebuild: $FORCE_MATRIX_REBUILD"
-print_message "Force Image Rebuild: $FORCE_IMAGE_REBUILD"
+print_message "Cache Dir: ${CACHE_DIR}"
+print_message "Workers: ${WORKER_COUNT}"
+[ -n "${TEST_IGNORE}" ] && print_message "Test Ignore: ${TEST_IGNORE}"
+[ -n "${TRANSPORT_IGNORE}" ] && print_message "Transport Ignore: ${TRANSPORT_IGNORE}"
+[ -n "${SECURE_IGNORE}" ] && print_message "Secure Ignore: ${SECURE_IGNORE}"
+[ -n "${MUXER_IGNORE}" ] && print_message "Muxer Ignore: ${MUXER_IGNORE}"
+print_message "Create Snapshot: ${CREATE_SNAPSHOT}"
+print_message "Debug: ${DEBUG}"
+print_message "Force Matrix Rebuild: ${FORCE_MATRIX_REBUILD}"
+print_message "Force Image Rebuild: ${FORCE_IMAGE_REBUILD}"
 echo ""
 
 # Set up the folder structure for the output
 mkdir -p "${TEST_PASS_DIR}"/{logs,results,docker-compose}
 
 # Generate inputs.yaml to capture the current environment and command line arguments
-generate_inputs_yaml "${TEST_PASS_DIR}/inputs.yaml" "$TEST_TYPE" "${ORIGINAL_ARGS[@]}"
+generate_inputs_yaml "${TEST_PASS_DIR}/inputs.yaml" "${TEST_TYPE}" "${ORIGINAL_ARGS[@]}"
 
 echo ""
 unindent
@@ -364,7 +364,7 @@ indent
 bash "${SCRIPT_LIB_DIR}/check-dependencies.sh" docker yq || {
   echo ""
   print_error "Error: Missing required dependencies."
-  print_message "Run '$0 --check-deps' to see details."
+  print_message "Run '${0}' --check-deps to see details."
   unindent
   exit 1
 }
@@ -395,7 +395,7 @@ TEST_START_TIME=$(date +%s)
 print_header "Generating test matrix..."
 indent
 
-bash ${SCRIPT_DIR}/generate-tests.sh || {
+bash "${SCRIPT_DIR}/generate-tests.sh" || {
   print_error "Test matrix generation failed"
   unindent
   exit 1
@@ -422,7 +422,7 @@ echo ""
 
 # Get and maybe print the ignored main tests
 readarray -t ignored_main_tests < <(get_entity_ids "ignoredTests" "${TEST_PASS_DIR}/test-matrix.yaml")
-if [ "$SHOW_IGNORED" == "true" ]; then
+if [ "${SHOW_IGNORED}" == "true" ]; then
   print_list "Ignored main tests" ignored_main_tests
   echo ""
 fi
@@ -430,25 +430,25 @@ fi
 TEST_COUNT=${#selected_main_tests[@]}
 TOTAL_TESTS=${TEST_COUNT}
 
-print_message "Total selected: $TOTAL_TESTS tests"
+print_message "Total selected: ${TOTAL_TESTS} tests"
 print_message "Total ignored: ${#ignored_main_tests[@]} tests"
 echo ""
 unindent
 
 # Get unique implementations from main tests
 REQUIRED_IMAGES=$(mktemp)
-yq eval '.tests[].dialer.id' "${TEST_PASS_DIR}/test-matrix.yaml" 2>/dev/null | sort -u >> "$REQUIRED_IMAGES" || true
-yq eval '.tests[].listener.id' "${TEST_PASS_DIR}/test-matrix.yaml" 2>/dev/null | sort -u >> "$REQUIRED_IMAGES" || true
-sort -u "$REQUIRED_IMAGES" -o "$REQUIRED_IMAGES"
-IMAGE_COUNT=$(wc -l < "$REQUIRED_IMAGES")
+yq eval '.tests[].dialer.id' "${TEST_PASS_DIR}/test-matrix.yaml" 2>/dev/null | sort -u >> "${REQUIRED_IMAGES}" || true
+yq eval '.tests[].listener.id' "${TEST_PASS_DIR}/test-matrix.yaml" 2>/dev/null | sort -u >> "${REQUIRED_IMAGES}" || true
+sort -u "${REQUIRED_IMAGES}" -o "${REQUIRED_IMAGES}"
+IMAGE_COUNT=$(wc -l < "${REQUIRED_IMAGES}")
 
 # Prompt for confirmation unless auto-approved
 indent
-if [ "$AUTO_YES" != true ]; then
-  read -p "  Build $IMAGE_COUNT Docker images and execute $TOTAL_TESTS tests? (Y/n): " response
+if [ "${AUTO_YES}" != true ]; then
+  read -p "  Build ${IMAGE_COUNT} Docker images and execute ${TOTAL_TESTS} tests? (Y/n): " response
   response=${response:-Y}
 
-  if [[ ! "$response" =~ ^[Yy]$ ]]; then
+  if [[ ! "${response}" =~ ^[Yy]$ ]]; then
     echo ""
     print_error "Test execution cancelled."
     unindent
@@ -482,7 +482,7 @@ build_images_from_section "implementations" "${IMAGE_FILTER}" "${FORCE_IMAGE_REB
 
 print_success "All images built successfully"
 
-rm -f "$REQUIRED_IMAGES"
+rm -f "${REQUIRED_IMAGES}"
 unindent
 echo ""
 
@@ -514,15 +514,15 @@ TEST_RESULTS_FILE="${TEST_PASS_DIR}/results.yaml.tmp"
 
 # Run tests with parallel workers
 run_test() {
-  local index=$1
-  local name=$(yq eval ".tests[$index].id" "${TEST_PASS_DIR}/test-matrix.yaml")
+  local index="${1}"
+  local name=$(yq eval ".tests[${index}].id" "${TEST_PASS_DIR}/test-matrix.yaml")
 
   source "${SCRIPT_LIB_DIR}/lib-output-formatting.sh"
 
   # Run test using run-single-test.sh (now reads from test-matrix.yaml)
   # Results are written to results.yaml.tmp by the script
   # This executes in parallel without the lock
-  if bash ${SCRIPT_DIR}/run-single-test.sh "$index" "tests" "${TEST_PASS_DIR}/results.yaml.tmp"; then
+  if bash "${SCRIPT_DIR}/run-single-test.sh" "${index}" "tests" "${TEST_PASS_DIR}/results.yaml.tmp"; then
     result="[SUCCESS]"
     exit_code=0
   else
@@ -533,10 +533,10 @@ run_test() {
   # Serialize the message printing using flock (prevents interleaved output)
   (
     flock -x 200
-    print_message "[$((index + 1))/$TEST_COUNT] $name...$result"
+    print_message "[$((index + 1))/${TEST_COUNT}] ${name}...${result}"
   ) 200>/tmp/transport-test-output.lock
 
-  return $exit_code
+  return ${exit_code}
 }
 
 export TEST_COUNT
@@ -545,7 +545,7 @@ export -f run_test
 # Run tests in parallel using xargs
 # Note: Some tests may fail, but we want to continue to collect results
 # So we use || true to ensure xargs exit code doesn't stop the script
-seq 0 $((TEST_COUNT - 1)) | xargs -P "$WORKER_COUNT" -I {} bash -c 'run_test {}' || true
+seq 0 $((TEST_COUNT - 1)) | xargs -P "${WORKER_COUNT}" -I {} bash -c 'run_test {}' || true
 
 unindent
 echo ""
@@ -578,9 +578,9 @@ indent
 # Count pass/fail from individual result files
 PASSED=0
 FAILED=0
-if [ -f "$TEST_PASS_DIR/results.yaml.tmp" ]; then
-  PASSED=$(grep -c "status: pass" "$TEST_PASS_DIR/results.yaml.tmp" || true)
-  FAILED=$(grep -c "status: fail" "$TEST_PASS_DIR/results.yaml.tmp" || true)
+if [ -f "${TEST_PASS_DIR}/results.yaml.tmp" ]; then
+  PASSED=$(grep -c "status: pass" "${TEST_PASS_DIR}/results.yaml.tmp" || true)
+  FAILED=$(grep -c "status: fail" "${TEST_PASS_DIR}/results.yaml.tmp" || true)
 fi
 
 # Handle empty results
@@ -588,20 +588,20 @@ PASSED=${PASSED:-0}
 FAILED=${FAILED:-0}
 
 # Generate final results.yaml
-cat > "$TEST_PASS_DIR/results.yaml" <<EOF
+cat > "${TEST_PASS_DIR}/results.yaml" <<EOF
 metadata:
-  testPass: $TEST_PASS_NAME
-  startedAt: $(date -d @$TEST_START_TIME -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -r $TEST_START_TIME -u +%Y-%m-%dT%H:%M:%SZ)
+  testPass: ${TEST_PASS_NAME}
+  startedAt: $(date -d @"${TEST_START_TIME}" -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -r "${TEST_START_TIME}" -u +%Y-%m-%dT%H:%M:%SZ)
   completedAt: $(date -u +%Y-%m-%dT%H:%M:%SZ)
   duration: ${TEST_DURATION}s
   platform: $(uname -m)
   os: $(uname -s)
-  workerCount: $WORKER_COUNT
+  workerCount: ${WORKER_COUNT}
 
 summary:
-  total: $TEST_COUNT
-  passed: $PASSED
-  failed: $FAILED
+  total: ${TEST_COUNT}
+  passed: ${PASSED}
+  failed: ${FAILED}
 
 tests:
 EOF
@@ -614,16 +614,16 @@ fi
 
 print_message "Results:"
 indent
-print_message "Total: $TEST_COUNT"
-print_success "Passed: $PASSED"
-print_error "Failed: $FAILED"
+print_message "Total: ${TEST_COUNT}"
+print_success "Passed: ${PASSED}"
+print_error "Failed: ${FAILED}"
 
 # List failed tests if any
-if [ "$FAILED" -gt 0 ]; then
+if [ "${FAILED}" -gt 0 ]; then
   readarray -t FAILED_TESTS < <(yq eval '.tests[]? | select(.status == "fail") | .name' "${TEST_PASS_DIR}/results.yaml" 2>/dev/null || true)
   if [ ${#FAILED_TESTS[@]} -gt 0 ]; then
     for test_name in "${FAILED_TESTS[@]}"; do
-      echo "    - $test_name"
+      echo "    - ${test_name}"
     done
   fi
 fi
@@ -636,15 +636,15 @@ echo ""
 HOURS=$((TEST_DURATION / 3600))
 MINUTES=$(((TEST_DURATION % 3600) / 60))
 SECONDS=$((TEST_DURATION % 60))
-print_message "$(printf "Total time: %02d:%02d:%02d\n" $HOURS $MINUTES $SECONDS)"
+print_message "$(printf "Total time: %02d:%02d:%02d\n" "${HOURS}" "${MINUTES}" "${SECONDS}")"
 echo ""
 
 # Display status message
-if [ "$FAILED" -eq 0 ]; then
+if [ "${FAILED}" -eq 0 ]; then
   print_success "All tests passed!"
   EXIT_FINAL=0
 else
-  print_error "$FAILED test(s) failed"
+  print_error "${FAILED} test(s) failed"
   EXIT_FINAL=1
 fi
 
@@ -663,7 +663,7 @@ print_header "Generating results dashboard..."
 indent
 
 print_success "Generated ${TEST_PASS_DIR}/results.yaml"
-bash ${SCRIPT_DIR}/generate-dashboard.sh || {
+bash "${SCRIPT_DIR}/generate-dashboard.sh" || {
   print_error "Dashboard generation failed"
 }
 echo ""
@@ -682,7 +682,7 @@ echo ""
 # =============================================================================
 
 # Create snapshot (if requested)
-if [ "$CREATE_SNAPSHOT" == "true" ]; then
+if [ "${CREATE_SNAPSHOT}" == "true" ]; then
   print_header "Creating test pass snapshot..."
   indent
   create_snapshot || {
@@ -691,4 +691,4 @@ if [ "$CREATE_SNAPSHOT" == "true" ]; then
   unindent
 fi
 
-exit $EXIT_FINAL
+exit "${EXIT_FINAL}"

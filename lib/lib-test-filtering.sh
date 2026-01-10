@@ -21,13 +21,13 @@ get_common() {
     local list2="$2"
     local result=""
 
-    for item in $list1; do
-        case " $list2 " in
-            *" $item "*)
-                result="$result $item"
+    for item in ${list1}; do
+        case " ${list2} " in
+            *" ${item} "*)
+                result="${result} ${item}"
                 ;;
         esac
     done
 
-    echo "$result"
+    echo "${result}"
 }

@@ -21,19 +21,19 @@ start_redis_service() {
 
   # Create network if doesn't exist
   # For perf, create with subnet to support static IP assignment
-  if ! docker network inspect "$network_name" &>/dev/null; then
-    if [ "$network_name" == "perf-network" ]; then
+  if ! docker network inspect "${network_name}" &>/dev/null; then
+    if [ "${network_name}" == "perf-network" ]; then
       # Perf network needs subnet for static listener IP (10.5.0.10)
-      docker network create "$network_name" \
+      docker network create "${network_name}" \
         --subnet 10.5.0.0/24 \
         --gateway 10.5.0.1 > /dev/null
     else
       # Other networks don't need specific subnet
-      docker network create "$network_name" > /dev/null
+      docker network create "${network_name}" > /dev/null
     fi
-    print_success "Created network: $network_name"
+    print_success "Created network: ${network_name}"
   else
-    print_message "Network already exists: $network_name"
+    print_message "Network already exists: ${network_name}"
   fi
 
   # Start Redis if not running
@@ -41,15 +41,15 @@ start_redis_service() {
   if ! docker ps -q -f name="^${redis_name}$" | grep -q .; then
     echo_message "Starting Redis..."
     docker run -d \
-      --name "$redis_name" \
-      --network "$network_name" \
+      --name "${redis_name}" \
+      --network "${network_name}" \
       --rm \
       redis:7-alpine \
       redis-server --save "" --appendonly no > /dev/null
 
     # Wait for Redis to be ready
     for i in {1..10}; do
-      if docker exec "$redis_name" redis-cli ping &>/dev/null 2>&1; then
+      if docker exec "${redis_name}" redis-cli ping &>/dev/null 2>&1; then
         echo "started"
         break
       fi
@@ -80,7 +80,7 @@ stop_redis_service() {
   indent
   if docker ps -q -f name="^${redis_name}$" | grep -q .; then
     echo_message "Stopping Redis..."
-    docker stop "$redis_name" &>/dev/null || true
+    docker stop "${redis_name}" &>/dev/null || true
     echo "stopped"
   else
     print_message "Redis not running"
@@ -88,9 +88,9 @@ stop_redis_service() {
   unindent
 
   # Remove network
-  if docker network inspect "$network_name" &>/dev/null; then
-    docker network rm "$network_name" &>/dev/null || true
-    print_success "Network removed: $network_name"
+  if docker network inspect "${network_name}" &>/dev/null; then
+    docker network rm "${network_name}" &>/dev/null || true
+    print_success "Network removed: ${network_name}"
   else
     print_message "Network not found"
   fi

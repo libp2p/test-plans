@@ -17,7 +17,7 @@ compute_test_run_key() {
   shift
 
   # 1. Load contents of $images_yaml file
-  local contents=$(<"$images_yaml")
+  local contents=$(<"${images_yaml}")
 
   # 2. Remaining arguments joined with '||'
   local args
@@ -26,9 +26,9 @@ compute_test_run_key() {
   else
     args=$(printf '%s\n' "$@" | paste -sd '|' -)
   fi
- 
+
   # 3. Calculate the hash of both
-  local hash=$(printf '%s' "$contents$args" | sha256sum | cut -d ' ' -f1)
+  local hash=$(printf '%s' "${contents}${args}" | sha256sum | cut -d ' ' -f1)
 
   echo "${hash:0:8}"
 }
@@ -45,13 +45,13 @@ compute_test_run_key() {
 compute_test_key() {
     local test_name="$1"
 
-    if [ -z "$test_name" ]; then
+    if [ -z "${test_name}" ]; then
         print_error "Error: test_name is required"
         return 1
     fi
 
     # Hash the test name
-    local test_hash=$(echo "$test_name" | sha256sum | cut -d' ' -f1)
+    local test_hash=$(echo "${test_name}" | sha256sum | cut -d' ' -f1)
 
     # Return first 8 characters
     echo "${test_hash:0:8}"
@@ -67,21 +67,21 @@ check_and_load_cache() {
   local test_type="${5:-}"  # Optional: test type prefix
 
   # Use test type prefix if provided
-  if [ -n "$test_type" ]; then
-    local cache_file="$cache_dir/${test_type}-${cache_key}.yaml"
+  if [ -n "${test_type}" ]; then
+    local cache_file="${cache_dir}/${test_type}-${cache_key}.yaml"
   else
-    local cache_file="$cache_dir/${cache_key}.yaml"
+    local cache_file="${cache_dir}/${cache_key}.yaml"
   fi
 
   # If force rebuild requested, skip cache
-  if [ "$force_rebuild" == "true" ]; then
+  if [ "${force_rebuild}" == "true" ]; then
     print_error "[MISS] Force rebuild requested"
     return 1
   fi
 
-  if [ -f "$cache_file" ]; then
+  if [ -f "${cache_file}" ]; then
     print_success "[HIT] Using cached file: ${cache_file}"
-    cp "$cache_file" "$output_file"
+    cp "${cache_file}" "${output_file}"
     return 0
   else
     print_error "[MISS] Generating new file"
@@ -97,14 +97,14 @@ save_to_cache() {
   local test_type="${4:-}"  # Optional: test type prefix
 
   # Use test type prefix if provided
-  if [ -n "$test_type" ]; then
-    local cache_file="$cache_dir/${test_type}-${cache_key}.yaml"
+  if [ -n "${test_type}" ]; then
+    local cache_file="${cache_dir}/${test_type}-${cache_key}.yaml"
   else
-    local cache_file="$cache_dir/${cache_key}.yaml"
+    local cache_file="${cache_dir}/${cache_key}.yaml"
   fi
 
   # Copy the generated test-matrix.yaml file to the cache location
-  cp "$output_file" "$cache_file"
+  cp "${output_file}" "${cache_file}"
 
   print_success "Cached as: ${cache_file}"
 }

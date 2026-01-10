@@ -5,64 +5,64 @@
 # Source formatting library if not already loaded
 if ! type indent &>/dev/null; then
   _this_script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  source "$_this_script_dir/lib-output-formatting.sh"
+  source "${_this_script_dir}/lib-output-formatting.sh"
 fi
 
 # Create a snapshot
 create_snapshot() {
   # Step 1: Validate inputs
   print_message "Validating inputs..."
-  validate_snapshot_inputs "$TEST_PASS_DIR" "$CACHE_DIR" || return 1
+  validate_snapshot_inputs "${TEST_PASS_DIR}" "${CACHE_DIR}" || return 1
 
   # Step 2: Get test pass name and create snapshot directory
-  test_pass=$(get_test_pass_name "$TEST_PASS_DIR/results.yaml")
-  SNAPSHOT_DIR="$CACHE_DIR/test-run/$test_pass"
+  test_pass=$(get_test_pass_name "${TEST_PASS_DIR}/results.yaml")
+  SNAPSHOT_DIR="${CACHE_DIR}/test-run/${test_pass}"
 
-  print_message "Snapshot: $test_pass"
-  print_message "Location: $SNAPSHOT_DIR"
+  print_message "Snapshot: ${test_pass}"
+  print_message "Location: ${SNAPSHOT_DIR}"
 
   # Step 3: Create directory structure
   print_message "Creating snapshot directory structure..."
-  create_snapshot_directory "$SNAPSHOT_DIR" || return 1
+  create_snapshot_directory "${SNAPSHOT_DIR}" || return 1
 
   # Step 4: Copy configuration and results
   print_message "Copying configuration and results..."
-  copy_config_files "$SNAPSHOT_DIR" "$TEST_PASS_DIR" "$TEST_TYPE"
-  copy_images_directory "$SNAPSHOT_DIR"
+  copy_config_files "${SNAPSHOT_DIR}" "${TEST_PASS_DIR}" "${TEST_TYPE}"
+  copy_images_directory "${SNAPSHOT_DIR}"
 
   # Step 4b: Modify inputs.yaml for snapshot context
   print_message "Modifying inputs.yaml for snapshot context..."
-  modify_inputs_for_snapshot "$SNAPSHOT_DIR"
+  modify_inputs_for_snapshot "${SNAPSHOT_DIR}"
 
   # Step 5: Copy scripts and run.sh
   print_message "Copying scripts..."
-  copy_all_scripts "$SNAPSHOT_DIR" "$TEST_TYPE"
-  copy_run_script "$SNAPSHOT_DIR" "$TEST_TYPE"
+  copy_all_scripts "${SNAPSHOT_DIR}" "${TEST_TYPE}"
+  copy_run_script "${SNAPSHOT_DIR}" "${TEST_TYPE}"
 
   # Step 6: Handle GitHub sources (perf typically doesn't use GitHub sources for implementations)
   # But we still support it for completeness
-  if [ -d "$CACHE_DIR/snapshots" ] || [ -d "$CACHE_DIR/git-repos" ]; then
+  if [ -d "${CACHE_DIR}/snapshots" ] || [ -d "${CACHE_DIR}/git-repos" ]; then
     print_message "Handling GitHub sources..."
-    copy_github_sources_to_snapshot "$SNAPSHOT_DIR" "$CACHE_DIR" 2>/dev/null || true
-    cleanup_empty_source_dirs "$SNAPSHOT_DIR"
+    copy_github_sources_to_snapshot "${SNAPSHOT_DIR}" "${CACHE_DIR}" 2>/dev/null || true
+    cleanup_empty_source_dirs "${SNAPSHOT_DIR}"
   fi
 
   # Step 7: Save Docker images (main + baseline)
   print_message "Saving Docker images..."
-  save_docker_images_for_tests "$SNAPSHOT_DIR" "$TEST_TYPE"
+  save_docker_images_for_tests "${SNAPSHOT_DIR}" "${TEST_TYPE}"
 
   # Step 9: Create settings.yaml
   print_message "Creating settings.yaml..."
-  create_settings_yaml "$SNAPSHOT_DIR" "$test_pass" "$TEST_TYPE" "$CACHE_DIR"
+  create_settings_yaml "${SNAPSHOT_DIR}" "${test_pass}" "${TEST_TYPE}" "${CACHE_DIR}"
 
   # Step 10: Generate README
   print_message "Generating README.md..."
-  generate_snapshot_readme "$SNAPSHOT_DIR" "$TEST_TYPE" "$test_pass" ""
+  generate_snapshot_readme "${SNAPSHOT_DIR}" "${TEST_TYPE}" "${test_pass}" ""
 
   # Step 11: Validate snapshot is complete
   print_message "Validating snapshot..."
   indent
-  if validate_snapshot_complete "$SNAPSHOT_DIR"; then
+  if validate_snapshot_complete "${SNAPSHOT_DIR}"; then
     print_success "Snapshot validation passed"
   else
     print_error "Snapshot validation failed"
@@ -76,7 +76,7 @@ create_snapshot() {
 
   # Step 13: Display summary
   print_header "Snapshot Summary"
-  display_snapshot_summary "$SNAPSHOT_DIR"
+  display_snapshot_summary "${SNAPSHOT_DIR}"
   return 0
 }
 
@@ -90,8 +90,8 @@ validate_snapshot_inputs() {
   local cache_dir="$2"
 
   # Check test pass directory exists
-  if [ ! -d "$test_pass_dir" ]; then
-    print_error "Error: Test pass directory not found: $test_pass_dir"
+  if [ ! -d "${test_pass_dir}" ]; then
+    print_error "Error: Test pass directory not found: ${test_pass_dir}"
     return 1
   fi
 
@@ -101,19 +101,19 @@ validate_snapshot_inputs() {
     return 1
   fi
 
-  if [ ! -f "$test_pass_dir/test-matrix.yaml" ]; then
-    print_error "Error: test-matrix.yaml not found in $test_pass_dir"
+  if [ ! -f "${test_pass_dir}/test-matrix.yaml" ]; then
+    print_error "Error: test-matrix.yaml not found in ${test_pass_dir}"
     return 1
   fi
 
-  if [ ! -f "$test_pass_dir/results.yaml" ]; then
-    print_error "Error: results.yaml not found in $test_pass_dir"
+  if [ ! -f "${test_pass_dir}/results.yaml" ]; then
+    print_error "Error: results.yaml not found in ${test_pass_dir}"
     return 1
   fi
 
   # Check cache directory
-  if [ ! -d "$cache_dir" ]; then
-    print_error "Error: Cache directory not found: $cache_dir"
+  if [ ! -d "${cache_dir}" ]; then
+    print_error "Error: Cache directory not found: ${cache_dir}"
     return 1
   fi
 
@@ -130,9 +130,9 @@ create_snapshot_directory() {
   indent
 
   # If directory exists (created during test execution), just ensure subdirectories
-  if [ -d "$snapshot_dir" ]; then
+  if [ -d "${snapshot_dir}" ]; then
     print_message "Snapshot directory exists, ensuring subdirectories..."
-    mkdir -p "$snapshot_dir"/{logs,docker-compose,docker-images,snapshot,lib,git-repo}
+    mkdir -p "${snapshot_dir}"/{logs,docker-compose,docker-images,snapshot,lib,git-repo}
     indent
     print_success "Snapshot directory structure ready"
     unindent
@@ -141,7 +141,7 @@ create_snapshot_directory() {
   fi
 
   # Directory doesn't exist - create complete structure
-  mkdir -p "$snapshot_dir"/{logs,docker-compose,docker-images,snapshot,lib,git-repo}
+  mkdir -p "${snapshot_dir}"/{logs,docker-compose,docker-images,snapshot,lib,git-repo}
 
   print_success "Created snapshot directory structure"
   unindent
@@ -161,35 +161,35 @@ copy_config_files() {
 
   # Check if source and destination are the same directory
   local same_dir=false
-  if [ "$(cd "$test_pass_dir" 2>/dev/null && pwd)" == "$(cd "$snapshot_dir" 2>/dev/null && pwd)" ]; then
+  if [ "$(cd "${test_pass_dir}" 2>/dev/null && pwd)" == "$(cd "${snapshot_dir}" 2>/dev/null && pwd)" ]; then
     same_dir=true
   fi
 
   # Copy images.yaml (from current directory, always safe)
-  if [ ! -f "$snapshot_dir/images.yaml" ]; then
-    cp images.yaml "$snapshot_dir/" 2>/dev/null || true
+  if [ ! -f "${snapshot_dir}/images.yaml" ]; then
+    cp images.yaml "${snapshot_dir}/" 2>/dev/null || true
   fi
 
   # Copy impls/ directory if it exists (for local implementations)
-  if [ -d impls ] && [ ! -d "$snapshot_dir/impls" ]; then
-    cp -r impls "$snapshot_dir/" 2>/dev/null || true
+  if [ -d impls ] && [ ! -d "${snapshot_dir}/impls" ]; then
+    cp -r impls "${snapshot_dir}/" 2>/dev/null || true
   fi
 
   # Only copy files if directories are different
-  if [ "$same_dir" == "false" ]; then
+  if [ "${same_dir}" == "false" ]; then
     # Copy test matrix
-    cp "$test_pass_dir/test-matrix.yaml" "$snapshot_dir/" 2>/dev/null || true
+    cp "${test_pass_dir}/test-matrix.yaml" "${snapshot_dir}/" 2>/dev/null || true
 
     # Copy results files
-    cp "$test_pass_dir/results.yaml" "$snapshot_dir/" 2>/dev/null || true
-    cp "$test_pass_dir/results.md" "$snapshot_dir/" 2>/dev/null || true
-    cp "$test_pass_dir/results.html" "$snapshot_dir/" 2>/dev/null || true
-    cp "$test_pass_dir/LATEST_TEST_RESULTS.md" "$snapshot_dir/" 2>/dev/null || true
+    cp "${test_pass_dir}/results.yaml" "${snapshot_dir}/" 2>/dev/null || true
+    cp "${test_pass_dir}/results.md" "${snapshot_dir}/" 2>/dev/null || true
+    cp "${test_pass_dir}/results.html" "${snapshot_dir}/" 2>/dev/null || true
+    cp "${test_pass_dir}/LATEST_TEST_RESULTS.md" "${snapshot_dir}/" 2>/dev/null || true
 
     # Copy test-type-specific files
-    if [ "$test_type" == "perf" ]; then
+    if [ "${test_type}" == "perf" ]; then
       # Copy box plot images
-      cp "$test_pass_dir"/*_boxplot.png "$snapshot_dir/" 2>/dev/null || true
+      cp "${test_pass_dir}"/*_boxplot.png "${snapshot_dir}/" 2>/dev/null || true
     fi
 
     print_success "Copied configuration and results files"
@@ -211,16 +211,16 @@ copy_all_scripts() {
   indent
 
   # Create lib directory
-  mkdir -p "$snapshot_dir/lib"
+  mkdir -p "${snapshot_dir}/lib"
 
   # Copy test-specific scripts to lib/
-  cp lib/*.sh "$snapshot_dir/lib/" 2>/dev/null || true
+  cp lib/*.sh "${snapshot_dir}/lib/" 2>/dev/null || true
 
   # Copy global scripts to SAME lib/ directory
-  cp ../lib/*.sh "$snapshot_dir/lib/" 2>/dev/null || true
+  cp ../lib/*.sh "${snapshot_dir}/lib/" 2>/dev/null || true
 
   # Make all scripts executable
-  chmod +x "$snapshot_dir/lib/"*.sh 2>/dev/null || true
+  chmod +x "${snapshot_dir}/lib/"*.sh 2>/dev/null || true
 
   print_success "Copied all scripts (test-specific + global to lib/)"
   unindent
@@ -238,8 +238,8 @@ copy_run_script() {
 
   # Copy run.sh from current directory to snapshot
   if [ -f "run.sh" ]; then
-    cp run.sh "$snapshot_dir/run.sh"
-    chmod +x "$snapshot_dir/run.sh"
+    cp run.sh "${snapshot_dir}/run.sh"
+    chmod +x "${snapshot_dir}/run.sh"
     print_success "Copied run.sh"
     unindent
     return 0
@@ -264,35 +264,35 @@ create_settings_yaml() {
   indent
 
   # Extract summary from results.yaml
-  local total=$(yq eval '.summary.total' "$snapshot_dir/results.yaml" 2>/dev/null || echo "0")
-  local passed=$(yq eval '.summary.passed' "$snapshot_dir/results.yaml" 2>/dev/null || echo "0")
-  local failed=$(yq eval '.summary.failed' "$snapshot_dir/results.yaml" 2>/dev/null || echo "0")
+  local total=$(yq eval '.summary.total' "${snapshot_dir}/results.yaml" 2>/dev/null || echo "0")
+  local passed=$(yq eval '.summary.passed' "${snapshot_dir}/results.yaml" 2>/dev/null || echo "0")
+  local failed=$(yq eval '.summary.failed' "${snapshot_dir}/results.yaml" 2>/dev/null || echo "0")
 
   # Extract metadata
-  local started_at=$(yq eval '.metadata.startedAt' "$snapshot_dir/results.yaml" 2>/dev/null || echo "")
-  local completed_at=$(yq eval '.metadata.completedAt' "$snapshot_dir/results.yaml" 2>/dev/null || echo "")
-  local duration=$(yq eval '.metadata.duration' "$snapshot_dir/results.yaml" 2>/dev/null || echo "0")
+  local started_at=$(yq eval '.metadata.startedAt' "${snapshot_dir}/results.yaml" 2>/dev/null || echo "")
+  local completed_at=$(yq eval '.metadata.completedAt' "${snapshot_dir}/results.yaml" 2>/dev/null || echo "")
+  local duration=$(yq eval '.metadata.duration' "${snapshot_dir}/results.yaml" 2>/dev/null || echo "0")
 
-  cat > "$snapshot_dir/settings.yaml" <<SETTINGS
+  cat > "${snapshot_dir}/settings.yaml" <<SETTINGS
 # Snapshot Settings
-testPass: $test_pass
-testType: $test_type
+testPass: ${test_pass}
+testType: ${test_type}
 createdAt: $(date -u +%Y-%m-%dT%H:%M:%SZ)
 platform: $(uname -m)
 os: $(uname -s)
-cacheDir: $cache_dir
+cacheDir: ${cache_dir}
 
 # Test execution metadata
-startedAt: $started_at
-completedAt: $completed_at
-duration: $duration
+startedAt: ${started_at}
+completedAt: ${completed_at}
+duration: ${duration}
 
 # Summary
 summary:
-  total: $total
-  passed: $passed
-  failed: $failed
-  passRate: $(if [ "$total" -gt 0 ]; then echo "scale=1; ($passed * 100) / $total" | bc; else echo "0.0"; fi)
+  total: ${total}
+  passed: ${passed}
+  failed: ${failed}
+  passRate: $(if [ "${total}" -gt 0 ]; then echo "scale=1; (${passed} * 100) / ${total}" | bc; else echo "0.0"; fi)
 SETTINGS
 
 print_success "Created settings.yaml"
@@ -314,30 +314,30 @@ generate_snapshot_readme() {
   indent
 
   # Read summary from settings.yaml
-  local total=$(yq eval '.summary.total' "$snapshot_dir/settings.yaml" 2>/dev/null || echo "0")
-  local passed=$(yq eval '.summary.passed' "$snapshot_dir/settings.yaml" 2>/dev/null || echo "0")
-  local failed=$(yq eval '.summary.failed' "$snapshot_dir/settings.yaml" 2>/dev/null || echo "0")
-  local pass_rate=$(yq eval '.summary.passRate' "$snapshot_dir/settings.yaml" 2>/dev/null || echo "0.0")
+  local total=$(yq eval '.summary.total' "${snapshot_dir}/settings.yaml" 2>/dev/null || echo "0")
+  local passed=$(yq eval '.summary.passed' "${snapshot_dir}/settings.yaml" 2>/dev/null || echo "0")
+  local failed=$(yq eval '.summary.failed' "${snapshot_dir}/settings.yaml" 2>/dev/null || echo "0")
+  local pass_rate=$(yq eval '.summary.passRate' "${snapshot_dir}/settings.yaml" 2>/dev/null || echo "0.0")
 
   # Get test type display name
   local test_type_name
-  case "$test_type" in
+  case "${test_type}" in
     transport) test_type_name="Transport Interoperability" ;;
     hole-punch) test_type_name="Hole Punch Interoperability" ;;
     perf) test_type_name="Performance Benchmark" ;;
     *) test_type_name="Test" ;;
   esac
 
-  cat > "$snapshot_dir/README.md" <<README
-# Test Pass Snapshot: $test_pass
+  cat > "${snapshot_dir}/README.md" <<README
+# Test Pass Snapshot: ${test_pass}
 
-This is a self-contained snapshot of a **$test_type_name** test run.
+This is a self-contained snapshot of a **${test_type_name}** test run.
 
 ## Summary
 
-- **Total Tests**: $total
-- **Passed**: ✅ $passed
-- **Failed**: ❌ $failed
+- **Total Tests**: ${total}
+- **Passed**: ✅ ${passed}
+- **Failed**: ❌ ${failed}
 - **Pass Rate**: ${pass_rate}%
 
 ## Contents
@@ -353,7 +353,7 @@ This snapshot contains everything needed to reproduce the test run:
 - **settings.yaml** - Snapshot metadata
 - **lib/** - Test-specific scripts
 - **../lib/** - Common shared libraries
-- **logs/** - Test execution logs ($total files)
+- **logs/** - Test execution logs (${total} files)
 - **docker-compose/** - Generated compose files
 - **docker-images/** - Saved Docker images (compressed)
 - **snapshot/** - GitHub source archives (ZIP files)
@@ -383,7 +383,7 @@ original run_tests.sh script, allowing you to subset or modify the test run.
 
 ## Snapshot Details
 
-- **Test Type**: $test_type_name
+- **Test Type**: ${test_type_name}
 - **Created**: $(date -u +%Y-%m-%dT%H:%M:%SZ)
 - **Platform**: $(uname -m) / $(uname -s)
 - **Snapshot Location**: $(pwd)
@@ -391,7 +391,7 @@ original run_tests.sh script, allowing you to subset or modify the test run.
 ## Files Structure
 
 \`\`\`
-$(basename "$snapshot_dir")/
+$(basename "${snapshot_dir}")/
 ├── images.yaml
 ├── test-matrix.yaml
 ├── results.yaml
@@ -443,32 +443,32 @@ return 0
 display_snapshot_summary() {
   local snapshot_dir="$1"
 
-  local snapshot_size=$(du -sh "$snapshot_dir" 2>/dev/null | cut -f1)
-  local snapshot_name=$(basename "$snapshot_dir")
+  local snapshot_size=$(du -sh "${snapshot_dir}" 2>/dev/null | cut -f1)
+  local snapshot_name=$(basename "${snapshot_dir}")
 
   # Count files
-  local log_count=$(ls -1 "$snapshot_dir/logs/" 2>/dev/null | wc -l)
-  local compose_count=$(ls -1 "$snapshot_dir/docker-compose/" 2>/dev/null | wc -l)
-  local image_count=$(ls -1 "$snapshot_dir/docker-images/" 2>/dev/null | wc -l)
-  local zip_count=$(ls -1 "$snapshot_dir/snapshot/"*.zip 2>/dev/null | wc -l)
-  local git_count=$(ls -d "$snapshot_dir/git-repo/"*/ 2>/dev/null | wc -l)
+  local log_count=$(ls -1 "${snapshot_dir}/logs/" 2>/dev/null | wc -l)
+  local compose_count=$(ls -1 "${snapshot_dir}/docker-compose/" 2>/dev/null | wc -l)
+  local image_count=$(ls -1 "${snapshot_dir}/docker-images/" 2>/dev/null | wc -l)
+  local zip_count=$(ls -1 "${snapshot_dir}/snapshot/"*.zip 2>/dev/null | wc -l)
+  local git_count=$(ls -d "${snapshot_dir}/git-repo/"*/ 2>/dev/null | wc -l)
 
-  print_message "Snapshot: $snapshot_name"
-  print_message "Location: $snapshot_dir"
-  print_message "Size: $snapshot_size"
-  print_message "Logs: $log_count files"
-  print_message "Docker Compose: $compose_count files"
-  print_message "Docker Images: $image_count saved"
-  print_message "ZIP Snapshots: $zip_count files"
+  print_message "Snapshot: ${snapshot_name}"
+  print_message "Location: ${snapshot_dir}"
+  print_message "Size: ${snapshot_size}"
+  print_message "Logs: ${log_count} files"
+  print_message "Docker Compose: ${compose_count} files"
+  print_message "Docker Images: ${image_count} saved"
+  print_message "ZIP Snapshots: ${zip_count} files"
 
-  if [ $git_count -gt 0 ]; then
-    print_message "Git Clones: $git_count (with submodules)"
+  if [ ${git_count} -gt 0 ]; then
+    print_message "Git Clones: ${git_count} (with submodules)"
   fi
 
   echo ""
   print_message "To reproduce this test run:"
   indent
-  print_message "cd $snapshot_dir"
+  print_message "cd ${snapshot_dir}"
   print_message "./run.sh"
   unindent
   echo ""
@@ -484,9 +484,9 @@ copy_images_directory() {
   indent
 
   if [ -d images ]; then
-    cp -r images "$snapshot_dir/"
+    cp -r images "${snapshot_dir}/"
     local impl_count=$(find images -mindepth 1 -maxdepth 1 -type d | wc -l)
-    print_success "Copied images/ directory ($impl_count local implementations)"
+    print_success "Copied images/ directory (${impl_count} local implementations)"
   fi
 
   unindent
@@ -500,14 +500,14 @@ copy_images_directory() {
 get_test_pass_name() {
   local results_file="$1"
 
-  local test_pass=$(yq eval '.metadata.testPass' "$results_file" 2>/dev/null)
+  local test_pass=$(yq eval '.metadata.testPass' "${results_file}" 2>/dev/null)
 
-  if [ -z "$test_pass" ] || [ "$test_pass" == "null" ]; then
+  if [ -z "${test_pass}" ] || [ "${test_pass}" == "null" ]; then
     # Generate name from timestamp
     test_pass="snapshot-$(date +%H%M%S-%d-%m-%Y)"
   fi
 
-  echo "$test_pass"
+  echo "${test_pass}"
 }
 
 # Validate snapshot was created successfully
@@ -521,20 +521,20 @@ validate_snapshot_complete() {
   local errors=0
 
   # Check critical files
-  [ ! -f "$snapshot_dir/images.yaml" ] && print_error "Missing: images.yaml" && errors=$((errors + 1))
-  [ ! -f "$snapshot_dir/test-matrix.yaml" ] && print_error "Missing: test-matrix.yaml" && errors=$((errors + 1))
-  [ ! -f "$snapshot_dir/results.yaml" ] && print_error "Missing: results.yaml" && errors=$((errors + 1))
-  [ ! -f "$snapshot_dir/settings.yaml" ] && print_error "Missing: settings.yaml" && errors=$((errors + 1))
-  [ ! -f "$snapshot_dir/README.md" ] && print_error "Missing: README.md" && errors=$((errors + 1))
-  [ ! -f "$snapshot_dir/run.sh" ] && print_error "Missing: run.sh" && errors=$((errors + 1))
-  [ ! -x "$snapshot_dir/run.sh" ] && print_error "run.sh not executable" && errors=$((errors + 1))
+  [ ! -f "${snapshot_dir}/images.yaml" ] && print_error "Missing: images.yaml" && errors=$((${errors} + 1))
+  [ ! -f "${snapshot_dir}/test-matrix.yaml" ] && print_error "Missing: test-matrix.yaml" && errors=$((${errors} + 1))
+  [ ! -f "${snapshot_dir}/results.yaml" ] && print_error "Missing: results.yaml" && errors=$((${errors} + 1))
+  [ ! -f "${snapshot_dir}/settings.yaml" ] && print_error "Missing: settings.yaml" && errors=$((${errors} + 1))
+  [ ! -f "${snapshot_dir}/README.md" ] && print_error "Missing: README.md" && errors=$((${errors} + 1))
+  [ ! -f "${snapshot_dir}/run.sh" ] && print_error "Missing: run.sh" && errors=$((${errors} + 1))
+  [ ! -x "${snapshot_dir}/run.sh" ] && print_error "run.sh not executable" && errors=$((${errors} + 1))
 
   # Check directories
-  [ ! -d "$snapshot_dir/lib" ] && print_error "Missing: lib/" && errors=$((errors + 1))
-  [ ! -d "$snapshot_dir/logs" ] && print_error "Missing: logs/" && errors=$((errors + 1))
+  [ ! -d "${snapshot_dir}/lib" ] && print_error "Missing: lib/" && errors=$((${errors} + 1))
+  [ ! -d "${snapshot_dir}/logs" ] && print_error "Missing: logs/" && errors=$((${errors} + 1))
 
-  if [ $errors -gt 0 ]; then
-    print_error "Snapshot validation: $errors errors"
+  if [ ${errors} -gt 0 ]; then
+    print_error "Snapshot validation: ${errors} errors"
     unindent
     return 1
   fi

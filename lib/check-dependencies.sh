@@ -8,7 +8,7 @@ HAS_ERROR=false
 # Source formatting library if not already loaded
 if ! type indent &>/dev/null; then
   _this_script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  source "$_this_script_dir/lib-output-formatting.sh"
+  source "${_this_script_dir}/lib-output-formatting.sh"
 fi
 
 # Function to compare semantic versions
@@ -38,10 +38,10 @@ version_compare() {
 # Check bash
 if [ -n "${BASH_VERSION:-}" ]; then
   bash_version="${BASH_VERSION%.*}"
-  if [ $(version_compare "$bash_version" "4.0") -ge 0 ]; then
-    print_success "bash $bash_version (minimum: 4.0)"
+  if [ $(version_compare "${bash_version}" "4.0") -ge 0 ]; then
+    print_success "bash ${bash_version} (minimum: 4.0)"
   else
-    print_error "bash $bash_version is too old (minimum: 4.0)"
+    print_error "bash ${bash_version} is too old (minimum: 4.0)"
     HAS_ERROR=true
   fi
 else
@@ -52,10 +52,10 @@ fi
 # Check docker
 if command -v docker &> /dev/null; then
   docker_version=$(docker --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-  if [ $(version_compare "$docker_version" "20.10.0") -ge 0 ]; then
-    print_success "docker $docker_version (minimum: 20.10.0)"
+  if [ $(version_compare "${docker_version}" "20.10.0") -ge 0 ]; then
+    print_success "docker ${docker_version} (minimum: 20.10.0)"
   else
-    print_error "docker $docker_version is too old (minimum: 20.10.0)"
+    print_error "docker ${docker_version} is too old (minimum: 20.10.0)"
     HAS_ERROR=true
   fi
 
@@ -78,12 +78,12 @@ DOCKER_COMPOSE_CMD=""
 if docker compose version &> /dev/null; then
   # New docker compose plugin
   compose_version=$(docker compose version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-  print_success "docker compose $compose_version (using 'docker compose')"
+  print_success "docker compose ${compose_version} (using 'docker compose')"
   DOCKER_COMPOSE_CMD="docker compose"
 elif command -v docker-compose &> /dev/null; then
   # Old standalone docker-compose
   compose_version=$(docker-compose --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-  print_success "docker-compose $compose_version (using 'docker-compose')"
+  print_success "docker-compose ${compose_version} (using 'docker-compose')"
   DOCKER_COMPOSE_CMD="docker-compose"
 else
   print_error "docker compose is not installed"
@@ -94,18 +94,18 @@ else
 fi
 
 # Export the docker compose command for use by other scripts
-if [ -n "$DOCKER_COMPOSE_CMD" ]; then
-  echo "$DOCKER_COMPOSE_CMD" > /tmp/docker-compose-cmd.txt
+if [ -n "${DOCKER_COMPOSE_CMD}" ]; then
+  echo "${DOCKER_COMPOSE_CMD}" > /tmp/docker-compose-cmd.txt
 fi
 
 # Check yq
 if command -v yq &> /dev/null; then
   yq_version=$(yq --version 2>&1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-  if [ -n "$yq_version" ]; then
-    if [ $(version_compare "$yq_version" "4.0.0") -ge 0 ]; then
-      print_success "yq $yq_version (minimum: 4.0.0)"
+  if [ -n "${yq_version}" ]; then
+    if [ $(version_compare "${yq_version}" "4.0.0") -ge 0 ]; then
+      print_success "yq ${yq_version} (minimum: 4.0.0)"
     else
-      print_error "yq $yq_version is too old (minimum: 4.0.0)"
+      print_error "yq ${yq_version} is too old (minimum: 4.0.0)"
       HAS_ERROR=true
     fi
   else
@@ -171,7 +171,7 @@ fi
 # Check gnuplot (optional - for box plot generation)
 if command -v gnuplot &> /dev/null; then
   gnuplot_version=$(gnuplot --version 2>&1 | grep -oE '[0-9]+\.[0-9]+' | head -1)
-  print_success "gnuplot $gnuplot_version (for box plot generation)"
+  print_success "gnuplot ${gnuplot_version} (for box plot generation)"
 else
   print_error "gnuplot not found (box plots will be skipped)"
   indent
@@ -181,7 +181,7 @@ fi
 
 echo ""
 
-if [ "$HAS_ERROR" == "true" ]; then
+if [ "${HAS_ERROR}" == "true" ]; then
   print_error "Some dependencies are missing or outdated"
   exit 1
 else
