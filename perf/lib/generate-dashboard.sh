@@ -20,18 +20,18 @@ fi
 
 # Extract metadata
 test_pass=$(yq eval '.metadata.testPass' "$RESULTS_FILE")
-started_at=$(yq eval '.metadata.startedAt' "$RESULTS_FILE")
-completed_at=$(yq eval '.metadata.completedAt' "$RESULTS_FILE")
+STARTED_AT=$(yq eval '.metadata.startedAt' "$RESULTS_FILE")
+COMPLETED_AT=$(yq eval '.metadata.completedAt' "$RESULTS_FILE")
 duration=$(yq eval '.metadata.duration' "$RESULTS_FILE")
 platform=$(yq eval '.metadata.platform' "$RESULTS_FILE")
 os_name=$(yq eval '.metadata.os' "$RESULTS_FILE")
 
 # Extract summary
 total_baselines=$(yq eval '.summary.totalBaselines' "$RESULTS_FILE")
-baselines_passed=$(yq eval '.summary.baselinesPassed' "$RESULTS_FILE")
-baselines_failed=$(yq eval '.summary.baselinesFailed' "$RESULTS_FILE")
-total_tests=$(yq eval '.summary.totalTests' "$RESULTS_FILE")
-tests_passed=$(yq eval '.summary.testsPassed' "$RESULTS_FILE")
+BASELINES_PASSED=$(yq eval '.summary.baselinesPassed' "$RESULTS_FILE")
+BASELINES_FAILED=$(yq eval '.summary.baselinesFailed' "$RESULTS_FILE")
+TOTAL_TESTS=$(yq eval '.summary.totalTests' "$RESULTS_FILE")
+TESTS_PASSED=$(yq eval '.summary.testsPassed' "$RESULTS_FILE")
 tests_failed=$(yq eval '.summary.testsFailed' "$RESULTS_FILE")
 total_all=$(yq eval '.summary.totalAll' "$RESULTS_FILE")
 passed_all=$(yq eval '.summary.passedAll' "$RESULTS_FILE")
@@ -39,7 +39,7 @@ failed_all=$(yq eval '.summary.failedAll' "$RESULTS_FILE")
 
 # Calculate pass rate
 if [ "$total_all" -gt 0 ]; then
-  pass_rate=$(awk "BEGIN {printf \"%.1f\", ($passed_all / $total_all) * 100}")
+  pass_rate=$(echo "scale=1; ($passed_all * 100) / $total_all" | bc)
 else
   pass_rate="0.0"
 fi
@@ -49,39 +49,39 @@ cat > "$LATEST_RESULTS_FILE" <<EOF
 # Performance Test Results
 
 **Test Pass:** $test_pass
-**Started:** $started_at
-**Completed:** $completed_at
+**Started:** $STARTED_AT
+**Completed:** $COMPLETED_AT
 **Duration:** $duration
 **Platform:** $platform ($os_name)
 
 ## Summary
 
-- **Total Tests:** $total_all ($total_baselines baseline + $total_tests main)
+- **Total Tests:** $total_all ($total_baselines baseline + $TOTAL_TESTS main)
 - **Passed:** $passed_all (${pass_rate}%)
 - **Failed:** $failed_all
 
 ### Baseline Results
 - Total: $total_baselines
-- Passed: $baselines_passed
-- Failed: $baselines_failed
+- Passed: $BASELINES_PASSED
+- Failed: $BASELINES_FAILED
 
 ### Main Test Results
-- Total: $total_tests
-- Passed: $tests_passed
+- Total: $TOTAL_TESTS
+- Passed: $TESTS_PASSED
 - Failed: $tests_failed
 
 ## Environment
 
 - **Platform:** $platform
 - **OS:** $os_name
-- **Started:** $started_at
-- **Completed:** $completed_at
+- **Started:** $STARTED_AT
+- **Completed:** $COMPLETED_AT
 - **Duration:** $duration
 
 ## Timestamps
 
-- **Started:** $started_at
-- **Completed:** $completed_at
+- **Started:** $STARTED_AT
+- **Completed:** $COMPLETED_AT
 
 ---
 
@@ -94,8 +94,8 @@ cat > "$LATEST_RESULTS_FILE" <<EOF
 EOF
 
 # Extract upload stats from each test (without Outliers column)
-test_count=$(yq eval '.testResults | length' "$RESULTS_FILE" 2>/dev/null || echo "0")
-for ((i=0; i<test_count; i++)); do
+TEST_COUNT=$(yq eval '.testResults | length' "$RESULTS_FILE" 2>/dev/null || echo "0")
+for ((i=0; i<TEST_COUNT; i++)); do
   name=$(yq eval ".testResults[$i].name" "$RESULTS_FILE" 2>/dev/null || echo "N/A")
   min=$(yq eval ".testResults[$i].upload.min" "$RESULTS_FILE" 2>/dev/null || echo "null")
   q1=$(yq eval ".testResults[$i].upload.q1" "$RESULTS_FILE" 2>/dev/null || echo "null")
@@ -115,7 +115,7 @@ cat >> "$LATEST_RESULTS_FILE" <<'EOF'
 EOF
 
 # Extract download stats from each test (without Outliers column)
-for ((i=0; i<test_count; i++)); do
+for ((i=0; i<TEST_COUNT; i++)); do
   name=$(yq eval ".testResults[$i].name" "$RESULTS_FILE" 2>/dev/null || echo "N/A")
   min=$(yq eval ".testResults[$i].download.min" "$RESULTS_FILE" 2>/dev/null || echo "null")
   q1=$(yq eval ".testResults[$i].download.q1" "$RESULTS_FILE" 2>/dev/null || echo "null")
@@ -135,7 +135,7 @@ cat >> "$LATEST_RESULTS_FILE" <<'EOF'
 EOF
 
 # Extract latency stats from each test (without Outliers column)
-for ((i=0; i<test_count; i++)); do
+for ((i=0; i<TEST_COUNT; i++)); do
   name=$(yq eval ".testResults[$i].name" "$RESULTS_FILE" 2>/dev/null || echo "N/A")
   min=$(yq eval ".testResults[$i].latency.min" "$RESULTS_FILE" 2>/dev/null || echo "null")
   q1=$(yq eval ".testResults[$i].latency.q1" "$RESULTS_FILE" 2>/dev/null || echo "null")
@@ -161,39 +161,39 @@ cat > "$OUTPUT_MD" <<EOF
 # Performance Test Results
 
 **Test Pass:** $test_pass
-**Started:** $started_at
-**Completed:** $completed_at
+**Started:** $STARTED_AT
+**Completed:** $COMPLETED_AT
 **Duration:** $duration
 **Platform:** $platform ($os_name)
 
 ## Summary
 
-- **Total Tests:** $total_all ($total_baselines baseline + $total_tests main)
+- **Total Tests:** $total_all ($total_baselines baseline + $TOTAL_TESTS main)
 - **Passed:** $passed_all (${pass_rate}%)
 - **Failed:** $failed_all
 
 ### Main Test Results
-- Total: $total_tests
-- Passed: $tests_passed
+- Total: $TOTAL_TESTS
+- Passed: $TESTS_PASSED
 - Failed: $tests_failed
 
 ### Baseline Results
 - Total: $total_baselines
-- Passed: $baselines_passed
-- Failed: $baselines_failed
+- Passed: $BASELINES_PASSED
+- Failed: $BASELINES_FAILED
 
 ## Environment
 
 - **Platform:** $platform
 - **OS:** $os_name
-- **Started:** $started_at
-- **Completed:** $completed_at
+- **Started:** $STARTED_AT
+- **Completed:** $COMPLETED_AT
 - **Duration:** $duration
 
 ## Timestamps
 
-- **Started:** $started_at
-- **Completed:** $completed_at
+- **Started:** $STARTED_AT
+- **Completed:** $COMPLETED_AT
 
 ---
 
@@ -244,7 +244,7 @@ cat > "$OUTPUT_HTML" <<EOF
     <p><strong>Duration:</strong> $duration</p>
     <h2>Summary</h2>
     <ul>
-        <li>Total: $total_all ($total_baselines baseline + $total_tests main)</li>
+        <li>Total: $total_all ($total_baselines baseline + $TOTAL_TESTS main)</li>
         <li class="pass">Passed: $passed_all</li>
         <li class="fail">Failed: $failed_all</li>
     </ul>

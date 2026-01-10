@@ -101,7 +101,8 @@ init_cache_dirs
 # Hook up ctrl+c handler
 trap handle_shutdown INT
 
-# Override for perf: Must run 1 test at a time (sequential) to get accurate performance results
+# Override for perf: Must run 1 test at a time (sequential) to get accurate
+# performance results
 WORKER_COUNT=1
 
 # Perf-specific variables
@@ -167,7 +168,7 @@ Examples:
   $0 --snapshot --force-image-rebuild
 
 Dependencies:
-  bash 4.0+, docker 20.10+, yq 4.0+, wget, zip, unzip
+  bash 4.0+, docker 20.10+, yq 4.0+, wget, zip, unzip, bc, sha256sum
   Run with --check-deps to verify installation.
 
 EOF
@@ -327,6 +328,7 @@ if [ "$LIST_TESTS" == "true" ]; then
   echo ""
 
   unindent
+  rm -rf "${TEMP_DIR}"
   exit 0
 fi
 
@@ -415,37 +417,11 @@ fi
 unindent
 echo ""
 
-# =============================================================================
-# STEP 5: REMOTE SETUP
-# -----------------------------------------------------------------------------
-# This is currently not used, but there is code for initializing a remote host
-# to run a docker image that is used in this test. This is to support doing
-# this test over an actual network connection. For now, all tests are run
-# locally and therefore only give relative performance numbers of different
-# implementations and baselines
-# =============================================================================
-
-# Start timing (moved before server setup)
+# Start timing
 TEST_START_TIME=$(date +%s)
 
-# Setup remote servers (if any)
-#print_header "Server Setup..."
-#indent
-#if [ -f ${SCRIPT_DIR}/setup-remote-server.sh ]; then
-#  bash ${SCRIPT_DIR}/setup-remote-server.sh || {
-#    print_error "Remote server setup failed"
-#    unindent
-#    exit 1
-#  }
-#else
-#  print_message "No remote server setup script found"
-#  print_message "Proceeding with local-only testing"
-#fi
-#unindent
-#echo ""
-
 # =============================================================================
-# STEP 6: GENERATE TEST MATRIX
+# STEP 5: GENERATE TEST MATRIX
 # -----------------------------------------------------------------------------
 # This either loads an already generated test matrix from the cache or it
 # generates a new one and caches it. This applies the filtering and the test
@@ -465,7 +441,7 @@ unindent
 echo ""
 
 # =============================================================================
-# STEP 7: PRINT TEST SELECTION
+# STEP 6: PRINT TEST SELECTION
 # -----------------------------------------------------------------------------
 # This loads the test matrix data and prints it out. If AUTO_YES is not true,
 # then prompt the user if they would like to continue.
@@ -501,11 +477,11 @@ if [ "$SHOW_IGNORED" == "true" ]; then
   echo ""
 fi
 
-baseline_count=${#selected_baseline_tests[@]}
-test_count=${#selected_main_tests[@]}
-total_tests=$(($baseline_count + $test_count))
+BASELINE_COUNT=${#selected_baseline_tests[@]}
+TEST_COUNT=${#selected_main_tests[@]}
+TOTAL_TESTS=$(($BASELINE_COUNT + $TEST_COUNT))
 
-print_message "Total selected: $baseline_count baseline + $test_count main = $total_tests tests"
+print_message "Total selected: $BASELINE_COUNT baseline + $TEST_COUNT main = $TOTAL_TESTS tests"
 print_message "Total ignored: ${#ignored_baseline_tests[@]} baseline + ${#ignored_main_tests[@]} main = $((${#ignored_baseline_tests[@]} + ${#ignored_main_tests[@]})) tests"
 echo ""
 unindent
@@ -522,7 +498,7 @@ IMAGE_COUNT=$(wc -l < "$REQUIRED_IMAGES")
 # Prompt for confirmation unless auto-approved
 indent
 if [ "$AUTO_YES" != true ]; then
-  read -p "  Build $IMAGE_COUNT Docker images and execute $total_tests tests ($baseline_count baseline + $test_count main)? (Y/n): " response
+  read -p "  Build $IMAGE_COUNT Docker images and execute $TOTAL_TESTS tests ($BASELINE_COUNT baseline + $TEST_COUNT main)? (Y/n): " response
   response=${response:-Y}
 
   if [[ ! "$response" =~ ^[Yy]$ ]]; then
@@ -537,7 +513,7 @@ fi
 unindent
 
 # =============================================================================
-# STEP 8: BUILD MISSING DOCKER IMAGES
+# STEP 7: BUILD MISSING DOCKER IMAGES
 # -----------------------------------------------------------------------------
 # This attempts to build the missing docker images needed to run the selected
 # tests.
@@ -565,7 +541,7 @@ unindent
 echo ""
 
 # =============================================================================
-# STEP 9: RUN TESTS
+# STEP 8: RUN TESTS
 # -----------------------------------------------------------------------------
 # This starts global services (e.g. Redis), then runs the baseline tests
 # followed by the main tests and then stops the global services.
@@ -586,12 +562,12 @@ echo ""
 print_header "Running baseline tests... (1 worker)"
 indent
 
-if [ "$baseline_count" -eq 0 ]; then
+if [ "$BASELINE_COUNT" -eq 0 ]; then
     print_message "No baseline tests selected"
 else
   BASELINE_RESULTS_FILE="${TEST_PASS_DIR}/baseline-results.yaml.tmp"
   > "${BASELINE_RESULTS_FILE}"
-  for ((i=0; i<baseline_count; i++)); do
+  for ((i=0; i<BASELINE_COUNT; i++)); do
     # Check for shutdown
     if [ "${SHUTDOWN}" == "true" ]; then
       break
@@ -602,9 +578,9 @@ else
 
     # Show progress (same format as main tests)
     if [ "${DEBUG:-false}" == "true" ]; then
-      print_message "[$((i + 1))/$baseline_count] $baseline_name..."
+      print_message "[$((i + 1))/$BASELINE_COUNT] $baseline_name..."
     else
-      echo_message "[$((i + 1))/$baseline_count] $baseline_name..."
+      echo_message "[$((i + 1))/$BASELINE_COUNT] $baseline_name..."
     fi
 
     # Run baseline test using same script, passing "baseline" as test type >/dev/null 2>&1
@@ -623,12 +599,12 @@ echo ""
 print_header "Running tests... (1 worker)"
 indent
 
-if [ "$test_count" -eq 0 ]; then
+if [ "$TEST_COUNT" -eq 0 ]; then
     print_message "No tests selected"
 else
   TEST_RESULTS_FILE="${TEST_PASS_DIR}/results.yaml.tmp"
   > "${TEST_RESULTS_FILE}"
-  for ((i=0; i<test_count; i++)); do
+  for ((i=0; i<TEST_COUNT; i++)); do
     # Check for shutdown
     if [ "${SHUTDOWN}" == "true" ]; then
       break
@@ -639,10 +615,10 @@ else
 
     # Show test progress (matching transport format)
     if [ "${DEBUG:-false}" == "true" ]; then
-      print_message "[$((i + 1))/$test_count] $test_name..."
+      print_message "[$((i + 1))/$TEST_COUNT] $test_name..."
       indent
     else
-      echo_message "[$((i + 1))/$test_count] $test_name..."
+      echo_message "[$((i + 1))/$TEST_COUNT] $test_name..."
     fi
 
     # Run test, suppress terminal output (still writes to log file)
@@ -676,7 +652,7 @@ TEST_END_TIME=$(date +%s)
 TEST_DURATION=$((TEST_END_TIME - TEST_START_TIME))
 
 # =============================================================================
-# STEP 10: COLLECT RESULTS
+# STEP 9: COLLECT RESULTS
 # -----------------------------------------------------------------------------
 # This appends all of the results files to the single results.yaml in the
 # output directory and then displays a summary
@@ -707,7 +683,7 @@ fi
 # Total counts
 TOTAL_PASSED=$((BASELINE_PASSED + PASSED))
 TOTAL_FAILED=$((BASELINE_FAILED + FAILED))
-TOTAL_TESTS=$((baseline_count + test_count))
+# TOTAL_TESTS already defined earlier in script
 
 # Generate final results.yaml
 cat > "${TEST_PASS_DIR}/results.yaml" <<EOF
@@ -721,10 +697,10 @@ metadata:
   workerCount: $WORKER_COUNT
 
 summary:
-  totalBaselines: $baseline_count
+  totalBaselines: $BASELINE_COUNT
   baselinesPassed: $BASELINE_PASSED
   baselinesFailed: $BASELINE_FAILED
-  totalTests: $test_count
+  totalTests: $TEST_COUNT
   testsPassed: $PASSED
   testsFailed: $FAILED
   totalAll: $TOTAL_TESTS
@@ -753,7 +729,7 @@ fi
 
 print_message "Results:"
 indent
-print_message "Total: $TOTAL_TESTS ($baseline_count baseline + $test_count main)"
+print_message "Total: $TOTAL_TESTS ($BASELINE_COUNT baseline + $TEST_COUNT main)"
 print_success "Passed: $TOTAL_PASSED"
 print_error "Failed: $TOTAL_FAILED"
 
@@ -790,7 +766,7 @@ unindent
 echo ""
 
 # =============================================================================
-# STEP 11: GENERATE RESULTS DASHBOARD
+# STEP 10: GENERATE RESULTS DASHBOARD
 # -----------------------------------------------------------------------------
 # This creates the Markdown version for injecting into the README.md file for
 # this test. If `pandoc` is installed, an HTML version is gnerated. If
@@ -829,7 +805,7 @@ unindent
 echo ""
 
 # =============================================================================
-# STEP 12: CREATE SNAPSHOT
+# STEP 11: CREATE SNAPSHOT
 # -----------------------------------------------------------------------------
 # This copies all necessary scripts and input files to the output directory so
 # that it becomes a standalone version of this test that can be emitted as an

@@ -3,7 +3,7 @@
 
 set -euo pipefail
 
-has_error=false
+HAS_ERROR=false
 
 # Source formatting library if not already loaded
 if ! type indent &>/dev/null; then
@@ -42,11 +42,11 @@ if [ -n "${BASH_VERSION:-}" ]; then
     print_success "bash $bash_version (minimum: 4.0)"
   else
     print_error "bash $bash_version is too old (minimum: 4.0)"
-    has_error=true
+    HAS_ERROR=true
   fi
 else
   print_error "bash not detected"
-  has_error=true
+  HAS_ERROR=true
 fi
 
 # Check docker
@@ -56,7 +56,7 @@ if command -v docker &> /dev/null; then
     print_success "docker $docker_version (minimum: 20.10.0)"
   else
     print_error "docker $docker_version is too old (minimum: 20.10.0)"
-    has_error=true
+    HAS_ERROR=true
   fi
 
   indent
@@ -65,12 +65,12 @@ if command -v docker &> /dev/null; then
     print_success "Docker daemon is running"
   else
     print_error "Docker daemon is not running"
-    has_error=true
+    HAS_ERROR=true
   fi
   unindent
 else
   print_error "docker is not installed"
-  has_error=true
+  HAS_ERROR=true
 fi
 
 # Check docker compose (prefer new 'docker compose' over old 'docker-compose')
@@ -90,7 +90,7 @@ else
   indent
   print_message "Install: docker compose plugin (recommended) or standalone docker-compose"
   unindent
-  has_error=true
+  HAS_ERROR=true
 fi
 
 # Export the docker compose command for use by other scripts
@@ -106,7 +106,7 @@ if command -v yq &> /dev/null; then
       print_success "yq $yq_version (minimum: 4.0.0)"
     else
       print_error "yq $yq_version is too old (minimum: 4.0.0)"
-      has_error=true
+      HAS_ERROR=true
     fi
   else
     print_success "yq is installed"
@@ -117,7 +117,7 @@ else
   print_message "Install: sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64"
   print_message "         sudo chmod +x /usr/local/bin/yq"
   unindent
-  has_error=true
+  HAS_ERROR=true
 fi
 
 # Check wget
@@ -125,7 +125,7 @@ if command -v wget &> /dev/null; then
   print_success "wget is installed"
 else
   print_error "wget is not installed"
-  has_error=true
+  HAS_ERROR=true
 fi
 
 # Check zip
@@ -133,7 +133,7 @@ if command -v zip &> /dev/null; then
   print_success "zip is installed"
 else
   print_error "zip is not installed"
-  has_error=true
+  HAS_ERROR=true
 fi
 
 # Check unzip
@@ -141,7 +141,7 @@ if command -v unzip &> /dev/null; then
   print_success "unzip is installed"
 else
   print_error "unzip is not installed"
-  has_error=true
+  HAS_ERROR=true
 fi
 
 # Check cut
@@ -149,15 +149,15 @@ if command -v cut &> /dev/null; then
   print_success "cut is installed"
 else
   print_error "cut is not installed"
-  has_error=true
+  HAS_ERROR=true
 fi
 
-# Check awk
-if command -v awk &> /dev/null; then
-  print_success "awk is installed"
+# Check bc
+if command -v bc &> /dev/null; then
+  print_success "bc is installed"
 else
-  print_error "awk is not installed"
-  has_error=true
+  print_error "bc is not installed"
+  HAS_ERROR=true
 fi
 
 # Check sha256sum
@@ -165,23 +165,7 @@ if command -v sha256sum &> /dev/null; then
   print_success "sha256sum is installed"
 else
   print_error "sha256sum is not installed"
-  has_error=true
-fi
-
-# Check ssh (required for remote builds)
-if command -v ssh &> /dev/null; then
-  print_success "ssh is installed"
-else
-  print_error "ssh is not installed (required for remote builds)"
-  has_error=true
-fi
-
-# Check scp (required for remote builds)
-if command -v scp &> /dev/null; then
-  print_success "scp is installed"
-else
-  print_error "scp is not installed (required for remote builds)"
-  has_error=true
+  HAS_ERROR=true
 fi
 
 # Check gnuplot (optional - for box plot generation)
@@ -197,7 +181,7 @@ fi
 
 echo ""
 
-if [ "$has_error" == "true" ]; then
+if [ "$HAS_ERROR" == "true" ]; then
   print_error "Some dependencies are missing or outdated"
   exit 1
 else

@@ -273,7 +273,7 @@ download_missing_github_sources() {
 
   local downloaded_zips=0
   local downloaded_gits=0
-  local failed=0
+  local FAILED=0
 
   while IFS=$'\t' read -r commit repo requires_submodules; do
     local repo_name=$(basename "$repo")
@@ -292,11 +292,11 @@ download_missing_github_sources() {
               downloaded_gits=$((downloaded_gits + 1))
             else
               print_error "Failed to clone $repo" >&2
-              failed=$((failed + 1))
+              FAILED=$((FAILED + 1))
             fi
           else
             print_error "clone_github_repo_with_submodules not available (source lib-image-building.sh)"
-            failed=$((failed + 1))
+            FAILED=$((FAILED + 1))
           fi
         fi
       fi
@@ -312,11 +312,11 @@ download_missing_github_sources() {
               downloaded_zips=$((downloaded_zips + 1))
             else
               print_error "Failed to download ZIP for ${commit:0:8}" >&2
-              failed=$((failed + 1))
+              FAILED=$((FAILED + 1))
             fi
           else
             print_error "download_github_snapshot not available (source lib-image-building.sh)" >&2
-            failed=$((failed + 1))
+            FAILED=$((FAILED + 1))
           fi
         fi
       fi
@@ -332,8 +332,8 @@ download_missing_github_sources() {
     print_success "Cloned $downloaded_gits repositories with submodules"
   fi
 
-  if [ $failed -gt 0 ]; then
-    print_error "Failed to download $failed sources" >&2
+  if [ $FAILED -gt 0 ]; then
+    print_error "Failed to download $FAILED sources" >&2
     return 1
   fi
 
@@ -422,7 +422,7 @@ verify_git_submodules() {
   local submodule_count=$(git -C "$git_clone_dir" config --file .gitmodules --get-regexp path | wc -l)
   if [ $submodule_count -gt 0 ]; then
     # Check if first submodule directory has files
-    local first_submodule=$(git -C "$git_clone_dir" config --file .gitmodules --get-regexp path | head -1 | awk '{print $2}')
+    local first_submodule=$(git -C "$git_clone_dir" config --file .gitmodules --get-regexp path | head -1 | { read first second rest; echo "$second"; })
     if [ -d "$git_clone_dir/$first_submodule" ] && [ "$(ls -A "$git_clone_dir/$first_submodule" 2>/dev/null)" ]; then
       return 0  # Submodule has content
     fi

@@ -40,23 +40,11 @@ build_images_from_section() {
     fi
 
     image_name="${TEST_TYPE}-${impl_id}"
-    #server_id=$(get_server_config "$impl_id")
-
-    # Determine if remote build
-    #if is_remote_server "$server_id"; then
-    #  build_location="remote"
-    #  hostname=$(get_remote_hostname "$server_id")
-    #  username=$(get_remote_username "$server_id")
-    #else
-      build_location="local"
-    #fi
 
     # Check if image already exists (for local builds only)
-    if [ "$build_location" == "local" ]; then
-      if [ "$force_image_rebuild" != "true" ] && docker_image_exists "$image_name"; then
-        print_success "$image_name (already built)"
-        continue
-      fi
+    if [ "$force_image_rebuild" != "true" ] && docker_image_exists "$image_name"; then
+      print_success "$image_name (already built)"
+      continue
     fi
 
     # Create YAML file for this build
@@ -67,21 +55,9 @@ imageName: $image_name
 imageType: peer
 imagePrefix: "${TEST_TYPE}"
 sourceType: $source_type
-buildLocation: $build_location
 cacheDir: $CACHE_DIR
 forceRebuild: $force_image_rebuild
 EOF
-
-    # Add remote info if needed
-    if [ "$build_location" == "remote" ]; then
-      cat >> "$yaml_file" <<EOF
-
-remote:
-  server: $server_id
-  hostname: $hostname
-  username: $username
-EOF
-    fi
 
     # Add source-specific parameters
     case "$source_type" in
@@ -150,22 +126,10 @@ EOF
       ;;
     esac
 
-    # Execute build (local or remote)
-    if [ "$build_location" == "remote" ]; then
-      # Copy lib-image-building.sh to remote for use by build script
-      local lib_script="${SCRIPT_LIB_DIR}/lib-image-building.sh"
-
-      build_on_remote "$yaml_file" "$username" "$hostname" "${SCRIPT_LIB_DIR}/build-single-image.sh" || {
-        print_error "Remote build failed for $impl_id"
-          exit 1
-        }
-    else
-      # Local build
-      bash "${SCRIPT_LIB_DIR}/build-single-image.sh" "$yaml_file" || {
-        print_error "Local build failed for $impl_id"
-          exit 1
-        }
-    fi
+    bash "${SCRIPT_LIB_DIR}/build-single-image.sh" "$yaml_file" || {
+      print_error "Local build failed for $impl_id"
+        exit 1
+    }
   done
 }
 

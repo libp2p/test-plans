@@ -17,23 +17,23 @@ print_debug "test index: ${TEST_INDEX}"
 print_debug "test_pass: ${TEST_PASS}"
 
 # Read test configuration from matrix
-dialer_id=$(yq eval ".${TEST_PASS}[${TEST_INDEX}].dialer.id" "${TEST_PASS_DIR}/test-matrix.yaml")
-listener_id=$(yq eval ".${TEST_PASS}[${TEST_INDEX}].listener.id" "${TEST_PASS_DIR}/test-matrix.yaml")
-transport=$(yq eval ".${TEST_PASS}[${TEST_INDEX}].transport" "${TEST_PASS_DIR}/test-matrix.yaml")
-secure=$(yq eval ".${TEST_PASS}[${TEST_INDEX}].secureChannel" "${TEST_PASS_DIR}/test-matrix.yaml")
-muxer=$(yq eval ".${TEST_PASS}[${TEST_INDEX}].muxer" "${TEST_PASS_DIR}/test-matrix.yaml")
-test_name=$(yq eval ".${TEST_PASS}[${TEST_INDEX}].id" "${TEST_PASS_DIR}/test-matrix.yaml")
+DIALER_ID=$(yq eval ".${TEST_PASS}[${TEST_INDEX}].dialer.id" "${TEST_PASS_DIR}/test-matrix.yaml")
+LISTENER_ID=$(yq eval ".${TEST_PASS}[${TEST_INDEX}].listener.id" "${TEST_PASS_DIR}/test-matrix.yaml")
+TRANSPORT_NAME=$(yq eval ".${TEST_PASS}[${TEST_INDEX}].transport" "${TEST_PASS_DIR}/test-matrix.yaml")
+SECURE=$(yq eval ".${TEST_PASS}[${TEST_INDEX}].secureChannel" "${TEST_PASS_DIR}/test-matrix.yaml")
+MUXER_NAME=$(yq eval ".${TEST_PASS}[${TEST_INDEX}].muxer" "${TEST_PASS_DIR}/test-matrix.yaml")
+TEST_NAME=$(yq eval ".${TEST_PASS}[${TEST_INDEX}].id" "${TEST_PASS_DIR}/test-matrix.yaml")
 
-print_debug "test_name: $test_name"
-print_debug "dialer id: $dialer_id"
-print_debug "listener id: $listener_id"
-print_debug "transport: $transport"
-print_debug "secure: $secure"
-print_debug "muxer: $muxer"
+print_debug "test_name: $TEST_NAME"
+print_debug "dialer id: $DIALER_ID"
+print_debug "listener id: $LISTENER_ID"
+print_debug "transport: $TRANSPORT_NAME"
+print_debug "secure: $SECURE"
+print_debug "muxer: $MUXER_NAME"
 
 # Compute TEST_KEY for Redis key namespacing (8-char hex hash)
-TEST_KEY=$(compute_test_key "$test_name")
-TEST_SLUG=$(echo "$test_name" | sed 's/[^a-zA-Z0-9-]/_/g')
+TEST_KEY=$(compute_test_key "$TEST_NAME")
+TEST_SLUG=$(echo "$TEST_NAME" | sed 's/[^a-zA-Z0-9-]/_/g')
 LOG_FILE="${TEST_PASS_DIR}/logs/${TEST_SLUG}.log"
 > "${LOG_FILE}"
 
@@ -41,11 +41,11 @@ print_debug "test key: $TEST_KEY"
 print_debug "test slug: $TEST_SLUG"
 print_debug "log file: $LOG_FILE"
 
-log_message "[$((TEST_INDEX + 1))] $test_name (key: $TEST_KEY)"
+log_message "[$((TEST_INDEX + 1))] $TEST_NAME (key: $TEST_KEY)"
 
 # Construct Docker image names
-DIALER_IMAGE="transport-${dialer_id}"
-LISTENER_IMAGE="transport-${listener_id}"
+DIALER_IMAGE="transport-${DIALER_ID}"
+LISTENER_IMAGE="transport-${LISTENER_ID}"
 
 print_debug "dialer image: $DIALER_IMAGE"
 print_debug "listener image: $LISTENER_IMAGE"
@@ -59,36 +59,36 @@ print_debug "docker compose file: $COMPOSE_FILE"
 LISTENER_ENV="      - IS_DIALER=false
       - REDIS_ADDR=transport-redis:6379
       - TEST_KEY=$TEST_KEY
-      - TRANSPORT=$transport
+      - TRANSPORT=$TRANSPORT_NAME
       - LISTENER_IP=0.0.0.0
       - DEBUG=${DEBUG:-false}"
 
-if [ "$secure" != "null" ]; then
+if [ "$SECURE" != "null" ]; then
     LISTENER_ENV="$LISTENER_ENV
-      - SECURE_CHANNEL=$secure"
+      - SECURE_CHANNEL=$SECURE"
 fi
 
-if [ "$muxer" != "null" ]; then
+if [ "$MUXER_NAME" != "null" ]; then
     LISTENER_ENV="$LISTENER_ENV
-      - MUXER=$muxer"
+      - MUXER=$MUXER_NAME"
 fi
 
 # Build environment variables for dialer
 DIALER_ENV="      - IS_DIALER=true
       - REDIS_ADDR=transport-redis:6379
       - TEST_KEY=$TEST_KEY
-      - TRANSPORT=$transport
+      - TRANSPORT=$TRANSPORT_NAME
       - LISTENER_IP=0.0.0.0
       - DEBUG=${DEBUG:-false}"
 
-if [ "$secure" != "null" ]; then
+if [ "$SECURE" != "null" ]; then
     DIALER_ENV="$DIALER_ENV
-      - SECURE_CHANNEL=$secure"
+      - SECURE_CHANNEL=$SECURE"
 fi
 
-if [ "$muxer" != "null" ]; then
+if [ "$MUXER_NAME" != "null" ]; then
     DIALER_ENV="$DIALER_ENV
-      - MUXER=$muxer"
+      - MUXER=$MUXER_NAME"
 fi
 
 # Generate docker-compose file
@@ -122,7 +122,7 @@ EOF
 
 # Run the test
 log_debug "  Starting containers..."
-log_message "Running: $test_name" > "$LOG_FILE"
+log_message "Running: $TEST_NAME" > "$LOG_FILE"
 
 # Set timeout (180 seconds / 3 minutes for transport tests)
 TEST_TIMEOUT=180
@@ -162,13 +162,13 @@ DIALER_LOGS=$($DOCKER_COMPOSE_CMD -f "$COMPOSE_FILE" logs dialer 2>/dev/null || 
 DIALER_YAML=$(echo "$DIALER_LOGS" | grep -E "dialer.*\| (latency:|  (handshake_plus_one_rtt|ping_rtt|unit):)" | sed 's/^.*| //' || echo "")
 
 # Save complete result to individual file
-cat > "${TEST_PASS_DIR}/results/${test_name}.yaml" <<EOF
-test: $test_name
-dialer: $dialer_id
-listener: $listener_id
-transport: $transport
-secureChannel: $secure
-muxer: $muxer
+cat > "${TEST_PASS_DIR}/results/${TEST_NAME}.yaml" <<EOF
+test: $TEST_NAME
+dialer: $DIALER_ID
+listener: $LISTENER_ID
+transport: $TRANSPORT_NAME
+secureChannel: $SECURE
+muxer: $MUXER_NAME
 status: $([ $EXIT_CODE -eq 0 ] && echo "pass" || echo "fail")
 duration: ${TEST_DURATION}
 
@@ -183,12 +183,12 @@ INDENTED_YAML=$(echo "$DIALER_YAML" | sed 's/^/    /')
 (
     flock -x 200
     cat >> "$RESULTS_FILE" <<EOF
-  - name: $test_name
-    dialer: $dialer_id
-    listener: $listener_id
-    transport: $transport
-    secureChannel: $secure
-    muxer: $muxer
+  - name: $TEST_NAME
+    dialer: $DIALER_ID
+    listener: $LISTENER_ID
+    transport: $TRANSPORT_NAME
+    secureChannel: $SECURE
+    muxer: $MUXER_NAME
     status: $([ $EXIT_CODE -eq 0 ] && echo "pass" || echo "fail")
     duration: ${TEST_DURATION}s
 $INDENTED_YAML

@@ -166,14 +166,10 @@ echo ""
 print_message "Loading baseline data into memory..."
 
 declare -A baseline_transports
-declare -A baseline_server
 
 for baseline_id in "${all_baseline_ids[@]}"; do
   transports=$(yq eval ".baselines[] | select(.id == \"$baseline_id\") | .transports | join(\" \")" ${IMAGES_YAML})
-  server=$(yq eval ".baselines[] | select(.id == \"$baseline_id\") | .server" ${IMAGES_YAML})
-
   baseline_transports["$baseline_id"]="$transports"
-  baseline_server["$baseline_id"]="$server"
 done
 
 indent
@@ -186,19 +182,16 @@ print_message "Loading implementation data into memory..."
 declare -A image_transports
 declare -A image_secure
 declare -A image_muxers
-declare -A image_server
 declare -A image_dial_only
 
 for image_id in "${all_image_ids[@]}"; do
   transports=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .transports | join(\" \")" ${IMAGES_YAML})
   secure=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .secureChannels | join(\" \")" ${IMAGES_YAML})
   muxers=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .muxers | join(\" \")" ${IMAGES_YAML})
-  server=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .server" ${IMAGES_YAML})
 
   image_transports["$image_id"]="$transports"
   image_secure["$image_id"]="$secure"
   image_muxers["$image_id"]="$muxers"
-  image_server["$image_id"]="$server"
 done
 
 indent
@@ -218,7 +211,6 @@ print_message "Generating baseline test combinations..."
 # Iterate through ALL baselines and track selected vs ignored
 for dialer_id in "${all_baseline_ids[@]}"; do
   dialer_transports="${baseline_transports[$dialer_id]}"
-  dialer_server="${baseline_server[$dialer_id]}"
 
   for listener_id in "${all_baseline_ids[@]}"; do
     # Check if BOTH dialer AND listener are in filtered baseline list
@@ -228,7 +220,6 @@ for dialer_id in "${all_baseline_ids[@]}"; do
     fi
 
     listener_transports="${baseline_transports[$listener_id]}"
-    listener_server="${baseline_server[$listener_id]}"
 
     # Find common transports
     common_transports=$(get_common "$dialer_transports" "$listener_transports")
@@ -243,10 +234,10 @@ for dialer_id in "${all_baseline_ids[@]}"; do
       # Add to selected or ignored list based on entity membership
       if [ "$test_is_selected" == "true" ]; then
         # Select baseline test
-        baseline_tests+=("$test_id|$dialer_id|$listener_id|$dialer_server|$listener_server|$transport|null|null")
+        baseline_tests+=("$test_id|$dialer_id|$listener_id|$transport|null|null")
       else
         # Ignore baseline test
-        ignored_baseline_tests+=("$test_id|$dialer_id|$listener_id|$dialer_server|$listener_server|$transport|null|null")
+        ignored_baseline_tests+=("$test_id|$dialer_id|$listener_id|$transport|null|null")
       fi
     done
   done
@@ -269,7 +260,6 @@ for dialer_id in "${all_image_ids[@]}"; do
   dialer_transports="${image_transports[$dialer_id]}"
   dialer_secure="${image_secure[$dialer_id]}"
   dialer_muxers="${image_muxers[$dialer_id]}"
-  dialer_server="${image_server[$dialer_id]}"
   
   dialer_selected=true
 
@@ -282,7 +272,6 @@ for dialer_id in "${all_image_ids[@]}"; do
     listener_transports="${image_transports[$listener_id]}"
     listener_secure="${image_secure[$listener_id]}"
     listener_muxers="${image_muxers[$listener_id]}"
-    listener_server="${image_server[$listener_id]}"
 
     listener_selected=true
 
@@ -318,11 +307,11 @@ for dialer_id in "${all_image_ids[@]}"; do
            [ "$transport_selected" == "true" ]; then
           # Select main test
           print_debug "${test_id} is selected"
-          main_tests+=("$test_id|$dialer_id|$listener_id|$dialer_server|$listener_server|$transport|null|null")
+          main_tests+=("$test_id|$dialer_id|$listener_id|$transport|null|null")
         else
           # Ignore main test
           print_debug "${test_id} is ignored"
-          ignored_main_tests+=("$test_id|$dialer_id|$listener_id|$dialer_server|$listener_server|$transport|null|null")
+          ignored_main_tests+=("$test_id|$dialer_id|$listener_id|$transport|null|null")
         fi
 
       else
@@ -365,11 +354,11 @@ for dialer_id in "${all_image_ids[@]}"; do
                [ "$muxer_selected" == "true" ]; then
               # Select main test
               print_debug "${test_id} is selected"
-              main_tests+=("$test_id|$dialer_id|$listener_id|$dialer_server|$listener_server|$transport|$secure|$muxer")
+              main_tests+=("$test_id|$dialer_id|$listener_id|$transport|$secure|$muxer")
             else
               # Ignore main test
               print_debug "${test_id} is ignored"
-              ignored_main_tests+=("$test_id|$dialer_id|$listener_id|$dialer_server|$listener_server|$transport|$secure|$muxer")
+              ignored_main_tests+=("$test_id|$dialer_id|$listener_id|$transport|$secure|$muxer")
             fi
           done
         done
@@ -398,7 +387,7 @@ $name:
 EOF
 
   for test in "${tests[@]}"; do
-    IFS='|' read -r id dialer listener dialer_server listener_server transport secure_channel muxer <<< "$test"
+    IFS='|' read -r id dialer listener transport secure_channel muxer <<< "$test"
 
     # Get commits, if they exist
     local dialer_commit=$(get_source_commit "$entity_type" "$dialer")
@@ -411,7 +400,6 @@ EOF
     muxer: $muxer
     dialer:
       id: $dialer
-      server: $dialer_server
 EOF
 
     if [ ! -z "$dialer_commit" ]; then
@@ -421,7 +409,6 @@ EOF
     cat >> "${TEST_PASS_DIR}/test-matrix.yaml" <<EOF
     listener:
       id: $listener
-      server: $listener_server
 EOF
     if [ ! -z "$listener_commit" ]; then
       echo "      snapshot: snapshots/$listener_commit.zip" >> "${TEST_PASS_DIR}/test-matrix.yaml"

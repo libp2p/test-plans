@@ -94,9 +94,9 @@ case "$sourceType" in
 esac
 
 # Show result with image ID (transport style)
-image_id=$(docker image inspect "$imageName" -f '{{.Id}}' | cut -d':' -f2)
+IMAGE_ID=$(docker image inspect "$imageName" -f '{{.Id}}' | cut -d':' -f2)
 print_success "Built: $imageName"
-print_success "Image ID: ${image_id}..."
+print_success "Image ID: ${IMAGE_ID}..."
 unindent
 echo ""
 

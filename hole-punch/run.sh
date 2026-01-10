@@ -1,10 +1,24 @@
 #!/bin/bash
-# Main test orchestration script for hole punch interoperability tests
 
+# run in strict failure mode
 set -euo pipefail
 
-# Set starting indent level
-INDENT=1
+#                                 ╔╦╦╗  ╔═╗
+# ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁ ║╠╣╚╦═╬╝╠═╗ ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+# ═══════════════════════════════ ║║║║║║║╔╣║║ ═════════════════════════════════
+# ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔ ╚╩╩═╣╔╩═╣╔╝ ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+#                                     ╚╝  ╚╝
+
+# =============================================================================
+# STEP 1: BOOTSTRAP: Load inputs.yaml BEFORE setting SCRIPT_LIB_DIR
+# -----------------------------------------------------------------------------
+# This allows for the re-creation of the environment and command line arguments
+# from a previous test run. If the inputs.yaml file doesn't exist, then this
+# script will run from a default environment. Any command line arguments passed
+# will override any command line arguments loaded from inputs.yaml, however the
+# environment variables in inputs.yaml will override the ones initialized in
+# the shell executing this script.
+# =============================================================================
 
 # Capture original arguments for inputs.yaml generation
 ORIGINAL_ARGS=("$@")
@@ -12,102 +26,135 @@ ORIGINAL_ARGS=("$@")
 # Change to script directory
 cd "$(dirname "$0")"
 
-# ============================================================================
-# INLINE inputs.yaml LOADING (self-contained, no external dependencies)
-# Avoids bootstrap problem: can't source lib-inputs-yaml.sh before SCRIPT_LIB_DIR is set correctly
-# ============================================================================
-
+# Loads and exports the environment variables from the inputs yaml file
 load_inputs_yaml_inline() {
-    local inputs_file="${1:-inputs.yaml}"
-    if [ ! -f "$inputs_file" ]; then
-        return 1
+  local inputs_file="${1:-inputs.yaml}"
+
+  # Look for the inputs file if it exists
+  if [ ! -f "$inputs_file" ]; then
+    return 1
+  fi
+
+  echo "→ Loading configuration from $inputs_file"
+
+  # Load and export the environment variables from the inputs file
+  while IFS='=' read -r key value; do
+    if [ -n "$key" ] && [ -n "$value" ]; then
+      export "$key"="$value"
     fi
-    echo "  → Loading configuration from $inputs_file"
-    while IFS='=' read -r key value; do
-        if [ -n "$key" ] && [ -n "$value" ]; then
-            export "$key"="$value"
-        fi
-    done < <(yq eval '.environmentVariables | to_entries | .[] | .key + "=" + .value' "$inputs_file" 2>/dev/null)
-    return 0
+  done < <(yq eval '.environmentVariables | to_entries | .[] | .key + "=" + .value' "$inputs_file" 2>/dev/null)
+
+  return 0
 }
 
+# Loads the command line arguments from the inputs yaml file
 get_yaml_args_inline() {
-    local inputs_file="${1:-inputs.yaml}"
-    if [ ! -f "$inputs_file" ]; then
-        return 1
-    fi
-    yq eval '.commandLineArgs[]' "$inputs_file" 2>/dev/null || true
+  local inputs_file="${1:-inputs.yaml}"
+  if [ ! -f "$inputs_file" ]; then
+    return 1
+  fi
+  yq eval '.commandLineArgs[]' "$inputs_file" 2>/dev/null || true
 }
 
-# ============================================================================
-# BOOTSTRAP: Load inputs.yaml BEFORE setting SCRIPT_LIB_DIR
-# ============================================================================
-
-# Step 2 (from the_plan.md): Process inputs.yaml if it exists
+# Process inputs.yaml if it exists
 if [ -f "inputs.yaml" ]; then
-    load_inputs_yaml_inline "inputs.yaml"
-    mapfile -t YAML_ARGS < <(get_yaml_args_inline "inputs.yaml")
+  load_inputs_yaml_inline "inputs.yaml"
+  readarray -t YAML_ARGS < <(get_yaml_args_inline "inputs.yaml")
 else
-    YAML_ARGS=()
+  YAML_ARGS=()
 fi
 
-# Step 3 (from the_plan.md): Append actual command-line args (these override inputs.yaml)
+# Append actual command-line args (these override inputs.yaml)
 CMD_LINE_ARGS=("${YAML_ARGS[@]}" "$@")
 
-# Step 4 (from the_plan.md): Set positional parameters to merged args
+# Set positional parameters to merged args
 set -- "${CMD_LINE_ARGS[@]}"
 
-# NOW set SCRIPT_LIB_DIR (after inputs.yaml loaded, so it can be overridden)
-export SCRIPT_LIB_DIR="${SCRIPT_LIB_DIR:-$(cd "$(dirname "$0")/.." && pwd)/lib}"
+# NOTE: this test can be run and later re-run. When run initially, the
+# SCRIPT_DIR is something like `<repo root>/hole-punch/lib` and the
+# SCRIPT_LIB_DIR is then `${SCRIPT_DIR}/../../lib`. The SCRIPT_DIR points to
+# where the hole-punch-specific test scripts are located and the SCRIPT_LIB_DIR is
+# where the scripts that are common to all tests are located. An inputs.yaml
+# file is generated to capture these values for re-running the same test later.
+# When re-running a test from a snapshot, all scripts are located in the same
+# folder: `<snapshot root>/lib` so the inputs.yaml file is used to initialize
+# the environment variables so that all scripts load properly.
 
-# Initialize common variables (paths, flags, defaults)
-source "$SCRIPT_LIB_DIR/lib-common-init.sh"
+# Set SCRIPT_LIB_DIR after inputs.yaml loaded, so it can be overridden
+export TEST_ROOT="$(dirname "${BASH_SOURCE[0]}")"
+export SCRIPT_DIR="${SCRIPT_DIR:-$(cd "${TEST_ROOT}/lib" && pwd)}"
+export SCRIPT_LIB_DIR="${SCRIPT_LIB_DIR:-${SCRIPT_DIR}/../../lib}"
+
+# =============================================================================
+# STEP 2: INITIALIZATION
+# -----------------------------------------------------------------------------
+# Set up common variables used for hole-punch tests by processing the command
+# line arguments and setting up environment variables. Also source all
+# libraries needed.
+# =============================================================================
+
+# Initialize and export common environment variables (paths, flags, defaults)
+source "${SCRIPT_LIB_DIR}/lib-common-init.sh"
 init_common_variables
+init_cache_dirs
+
+# Hook up ctrl+c handler
+trap handle_shutdown INT
 
 # Hole-punch-specific variables
-RELAY_SELECT="${RELAY_SELECT:-}"
 RELAY_IGNORE="${RELAY_IGNORE:-}"
-ROUTER_SELECT="${ROUTER_SELECT:-}"
 ROUTER_IGNORE="${ROUTER_IGNORE:-}"
 
-# Source formatting library
-source "$SCRIPT_LIB_DIR/lib-output-formatting.sh"
+# Source common libraries
+source "${SCRIPT_LIB_DIR}/lib-github-snapshots.sh"
+source "${SCRIPT_LIB_DIR}/lib-global-services.sh"
+source "${SCRIPT_LIB_DIR}/lib-image-building.sh"
+source "${SCRIPT_LIB_DIR}/lib-image-naming.sh"
+source "${SCRIPT_LIB_DIR}/lib-inputs-yaml.sh"
+source "${SCRIPT_LIB_DIR}/lib-output-formatting.sh"
+source "${SCRIPT_LIB_DIR}/lib-snapshot-creation.sh"
+source "${SCRIPT_LIB_DIR}/lib-snapshot-images.sh"
+source "${SCRIPT_LIB_DIR}/lib-test-caching.sh"
+source "${SCRIPT_LIB_DIR}/lib-test-execution.sh"
+source "${SCRIPT_LIB_DIR}/lib-test-filtering.sh"
+source "${SCRIPT_LIB_DIR}/lib-test-images.sh"
 
+# Print the libp2p banner
 print_banner
 
 # Show help
 show_help() {
-    cat <<EOF
+  cat <<EOF
 libp2p Hole Punch Interoperability Test Runner
 
 Usage: $0 [options]
 
 Options:
-  --test-select VALUE        Select tests (pipe-separated substrings)
   --test-ignore VALUE        Ignore tests (pipe-separated substrings)
-  --relay-select VALUE       Select relays (pipe-separated substrings)
   --relay-ignore VALUE       Ignore relays (pipe-separated substrings)
-  --router-select VALUE      Select routers (pipe-separated substrings)
   --router-ignore VALUE      Ignore routers (pipe-separated substrings)
+  --transport-ignore VALUE   Ignore given transport (pipe-separated)
+  --secure-ignore VALUE      Ignore given secure channel (pipe-separated)
+  --muxer-ignore VALUE       Ignore given muxer (pipe-separated)
   --workers VALUE            Number of parallel workers (default: $WORKER_COUNT)
   --cache-dir VALUE          Cache directory (default: /srv/cache)
   --snapshot                 Create test pass snapshot after completion
   --debug                    Enable debug mode (sets DEBUG=true in test containers)
   --force-matrix-rebuild     Force regeneration of test matrix (bypass cache)
   --force-image-rebuild      Force rebuilding of all docker images (bypass cache)
-  -y, --yes                  Skip confirmation prompt and run tests immediately
+  --yes, -y                  Skip confirmation prompt and run tests immediately
   --check-deps               Only check dependencies and exit
   --list-images              List all image types used by this test suite and exit
   --list-tests               List all selected tests and exit
+  --show-ignored             Shows the list of ignored tests
   --help                     Show this help message
 
 Examples:
   $0 --cache-dir /srv/cache --workers 4
-  $0 --test-select "linux" --workers 8
   $0 --test-ignore "tcp"
-  $0 --relay-select "linux" --router-select "linux" --force-matrix-rebuild
+  $0 --relay-ignore "!linux" --router-ignore "!linux" --force-matrix-rebuild
   $0 --list-images
-  $0 --list-tests --test-select "~libp2p"
+  $0 --list-tests --test-ignore "!~rust"
   $0 --snapshot --force-image-rebuild
 
 Dependencies:
@@ -119,114 +166,230 @@ EOF
 
 # Parse arguments
 while [ $# -gt 0 ]; do
-    case "$1" in
-        --test-select) TEST_SELECT="$2"; shift 2 ;;
-        --test-ignore) TEST_IGNORE="$2"; shift 2 ;;
-        --relay-select) RELAY_SELECT="$2"; shift 2 ;;
-        --relay-ignore) RELAY_IGNORE="$2"; shift 2 ;;
-        --router-select) ROUTER_SELECT="$2"; shift 2 ;;
-        --router-ignore) ROUTER_IGNORE="$2"; shift 2 ;;
-        --workers) WORKER_COUNT="$2"; shift 2 ;;
-        --cache-dir) CACHE_DIR="$2"; shift 2 ;;
-        --snapshot) CREATE_SNAPSHOT=true; shift ;;
-        --debug) DEBUG=true; shift ;;
-        --force-matrix-rebuild) FORCE_MATRIX_REBUILD=true; shift ;;
-        --force-image-rebuild) FORCE_IMAGE_REBUILD=true; shift ;;
-        -y|--yes) AUTO_YES=true; shift ;;
-        --check-deps) CHECK_DEPS_ONLY=true; shift ;;
-        --list-images) LIST_IMAGES=true; shift ;;
-        --list-tests) LIST_TESTS=true; shift ;;
-        --help|-h) show_help; exit 0 ;;
-        *) echo "Unknown option: $1"; echo ""; show_help; exit 1 ;;
-    esac
+  case "$1" in
+    --test-ignore) TEST_IGNORE="$2"; shift 2 ;;
+    --relay-ignore) RELAY_IGNORE="$2"; shift 2 ;;
+    --router-ignore) ROUTER_IGNORE="$2"; shift 2 ;;
+    --transport-ignore) TRANSPORT_IGNORE="$2"; shift 2;;
+    --secure-ignore) SECURE_IGNORE="$2"; shift 2;;
+    --muxer-ignore) MUXER_IGNORE="$2"; shift 2;;
+    --workers) WORKER_COUNT="$2"; shift 2 ;;
+    --cache-dir) CACHE_DIR="$2"; shift 2 ;;
+    --snapshot) CREATE_SNAPSHOT=true; shift ;;
+    --debug) DEBUG=true; shift ;;
+    --force-matrix-rebuild) FORCE_MATRIX_REBUILD=true; shift ;;
+    --force-image-rebuild) FORCE_IMAGE_REBUILD=true; shift ;;
+    -y|--yes) AUTO_YES=true; shift ;;
+    --check-deps) CHECK_DEPS_ONLY=true; shift ;;
+    --list-images) LIST_IMAGES=true; shift ;;
+    --list-tests) LIST_TESTS=true; shift ;;
+    --show-ignored) SHOW_IGNORED=true; shift ;;
+    --help|-h) show_help; exit 0 ;;
+    *) echo "Unknown option: $1"; echo ""; show_help; exit 1 ;;
+  esac
 done
 
-# Source common libraries (after argument parsing, so --help doesn't need them)
-source "$SCRIPT_LIB_DIR/lib-test-filtering.sh"
-source "$SCRIPT_LIB_DIR/lib-test-caching.sh"
-source "$SCRIPT_LIB_DIR/lib-image-naming.sh"
+# Generate test run key and test pass name
+export TEST_TYPE="hole-punch"
+export TEST_RUN_KEY=$(compute_test_run_key \
+  "$IMAGES_YAML" \
+  "$TEST_IGNORE" \
+  "$RELAY_IGNORE" \
+  "$ROUTER_IGNORE" \
+  "$TRANSPORT_IGNORE" \
+  "$SECURE_IGNORE" \
+  "$MUXER_IGNORE" \
+  "$DEBUG" \
+)
+export TEST_PASS_NAME="${TEST_TYPE}-${TEST_RUN_KEY}-$(date +%H%M%S-%d-%m-%Y)"
+export TEST_PASS_DIR="$TEST_RUN_DIR/$TEST_PASS_NAME"
+
+# =============================================================================
+# STEP 3.A: LIST IMAGES AND EXIT
+# -----------------------------------------------------------------------------
+# This loads the implementations, relays, and routers from the images.yaml file
+# and prints them out nicely and exits. This is triggered by the
+# `--list-images` command line argument
+# =============================================================================
 
 # List images
 if [ "$LIST_IMAGES" == "true" ]; then
-    if [ ! -f "images.yaml" ]; then
-        print_error "images.yaml not found"
-        exit 1
-    fi
+  if [ ! -f "${IMAGES_YAML}" ]; then
+    print_error "${IMAGES_YAML} not found"
+    exit 1
+  fi
 
-    source "$SCRIPT_LIB_DIR/lib-test-aliases.sh"
+  print_header "Available Docker Images"
+  indent
 
-    print_header "Available Images"
+  # Get and print relays
+  readarray -t all_relays_ids < <(get_entity_ids "relays")
+  print_list "Relays" all_relays_ids
 
-    # Get and print implementations
-    all_image_ids=($(get_entity_ids "implementations"))
-    print_list "implementations" "${all_image_ids[@]}"
+  echo ""
 
-    echo ""
+  # Get and print routers
+  readarray -t all_routers_ids < <(get_entity_ids "routers")
+  print_list "Routers" all_routers_ids
 
-    # Get and print relays
-    all_relay_ids=($(get_entity_ids "relays"))
-    print_list "relays" "${all_relay_ids[@]}"
+  echo ""
 
-    echo ""
+  # Get and print implementations
+  readarray -t all_image_ids < <(get_entity_ids "implementations")
+  print_list "Implementations" all_image_ids
 
-    # Get and print routers
-    all_router_ids=($(get_entity_ids "routers"))
-    print_list "routers" "${all_router_ids[@]}"
-
-    echo ""
-    exit 0
+  echo ""
+  unindent
+  exit 0
 fi
 
+# =============================================================================
+# STEP 3.B: LIST TESTS AND EXIT
+# -----------------------------------------------------------------------------
+# This creates a temporary folder, runs the test matrix generation, then lists
+# the tests that are selected to run and which ones are ignored based on the
+# environment and command line arguments. This is triggered by the
+# `--list-tests` command line argument
+# =============================================================================
 
 # List tests
 if [ "$LIST_TESTS" == "true" ]; then
-    # Create temporary directory for test matrix generation
-    TEMP_DIR=$(mktemp -d)
-    trap "rm -rf $TEMP_DIR" EXIT
+  # Create temporary directory for test matrix generation
+  TEMP_DIR=$(mktemp -d)
+  trap "rm -rf $TEMP_DIR" EXIT
 
-    export TEST_PASS_DIR="$TEMP_DIR"
-    export TEST_PASS_NAME="temp-list"
-    export CACHE_DIR
-    export DEBUG
-    export TEST_SELECT TEST_IGNORE BASELINE_SELECT BASELINE_IGNORE
-    export UPLOAD_BYTES DOWNLOAD_BYTES
-    export ITERATIONS DURATION_PER_ITERATION LATENCY_ITERATIONS
-    export FORCE_MATRIX_REBUILD
+  export TEST_PASS_DIR="$TEMP_DIR"
+  export TEST_PASS_NAME="temp-list"
+  export CACHE_DIR
+  export DEBUG
+  export TEST_IGNORE RELAY_IGNORE ROUTER_IGNORE TRANSPORT_IGNORE SECURE_IGNORE MUXER_IGNORE
+  export FORCE_MATRIX_REBUILD
 
-    print_header "Generating test matrix..."
+  print_header "Generating test matrix..."
+  indent
 
-    # Generate test matrix
-    if ! bash lib/generate-tests.sh > /dev/null 2>&1; then
-        print_error "Failed to generate test matrix"
-        exit 1
-    fi
+  # Generate test matrix (don't suppress output to show Test Matrix Generation section)
+  bash ${SCRIPT_DIR}/generate-tests.sh || true
 
-    # Extract and display test counts
-    test_count=$(yq eval '.metadata.totalTests' "$TEMP_DIR/test-matrix.yaml")
-    ignored_count=$(yq eval '.metadata.ignoredTests' "$TEMP_DIR/test-matrix.yaml")
+  # Check if matrix was created successfully
+  if [ ! -f "$TEMP_DIR/test-matrix.yaml" ]; then
+    print_error "Failed to generate test matrix"
+    bash ${SCRIPT_DIR}/generate-tests.sh 2>&1 | tail -10  # Show error output
+    unindent
+    exit 1
+  fi
+  unindent
+  echo ""
 
-    print_header "Selected Tests ($test_count tests)"
+  print_header "Test Selection..."
+  indent
 
-    if [ "$test_count" -gt 0 ]; then
-        yq eval '.tests[].name' "$TEMP_DIR/test-matrix.yaml" | sed 's/^/→ /'
-    else
-        print_message "No tests selected"
-    fi
+  # Get and print the selected main tests
+  readarray -t selected_tests < <(get_entity_ids "tests" "$TEMP_DIR/test-matrix.yaml")
+  print_list "Selected tests" selected_tests
 
-    if [ "$ignored_count" -gt 0 ]; then
-        print_header "Ignored Tests ($ignored_count tests)"
-        yq eval '.ignoredTests[].name' "$TEMP_DIR/test-matrix.yaml" | sed 's/^/→ /'
-    fi
+  echo ""
 
+  # Get and maybe print the ignored main tests
+  readarray -t ignored_tests < <(get_entity_ids "ignoredTests" "$TEMP_DIR/test-matrix.yaml")
+  if [ "$SHOW_IGNORED" == "true" ]; then
+    print_list "Ignored tests" ignored_tests
     echo ""
-    exit 0
+  fi
+
+  print_message "Total selected: ${#selected_tests[@]} tests"
+  print_message "Total ignored: ${#ignored_tests[@]} tests"
+  echo ""
+
+  unindent
+  exit 0
 fi
+
+# =============================================================================
+# STEP 3.C: CHECK DEPS AND EXIT
+# -----------------------------------------------------------------------------
+# This runs the dependency checking and returns its results. This is triggered
+# by the `--list-deps` command line argument
+# =============================================================================
 
 # Check dependencies
-if [ "$CHECK_DEPS_ONLY" == "true" ]; then
-    bash "$SCRIPT_LIB_DIR/check-dependencies.sh"
-    exit $?
+if [ "$CHECK_DEPS" == "true" ]; then
+  print_header "Checking dependencies..."
+  indent
+  bash "${SCRIPT_LIB_DIR}/check-dependencies.sh" docker yq || {
+    echo ""
+    print_error "Error: Missing required dependencies."
+    print_message "Run '$0 --check-deps' to see details."
+    unindent
+    exit 1
+  }
+  unindent
+  exit 0
 fi
+
+# =============================================================================
+# STEP 4: INITIALIZE
+# -----------------------------------------------------------------------------
+# Create the folders needed for storing the test run artifacts. Also output all
+# of the settings, check for dependencies, and which docker compose command is
+# to be used.
+# =============================================================================
+
+print_header "Performance Test"
+indent
+
+print_message "Test Type: $TEST_TYPE"
+print_message "Test Run Key: $TEST_RUN_KEY"
+print_message "Test Pass: $TEST_PASS_NAME"
+print_message "Test Pass Dir: ${TEST_PASS_DIR}"
+print_message "Cache Dir: $CACHE_DIR"
+print_message "Workers: $WORKER_COUNT"
+[ -n "$TEST_IGNORE" ] && print_message "Test Ignore: $TEST_IGNORE"
+[ -n "$RELAY_IGNORE" ] && print_message "Relay Ignore: $RELAY_IGNORE"
+[ -n "$ROUTER_IGNORE" ] && print_message "Router Ignore: $ROUTER_IGNORE"
+[ -n "$TRANSPORT_IGNORE" ] && print_message "Transport Ignore: $TRANSPORT_IGNORE"
+[ -n "$SECURE_IGNORE" ] && print_message "Secure Ignore: $SECURE_IGNORE"
+[ -n "$MUXER_IGNORE" ] && print_message "Muxer Ignore: $MUXER_IGNORE"
+print_message "Create Snapshot: $CREATE_SNAPSHOT"
+print_message "Debug: $DEBUG"
+print_message "Force Matrix Rebuild: $FORCE_MATRIX_REBUILD"
+print_message "Force Image Rebuild: $FORCE_IMAGE_REBUILD"
+echo ""
+
+# Set up the folder structure for the output
+mkdir -p "${TEST_PASS_DIR}"/{logs,results,docker-compose}
+
+# Generate inputs.yaml to capture the current environment and command line arguments
+generate_inputs_yaml "${TEST_PASS_DIR}/inputs.yaml" "$TEST_TYPE" "${ORIGINAL_ARGS[@]}"
+
+echo ""
+unindent
+
+# Check dependencies for normal execution
+print_header "Checking dependencies..."
+indent
+bash "${SCRIPT_LIB_DIR}/check-dependencies.sh" docker yq || {
+  echo ""
+  print_error "Error: Missing required dependencies."
+  print_message "Run '$0 --check-deps' to see details."
+  unindent
+  exit 1
+}
+
+# Read and export the docker compose command detected by check-dependencies.sh
+if [ -f /tmp/docker-compose-cmd.txt ]; then
+  export DOCKER_COMPOSE_CMD=$(cat /tmp/docker-compose-cmd.txt)
+else
+  print_error "Error: Could not determine docker compose command"
+  unindent
+  exit 1
+fi
+unindent
+echo ""
+
+
+
+
 
 export CACHE_DIR
 export DEBUG
@@ -284,35 +447,39 @@ export TEST_PASS_NAME
 # 1. Check dependencies
 print_header "Checking dependencies..."
 if ! bash "$SCRIPT_LIB_DIR/check-dependencies.sh"; then
-    print_error "Dependency check failed. Please install missing dependencies."
-    exit 1
+  print_error "Dependency check failed. Please install missing dependencies."
+  exit 1
 fi
 
 # Read and export the docker compose command detected by check-dependencies.sh
 if [ -f /tmp/docker-compose-cmd.txt ]; then
-    export DOCKER_COMPOSE_CMD=$(cat /tmp/docker-compose-cmd.txt)
-    print_message "Using: $DOCKER_COMPOSE_CMD"
+  export DOCKER_COMPOSE_CMD=$(cat /tmp/docker-compose-cmd.txt)
+  print_message "Using: $DOCKER_COMPOSE_CMD"
 else
-    print_error "Could not determine docker compose command"
-    exit 1
+  print_error "Could not determine docker compose command"
+  exit 1
 fi
+
+
+
+
 
 # 2. Generate test matrix FIRST (before building images)
 print_header "╲ Generating test matrix..."
 bash lib/generate-tests.sh
 
 # 3. Display test selection and get confirmation
-test_count=$(yq eval '.metadata.totalTests' "$TEST_PASS_DIR/test-matrix.yaml")
+TEST_COUNT=$(yq eval '.metadata.totalTests' "$TEST_PASS_DIR/test-matrix.yaml")
 
-if [ "$test_count" -eq 0 ]; then
-    print_message "No tests in matrix, skipping image builds"
+if [ "$TEST_COUNT" -eq 0 ]; then
+  print_message "No tests in matrix, skipping image builds"
 else
-    # Extract unique RELAYS from test matrix
-    # Note: Relays do NOT have dialOnly - all relays in matrix should be built
-    REQUIRED_RELAYS=$(mktemp)
-    yq eval '.tests[].relay' "$TEST_PASS_DIR/test-matrix.yaml" | sort -u > "$REQUIRED_RELAYS"
-    RELAY_FILTER=$(cat "$REQUIRED_RELAYS" | paste -sd'|' -)
-    rm -f "$REQUIRED_RELAYS"
+  # Extract unique RELAYS from test matrix
+  # Note: Relays do NOT have dialOnly - all relays in matrix should be built
+  REQUIRED_RELAYS=$(mktemp)
+  yq eval '.tests[].relay' "$TEST_PASS_DIR/test-matrix.yaml" | sort -u > "$REQUIRED_RELAYS"
+  RELAY_FILTER=$(cat "$REQUIRED_RELAYS" | paste -sd'|' -)
+  rm -f "$REQUIRED_RELAYS"
 
     # Extract unique ROUTERS from test matrix (dialer router + listener router)
     # Note: Routers do NOT have dialOnly - all routers in matrix should be built
@@ -335,13 +502,13 @@ else
     cp "$REQUIRED_IMAGES" "$REQUIRED_IMPLS_WITH_DEPS"
 
     while IFS= read -r image_id; do
-        # Check if this is a browser-type implementation
-        source_type=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .source.type" images.yaml)
-        if [ "$source_type" == "browser" ]; then
-            # Add its base image as a dependency
-            base_image=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .source.baseImage" images.yaml)
-            echo "$base_image" >> "$REQUIRED_IMPLS_WITH_DEPS"
-        fi
+      # Check if this is a browser-type implementation
+      source_type=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .source.type" images.yaml)
+      if [ "$source_type" == "browser" ]; then
+        # Add its base image as a dependency
+        base_image=$(yq eval ".implementations[] | select(.id == \"$image_id\") | .source.baseImage" images.yaml)
+        echo "$base_image" >> "$REQUIRED_IMPLS_WITH_DEPS"
+      fi
     done < "$REQUIRED_IMAGES"
 
     # Sort and deduplicate
@@ -370,38 +537,38 @@ print_header "Test selection..."
 print_message "Selected tests:"
 
 # Read test matrix
-test_count=$(yq eval '.metadata.totalTests' "$TEST_PASS_DIR/test-matrix.yaml")
+TEST_COUNT=$(yq eval '.metadata.totalTests' "$TEST_PASS_DIR/test-matrix.yaml")
 ignored_count=$(yq eval '.metadata.ignoredTests' "$TEST_PASS_DIR/test-matrix.yaml")
 
 # Display active tests (extract all names in one yq call)
-if [ "$test_count" -gt 0 ]; then
-    yq eval '.tests[].name' "$TEST_PASS_DIR/test-matrix.yaml" | while read -r test_name; do
-        print_success "$test_name"
-    done
+if [ "$TEST_COUNT" -gt 0 ]; then
+  yq eval '.tests[].name' "$TEST_PASS_DIR/test-matrix.yaml" | while read -r test_name; do
+  print_success "$test_name"
+done
 fi
 
 # Display ignored tests (extract all names in one yq call)
 if [ "$ignored_count" -gt 0 ]; then
-    echo ""
-    print_message "Ignored tests:"
-    yq eval '.ignoredTests[].name' "$TEST_PASS_DIR/test-matrix.yaml" | while read -r test_name; do
-        print_error "$test_name [ignored]"
-    done
+  echo ""
+  print_message "Ignored tests:"
+  yq eval '.ignoredTests[].name' "$TEST_PASS_DIR/test-matrix.yaml" | while read -r test_name; do
+  print_error "$test_name [ignored]"
+done
 fi
 
 echo ""
 
-print_message "Total: $test_count tests to execute, $ignored_count ignored"
+print_message "Total: $TEST_COUNT tests to execute, $ignored_count ignored"
 
 # Prompt user for confirmation (unless -y flag was set)
 if [ "$AUTO_YES" == "false" ]; then
-    read -p "Execute $test_count tests? (Y/n): " response
-    response=${response:-Y}  # Default to Y if user just presses enter
+  read -p "Execute $TEST_COUNT tests? (Y/n): " response
+  response=${response:-Y}  # Default to Y if user just presses enter
 
-    if [[ ! "$response" =~ ^[Yy]$ ]]; then
-        print_error "Test execution cancelled."
-        exit 0
-    fi
+  if [[ ! "$response" =~ ^[Yy]$ ]]; then
+    print_error "Test execution cancelled."
+    exit 0
+  fi
 fi
 
 # Start global services
@@ -411,59 +578,59 @@ bash lib/start-global-services.sh
 # Run tests in parallel
 print_header "Running tests... ($WORKER_COUNT workers)"
 
-# Read test matrix and export test_count for use in subshells
-test_count=$(yq eval '.metadata.totalTests' "$TEST_PASS_DIR/test-matrix.yaml")
-export test_count
+# Read test matrix and export TEST_COUNT for use in subshells
+TEST_COUNT=$(yq eval '.metadata.totalTests' "$TEST_PASS_DIR/test-matrix.yaml")
+export TEST_COUNT
 
 # Initialize results
 > "$TEST_PASS_DIR/results.yaml.tmp"
 
 # Run tests with parallel workers
 run_test() {
-    local index=$1
-    local name=$(yq eval ".tests[$index].name" "$TEST_PASS_DIR/test-matrix.yaml")
-    local dialer=$(yq eval ".tests[$index].dialer" "$TEST_PASS_DIR/test-matrix.yaml")
-    local listener=$(yq eval ".tests[$index].listener" "$TEST_PASS_DIR/test-matrix.yaml")
-    local transport=$(yq eval ".tests[$index].transport" "$TEST_PASS_DIR/test-matrix.yaml")
-    local secure=$(yq eval ".tests[$index].secureChannel" "$TEST_PASS_DIR/test-matrix.yaml")
-    local muxer=$(yq eval ".tests[$index].muxer" "$TEST_PASS_DIR/test-matrix.yaml")
-    local dialer_router=$(yq eval ".tests[$index].dialerRouter" "$TEST_PASS_DIR/test-matrix.yaml")
-    local relay=$(yq eval ".tests[$index].relay" "$TEST_PASS_DIR/test-matrix.yaml")
-    local listener_router=$(yq eval ".tests[$index].listenerRouter" "$TEST_PASS_DIR/test-matrix.yaml")
+  local index=$1
+  local name=$(yq eval ".tests[$index].name" "$TEST_PASS_DIR/test-matrix.yaml")
+  local dialer=$(yq eval ".tests[$index].dialer" "$TEST_PASS_DIR/test-matrix.yaml")
+  local listener=$(yq eval ".tests[$index].listener" "$TEST_PASS_DIR/test-matrix.yaml")
+  local transport=$(yq eval ".tests[$index].transport" "$TEST_PASS_DIR/test-matrix.yaml")
+  local secure=$(yq eval ".tests[$index].secureChannel" "$TEST_PASS_DIR/test-matrix.yaml")
+  local muxer=$(yq eval ".tests[$index].muxer" "$TEST_PASS_DIR/test-matrix.yaml")
+  local dialer_router=$(yq eval ".tests[$index].dialerRouter" "$TEST_PASS_DIR/test-matrix.yaml")
+  local relay=$(yq eval ".tests[$index].relay" "$TEST_PASS_DIR/test-matrix.yaml")
+  local listener_router=$(yq eval ".tests[$index].listenerRouter" "$TEST_PASS_DIR/test-matrix.yaml")
 
-    print_message "[$((index + 1))/$test_count] $name"
+  print_message "[$((index + 1))/$TEST_COUNT] $name"
 
-    start=$(date +%s)
-    if bash lib/run-single-test.sh "$name" "$dialer" "$listener" "$transport" "$secure" "$muxer"; then
-        status="pass"
-        exit_code=0
-    else
-        status="fail"
-        exit_code=1
+  start=$(date +%s)
+  if bash lib/run-single-test.sh "$name" "$dialer" "$listener" "$transport" "$secure" "$muxer"; then
+    status="pass"
+    exit_code=0
+  else
+    status="fail"
+    exit_code=1
+  fi
+end=$(date +%s)
+duration=$((end - start))
+
+# Extract metrics from log file if test passed
+handshake_ms=""
+ping_ms=""
+if [ "$status" == "pass" ]; then
+  test_slug=$(echo "$name" | sed 's/[^a-zA-Z0-9-]/_/g')
+  log_file="$TEST_PASS_DIR/logs/${test_slug}.log"
+  if [ -f "$log_file" ]; then
+    # Extract JSON metrics from log
+    metrics=$(grep -o '{"handshakePlusOneRTTMillis":[0-9.]*,"pingRTTMilllis":[0-9.]*}' "$log_file" 2>/dev/null | tail -1)
+    if [ -n "$metrics" ]; then
+      handshake_ms=$(echo "$metrics" | grep -o '"handshakePlusOneRTTMillis":[0-9.]*' | cut -d: -f2)
+      ping_ms=$(echo "$metrics" | grep -o '"pingRTTMilllis":[0-9.]*' | cut -d: -f2)
     fi
-    end=$(date +%s)
-    duration=$((end - start))
+  fi
+fi
 
-    # Extract metrics from log file if test passed
-    handshake_ms=""
-    ping_ms=""
-    if [ "$status" == "pass" ]; then
-        test_slug=$(echo "$name" | sed 's/[^a-zA-Z0-9-]/_/g')
-        log_file="$TEST_PASS_DIR/logs/${test_slug}.log"
-        if [ -f "$log_file" ]; then
-            # Extract JSON metrics from log
-            metrics=$(grep -o '{"handshakePlusOneRTTMillis":[0-9.]*,"pingRTTMilllis":[0-9.]*}' "$log_file" 2>/dev/null | tail -1)
-            if [ -n "$metrics" ]; then
-                handshake_ms=$(echo "$metrics" | grep -o '"handshakePlusOneRTTMillis":[0-9.]*' | cut -d: -f2)
-                ping_ms=$(echo "$metrics" | grep -o '"pingRTTMilllis":[0-9.]*' | cut -d: -f2)
-            fi
-        fi
-    fi
-
-    # Append to results (with locking to avoid race conditions)
-    (
-        flock -x 200
-        cat >> "$TEST_PASS_DIR/results.yaml.tmp" <<EOF
+# Append to results (with locking to avoid race conditions)
+(
+  flock -x 200
+  cat >> "$TEST_PASS_DIR/results.yaml.tmp" <<EOF
   - name: "$name"
     status: $status
     exitCode: $exit_code
@@ -472,16 +639,16 @@ run_test() {
     listener: $listener
     transport: $transport
 EOF
-    ) 200>/tmp/results.lock
+) 200>/tmp/results.lock
 
-    return $exit_code
+return $exit_code
 }
 
 export -f run_test
 
 # Run tests in parallel using xargs
 # Note: Don't exit on failure - we want to collect results even if tests fail
-seq 0 $((test_count - 1)) | xargs -P "$WORKER_COUNT" -I {} bash -c 'run_test {}' || true
+seq 0 $((TEST_COUNT - 1)) | xargs -P "$WORKER_COUNT" -I {} bash -c 'run_test {}' || true
 
 # Cleanup
 print_header "Stopping global services..."
@@ -515,7 +682,7 @@ metadata:
   workerCount: $WORKER_COUNT
 
 summary:
-  total: $test_count
+  total: $TEST_COUNT
   passed: $PASSED
   failed: $FAILED
 
@@ -528,12 +695,12 @@ rm "$TEST_PASS_DIR/results.yaml.tmp"
 # Collect failed test names
 FAILED_TESTS=()
 if [ "$FAILED" -gt 0 ]; then
-    readarray -t FAILED_TESTS < <(yq eval '.tests[] | select(.status == "fail") | .name' "$TEST_PASS_DIR/results.yaml")
+  readarray -t FAILED_TESTS < <(yq eval '.tests[] | select(.status == "fail") | .name' "$TEST_PASS_DIR/results.yaml")
 fi
 
 print_message "Results:"
 indent
-print_message "Total: $test_count"
+print_message "Total: $TEST_COUNT"
 print_success "Passed: $PASSED"
 print_error "Failed: $FAILED"
 print_list "Failed Tests:" "${FAILED_TESTS[@]}"
@@ -555,17 +722,17 @@ bash lib/generate-dashboard.sh
 # Final status message
 echo ""
 if [ "$FAILED" -eq 0 ]; then
-    print_header "✓ All tests passed!"
-    EXIT_FINAL=0
+  print_header "✓ All tests passed!"
+  EXIT_FINAL=0
 else
-    print_header "✗ $FAILED test(s) failed"
-    EXIT_FINAL=1
+  print_header "✗ $FAILED test(s) failed"
+  EXIT_FINAL=1
 fi
 
 # 7. Create snapshot (optional)
 if [ "$CREATE_SNAPSHOT" == "true" ]; then
-    print_header "Creating test pass snapshot..."
-    bash lib/create-snapshot.sh
+  print_header "Creating test pass snapshot..."
+  bash lib/create-snapshot.sh
 fi
 
 exit $EXIT_FINAL

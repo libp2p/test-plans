@@ -15,8 +15,8 @@ fi
 
 # Extract metadata
 test_pass=$(yq eval '.metadata.testPass' "$RESULTS_FILE")
-started_at=$(yq eval '.metadata.startedAt' "$RESULTS_FILE")
-completed_at=$(yq eval '.metadata.completedAt' "$RESULTS_FILE")
+STARTED_AT=$(yq eval '.metadata.startedAt' "$RESULTS_FILE")
+COMPLETED_AT=$(yq eval '.metadata.completedAt' "$RESULTS_FILE")
 duration=$(yq eval '.metadata.duration' "$RESULTS_FILE")
 platform=$(yq eval '.metadata.platform' "$RESULTS_FILE")
 os_name=$(yq eval '.metadata.os' "$RESULTS_FILE")
@@ -24,12 +24,12 @@ worker_count=$(yq eval '.metadata.workerCount' "$RESULTS_FILE")
 
 # Extract summary
 total=$(yq eval '.summary.total' "$RESULTS_FILE")
-passed=$(yq eval '.summary.passed' "$RESULTS_FILE")
-failed=$(yq eval '.summary.failed' "$RESULTS_FILE")
+PASSED=$(yq eval '.summary.passed' "$RESULTS_FILE")
+FAILED=$(yq eval '.summary.failed' "$RESULTS_FILE")
 
 # Calculate pass rate
 if [ "$total" -gt 0 ]; then
-    pass_rate=$(awk "BEGIN {printf \"%.1f\", ($passed / $total) * 100}")
+    pass_rate=$(awk "BEGIN {printf \"%.1f\", ($PASSED / $total) * 100}")
 else
     pass_rate="0.0"
 fi
@@ -42,8 +42,8 @@ cat > "$LATEST_RESULTS_FILE" <<EOF
 
 **Summary:**
 - **Total Tests:** $total
-- **Passed:** ✅ $passed
-- **Failed:** ❌ $failed
+- **Passed:** ✅ $PASSED
+- **Failed:** ❌ $FAILED
 - **Pass Rate:** ${pass_rate}%
 
 **Environment:**
@@ -53,8 +53,8 @@ cat > "$LATEST_RESULTS_FILE" <<EOF
 - **Duration:** $duration
 
 **Timestamps:**
-- **Started:** $started_at
-- **Completed:** $completed_at
+- **Started:** $STARTED_AT
+- **Completed:** $COMPLETED_AT
 
 ---
 
@@ -65,14 +65,14 @@ cat > "$LATEST_RESULTS_FILE" <<EOF
 EOF
 
 # Read test count
-test_count=$(yq eval '.tests | length' "$RESULTS_FILE")
+TEST_COUNT=$(yq eval '.tests | length' "$RESULTS_FILE")
 
 # Declare associative arrays for fast lookups in matrix generation
 declare -A test_status_map
 declare -A test_transport_map
 
 # Only process tests if there are any
-if [ "$test_count" -gt 0 ]; then
+if [ "$TEST_COUNT" -gt 0 ]; then
     # Export all test data as TSV in one yq call (much faster than individual calls)
     test_data=$(yq eval '.tests[] | [.name, .status, .dialer, .listener, .transport, .duration] | @tsv' "$RESULTS_FILE")
 
@@ -112,8 +112,8 @@ cat > "$OUTPUT_FILE" <<EOF
 
 **Summary:**
 - **Total Tests:** $total
-- **Passed:** ✅ $passed
-- **Failed:** ❌ $failed
+- **Passed:** ✅ $PASSED
+- **Failed:** ❌ $FAILED
 - **Pass Rate:** ${pass_rate}%
 
 **Environment:**
@@ -123,8 +123,8 @@ cat > "$OUTPUT_FILE" <<EOF
 - **Duration:** $duration
 
 **Timestamps:**
-- **Started:** $started_at
-- **Completed:** $completed_at
+- **Started:** $STARTED_AT
+- **Completed:** $COMPLETED_AT
 
 ---
 
@@ -148,7 +148,7 @@ See [Latest Test Results](LATEST_TEST_RESULTS.md) for detailed results table.
 EOF
 
 # Only generate matrix view if there are tests
-if [ "$test_count" -gt 0 ]; then
+if [ "$TEST_COUNT" -gt 0 ]; then
     # Generate matrix view (dialer x listener grid)
     # Get unique dialers and listeners
     dialers=$(yq eval '.tests[].dialer' "$RESULTS_FILE" | sort -u)

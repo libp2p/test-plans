@@ -71,12 +71,12 @@ CMD_LINE_ARGS=("${YAML_ARGS[@]}" "$@")
 set -- "${CMD_LINE_ARGS[@]}"
 
 # NOTE: this test can be run and later re-run. When run initially, the
-# SCRIPT_DIR is something like `<repo root>/perf/lib` and the SCRIPT_LIB_DIR is
-# then `${SCRIPT_DIR}/../../lib`. The SCRIPT_DIR points to where the
-# perf-specific test scripts are located and the SCRIPT_LIB_DIR is where the
-# scripts that are common to all tests are located. An inputs.yaml file is
-# generated to capture these values for re-running the same test later. When
-# re-running a test from a snapshot, all scripts are located in the same
+# SCRIPT_DIR is something like `<repo root>/transport/lib` and the
+# SCRIPT_LIB_DIR is then `${SCRIPT_DIR}/../../lib`. The SCRIPT_DIR points to
+# where the transport-specific test scripts are located and the SCRIPT_LIB_DIR
+# is where the scripts that are common to all tests are located. An inputs.yaml
+# file is generated to capture these values for re-running the same test later.
+# When re-running a test from a snapshot, all scripts are located in the same
 # folder: `<snapshot root>/lib` so the inputs.yaml file is used to initialize
 # the environment variables so that all scripts load properly.
 
@@ -164,7 +164,7 @@ Examples:
   $0 --snapshot --force-image-rebuild
 
 Dependencies:
-  bash 4.0+, docker 20.10+, yq 4.0+, wget, zip, unzip
+  bash 4.0+, docker 20.10+, yq 4.0+, wget, zip, unzip, bc
   Run with --check-deps to verify installation.
 
 EOF
@@ -427,10 +427,10 @@ if [ "$SHOW_IGNORED" == "true" ]; then
   echo ""
 fi
 
-test_count=${#selected_main_tests[@]}
-total_tests=${test_count}
+TEST_COUNT=${#selected_main_tests[@]}
+TOTAL_TESTS=${TEST_COUNT}
 
-print_message "Total selected: $total_tests tests"
+print_message "Total selected: $TOTAL_TESTS tests"
 print_message "Total ignored: ${#ignored_main_tests[@]} tests"
 echo ""
 unindent
@@ -445,7 +445,7 @@ IMAGE_COUNT=$(wc -l < "$REQUIRED_IMAGES")
 # Prompt for confirmation unless auto-approved
 indent
 if [ "$AUTO_YES" != true ]; then
-  read -p "  Build $IMAGE_COUNT Docker images and execute $total_tests tests? (Y/n): " response
+  read -p "  Build $IMAGE_COUNT Docker images and execute $TOTAL_TESTS tests? (Y/n): " response
   response=${response:-Y}
 
   if [[ ! "$response" =~ ^[Yy]$ ]]; then
@@ -504,7 +504,7 @@ start_redis_service "transport-network" "transport-redis" || {
 unindent
 echo ""
 
-# Run main performance tests
+# Run main transport interop tests
 print_header "Running tests... (${WORKER_COUNT} workers)"
 indent
 
@@ -533,19 +533,19 @@ run_test() {
   # Serialize the message printing using flock (prevents interleaved output)
   (
     flock -x 200
-    print_message "[$((index + 1))/$test_count] $name...$result"
+    print_message "[$((index + 1))/$TEST_COUNT] $name...$result"
   ) 200>/tmp/transport-test-output.lock
 
   return $exit_code
 }
 
-export test_count
+export TEST_COUNT
 export -f run_test
 
 # Run tests in parallel using xargs
 # Note: Some tests may fail, but we want to continue to collect results
 # So we use || true to ensure xargs exit code doesn't stop the script
-seq 0 $((test_count - 1)) | xargs -P "$WORKER_COUNT" -I {} bash -c 'run_test {}' || true
+seq 0 $((TEST_COUNT - 1)) | xargs -P "$WORKER_COUNT" -I {} bash -c 'run_test {}' || true
 
 unindent
 echo ""
@@ -599,7 +599,7 @@ metadata:
   workerCount: $WORKER_COUNT
 
 summary:
-  total: $test_count
+  total: $TEST_COUNT
   passed: $PASSED
   failed: $FAILED
 
@@ -614,7 +614,7 @@ fi
 
 print_message "Results:"
 indent
-print_message "Total: $test_count"
+print_message "Total: $TEST_COUNT"
 print_success "Passed: $PASSED"
 print_error "Failed: $FAILED"
 

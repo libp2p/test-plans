@@ -292,7 +292,7 @@ summary:
   total: $total
   passed: $passed
   failed: $failed
-  passRate: $(awk "BEGIN {if ($total > 0) printf \"%.1f\", ($passed / $total) * 100; else print \"0.0\"}")
+  passRate: $(if [ "$total" -gt 0 ]; then echo "scale=1; ($passed * 100) / $total" | bc; else echo "0.0"; fi)
 SETTINGS
 
 print_success "Created settings.yaml"

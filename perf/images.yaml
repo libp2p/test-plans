@@ -23,27 +23,6 @@ test-aliases:
   - alias: "failing"
     value: "go-v0.45|js-v3.x"
 
-# Server configurations - Where perf servers run
-# Supports both local (Docker on same machine) and remote (SSH to another machine)
-servers:
-  # Local server - runs in Docker container on same machine as client
-  - id: local
-    type: local
-    description: "Run server in Docker on same machine as client"
-    # No additional configuration needed for local servers
-
-  # Example remote server configuration
-  # Uncomment and configure for your setup
-  # - id: remote
-  #   type: remote
-  #   hostname: "192.168.1.100"  # IP address or DNS name
-  #   username: "perfuser"        # SSH username on remote machine
-  #   description: "Remote Debian 13 server (Computer 2)"
-  #   # Requirements:
-  #   # - SSH key-based authentication setup (see QUICKSTART.md)
-  #   # - Docker installed and user in docker group
-  #   # - Port 4001 accessible (default perf protocol port)
-
 # Baseline implementations - Separate from main tests
 # These measure raw network/protocol performance for comparison
 # Docker image naming: perf-<id>
@@ -55,7 +34,6 @@ baselines:
       type: local
       path: images/https/v1.0
       dockerfile: Dockerfile
-    server: local
     transports: [https]
     secureChannels: []
     muxers: []
@@ -73,7 +51,6 @@ baselines:
       type: local
       path: images/quic-go/v1.0
       dockerfile: Dockerfile
-    server: local
     transports: [quic]
     secureChannels: []
     muxers: []
@@ -91,7 +68,6 @@ baselines:
       type: local
       path: images/iperf/v3.0
       dockerfile: Dockerfile
-    server: local
     transports: [tcp]
     secureChannels: []
     muxers: []
@@ -112,7 +88,6 @@ implementations:
       type: local
       path: images/go/v0.45
       dockerfile: Dockerfile
-    server: local
     transports: [tcp, quic-v1, webtransport]
     secureChannels: [noise, tls]
     muxers: [yamux, mplex]
@@ -130,7 +105,6 @@ implementations:
       type: local
       path: images/rust/v0.56
       dockerfile: Dockerfile
-    server: local
     transports: [tcp, quic-v1]
     secureChannels: [noise, tls]
     muxers: [yamux, mplex]
@@ -148,7 +122,6 @@ implementations:
       type: local
       path: images/js/v3.x
       dockerfile: Dockerfile
-    server: local
     transports: [tcp, webtransport]
     secureChannels: [noise, tls]
     muxers: [yamux, mplex]
@@ -166,7 +139,6 @@ implementations:
       type: local
       path: images/dotnet/v1.0
       dockerfile: Dockerfile
-    server: local
     transports: [tcp, quic-v1]
     secureChannels: [noise, tls]
     muxers: [yamux, mplex]
