@@ -267,7 +267,7 @@ The `--force-rebuild` flag forces rebuilding of all Docker images from the captu
 <!-- TEST_RESULTS_START -->
 # Hole Punch Interoperability Test Results
 
-## Test Pass: `hole-punch-030559-09-01-2026`
+## Test Pass: `hole-punch-024023-10-01-2026`
 
 **Summary:**
 - **Total Tests:** 5
@@ -279,11 +279,11 @@ The `--force-rebuild` flag forces rebuilding of all Docker images from the captu
 - **Platform:** x86_64
 - **OS:** Linux
 - **Workers:** 8
-- **Duration:** 15s
+- **Duration:** 14s
 
 **Timestamps:**
-- **Started:** 2026-01-09T03:05:59Z
-- **Completed:** 2026-01-09T03:06:14Z
+- **Started:** 2026-01-10T02:40:23Z
+- **Completed:** 2026-01-10T02:40:37Z
 
 ---
 
@@ -291,11 +291,11 @@ The `--force-rebuild` flag forces rebuilding of all Docker images from the captu
 
 | Test | Dialer | Listener | Transport | Status | Duration |
 |------|--------|----------|-----------|--------|----------|
-| linux x linux (quic-v1) [dr: linux, rly: linux, lr: linux] | linux | linux | quic-v1 | ✅ | 10s |
+| linux x linux (tcp, tls, yamux) [dr: linux, rly: linux, lr: linux] | linux | linux | tcp | ✅ | 9s |
+| linux x linux (tcp, noise, mplex) [dr: linux, rly: linux, lr: linux] | linux | linux | tcp | ✅ | 10s |
+| linux x linux (quic-v1) [dr: linux, rly: linux, lr: linux] | linux | linux | quic-v1 | ✅ | 11s |
 | linux x linux (tcp, tls, mplex) [dr: linux, rly: linux, lr: linux] | linux | linux | tcp | ✅ | 11s |
-| linux x linux (tcp, noise, mplex) [dr: linux, rly: linux, lr: linux] | linux | linux | tcp | ✅ | 12s |
-| linux x linux (tcp, tls, yamux) [dr: linux, rly: linux, lr: linux] | linux | linux | tcp | ✅ | 13s |
-| linux x linux (tcp, noise, yamux) [dr: linux, rly: linux, lr: linux] | linux | linux | tcp | ✅ | 14s |
+| linux x linux (tcp, noise, yamux) [dr: linux, rly: linux, lr: linux] | linux | linux | tcp | ✅ | 12s |
 
 ---
 
@@ -316,6 +316,6 @@ The `--force-rebuild` flag forces rebuilding of all Docker images from the captu
 
 ---
 
-*Generated: 2026-01-09T03:06:14Z*
+*Generated: 2026-01-10T02:40:37Z*
 <!-- TEST_RESULTS_END -->
 
