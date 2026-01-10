@@ -131,7 +131,8 @@ TEST_TIMEOUT=180
 TEST_START=$(date +%s)
 
 # Start containers and wait for dialer to exit (with timeout)
-if timeout "${TEST_TIMEOUT}" "${DOCKER_COMPOSE_CMD}" -f "${COMPOSE_FILE}" up --exit-code-from dialer --abort-on-container-exit >> "${LOG_FILE}" 2>&1; then
+# WARNING: Do NOT put quotes around this because the command has two parts
+if timeout "${TEST_TIMEOUT}" ${DOCKER_COMPOSE_CMD} -f "${COMPOSE_FILE}" up --exit-code-from dialer --abort-on-container-exit >> "${LOG_FILE}" 2>&1; then
     EXIT_CODE=0
     log_message "  ✓ Test complete"
 else
@@ -153,7 +154,8 @@ TEST_DURATION=$((${TEST_END} - ${TEST_START}))
 
 # Extract results from dialer container logs
 # Dialer outputs YAML to stdout, which appears in docker logs
-DIALER_LOGS=$("${DOCKER_COMPOSE_CMD}" -f "${COMPOSE_FILE}" logs dialer 2>/dev/null || echo "")
+# WARNING: Do NOT put quotes around this because the command has two parts
+DIALER_LOGS=$(${DOCKER_COMPOSE_CMD} -f "${COMPOSE_FILE}" logs dialer 2>/dev/null || echo "")
 
 # Extract the measurement YAML (including outliers and samples arrays)
 # Docker compose prefixes each line with: "container_name  | "
@@ -197,6 +199,7 @@ EOF
 
 # Cleanup
 log_debug "  Cleaning up containers..."
-"${DOCKER_COMPOSE_CMD}" -f "${COMPOSE_FILE}" down --volumes --remove-orphans >> "${LOG_FILE}" 2>&1 || true
+# WARNING: Do NOT put quotes around this because the command has two parts
+${DOCKER_COMPOSE_CMD} -f "${COMPOSE_FILE}" down --volumes --remove-orphans >> "${LOG_FILE}" 2>&1 || true
 
 exit "${EXIT_CODE}"

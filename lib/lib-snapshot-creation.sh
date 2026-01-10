@@ -264,14 +264,24 @@ create_settings_yaml() {
   indent
 
   # Extract summary from results.yaml
-  local total=$(yq eval '.summary.total' "${snapshot_dir}/results.yaml" 2>/dev/null || echo "0")
-  local passed=$(yq eval '.summary.passed' "${snapshot_dir}/results.yaml" 2>/dev/null || echo "0")
-  local failed=$(yq eval '.summary.failed' "${snapshot_dir}/results.yaml" 2>/dev/null || echo "0")
+  local total=$(yq eval '.summary.total' "${snapshot_dir}/results.yaml" 2>/dev/null)
+  total=${total:-0}
+  [ "${total}" = "null" ] && total=0
+
+  local passed=$(yq eval '.summary.passed' "${snapshot_dir}/results.yaml" 2>/dev/null)
+  passed=${passed:-0}
+  [ "${passed}" = "null" ] && passed=0
+
+  local failed=$(yq eval '.summary.failed' "${snapshot_dir}/results.yaml" 2>/dev/null)
+  failed=${failed:-0}
+  [ "${failed}" = "null" ] && failed=0
 
   # Extract metadata
   local started_at=$(yq eval '.metadata.startedAt' "${snapshot_dir}/results.yaml" 2>/dev/null || echo "")
   local completed_at=$(yq eval '.metadata.completedAt' "${snapshot_dir}/results.yaml" 2>/dev/null || echo "")
-  local duration=$(yq eval '.metadata.duration' "${snapshot_dir}/results.yaml" 2>/dev/null || echo "0")
+  local duration=$(yq eval '.metadata.duration' "${snapshot_dir}/results.yaml" 2>/dev/null)
+  duration=${duration:-0}
+  [ "${duration}" = "null" ] && duration=0
 
   cat > "${snapshot_dir}/settings.yaml" <<SETTINGS
 # Snapshot Settings
