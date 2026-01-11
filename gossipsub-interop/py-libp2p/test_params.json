@@ -1,0 +1,38 @@
+{
+  "node_id": 1,
+  "gossipsub_params": {
+    "D": 6,
+    "D_low": 4,
+    "D_high": 12,
+    "D_lazy": 6,
+    "heartbeat_interval": 1000,
+    "fanout_ttl": 60000,
+    "mcache_len": 5,
+    "mcache_gossip": 3,
+    "seen_ttl": 120000
+  },
+  "script": [
+    {
+      "action": "InitGossipSub",
+      "gossipsubParams": {
+        "D": 6,
+        "D_low": 4,
+        "D_high": 12,
+        "D_lazy": 6,
+        "heartbeat_interval": 1000,
+        "fanout_ttl": 60000,
+        "mcache_len": 5,
+        "mcache_gossip": 3,
+        "seen_ttl": 120000
+      }
+    },
+    {
+      "action": "SubscribeToTopic",
+      "topicID": "test-topic"
+    },
+    {
+      "action": "WaitUntil",
+      "duration": 5000
+    }
+  ]
+}
