@@ -1,6 +1,5 @@
 #!/bin/bash
 # Run a single transport interop test using docker-compose
-# Uses same pattern as perf/lib/run-single-test.sh
 
 set -euo pipefail
 
@@ -30,6 +29,7 @@ print_debug "listener id: ${LISTENER_ID}"
 print_debug "transport: ${TRANSPORT_NAME}"
 print_debug "secure: ${SECURE}"
 print_debug "muxer: ${MUXER_NAME}"
+print_debug "debug: ${DEBUG}"
 
 # Compute TEST_KEY for Redis key namespacing (8-char hex hash)
 TEST_KEY=$(compute_test_key "${TEST_NAME}")

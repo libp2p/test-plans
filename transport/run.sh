@@ -1,6 +1,6 @@
 #!/bin/bash
-# Main test runner for libp2p transport interoperability tests
 
+# run in strict failure mode
 set -euo pipefail
 
 #                                 ╔╦╦╗  ╔═╗
@@ -384,7 +384,7 @@ echo ""
 TEST_START_TIME=$(date +%s)
 
 # =============================================================================
-# STEP 6: GENERATE TEST MATRIX
+# STEP 5: GENERATE TEST MATRIX
 # -----------------------------------------------------------------------------
 # This either loads an already generated test matrix from the cache or it
 # generates a new one and caches it. This applies the filtering and the test
@@ -404,7 +404,7 @@ unindent
 echo ""
 
 # =============================================================================
-# STEP 7: PRINT TEST SELECTION
+# STEP 6: PRINT TEST SELECTION
 # -----------------------------------------------------------------------------
 # This loads the test matrix data and prints it out. If AUTO_YES is not true,
 # then prompt the user if they would like to continue.
@@ -460,7 +460,7 @@ fi
 unindent
 
 # =============================================================================
-# STEP 8: BUILD MISSING DOCKER IMAGES
+# STEP 7: BUILD MISSING DOCKER IMAGES
 # -----------------------------------------------------------------------------
 # This attempts to build the missing docker images needed to run the selected
 # tests.
@@ -487,7 +487,7 @@ unindent
 echo ""
 
 # =============================================================================
-# STEP 9: RUN TESTS
+# STEP 8: RUN TESTS
 # -----------------------------------------------------------------------------
 # This starts global services (e.g. Redis), then runs the main tests and then
 # stops the global services.
@@ -565,7 +565,7 @@ TEST_END_TIME=$(date +%s)
 TEST_DURATION=$((TEST_END_TIME - TEST_START_TIME))
 
 # =============================================================================
-# STEP 10: COLLECT RESULTS
+# STEP 9: COLLECT RESULTS
 # -----------------------------------------------------------------------------
 # This appends all of the results files to the single results.yaml in the
 # output directory and then displays a summary
@@ -628,7 +628,6 @@ if [ "${FAILED}" -gt 0 ]; then
   fi
 fi
 
-
 unindent
 echo ""
 
@@ -652,7 +651,7 @@ unindent
 echo ""
 
 # =============================================================================
-# STEP 11: GENERATE RESULTS DASHBOARD
+# STEP 10: GENERATE RESULTS DASHBOARD
 # -----------------------------------------------------------------------------
 # This creates the Markdown version for injecting into the README.md file for
 # this test. If `pandoc` is installed, an HTML version is gnerated.
@@ -672,7 +671,7 @@ unindent
 echo ""
 
 # =============================================================================
-# STEP 12: CREATE SNAPSHOT
+# STEP 11: CREATE SNAPSHOT
 # -----------------------------------------------------------------------------
 # This copies all necessary scripts and input files to the output directory so
 # that it becomes a standalone version of this test that can be emitted as an

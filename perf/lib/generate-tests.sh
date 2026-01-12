@@ -5,7 +5,9 @@
 
 ##### 1. SETUP
 
-set -ueo pipefail  # Removed -e to allow continuation on errors
+set -ueo pipefail
+
+trap 'echo "ERROR in generate-tests.sh at line $LINENO: Command exited with status $?" >&2' ERR
 
 # Source common libraries
 source "${SCRIPT_LIB_DIR}/lib-filter-engine.sh"
@@ -183,15 +185,22 @@ declare -A image_transports
 declare -A image_secure
 declare -A image_muxers
 declare -A image_dial_only
+declare -A image_commit
 
 for image_id in "${all_image_ids[@]}"; do
   transports=$(yq eval ".implementations[] | select(.id == \"${image_id}\") | .transports | join(\" \")" "${IMAGES_YAML}")
   secure=$(yq eval ".implementations[] | select(.id == \"${image_id}\") | .secureChannels | join(\" \")" "${IMAGES_YAML}")
   muxers=$(yq eval ".implementations[] | select(.id == \"${image_id}\") | .muxers | join(\" \")" "${IMAGES_YAML}")
+  dial_only=$(yq eval ".implementations[] | select(.id == \"${image_id}\") | .dialOnly | join(\" \")" "${IMAGES_YAML}" 2>/dev/null || echo "")
+  commit=$(yq eval ".implementations[] | select (.id == \"${image_id}\") | .source.commit" "${IMAGES_YAML}" 2>/dev/null || echo "")
 
   image_transports["${image_id}"]="${transports}"
   image_secure["${image_id}"]="${secure}"
   image_muxers["${image_id}"]="${muxers}"
+  image_dial_only["${image_id}"]="${dial_only}"
+  if [ -n "${commit}" ]; then
+    image_commit["${image_id}"]="${commit}"
+  fi
 done
 
 indent
