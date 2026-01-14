@@ -1,13 +1,15 @@
-from collections import defaultdict, OrderedDict
+import argparse
 import json
 import os
-import argparse
-from datetime import datetime
-from typing import Dict, List, Tuple, OrderedDict as OrderedDictType
+import re
+from collections import OrderedDict, defaultdict
 from dataclasses import dataclass
+from datetime import datetime
+from typing import Dict, List, Tuple
+from typing import OrderedDict as OrderedDictType
+
 import matplotlib.pyplot as plt
 import yaml
-import re
 
 peer_id_to_node_id = dict()
 node_id_to_peer_id = dict()
@@ -197,6 +199,18 @@ def parse_log_file(lines) -> FileParseResult:
         if msg_type == "Received Message" and "time" in parsed:
             timestamp = datetime.fromisoformat(parsed["time"])
             message_id_str = parsed.get("id", "")
+            if message_id_str:
+                message_id = MessageId(message_id_str)
+                if message_id_str not in seen_message_ids:
+                    seen_message_ids.add(message_id_str)
+                    message_deliveries[message_id].append(
+                        MessageDelivery(timestamp, node_id)
+                    )
+                else:
+                    duplicate_counts[message_id] += 1
+        if msg_type == "All parts received" and "time" in parsed:
+            timestamp = datetime.fromisoformat(parsed["time"])
+            message_id_str = parsed.get("group id", "")
             if message_id_str:
                 message_id = MessageId(message_id_str)
                 if message_id_str not in seen_message_ids:

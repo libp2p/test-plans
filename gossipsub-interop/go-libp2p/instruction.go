@@ -41,10 +41,11 @@ type WaitUntilInstruction struct {
 func (WaitUntilInstruction) isInstruction() {}
 
 type AddPartialMessage struct {
-	Type    string `json:"type"`
-	TopicID string `json:"topicID"`
-	GroupID int    `json:"groupID"`
-	Parts   int    `json:"parts"`
+	Type           string `json:"type"`
+	TopicID        string `json:"topicID"`
+	GroupID        int    `json:"groupID"`
+	Parts          int    `json:"parts"`
+	EagerPushParts int    `json:"eagerPushParts"` // bitmap for eager push (0 = lazy mode)
 }
 
 // isInstruction implements the ScriptInstruction interface

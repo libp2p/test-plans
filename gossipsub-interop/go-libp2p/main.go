@@ -29,7 +29,7 @@ var (
 )
 
 // pubsubOptions creates a list of options to configure our router with.
-func pubsubOptions(slogger *slog.Logger, params pubsub.GossipSubParams, pme *partialmessages.PartialMessageExtension) []pubsub.Option {
+func pubsubOptions(slogger *slog.Logger, params pubsub.GossipSubParams, pme *partialmessages.PartialMessagesExtension) []pubsub.Option {
 	tr := gossipTracer{logger: slogger.With("service", "gossipsub")}
 	psOpts := []pubsub.Option{
 		pubsub.WithMessageSignaturePolicy(pubsub.StrictNoSign),

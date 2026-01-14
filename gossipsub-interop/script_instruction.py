@@ -31,9 +31,10 @@ class WaitUntil(BaseModel):
 
 class AddPartialMessage(BaseModel):
     type: Literal["addPartialMessage"] = "addPartialMessage"
-    parts: int  # uint8 representing bitmap
+    parts: int  # uint8 representing bitmap of parts this node has
     topicID: str
     groupID: int  # uint64 representing groupID
+    eagerPushParts: int = 0  # uint8 bitmap of parts to push eagerly (0 = lazy mode)
 
 
 class PublishPartial(BaseModel):

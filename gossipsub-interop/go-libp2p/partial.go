@@ -13,8 +13,9 @@ import (
 const partLen = 1024
 
 type PartialMessage struct {
-	groupID [8]byte
-	parts   [8][]byte // each part is partLen sized or nil if empty
+	groupID        [8]byte
+	parts          [8][]byte // each part is partLen sized or nil if empty
+	eagerPushParts byte      // bitmap of parts to include on eager push (0 = lazy mode)
 }
 
 // PartsMetadata implements partialmessages.PartialMessage.
@@ -109,7 +110,7 @@ func (p *PartialMessage) Extend(data []byte) error {
 	return nil
 }
 
-// PartialMessageBytes implements partialmessages.PartialMessage.
+// PartialMessageBytes implements partialmessages.Message.
 func (p *PartialMessage) PartialMessageBytes(metadata partialmessages.PartsMetadata) ([]byte, error) {
 	if len(metadata) != 1 {
 		return nil, errors.New("invalid metadata length")
@@ -133,6 +134,27 @@ func (p *PartialMessage) PartialMessageBytes(metadata partialmessages.PartsMetad
 	}
 	out = append(out, p.groupID[:]...)
 	return out, nil
+}
+
+// EagerPartialMessageBytes implements partialmessages.Message.
+// Returns data to send to peers whose parts metadata is unknown.
+func (p *PartialMessage) EagerPartialMessageBytes() ([]byte, partialmessages.PartsMetadata, error) {
+	if p.eagerPushParts == 0 {
+		// No eager push configured - return nil (lazy mode)
+		return nil, nil, nil
+	}
+
+	// Create metadata representing "peer has everything except eagerPushParts"
+	// so PartialMessageBytes will return those parts
+	theyHave := partialmessages.PartsMetadata{^p.eagerPushParts}
+	msg, err := p.PartialMessageBytes(theyHave)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// Return what parts the peer will have after decoding
+	peerWillHave := partialmessages.PartsMetadata{p.eagerPushParts}
+	return msg, peerWillHave, nil
 }
 
 var _ partialmessages.Message = (*PartialMessage)(nil)

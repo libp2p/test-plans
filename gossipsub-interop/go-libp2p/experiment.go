@@ -206,7 +206,7 @@ func (n *scriptedNode) runInstruction(ctx context.Context, instruction ScriptIns
 	switch a := instruction.(type) {
 	case InitGossipSubInstruction:
 		slog.SetLogLoggerLevel(slog.LevelDebug)
-		pme := &partialmessages.PartialMessageExtension{
+		pme := &partialmessages.PartialMessagesExtension{
 			Logger: slog.Default(),
 			ValidateRPC: func(from peer.ID, rpc *pubsub_pb.PartialMessagesExtension) error {
 				// Not doing any validation for now
@@ -298,7 +298,9 @@ func (n *scriptedNode) runInstruction(ctx context.Context, instruction ScriptIns
 		})
 
 	case AddPartialMessage:
-		pm := &PartialMessage{}
+		pm := &PartialMessage{
+			eagerPushParts: byte(a.EagerPushParts),
+		}
 		binary.BigEndian.AppendUint64(pm.groupID[:0], uint64(a.GroupID))
 		pm.FillParts(uint8(a.Parts))
 		if pm.complete() {
