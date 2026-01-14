@@ -55,5 +55,9 @@ blocks-data-columns-race: binaries
 	@echo "Data Column received timings"
 	@rg --no-filename "Received Mess.*data_columns" latest/hosts/node*/*.stdout -m 1 | jq -r '.time' | python3 ./checks/stats_ts.py --relative-to "2000-01-01T00:00:30.00000000Z"
 
+eager-vs-lazy-publisher:
+	@uv run run.py --node_count 1024 --seed 3 --composition "all-go" --scenario "partial-messages-lazy"
+	@uv run run.py --node_count 1024 --seed 3 --composition "all-go" --scenario "partial-messages-eager"
+
 
 .PHONY: binaries all clean test blocks-data-columns-race
