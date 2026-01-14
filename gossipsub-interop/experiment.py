@@ -323,6 +323,7 @@ def partial_message_lazy_scenario(
     - Other nodes start with no parts
     - Publisher only sends bitmap (not data) initially (eagerPushParts=0)
     - Peers request parts after receiving first message
+    - 5 messages total (4 warm-up + 1 main)
     """
     instructions: List[ScriptInstruction] = []
     gs_params = GossipSubParams()
@@ -339,52 +340,47 @@ def partial_message_lazy_scenario(
         script_instruction.SubscribeToTopic(topicID=topic, partial=True)
     )
 
-    groupID = random.randint(0, (2**32) - 1)
-
     # Wait for setup time
     elapsed_seconds = 30
     instructions.append(script_instruction.WaitUntil(elapsedSeconds=elapsed_seconds))
 
-    # Node 0 (publisher) has ALL parts, lazy mode (eagerPushParts=0)
-    instructions.append(
-        script_instruction.IfNodeIDEquals(
-            nodeID=0,
-            instruction=script_instruction.AddPartialMessage(
-                topicID=topic,
-                groupID=groupID,
-                parts=0xFF,  # has all 8 parts
-                eagerPushParts=0,  # LAZY: no eager push
-            ),
-        )
-    )
+    # Publish 5 messages (4 warm-up + 1 main)
+    num_messages = 5
+    for msg_idx in range(num_messages):
+        groupID = random.randint(0, (2**32) - 1)
 
-    # All other nodes have NO parts initially
-    for i in range(1, node_count):
+        # Node 0 (publisher) has ALL parts, lazy mode (eagerPushParts=0)
         instructions.append(
             script_instruction.IfNodeIDEquals(
-                nodeID=i,
+                nodeID=0,
                 instruction=script_instruction.AddPartialMessage(
                     topicID=topic,
                     groupID=groupID,
-                    parts=0,  # no parts
-                    eagerPushParts=0,
+                    parts=0xFF,  # has all 8 parts
+                    eagerPushParts=0,  # LAZY: no eager push
                 ),
             )
         )
 
-    # Publisher publishes (lazy - peers will request parts)
-    instructions.append(
-        script_instruction.IfNodeIDEquals(
-            nodeID=0,
-            instruction=script_instruction.PublishPartial(
-                topicID=topic,
-                groupID=groupID,
-            ),
+        # Publisher publishes (lazy - peers will request parts)
+        instructions.append(
+            script_instruction.IfNodeIDEquals(
+                nodeID=0,
+                instruction=script_instruction.PublishPartial(
+                    topicID=topic,
+                    groupID=groupID,
+                ),
+            )
         )
-    )
 
-    # Wait for propagation and part requests
-    elapsed_seconds += 30
+        # Wait for propagation between messages
+        elapsed_seconds += 10
+        instructions.append(
+            script_instruction.WaitUntil(elapsedSeconds=elapsed_seconds)
+        )
+
+    # Extra wait at end for final propagation
+    elapsed_seconds += 20
     instructions.append(script_instruction.WaitUntil(elapsedSeconds=elapsed_seconds))
 
     return instructions
@@ -398,6 +394,7 @@ def partial_message_eager_scenario(
     - One publisher (node 0) has all 8 parts
     - Other nodes start with no parts
     - Publisher pushes ALL data eagerly (eagerPushParts=0xFF)
+    - 5 messages total (4 warm-up + 1 main)
     """
     instructions: List[ScriptInstruction] = []
     gs_params = GossipSubParams()
@@ -414,51 +411,47 @@ def partial_message_eager_scenario(
         script_instruction.SubscribeToTopic(topicID=topic, partial=True)
     )
 
-    groupID = random.randint(0, (2**32) - 1)
-
     # Wait for setup time
     elapsed_seconds = 30
     instructions.append(script_instruction.WaitUntil(elapsedSeconds=elapsed_seconds))
 
-    # Node 0 (publisher) has ALL parts, eager mode (eagerPushParts=0xFF)
-    instructions.append(
-        script_instruction.IfNodeIDEquals(
-            nodeID=0,
-            instruction=script_instruction.AddPartialMessage(
-                topicID=topic,
-                groupID=groupID,
-                parts=0xFF,  # has all 8 parts
-                eagerPushParts=0xFF,  # EAGER: push all 8 parts
-            ),
-        )
-    )
+    # Publish 5 messages (4 warm-up + 1 main)
+    num_messages = 5
+    for msg_idx in range(num_messages):
+        groupID = random.randint(0, (2**32) - 1)
 
-    # All other nodes have NO parts initially
-    for i in range(1, node_count):
+        # Node 0 (publisher) has ALL parts, eager mode (eagerPushParts=0xFF)
         instructions.append(
             script_instruction.IfNodeIDEquals(
-                nodeID=i,
+                nodeID=0,
                 instruction=script_instruction.AddPartialMessage(
                     topicID=topic,
                     groupID=groupID,
-                    parts=0,  # no parts
-                    eagerPushParts=0,
+                    parts=0xFF,  # has all 8 parts
+                    eagerPushParts=0xFF,  # EAGER: push all 8 parts
                 ),
             )
         )
 
-    # Publisher publishes (eager - all data pushed immediately)
-    instructions.append(
-        script_instruction.IfNodeIDEquals(
-            nodeID=0,
-            instruction=script_instruction.PublishPartial(
-                topicID=topic,
-                groupID=groupID,
-            ),
+        # Publisher publishes (eager - all data pushed immediately)
+        instructions.append(
+            script_instruction.IfNodeIDEquals(
+                nodeID=0,
+                instruction=script_instruction.PublishPartial(
+                    topicID=topic,
+                    groupID=groupID,
+                ),
+            )
         )
-    )
 
-    elapsed_seconds += 20
+        # Wait for propagation between messages
+        elapsed_seconds += 10
+        instructions.append(
+            script_instruction.WaitUntil(elapsedSeconds=elapsed_seconds)
+        )
+
+    # Extra wait at end for final propagation
+    elapsed_seconds += 10
     instructions.append(script_instruction.WaitUntil(elapsedSeconds=elapsed_seconds))
 
     return instructions
