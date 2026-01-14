@@ -113,6 +113,7 @@ func (m *partialMsgManager) handleRPC(rpc incomingPartialRPC) {
 
 	pm, existingMessage := m.partialMessages[rpc.GetTopicID()][string(rpc.GroupID)]
 	if !existingMessage {
+		m.Info("Partial Message first seen", "group id", rpc.GroupID)
 		pm = &PartialMessage{}
 		copy(pm.groupID[:], rpc.GroupID)
 		m.partialMessages[rpc.GetTopicID()][string(rpc.GroupID)] = pm
