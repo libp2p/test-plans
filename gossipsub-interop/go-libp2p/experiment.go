@@ -56,7 +56,7 @@ type partialMsgManager struct {
 func (m *partialMsgManager) start(logger *slog.Logger, pubsub *pubsub.PubSub) {
 	m.Logger = logger
 	m.done = make(chan struct{})
-	m.incomingRPC = make(chan incomingPartialRPC, 1)
+	m.incomingRPC = make(chan incomingPartialRPC, 64)
 	m.publish = make(chan publishReq)
 	m.add = make(chan partialMsgWithTopic)
 	m.partialMessages = make(map[string]map[string]*PartialMessage)
