@@ -330,6 +330,10 @@ def partial_message_lazy_scenario(
     if disable_gossip:
         gs_params.Dlazy = 0
         gs_params.GossipFactor = 0
+    gs_params.D = 4
+    gs_params.Dhi = 4
+    gs_params.Dlo = 4
+    gs_params.Dout = 1
     instructions.extend(spread_heartbeat_delay(node_count, gs_params))
 
     number_of_conns_per_node = min(20, node_count - 1)
@@ -401,6 +405,10 @@ def partial_message_eager_scenario(
     if disable_gossip:
         gs_params.Dlazy = 0
         gs_params.GossipFactor = 0
+    gs_params.D = 4
+    gs_params.Dhi = 4
+    gs_params.Dlo = 4
+    gs_params.Dout = 1
     instructions.extend(spread_heartbeat_delay(node_count, gs_params))
 
     number_of_conns_per_node = min(20, node_count - 1)
