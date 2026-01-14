@@ -267,7 +267,7 @@ The `--force-rebuild` flag forces rebuilding of all Docker images from the captu
 <!-- TEST_RESULTS_START -->
 # Hole Punch Interoperability Test Results
 
-## Test Pass: `hole-punch-024332-13-01-2026`
+## Test Pass: `hole-punch-084921-14-01-2026`
 
 **Summary:**
 - **Total Tests:** 5
@@ -282,8 +282,8 @@ The `--force-rebuild` flag forces rebuilding of all Docker images from the captu
 - **Duration:** 15s
 
 **Timestamps:**
-- **Started:** 2026-01-13T02:43:32Z
-- **Completed:** 2026-01-13T02:43:47Z
+- **Started:** 2026-01-14T08:49:21Z
+- **Completed:** 2026-01-14T08:49:36Z
 
 ---
 
@@ -291,11 +291,11 @@ The `--force-rebuild` flag forces rebuilding of all Docker images from the captu
 
 | Test | Dialer | Listener | Transport | Status | Duration |
 |------|--------|----------|-----------|--------|----------|
-| linux x linux (tcp, tls, mplex) [dr: linux, rly: linux, lr: linux] | linux | linux | tcp | ✅ | 10s |
+| linux x linux (tcp, noise, yamux) [dr: linux, rly: linux, lr: linux] | linux | linux | tcp | ✅ | 10s |
 | linux x linux (tcp, tls, yamux) [dr: linux, rly: linux, lr: linux] | linux | linux | tcp | ✅ | 11s |
-| linux x linux (quic-v1) [dr: linux, rly: linux, lr: linux] | linux | linux | quic-v1 | ✅ | 11s |
-| linux x linux (tcp, noise, mplex) [dr: linux, rly: linux, lr: linux] | linux | linux | tcp | ✅ | 12s |
-| linux x linux (tcp, noise, yamux) [dr: linux, rly: linux, lr: linux] | linux | linux | tcp | ✅ | 13s |
+| linux x linux (quic-v1) [dr: linux, rly: linux, lr: linux] | linux | linux | quic-v1 | ✅ | 12s |
+| linux x linux (tcp, tls, mplex) [dr: linux, rly: linux, lr: linux] | linux | linux | tcp | ✅ | 13s |
+| linux x linux (tcp, noise, mplex) [dr: linux, rly: linux, lr: linux] | linux | linux | tcp | ✅ | 14s |
 
 ---
 
@@ -316,6 +316,6 @@ The `--force-rebuild` flag forces rebuilding of all Docker images from the captu
 
 ---
 
-*Generated: 2026-01-13T02:43:47Z*
+*Generated: 2026-01-14T08:49:36Z*
 <!-- TEST_RESULTS_END -->
 
