@@ -36,6 +36,7 @@ class FileParseResult:
     node_id: NodeId
     message_deliveries: OrderedDictType[MessageId, List[MessageDelivery]]
     duplicate_counts: Dict[MessageId, int]
+    partial_message_first_seen: OrderedDictType[MessageId, List[MessageDelivery]]
 
 
 def nodeIDFromFilename(filename):
@@ -174,8 +175,10 @@ def parse_log_file(lines) -> FileParseResult:
     """
     node_id = NodeId(-1)
     seen_message_ids = set()
+    seen_partial_message_ids = set()
     message_deliveries = defaultdict(list)
     duplicate_counts = defaultdict(int)
+    partial_message_first_seen = defaultdict(list)
 
     for line in lines:
         try:
@@ -221,6 +224,17 @@ def parse_log_file(lines) -> FileParseResult:
                 else:
                     duplicate_counts[message_id] += 1
 
+        if msg_type == "Partial Message first seen" and "time" in parsed:
+            timestamp = datetime.fromisoformat(parsed["time"])
+            message_id_str = parsed.get("group id", "")
+            if message_id_str:
+                message_id = MessageId(message_id_str)
+                if message_id_str not in seen_partial_message_ids:
+                    seen_partial_message_ids.add(message_id_str)
+                    partial_message_first_seen[message_id].append(
+                        MessageDelivery(timestamp, node_id)
+                    )
+
     # Sort message_deliveries by first delivery time
     sorted_message_deliveries = OrderedDict()
     message_items = list(message_deliveries.items())
@@ -229,10 +243,21 @@ def parse_log_file(lines) -> FileParseResult:
     for msg_id, deliveries in message_items:
         sorted_message_deliveries[msg_id] = deliveries
 
+    # Sort partial_message_first_seen by first delivery time
+    sorted_partial_message_first_seen = OrderedDict()
+    partial_message_items = list(partial_message_first_seen.items())
+    partial_message_items.sort(
+        key=lambda x: x[1][0].timestamp if x[1] else datetime.max
+    )
+
+    for msg_id, deliveries in partial_message_items:
+        sorted_partial_message_first_seen[msg_id] = deliveries
+
     return FileParseResult(
         node_id=node_id,
         message_deliveries=sorted_message_deliveries,
         duplicate_counts=dict(duplicate_counts),
+        partial_message_first_seen=sorted_partial_message_first_seen,
     )
 
 
@@ -341,6 +366,7 @@ def analyse_message_deliveries(folder, output_folder="plots", skip_messages=0):
     analysis_txt = []
     messages: Dict[MessageId, List[MessageDelivery]] = defaultdict(list)
     duplicate_count: Dict[MessageId, int] = defaultdict(lambda: 0)
+    partial_messages: Dict[MessageId, List[MessageDelivery]] = defaultdict(list)
 
     for file in logfile_iterator(folder):
         with open(file, "r") as f:
@@ -354,6 +380,11 @@ def analyse_message_deliveries(folder, output_folder="plots", skip_messages=0):
             # Add duplicate counts to counters
             for msg_id, count in result.duplicate_counts.items():
                 duplicate_count[msg_id] += count
+
+            # Add partial message first seen events
+            for msg_id, deliveries in result.partial_message_first_seen.items():
+                for delivery in deliveries:
+                    partial_messages[msg_id].append(delivery)
 
     # Sort messages by first delivery time
     ordered_messages: OrderedDict[MessageId, List[MessageDelivery]] = OrderedDict()
@@ -451,6 +482,43 @@ def analyse_message_deliveries(folder, output_folder="plots", skip_messages=0):
 
     plt.savefig(f"{output_folder}/message_delivery_cdf.png")
     plt.close()
+
+    # Sort and plot partial message first seen CDF
+    ordered_partial_messages: OrderedDict[MessageId, List[MessageDelivery]] = (
+        OrderedDict()
+    )
+    partial_message_items = list(partial_messages.items())
+    partial_message_items.sort(
+        key=lambda x: x[1][0].timestamp if x[1] else datetime.max
+    )
+
+    for msg_id, deliveries in partial_message_items:
+        deliveries.sort(key=lambda x: x.timestamp)
+        ordered_partial_messages[msg_id] = deliveries
+
+    # Skip the first N messages if requested (same as regular messages)
+    if skip_messages > 0:
+        ordered_partial_messages_list = list(ordered_partial_messages.items())
+        if skip_messages < len(ordered_partial_messages_list):
+            ordered_partial_messages = OrderedDict(
+                ordered_partial_messages_list[skip_messages:]
+            )
+        else:
+            ordered_partial_messages = OrderedDict()
+
+    if ordered_partial_messages:
+        plt.figure(figsize=(12, 6))
+        plt.xlabel("Time since initial publish (seconds)")
+        plt.ylabel("Number of Nodes with Partial Message")
+        plt.title("Partial Message First Seen CDF")
+        plt.xlim(0, 1)
+        for msgID, deliveries in ordered_partial_messages.items():
+            plot_msg_delivery_cdf(plt, deliveries, label=msgID.id)
+        plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
+        plt.tight_layout()
+
+        plt.savefig(f"{output_folder}/partial_message_first_seen_cdf.png")
+        plt.close()
 
     # Print the analysis and save it to a file
     with open(f"{output_folder}/analysis.txt", "w") as f:
