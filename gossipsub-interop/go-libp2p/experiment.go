@@ -84,7 +84,10 @@ func (m *partialMsgManager) run() {
 			opts := partialmessages.PublishOptions{
 				PublishToPeers: req.publishToPeers,
 			}
-			m.pubsub.PublishPartialMessage(req.topic, pm, opts)
+			err := m.pubsub.PublishPartialMessage(req.topic, pm, opts)
+			if err != nil {
+				panic(err)
+			}
 		case <-m.done:
 			return
 		}
@@ -107,8 +110,9 @@ func (m *partialMsgManager) handleRPC(rpc incomingPartialRPC) {
 	if !ok {
 		m.partialMessages[rpc.GetTopicID()] = make(map[string]*PartialMessage)
 	}
-	pm, ok := m.partialMessages[rpc.GetTopicID()][string(rpc.GroupID)]
-	if !ok {
+
+	pm, existingMessage := m.partialMessages[rpc.GetTopicID()][string(rpc.GroupID)]
+	if !existingMessage {
 		pm = &PartialMessage{}
 		copy(pm.groupID[:], rpc.GroupID)
 		m.partialMessages[rpc.GetTopicID()][string(rpc.GroupID)] = pm
@@ -141,21 +145,15 @@ func (m *partialMsgManager) handleRPC(rpc incomingPartialRPC) {
 	if len(rpc.PartsMetadata) == 1 {
 		shouldRequest = pmHas[0] != rpc.PartsMetadata[0]
 		if shouldRequest {
-			m.Info("Republishing partial message because a peer has something I want")
+			m.Info("Republishing partial message because parts metadata are different")
 		}
 	}
 
-	if extended {
-		// We've extended our set. Let our mesh peers know
-		m.pubsub.PublishPartialMessage(rpc.GetTopicID(), pm, partialmessages.PublishOptions{})
-	}
-
-	if shouldRequest {
-		// This peer has parts we are missing. Request them from the peer
-		// explicitly.
-		m.pubsub.PublishPartialMessage(rpc.GetTopicID(), pm, partialmessages.PublishOptions{
-			PublishToPeers: []peer.ID{rpc.from},
-		})
+	if extended || shouldRequest || !existingMessage {
+		err := m.pubsub.PublishPartialMessage(rpc.GetTopicID(), pm, partialmessages.PublishOptions{})
+		if err != nil {
+			panic(err)
+		}
 	}
 }
 
@@ -207,7 +205,7 @@ func (n *scriptedNode) runInstruction(ctx context.Context, instruction ScriptIns
 	case InitGossipSubInstruction:
 		slog.SetLogLoggerLevel(slog.LevelDebug)
 		pme := &partialmessages.PartialMessagesExtension{
-			Logger: slog.Default(),
+			Logger: n.slogger,
 			ValidateRPC: func(from peer.ID, rpc *pubsub_pb.PartialMessagesExtension) error {
 				// Not doing any validation for now
 				return nil

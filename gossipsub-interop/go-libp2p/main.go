@@ -43,6 +43,7 @@ func pubsubOptions(slogger *slog.Logger, params pubsub.GossipSubParams, pme *par
 		pubsub.WithMaxMessageSize(10 * 1 << 20),
 		pubsub.WithGossipSubParams(params),
 		pubsub.WithEventTracer(&tr),
+		pubsub.WithLogger(slogger),
 		pubsub.WithRPCLogger(slogger),
 	}
 
