@@ -11,6 +11,7 @@ import (
 	"log"
 	"math"
 	"math/big"
+	"net"
 	"net/http"
 	"os"
 	"sort"
@@ -99,8 +100,12 @@ func runListenerMode() {
 		io.Copy(w, io.LimitReader(zeroReader{}, size))
 	})
 
+	// Auto-detect container IP
+	containerIP := getContainerIP()
+	log.Printf("Detected container IP: %s", containerIP)
+
 	// Publish listener address to Redis with TEST_KEY namespacing
-	multiaddr := fmt.Sprintf("/ip4/%s/tcp/4001/https", listenerIP)
+	multiaddr := fmt.Sprintf("/ip4/%s/tcp/4001/https", containerIP)
 	log.Printf("Publishing listener address to Redis: %s", multiaddr)
 
 	ctx := context.Background()
@@ -437,6 +442,26 @@ func getEnvOrDefault(key, defaultValue string) string {
 		return val
 	}
 	return defaultValue
+}
+
+// getContainerIP returns the first non-loopback IPv4 address of the container
+func getContainerIP() string {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		log.Printf("Failed to get interface addresses: %v", err)
+		return "0.0.0.0"
+	}
+
+	for _, addr := range addrs {
+		if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				return ipnet.IP.String()
+			}
+		}
+	}
+
+	log.Println("No non-loopback IPv4 address found, using 0.0.0.0")
+	return "0.0.0.0"
 }
 
 type zeroReader struct{}
