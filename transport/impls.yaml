@@ -164,7 +164,7 @@ implementations:
       commit: e79b6e9f2d7adf6cd1d089e6696d39f43af12c6f
 
       dockerfile: interop/transport/Dockerfile
-    transports: [tcp, ws, wss, quic-v1]
+    transports: [tcp, ws, wss, quic-v1, webrtc-direct]
     secureChannels: [noise]
     muxers: [mplex, yamux]
 
