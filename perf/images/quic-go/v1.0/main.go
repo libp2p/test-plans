@@ -6,12 +6,14 @@ import (
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/binary"
 	"encoding/pem"
 	"fmt"
 	"io"
 	"log"
 	"math"
 	"math/big"
+	"net"
 	"os"
 	"sort"
 	"strconv"
@@ -88,8 +90,12 @@ func runListenerMode() {
 		log.Fatal(err)
 	}
 
+	// Auto-detect container IP
+	containerIP := getContainerIP()
+	log.Printf("Detected container IP: %s", containerIP)
+
 	// Publish listener address to Redis
-	multiaddr := fmt.Sprintf("/ip4/%s/udp/4001/quic-v1", listenerIP)
+	multiaddr := fmt.Sprintf("/ip4/%s/udp/4001/quic-v1", containerIP)
 	log.Printf("Publishing listener address to Redis: %s", multiaddr)
 
 	ctx := context.Background()
@@ -131,27 +137,24 @@ func handleConn(conn quic.Connection) {
 		go func(s quic.Stream) {
 			defer s.Close()
 
-			// Read first byte to determine if this is upload or download
-			firstByte := make([]byte, 1)
-			n, err := s.Read(firstByte)
+			// Read first 8 bytes to get the requested byte count
+			sizeBytes := make([]byte, 8)
+			n, err := io.ReadFull(s, sizeBytes)
 
-			if err != nil || n == 0 {
-				// No data, treat as upload - just discard
+			if err != nil || n != 8 {
+				// If we can't read 8 bytes, assume upload test - just discard
 				io.Copy(io.Discard, s)
 				return
 			}
 
-			// Check if there's more data coming (upload test)
-			// or if we should send data back (download test)
-			buf := make([]byte, 1024)
-			n, err = s.Read(buf)
+			requestedBytes := int64(binary.BigEndian.Uint64(sizeBytes))
 
-			if err == nil && n > 0 {
-				// More data coming - upload test, discard rest
+			if requestedBytes == 0 {
+				// requestedBytes == 0 means upload test - discard the rest
 				io.Copy(io.Discard, s)
 			} else {
-				// Download test - send 1GB of data
-				io.Copy(s, io.LimitReader(zeroReader{}, 1073741824))
+				// Download test - send requested bytes
+				io.Copy(s, io.LimitReader(zeroReader{}, requestedBytes))
 			}
 		}(stream)
 	}
@@ -275,6 +278,11 @@ func runUploadTest(serverAddr string, bytes int64, iterations int) Stats {
 			continue
 		}
 
+		// Send 8 bytes with value 0 to indicate upload test
+		sizeBytes := make([]byte, 8)
+		binary.BigEndian.PutUint64(sizeBytes, 0)
+		stream.Write(sizeBytes)
+
 		_, err = io.CopyN(stream, zeroReader{}, bytes)
 		if err != nil {
 			log.Printf("Upload iteration %d copy failed: %v", i+1, err)
@@ -317,8 +325,11 @@ func runDownloadTest(serverAddr string, bytes int64, iterations int) Stats {
 			continue
 		}
 
-		// Write 1 byte request, read response
-		stream.Write([]byte{0})
+		// Send requested byte count in first 8 bytes
+		sizeBytes := make([]byte, 8)
+		binary.BigEndian.PutUint64(sizeBytes, uint64(bytes))
+		stream.Write(sizeBytes)
+
 		io.CopyN(io.Discard, stream, bytes)
 		stream.Close()
 
@@ -358,8 +369,10 @@ func runLatencyTest(serverAddr string, iterations int) Stats {
 			continue
 		}
 
-		// Small ping
-		stream.Write([]byte{0})
+		// Small ping - request 1 byte
+		sizeBytes := make([]byte, 8)
+		binary.BigEndian.PutUint64(sizeBytes, 1)
+		stream.Write(sizeBytes)
 		buf := make([]byte, 1)
 		stream.Read(buf)
 		stream.Close()
@@ -509,6 +522,26 @@ func getEnvOrDefault(key, defaultValue string) string {
 		return val
 	}
 	return defaultValue
+}
+
+// getContainerIP returns the first non-loopback IPv4 address of the container
+func getContainerIP() string {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		log.Printf("Failed to get interface addresses: %v", err)
+		return "0.0.0.0"
+	}
+
+	for _, addr := range addrs {
+		if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				return ipnet.IP.String()
+			}
+		}
+	}
+
+	log.Println("No non-loopback IPv4 address found, using 0.0.0.0")
+	return "0.0.0.0"
 }
 
 type zeroReader struct{}
