@@ -36,8 +36,12 @@ log() {
 run_listener() {
     log "Starting iperf listener..."
 
-    # Construct multiaddr
-    MULTIADDR="/ip4/${LISTENER_IP}/tcp/${IPERF_PORT}"
+    # Auto-detect container IP (the one that's not 127.0.0.1/localhost)
+    ACTUAL_IP=$(hostname -i | awk '{print $1}')
+    log "Detected container IP: $ACTUAL_IP"
+
+    # Construct multiaddr using actual IP
+    MULTIADDR="/ip4/${ACTUAL_IP}/tcp/${IPERF_PORT}"
     log "Will listen on: $MULTIADDR"
 
     # Publish to Redis

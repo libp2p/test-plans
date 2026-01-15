@@ -25,8 +25,8 @@ MUXER_NAME=$(yq eval ".${TEST_PASS}[${TEST_INDEX}].muxer" "${TEST_PASS_DIR}/test
 TEST_NAME=$(yq eval ".${TEST_PASS}[${TEST_INDEX}].id" "${TEST_PASS_DIR}/test-matrix.yaml")
 upload_bytes=$(yq eval ".metadata.uploadBytes" "${TEST_PASS_DIR}/test-matrix.yaml")
 download_bytes=$(yq eval ".metadata.downloadBytes" "${TEST_PASS_DIR}/test-matrix.yaml")
-upload_iterations=$(yq eval ".metadata.uploadIterations" "${TEST_PASS_DIR}/test-matrix.yaml")
-download_iterations=$(yq eval ".metadata.downloadIterations" "${TEST_PASS_DIR}/test-matrix.yaml")
+upload_iterations=$(yq eval ".metadata.iterations" "${TEST_PASS_DIR}/test-matrix.yaml")
+download_iterations=$(yq eval ".metadata.iterations" "${TEST_PASS_DIR}/test-matrix.yaml")
 latency_iterations=$(yq eval ".metadata.latencyIterations" "${TEST_PASS_DIR}/test-matrix.yaml")
 duration=$(yq eval ".metadata.durationPerIteration" "${TEST_PASS_DIR}/test-matrix.yaml")
 
