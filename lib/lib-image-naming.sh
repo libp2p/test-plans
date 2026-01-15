@@ -60,28 +60,3 @@ get_router_image_name() {
     esac
 }
 
-# Detect test type from current directory
-# Returns "transport", "hole-punch", or "perf"
-detect_test_type() {
-    local pwd_basename=$(basename "$(pwd)")
-
-    if [ "${pwd_basename}" == "transport" ]; then
-        echo "transport"
-    elif [ "${pwd_basename}" == "hole-punch" ]; then
-        echo "hole-punch"
-    elif [ "${pwd_basename}" == "perf" ]; then
-        echo "perf"
-    else
-        # Try to detect from parent directory structure
-        if [ -f "images.yaml" ] && grep -q "hole-punch" images.yaml 2>/dev/null; then
-            echo "hole-punch"
-        elif [ -f "images.yaml" ] && grep -q "transport" images.yaml 2>/dev/null; then
-            echo "transport"
-        elif [ -f "images.yaml" ] && grep -q "perf" images.yaml 2>/dev/null; then
-            echo "perf"
-        else
-            echo "Error: Could not detect test type from directory" >&2
-            return 1
-        fi
-    fi
-}

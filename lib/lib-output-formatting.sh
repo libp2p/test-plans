@@ -88,13 +88,6 @@ print_debug() {
   return 0
 }
 
-# Same as above but uses echo -n instead
-echo_debug() {
-  local message="$1"
-  print_iem "DEBUG:" "${message}" "true" >&2
-  return 0
-}
-
 # Log debug (only if DEBUG=true)
 # Usage: log_debug "message"
 log_debug() {
@@ -154,13 +147,6 @@ print_success() {
   return 0
 }
 
-# Same as above but uses echo -n instead
-echo_success() {
-  local message="$1"
-  print_iem "✓" "${message}" "true" >&2
-  return 0
-}
-
 # Print an error message with X mark
 # Args:
 #   $1: message - Error message
@@ -170,13 +156,6 @@ echo_success() {
 print_error() {
   local message="$1"
   print_iem "✗" "${message}" >&2
-  return 0
-}
-
-# Same as above but uses echo -n instead
-echo_error() {
-  local message="$1"
-  print_iem "✗" "${message}" "true" >&2
   return 0
 }
 

@@ -357,7 +357,7 @@ DIALER_YAML=$(echo "${DIALER_LOGS}" | grep -E "dialer.*\| (latency:|  (handshake
 
 # Save complete result to individual file
 cat > "${TEST_PASS_DIR}/results/${TEST_NAME}.yaml" <<EOF
-test: ${TEST_NAME}
+test: "${TEST_NAME}"
 dialer: ${DIALER_ID}
 listener: ${LISTENER_ID}
 relay: ${RELAY_ID}
@@ -380,7 +380,7 @@ INDENTED_YAML=$(echo "${DIALER_YAML}" | sed 's/^/    /')
 (
     flock -x 200
     cat >> "${RESULTS_FILE}" <<EOF
-  - name: ${TEST_NAME}
+  - name: "${TEST_NAME}"
     dialer: ${DIALER_ID}
     listener: ${LISTENER_ID}
     relay: ${RELAY_ID}
