@@ -29,7 +29,6 @@ test-aliases:
 baselines:
   # HTTPS baseline (standalone transport - no secureChannel/muxer needed)
   - id: https
-    name: "HTTPS Baseline (Go stdlib)"
     source:
       type: local
       path: images/https/v1.0
@@ -37,16 +36,9 @@ baselines:
     transports: [https]
     secureChannels: []
     muxers: []
-    protocols: [perf]
-    capabilities: [upload, download, latency]
-    metadata:
-      language: go
-      version: stdlib
-      baseline: true
 
   # QUIC-Go baseline (standalone transport - no secureChannel/muxer needed)
   - id: quic-go
-    name: "QUIC-Go Baseline"
     source:
       type: local
       path: images/quic-go/v1.0
@@ -54,16 +46,9 @@ baselines:
     transports: [quic]
     secureChannels: []
     muxers: []
-    protocols: [perf]
-    capabilities: [upload, download, latency]
-    metadata:
-      language: go
-      version: v0.40.0
-      baseline: true
 
   # iperf3 baseline (raw TCP performance)
   - id: iperf
-    name: "iperf3 TCP Baseline"
     source:
       type: local
       path: images/iperf/v3.0
@@ -71,19 +56,11 @@ baselines:
     transports: [tcp]
     secureChannels: []
     muxers: []
-    protocols: [iperf3]
-    capabilities: [upload, download, latency]
-    metadata:
-      language: bash
-      version: "3.0"
-      baseline: true
 
 # Implementation definitions
 # Docker image naming: perf-<id>
 implementations:
-  # go-libp2p
   - id: go-v0.45
-    name: "go-libp2p v0.45"
     source:
       type: local
       path: images/go/v0.45
@@ -91,33 +68,17 @@ implementations:
     transports: [tcp, quic-v1, webtransport]
     secureChannels: [noise, tls]
     muxers: [yamux, mplex]
-    protocols: [perf]
-    capabilities: [upload, download, latency]
-    metadata:
-      language: go
-      version: v0.45.0
-      repo: libp2p/go-libp2p
 
-  # rust-libp2p
   - id: rust-v0.56
-    name: "rust-libp2p v0.56"
     source:
       type: local
       path: images/rust/v0.56
       dockerfile: Dockerfile
-    transports: [tcp, quic-v1]
+    transports: [quic-v1, tcp, webrtc-direct, ws]
     secureChannels: [noise, tls]
     muxers: [yamux, mplex]
-    protocols: [perf]
-    capabilities: [upload, download, latency]
-    metadata:
-      language: rust
-      version: v0.56.0
-      repo: libp2p/rust-libp2p
 
-  # js-libp2p
   - id: js-v3.x
-    name: "js-libp2p v3.x"
     source:
       type: local
       path: images/js/v3.x
@@ -125,16 +86,8 @@ implementations:
     transports: [tcp, webtransport]
     secureChannels: [noise, tls]
     muxers: [yamux, mplex]
-    protocols: [perf]
-    capabilities: [upload, download]
-    metadata:
-      language: javascript
-      version: v3.0.0
-      repo: libp2p/js-libp2p
 
-  # dotnet-libp2p
   - id: dotnet-v1.0
-    name: "dotnet-libp2p v1.0"
     source:
       type: local
       path: images/dotnet/v1.0
@@ -142,11 +95,4 @@ implementations:
     transports: [tcp, quic-v1]
     secureChannels: [noise, tls]
     muxers: [yamux, mplex]
-    protocols: [perf]
-    capabilities: [upload, download]
-    metadata:
-      language: dotnet
-      version: v1.0
-      repo: NethermindEth/dotnet-libp2p
-
 

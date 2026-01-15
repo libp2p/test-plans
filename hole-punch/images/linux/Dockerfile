@@ -4,10 +4,13 @@
 FROM alpine:3.19
 
 # Install required packages
+# Note: Alpine includes BusyBox awk by default, but we install gawk for full functionality
 RUN apk add --no-cache \
     bash \
     iptables \
     iproute2 \
+    ipcalc \
+    gawk \
     tcpdump
 
 # Copy NAT configuration script

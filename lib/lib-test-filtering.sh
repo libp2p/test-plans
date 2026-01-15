@@ -51,7 +51,7 @@ get_common() {
 
         # Remove items from item_map that are not in current list
         for item in "${!item_map[@]}"; do
-            if [[ -z "${current_list_map[$item]}" ]]; then
+            if [[ -z "${current_list_map[$item]:-}" ]]; then
                 unset item_map["$item"]
             fi
         done

@@ -12,6 +12,7 @@ trap 'echo "ERROR in generate-tests.sh at line $LINENO: Command exited with stat
 # Source common libraries
 source "${SCRIPT_LIB_DIR}/lib-filter-engine.sh"
 source "${SCRIPT_LIB_DIR}/lib-generate-tests.sh"
+source "${SCRIPT_LIB_DIR}/lib-image-building.sh"
 source "${SCRIPT_LIB_DIR}/lib-output-formatting.sh"
 source "${SCRIPT_LIB_DIR}/lib-test-caching.sh"
 source "${SCRIPT_LIB_DIR}/lib-test-filtering.sh"
@@ -254,6 +255,14 @@ generate_tests_worker() {
       # Skip if no common transports
       [ -z "${common_transports}" ] && continue
 
+      # Get commits for snapshot references
+      local dialer_commit="${image_commit[${dialer_id}]:-}"
+      local listener_commit="${image_commit[${listener_id}]:-}"
+
+      # Get the image names 
+      local dialer_image_name=$(get_image_name "implementations" "${dialer_id}")
+      local listener_image_name=$(get_image_name "implementations" "${listener_id}")
+
       # Process each common transport
       for transport in ${common_transports}; do
 
@@ -281,12 +290,9 @@ generate_tests_worker() {
           if [ "${dialer_selected}" == "true" ] && \
              [ "${listener_selected}" == "true" ] && \
              [ "${transport_selected}" == "true" ]; then
+
             # Select main test
             print_debug "${test_id} is selected"
-
-            # Get commits for snapshot references
-            local dialer_commit="${image_commit[${dialer_id}]:-}"
-            local listener_commit="${image_commit[${listener_id}]:-}"
 
             # Write YAML block
             cat >> "${worker_selected}" <<EOF
@@ -296,6 +302,7 @@ generate_tests_worker() {
     muxer: null
     dialer:
       id: ${dialer_id}
+      imageName: ${dialer_image_name}
 EOF
             if [ -n "${dialer_commit}" ]; then
               echo "      snapshot: snapshots/${dialer_commit}.zip" >> "${worker_selected}"
@@ -303,17 +310,15 @@ EOF
             cat >> "${worker_selected}" <<EOF
     listener:
       id: ${listener_id}
+      imageName: ${listener_image_name}
 EOF
             if [ -n "${listener_commit}" ]; then
               echo "      snapshot: snapshots/${listener_commit}.zip" >> "${worker_selected}"
             fi
           else
+
             # Ignore main test
             print_debug "${test_id} is ignored"
-
-            # Get commits for snapshot references
-            local dialer_commit="${image_commit[${dialer_id}]:-}"
-            local listener_commit="${image_commit[${listener_id}]:-}"
 
             # Write YAML block
             cat >> "${worker_ignored}" <<EOF
@@ -323,6 +328,7 @@ EOF
     muxer: null
     dialer:
       id: ${dialer_id}
+      imageName: ${dialer_image_name}
 EOF
             if [ -n "${dialer_commit}" ]; then
               echo "      snapshot: snapshots/${dialer_commit}.zip" >> "${worker_ignored}"
@@ -330,6 +336,7 @@ EOF
             cat >> "${worker_ignored}" <<EOF
     listener:
       id: ${listener_id}
+      imageName: ${listener_image_name}
 EOF
             if [ -n "${listener_commit}" ]; then
               echo "      snapshot: snapshots/${listener_commit}.zip" >> "${worker_ignored}"
@@ -374,12 +381,9 @@ EOF
                  [ "${transport_selected}" == "true" ] && \
                  [ "${secure_selected}" == "true" ] && \
                  [ "${muxer_selected}" == "true" ]; then
+
                 # Select main test
                 print_debug "${test_id} is selected"
-
-                # Get commits for snapshot references
-                local dialer_commit="${image_commit[${dialer_id}]:-}"
-                local listener_commit="${image_commit[${listener_id}]:-}"
 
                 # Write YAML block
                 cat >> "${worker_selected}" <<EOF
@@ -389,6 +393,7 @@ EOF
     muxer: ${muxer}
     dialer:
       id: ${dialer_id}
+      imageName: ${dialer_image_name}
 EOF
                 if [ -n "${dialer_commit}" ]; then
                   echo "      snapshot: snapshots/${dialer_commit}.zip" >> "${worker_selected}"
@@ -396,17 +401,15 @@ EOF
                 cat >> "${worker_selected}" <<EOF
     listener:
       id: ${listener_id}
+      imageName: ${listener_image_name}
 EOF
                 if [ -n "${listener_commit}" ]; then
                   echo "      snapshot: snapshots/${listener_commit}.zip" >> "${worker_selected}"
                 fi
               else
+
                 # Ignore main test
                 print_debug "${test_id} is ignored"
-
-                # Get commits for snapshot references
-                local dialer_commit="${image_commit[${dialer_id}]:-}"
-                local listener_commit="${image_commit[${listener_id}]:-}"
 
                 # Write YAML block
                 cat >> "${worker_ignored}" <<EOF
@@ -416,6 +419,7 @@ EOF
     muxer: ${muxer}
     dialer:
       id: ${dialer_id}
+      imageName: ${dialer_image_name}
 EOF
                 if [ -n "${dialer_commit}" ]; then
                   echo "      snapshot: snapshots/${dialer_commit}.zip" >> "${worker_ignored}"
@@ -423,6 +427,7 @@ EOF
                 cat >> "${worker_ignored}" <<EOF
     listener:
       id: ${listener_id}
+      imageName: ${listener_image_name}
 EOF
                 if [ -n "${listener_commit}" ]; then
                   echo "      snapshot: snapshots/${listener_commit}.zip" >> "${worker_ignored}"
@@ -465,6 +470,7 @@ done
 # Export necessary variables and functions for workers
 export -f generate_tests_worker
 export -f get_common
+export -f get_image_name
 export -f is_standalone_transport
 export -f print_debug
 export -f get_source_commit

@@ -1,6 +1,6 @@
 # Docker Build YAML Schema
 
-Complete reference for the YAML-based Docker image build system used by the perf test suite.
+Complete reference for the YAML-based Docker image build system used by all test suites (perf, transport, hole-punch).
 
 This documentation is based on the actual implementation in `lib/build-single-image.sh` and `lib/lib-image-building.sh`.
 
@@ -10,13 +10,42 @@ This documentation is based on the actual implementation in `lib/build-single-im
 
 The build system uses YAML files to define Docker image build parameters. These files are:
 
-1. **Generated automatically** by `build_images_from_section()` in `lib/lib-image-building.sh:14-157`
-2. **Stored in** `$CACHE_DIR/build-yamls/docker-build-<test-type>-<id>.yaml`
+1. **Generated automatically** by `build_images_from_section()` in `lib/lib-image-building.sh:23-157`
+2. **Stored in** `$CACHE_DIR/build-yamls/docker-build-perf-<id>.yaml` (or transport/hole-punch)
 3. **Consumed by** `lib/build-single-image.sh` to execute builds
 
-### Example Path
+**Used by all test suites:**
+- **perf**: Builds `baselines` + `implementations`
+- **transport**: Builds `implementations` only
+- **hole-punch**: Builds `routers` + `relays` + `implementations`
+
+### Example Paths
+
+**Note**: All YAML files are currently named with `docker-build-perf-` prefix regardless of test suite (see lib/lib-image-building.sh:60). The resulting Docker images use the correct test type prefix.
+
 ```
-/srv/cache/build-yamls/docker-build-perf-rust-v0.56.yaml
+# Examples (all test suites use same YAML naming):
+/srv/cache/build-yamls/docker-build-perf-rust-v0.56.yaml       # Implementation
+/srv/cache/build-yamls/docker-build-perf-iperf.yaml            # Baseline (perf only)
+/srv/cache/build-yamls/docker-build-perf-linux.yaml            # Router (hole-punch only)
+```
+
+### Image Naming
+
+Docker images are named using the pattern: `<test-type>-<section>-<id>`
+
+```
+# Perf test suite
+perf-implementations-rust-v0.56      # Implementation
+perf-baselines-iperf                 # Baseline
+
+# Transport test suite
+transport-implementations-go-v0.45   # Implementation
+
+# Hole-punch test suite
+hole-punch-implementations-rust-v0.56   # Peer implementation
+hole-punch-routers-linux                # NAT router
+hole-punch-relays-rust-v0.56            # Relay server
 ```
 
 ---
@@ -47,7 +76,7 @@ Depending on `sourceType`, one of these sections is required:
 
 ## Source Type: Local
 
-Used for implementations built from local filesystem. **This is the only source type currently used in perf tests.**
+Used for implementations built from local filesystem. **This is the primary source type used in perf and hole-punch tests.**
 
 ### YAML Structure
 
@@ -119,7 +148,7 @@ local:
 
 ## Source Type: GitHub
 
-Used for implementations built from GitHub repositories. **Supported but not currently used in perf tests.**
+Used for implementations built from GitHub repositories. **This is the primary source type used in transport tests.**
 
 ### YAML Structure
 
@@ -223,9 +252,61 @@ Used when submodules are required (lib/lib-image-building.sh:437-482).
 
 ---
 
+## Test Suite Specific Sections
+
+### Hole-Punch Test Sections
+
+The hole-punch test suite has three unique sections defined in `hole-punch/images.yaml`:
+
+1. **routers** - NAT router implementations
+   - Currently: `linux` (Linux-based NAT router with iptables)
+   - Used to simulate NAT devices that peers are behind
+   - Image name: `hole-punch-routers-<id>`
+
+2. **relays** - Relay server implementations
+   - Currently: `rust-v0.56` (rust-libp2p relay server)
+   - Provides relay functionality for DCUtR protocol
+   - Image name: `hole-punch-relays-<id>`
+
+3. **implementations** - Peer implementations
+   - libp2p peers that will establish direct connections
+   - Image name: `hole-punch-implementations-<id>`
+
+**Example hole-punch images.yaml:**
+```yaml
+routers:
+  - id: linux
+    source:
+      type: local
+      path: images/linux
+      dockerfile: Dockerfile
+
+relays:
+  - id: rust-v0.56
+    source:
+      type: local
+      path: images/rust/v0.56
+      dockerfile: Dockerfile.relay
+    transports: [tcp, quic-v1]
+    secureChannels: [noise, tls]
+    muxers: [yamux, mplex]
+
+implementations:
+  - id: rust-v0.56
+    source:
+      type: local
+      path: images/rust/v0.56
+      dockerfile: Dockerfile.peer
+    transports: [tcp, quic-v1]
+    secureChannels: [noise, tls]
+    muxers: [yamux, mplex]
+```
+
+---
+
 ## Source Type: Browser
 
-Used for browser-based implementations. **Supported but not used in perf tests.**
+Used for browser-based implementations. **Supported and used extensively in transport tests.**
 
 ### YAML Structure
 
@@ -296,31 +377,6 @@ browser:
 - `chromium` - Google Chromium
 - `firefox` - Mozilla Firefox
 - `webkit` - WebKit (Safari engine)
-
----
-
-## Build Location: Remote
-
-**Status**: Remote building is currently **NOT IMPLEMENTED** in the codebase.
-
-The code for remote building exists but is commented out in `lib/lib-image-building.sh:41-50, 75-83, 141-148`.
-
-### Implementation Notes
-
-If remote building were enabled, it would:
-
-1. Generate YAML file locally
-2. SCP YAML file, build script, and libraries to remote server
-3. Execute build remotely via SSH
-4. Stream output back to local terminal
-5. Cleanup remote files
-
-### Requirements (if implemented)
-
-- SSH key authentication configured
-- Docker installed on remote server
-- Same cache directory structure on remote
-- `build_on_remote()` function in `lib/lib-remote-execution.sh`
 
 ---
 
@@ -716,7 +772,7 @@ Building: perf-rust-v0.56
 
 ### Currently Implemented and Used
 
-- ✅ **Local builds** - Used by perf implementations
+- ✅ **Local builds** - Used by perf and hole-punch tests
 - ✅ **GitHub snapshot builds** - Used by transport tests
 - ✅ **GitHub with submodules** - Implemented, available when needed
 - ✅ **Browser builds** - Used by transport tests for browser-based implementations
@@ -724,31 +780,48 @@ Building: perf-rust-v0.56
 - ✅ **Patch file support** - Apply patches to source before building (all source types)
 - ✅ **Snapshot caching** - GitHub snapshots cached in `/srv/cache/snapshots/`
 - ✅ **Git repo caching** - Git clones with submodules cached in `/srv/cache/git-repos/`
+- ✅ **Multi-section support** - Supports implementations, baselines, routers, relays
 
-### Not Implemented
+### Test Suite Usage
 
-- ❌ **Remote builds** - Code partially present but commented out (lib/lib-image-building.sh:46-52, 76-84, 154-162)
-- ❌ **Multi-platform builds** - Not implemented
-- ❌ **Custom build arguments** - Not implemented (except BASE_IMAGE and BROWSER for browser builds)
-- ❌ **Registry push** - Not implemented
-- ❌ **Build output filtering** - Full Docker output only
+| Test Suite | Sections Built | Primary Source Type | Special Features |
+|------------|----------------|---------------------|------------------|
+| **perf** | baselines + implementations | local | Baseline comparisons (iperf, HTTPS, QUIC-Go) |
+| **transport** | implementations | github | Browser builds, 40+ implementations, patches |
+| **hole-punch** | routers + relays + implementations | local | NAT routers, relay servers, multiple Dockerfiles |
+
+### Known Limitations
+
+- **YAML file naming**: All build YAML files are named with `docker-build-perf-` prefix regardless of test suite (lib/lib-image-building.sh:60)
+- **imageType field**: Always set to "peer" regardless of actual type (routers, relays, etc.)
 
 ---
 
 ## Related Files
 
-- **lib/build-single-image.sh** (103 lines) - Thin executor for building from YAML
-- **lib/lib-image-building.sh** (610 lines) - Core build functions including patch support
-- **lib/lib-output-formatting.sh** - Print functions used during builds
-- **perf/run.sh** - Build orchestration in perf test runner
-- **transport/run.sh** - Build orchestration in transport test runner
-- **perf/images.yaml** - Perf implementation definitions
-- **transport/images.yaml** - Transport implementation definitions (uses GitHub sources and patches)
+### Core Build System
+- **lib/build-single-image.sh** (~108 lines) - Thin executor for building from YAML
+- **lib/lib-image-building.sh** (~610 lines) - Core build functions including patch support
+- **lib/lib-output-formatting.sh** (~202 lines) - Print functions used during builds
+- **lib/lib-github-snapshots.sh** (~615 lines) - GitHub snapshot download and caching
+
+### Test Runners
+- **perf/run.sh** (lines 479-498) - Build orchestration in perf test runner
+- **transport/run.sh** (lines 479-498) - Build orchestration in transport test runner
+- **hole-punch/run.sh** (lines 479-498) - Build orchestration in hole-punch test runner
+
+### Configuration Files
+- **perf/images.yaml** - Perf implementation definitions (baselines + implementations)
+- **transport/images.yaml** - Transport implementation definitions (40+ implementations, GitHub sources, patches)
+- **hole-punch/images.yaml** - Hole-punch definitions (routers + relays + implementations)
 
 ---
 
 ## See Also
 
-- **docs/inputs-schema.md** - inputs.yaml specification
-- **docs/unified_build_system.md** - Unified build system documentation
-- **lib/README.md** - Common library overview
+- **[docs/inputs-schema.md](inputs-schema.md)** - inputs.yaml specification
+- **[lib/README.md](../lib/README.md)** - Common library overview
+- **[CLAUDE.md](../CLAUDE.md)** - Comprehensive framework documentation
+- **[docs/write-a-perf-test-app.md](write-a-perf-test-app.md)** - How to write perf test applications
+- **[docs/write-a-transport-test-app.md](write-a-transport-test-app.md)** - How to write transport test applications
+- **[docs/write-a-hole-punch-test-app.md](write-a-hole-punch-test-app.md)** - How to write hole-punch test applications

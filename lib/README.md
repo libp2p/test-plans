@@ -1,6 +1,6 @@
 # Common Test Scripts Library
 
-This directory contains shared bash scripts and libraries used by the perf test suite (and potentially other test suites).
+This directory contains shared bash scripts and libraries used by **all test suites**: perf, transport, and hole-punch.
 
 ---
 
@@ -14,8 +14,14 @@ The lib/ directory provides reusable bash functions for:
 - **Cache management** for faster repeated runs
 - **GitHub integration** for snapshot downloads
 - **Global services** (Redis) coordination
+- **Network isolation** for parallel test execution
 
-**Total**: 20 scripts providing ~120KB of shared functionality
+**Total**: 19 scripts providing ~121KB of shared functionality
+
+**Used By**:
+- `perf/` - Performance benchmarking tests
+- `transport/` - Transport interoperability tests
+- `hole-punch/` - NAT hole punching tests
 
 ---
 
@@ -334,37 +340,63 @@ High-level function combining download and cache.
 
 ---
 
-### lib-global-services.sh (2.9KB)
+### lib-global-services.sh (3.0KB)
 
-**Purpose**: Manages global Docker services (Redis) used for test coordination.
+**Purpose**: Manages global Docker services (Redis) used for test coordination across all test suites.
 
 **Functions**:
 
-#### `start_redis_service()`
+#### `start_redis_service(network_name, redis_name)`
 Starts Redis container for listener/dialer coordination.
 
+**Parameters**:
+- `network_name`: Docker network name (e.g., "perf-network", "transport-network", "hole-punch-network")
+- `redis_name`: Redis container name (e.g., "perf-redis", "transport-redis", "hole-punch-redis")
+
 **Features**:
-- Creates `perf-network` Docker network if not exists
-- Starts `perf-redis` container
+- Creates Docker network if it doesn't exist
+- For perf-network: Creates with subnet 10.5.0.0/24 for static listener IP (10.5.0.10)
+- For other networks: Creates without specific subnet
+- Starts Redis container with name and network specified
 - Waits for Redis to be ready
 - Shared across all parallel tests
 
-**Network**: `perf-network` (bridge)
-**Container**: `perf-redis` (image: redis:7-alpine)
+**Image**: redis:7-alpine
+**Redis Config**: No persistence (`--save "" --appendonly no`)
 
-#### `stop_redis_service()`
+#### `stop_redis_service(network_name, redis_name)`
 Stops and removes Redis container and network.
+
+**Parameters**:
+- `network_name`: Docker network name to remove
+- `redis_name`: Redis container name to stop
 
 **Usage**:
 ```bash
 source lib-global-services.sh
-start_redis_service
+
+# For perf tests
+start_redis_service "perf-network" "perf-redis"
 # ... run tests ...
-stop_redis_service
+stop_redis_service "perf-network" "perf-redis"
+
+# For transport tests
+start_redis_service "transport-network" "transport-redis"
+# ... run tests ...
+stop_redis_service "transport-network" "transport-redis"
+
+# For hole-punch tests
+start_redis_service "hole-punch-network" "hole-punch-redis"
+# ... run tests ...
+stop_redis_service "hole-punch-network" "hole-punch-redis"
 ```
 
-**Called By**: perf/run.sh (before/after test execution)
-**Source**: lib/lib-global-services.sh:1-88
+**Called By**:
+- perf/run.sh (lines 563-669)
+- transport/run.sh (lines 496-562)
+- hole-punch/run.sh (lines 507-572)
+
+**Source**: lib/lib-global-services.sh:1-101
 
 ---
 
@@ -577,7 +609,9 @@ Building Images
 
 ### lib-remote-execution.sh (5.3KB)
 
-**Purpose**: Remote server execution via SSH (not currently used).
+**Purpose**: Remote server execution via SSH for multi-machine testing.
+
+**Status**: ⚠️ Code exists but **not currently used** - remote execution is commented out in all test runners.
 
 **Functions**:
 
@@ -601,9 +635,17 @@ SCP file to remote server.
 #### `exec_on_remote(command, username, hostname)`
 Execute command on remote server.
 
-**Status**: Code exists but remote building is commented out in lib-image-building.sh
+**Future Use Cases**:
+- Multi-machine performance testing
+- Geographic distribution testing
+- Cross-datacenter latency measurements
+- Testing between different network environments
+
+**Current Approach**: All tests run locally using Docker networking
 
 **Source**: lib/lib-remote-execution.sh:1-157
+
+**Note**: While the code infrastructure exists for remote execution (see perf/run.sh:416-443, transport/run.sh comments), it is not currently enabled. All test execution happens locally using Docker containers and networks.
 
 ---
 
@@ -799,33 +841,101 @@ Gets GitHub commit hash for implementation.
 
 ---
 
+## Test Suite Integration
+
+The library supports three distinct test suites with different execution models:
+
+### Perf Tests (Sequential)
+- **Worker Count**: 1 (sequential execution for accurate performance measurements)
+- **Network**: Single `perf-network` with static IP for listener (10.5.0.10)
+- **Sections**: `baselines` + `implementations`
+- **Special Features**:
+  - Upload/download throughput measurements
+  - Latency testing with statistical distribution
+  - Baseline comparisons (iperf, HTTPS, QUIC-Go)
+
+### Transport Tests (Parallel)
+- **Worker Count**: `$(nproc)` (parallel execution for speed)
+- **Network**: Single `transport-network` with dynamic IPs
+- **Sections**: `implementations` only
+- **Special Features**:
+  - dialOnly implementations (browsers can only dial, not listen)
+  - Standalone transports (quic-v1, webtransport, webrtc-direct)
+  - 40+ implementation variations including browsers
+
+### Hole-Punch Tests (Parallel)
+- **Worker Count**: `$(nproc)` (parallel execution for speed)
+- **Network**: Isolated networks per test (WAN + 2 LANs)
+  - WAN: 10.x.x.64/27
+  - Dialer LAN: 10.x.x.96/27
+  - Listener LAN: 10.x.x.128/27
+- **Sections**: `routers` + `relays` + `implementations`
+- **Special Features**:
+  - 5 containers per test (2 routers, 1 relay, 2 peers)
+  - NAT simulation with iptables
+  - DCUtR protocol testing
+  - Unique subnets calculated from test key
+
+### Common Features
+All test suites share:
+- Redis coordination for multiaddr exchange
+- Test matrix generation with filtering
+- Cache management for faster runs
+- Snapshot creation for reproducibility
+- Consistent output formatting
+- inputs.yaml for exact reproduction
+
+---
+
 ## Usage Patterns
 
 ### Pattern 1: Initialize Common Variables
 
-All test runners start with:
+All test runners (perf, transport, hole-punch) start with:
 
 ```bash
-# perf/run.sh
-SCRIPT_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../lib" && pwd)"
-TEST_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Example from perf/run.sh, transport/run.sh, hole-punch/run.sh
+export TEST_ROOT="$(dirname "${BASH_SOURCE[0]}")"
+export SCRIPT_DIR="${SCRIPT_DIR:-$(cd "${TEST_ROOT}/lib" && pwd)}"
+export SCRIPT_LIB_DIR="${SCRIPT_LIB_DIR:-${SCRIPT_DIR}/../../lib}"
 
-source "$SCRIPT_LIB_DIR/lib-common-init.sh"
+source "${SCRIPT_LIB_DIR}/lib-common-init.sh"
 init_common_variables
 init_cache_dirs
+
+# Hook up ctrl+c handler
+trap handle_shutdown INT
+```
+
+**Note**: Each test suite can override variables after initialization:
+```bash
+# perf/run.sh - Sequential execution
+WORKER_COUNT=1  # Perf must run 1 test at a time
+
+# transport/run.sh, hole-punch/run.sh - Parallel execution
+WORKER_COUNT=$(nproc)  # Use all CPU cores
 ```
 
 ### Pattern 2: Build Docker Images
 
 ```bash
-# perf/run.sh:535-561
-source "$SCRIPT_LIB_DIR/lib-image-building.sh"
+# Common pattern used by all test suites
+source "${SCRIPT_LIB_DIR}/lib-image-building.sh"
 
-export TEST_TYPE="perf"
+export TEST_TYPE="<test-type>"  # "perf", "transport", or "hole-punch"
 export IMAGES_YAML
 export FORCE_IMAGE_REBUILD
 
+# perf/run.sh - Baselines + Implementations
 build_images_from_section "baselines" "${IMAGE_FILTER}" "${FORCE_IMAGE_REBUILD}"
+build_images_from_section "implementations" "${IMAGE_FILTER}" "${FORCE_IMAGE_REBUILD}"
+
+# transport/run.sh - Implementations only
+build_images_from_section "implementations" "${IMAGE_FILTER}" "${FORCE_IMAGE_REBUILD}"
+
+# hole-punch/run.sh - Routers + Relays + Implementations
+build_images_from_section "routers" "${IMAGE_FILTER}" "${FORCE_IMAGE_REBUILD}"
+build_images_from_section "relays" "${IMAGE_FILTER}" "${FORCE_IMAGE_REBUILD}"
 build_images_from_section "implementations" "${IMAGE_FILTER}" "${FORCE_IMAGE_REBUILD}"
 ```
 
@@ -921,8 +1031,10 @@ fi
 | **GitHub Integration** | 1 | 19KB | Snapshot downloads |
 | **Snapshot Creation** | 2 | 21KB | Test reproducibility |
 | **Test Execution** | 5 | 14KB | Matrix generation, caching, execution |
-| **Utilities** | 3 | 11KB | Dependency checks, updates, testing |
-| **Total** | 20 | 119KB | Complete framework |
+| **Utilities** | 2 | 13KB | Dependency checks, testing |
+| **Total** | 19 | 121KB | Complete framework |
+
+**Note**: Total size is ~121KB across all library scripts, supporting perf, transport, and hole-punch test suites.
 
 ---
 
@@ -1059,16 +1171,24 @@ echo "Cache key: $key"
 
 ## Version History
 
-### Current Version (2026-01-01)
-- 20 scripts providing comprehensive framework
-- Full perf test suite integration
-- GitHub snapshot caching
-- Test matrix caching
-- Snapshot creation for reproducibility
-- Consistent output formatting
-- Remote execution support (code exists, not enabled)
+### Current Version (2026-01-14)
+- 19 scripts providing comprehensive framework
+- **All test suites supported**: perf, transport, hole-punch
+- Parameterized global services (network_name, redis_name)
+- GitHub snapshot caching with submodule support
+- Test matrix caching with content-addressed keys
+- Snapshot creation for full reproducibility
+- Consistent output formatting across all tests
+- Parallel test execution support (transport, hole-punch)
+- Sequential test execution support (perf)
+- Remote execution support (code exists, not currently enabled)
 
-### Previous Version (2025-12-03)
+### Previous Version (2026-01-01)
+- 20 scripts (before consolidation)
+- Initial multi-suite support
+- Basic global services
+
+### Earlier Version (2025-12-03)
 - Limited to 3 scripts
 - Basic alias expansion
 - Simple test filtering
@@ -1078,13 +1198,21 @@ echo "Cache key: $key"
 
 ## Related Documentation
 
-- **CLAUDE.md** - Comprehensive codebase guide
-- **docs/docker_build_yaml_schema.md** - YAML build specification
-- **docs/unified_build_system.md** - Build system architecture
-- **docs/inputs-schema.md** - inputs.yaml specification
-- **perf/README.md** - Performance test documentation
+### Framework Documentation
+- **[CLAUDE.md](../CLAUDE.md)** - Comprehensive codebase and framework guide
+- **[docs/inputs-schema.md](../docs/inputs-schema.md)** - inputs.yaml specification and schema
+
+### Test Suite Documentation
+- **[perf/README.md](../perf/README.md)** - Performance benchmarking tests
+- **[transport/README.md](../transport/README.md)** - Transport interoperability tests
+- **[hole-punch/README.md](../hole-punch/README.md)** - NAT hole punching tests
+
+### Additional Resources
+- **Filter Engine**: See `test-filter-engine.sh` for comprehensive examples
+- **Image Building**: See `build-single-image.sh` for YAML format
+- **Caching System**: See `lib-test-caching.sh` for cache key computation
 
 ---
 
-**Last Updated**: 2026-01-01
+**Last Updated**: 2026-01-14
 **Maintained By**: libp2p test-plans team

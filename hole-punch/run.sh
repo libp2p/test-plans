@@ -102,8 +102,8 @@ init_cache_dirs
 trap handle_shutdown INT
 
 # Hole-punch-specific variables
-RELAY_IGNORE="${RELAY_IGNORE:-}"
-ROUTER_IGNORE="${ROUTER_IGNORE:-}"
+export RELAY_IGNORE="${RELAY_IGNORE:-}"
+export ROUTER_IGNORE="${ROUTER_IGNORE:-}"
 
 # Source common libraries
 source "${SCRIPT_LIB_DIR}/lib-github-snapshots.sh"
@@ -446,8 +446,8 @@ unindent
 REQUIRED_IMAGES=$(mktemp)
 yq eval '.tests[].dialer.id' "${TEST_PASS_DIR}/test-matrix.yaml" 2>/dev/null | sort -u >> "${REQUIRED_IMAGES}" || true
 yq eval '.tests[].listener.id' "${TEST_PASS_DIR}/test-matrix.yaml" 2>/dev/null | sort -u >> "${REQUIRED_IMAGES}" || true
-yq eval '.tests[].dialer_router.id' "${TEST_PASS_DIR}/test-matrix.yaml" 2>/dev/null | sort -u >> "${REQUIRED_IMAGES}" || true
-yq eval '.tests[].listener_router.id' "${TEST_PASS_DIR}/test-matrix.yaml" 2>/dev/null | sort -u >> "${REQUIRED_IMAGES}" || true
+yq eval '.tests[].dialerRouter.id' "${TEST_PASS_DIR}/test-matrix.yaml" 2>/dev/null | sort -u >> "${REQUIRED_IMAGES}" || true
+yq eval '.tests[].listenerRouter.id' "${TEST_PASS_DIR}/test-matrix.yaml" 2>/dev/null | sort -u >> "${REQUIRED_IMAGES}" || true
 yq eval '.tests[].relay.id' "${TEST_PASS_DIR}/test-matrix.yaml" 2>/dev/null | sort -u >> "${REQUIRED_IMAGES}" || true
 sort -u "${REQUIRED_IMAGES}" -o "${REQUIRED_IMAGES}"
 IMAGE_COUNT=$(wc -l < "${REQUIRED_IMAGES}")
@@ -482,15 +482,14 @@ print_header "Building Docker images..."
 indent
 
 print_message "Building ${IMAGE_COUNT} required implementations"
-echo ""
 
 # Build each required implementation using pipe-separated list
-IMAGE_FILTER=$(cat "${REQUIRED_IMAGES}" | paste -sd'|' -)
+IMAGE_IDS=$(cat "${REQUIRED_IMAGES}" | paste -sd'|' -)
 
 # Build images from implementations
-build_images_from_section "router" "${IMAGE_FILTER}" "${FORCE_IMAGE_REBUILD}"
-build_images_from_section "relays" "${IMAGE_FILTER}" "${FORCE_IMAGE_REBUILD}"
-build_images_from_section "implementations" "${IMAGE_FILTER}" "${FORCE_IMAGE_REBUILD}"
+build_images_from_section "routers" "${IMAGE_IDS}" "${FORCE_IMAGE_REBUILD}"
+build_images_from_section "relays" "${IMAGE_IDS}" "${FORCE_IMAGE_REBUILD}"
+build_images_from_section "implementations" "${IMAGE_IDS}" "${FORCE_IMAGE_REBUILD}"
 
 print_success "All images built successfully"
 
@@ -508,7 +507,7 @@ echo ""
 # Start global services
 print_header "Staring global services..."
 indent
-start_redis_service "hole-punch-network" "hole-punch-redis" || {
+start_redis_service "${TEST_TYPE}-network" "${TEST_TYPE}-redis" || {
   print_error "Starting global services failed"
   unindent
   return 1
@@ -565,7 +564,7 @@ echo ""
 # Stop global services
 print_header "Stopping global services..."
 indent
-stop_redis_service "transport-network" "transport-redis" || {
+stop_redis_service "${TEST_TYPE}-network" "${TEST_TYPE}-redis" || {
   print_error "Stopping global services failed"
   unindent
   return 1

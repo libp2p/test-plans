@@ -56,8 +56,8 @@ print_debug "log file: ${LOG_FILE}"
 log_message "[$((${TEST_INDEX} + 1))] ${TEST_NAME} (key: ${TEST_KEY})"
 
 # Construct Docker image names
-DIALER_IMAGE="perf-${DIALER_ID}"
-LISTENER_IMAGE="perf-${LISTENER_ID}"
+DIALER_IMAGE=$(yq eval ".${TEST_PASS}[${TEST_INDEX}].dialer.imageName" "${TEST_PASS_DIR}/test-matrix.yaml")
+LISTENER_IMAGE=$(yq eval ".${TEST_PASS}[${TEST_INDEX}].listener.imageName" "${TEST_PASS_DIR}/test-matrix.yaml")
 
 print_debug "dialer image: ${DIALER_IMAGE}"
 print_debug "listener image: ${LISTENER_IMAGE}"

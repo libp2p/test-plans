@@ -7,7 +7,7 @@ test-aliases:
   - alias: "all"
     value: "~browsers|~rust|~go|~python|~js|~nim|~jvm|~c|~dotnet|~zig|~eth-p2p"
   - alias: "browsers"
-    value: "chromium-rust-v0.53|chromium-rust-v0.54|chromium-js-v1.x|chromium-js-v2.x|firefox-js-v1.x|firefox-js-v2.x|webkit-js-v1.x|webkit-js-v2.x"
+    value: "chromium-rust-v0.53|chromium-rust-v0.54|chromium-rust-v0.56|chromium-js-v1.x|chromium-js-v2.x|firefox-js-v1.x|firefox-js-v2.x|webkit-js-v1.x|webkit-js-v2.x"
   - alias: "rust-browsers"
     value: "chromium-rust-v0.53|chromium-rust-v0.54"
   - alias: "js-browsers"
@@ -362,4 +362,14 @@ implementations:
     muxers: [mplex, yamux]
     dialOnly: [webtransport, webrtc-direct, ws]
 
+  - id: chromium-rust-v0.56
+    source:
+      type: github
+      repo: libp2p/rust-libp2p
+      commit: 70082df7e6181722630eabc5de5373733aac9a21
+      dockerfile: interop-tests/Dockerfile.chromium
+    transports: [webtransport, webrtc-direct, ws]
+    secureChannels: [noise]
+    muxers: [mplex, yamux]
+    dialOnly: [webtransport, webrtc-direct, ws]
 

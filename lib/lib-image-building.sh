@@ -6,8 +6,17 @@
 # Usage: docker_image_exists <image_name>
 # Returns: 0 if exists, 1 if not
 docker_image_exists() {
-  local image_name="${1}"
+  local image_name="$1"
   docker image inspect "${image_name}" >/dev/null 2>&1
+}
+
+# Calculate the name of a Docker image from the test type, section, and id
+get_image_name() {
+  local test_type=${TEST_TYPE:-}
+  local section="$1"
+  local id="$2"
+
+  echo "${test_type}-${section}-${id}"
 }
 
 # Helper function to build images from a YAML section (implementations or baselines)
@@ -39,7 +48,7 @@ build_images_from_section() {
       fi
     fi
 
-    image_name="${TEST_TYPE}-${impl_id}"
+    local image_name=$(get_image_name "${section}" "${impl_id}")
 
     # Check if image already exists (for local builds only)
     if [ "${force_image_rebuild}" != "true" ] && docker_image_exists "${image_name}"; then

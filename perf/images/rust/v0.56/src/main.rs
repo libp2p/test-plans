@@ -1,105 +1,133 @@
 // Perf protocol implementation for rust-v0.56
-// Uses Redis for listener/dialer coordination (like transport tests)
 
 mod protocol;
 
-use redis::AsyncCommands;
-use std::env;
-use std::time::Instant;
-use tokio::time::Duration;
-
+use anyhow::{bail, Context, Result};
 use libp2p::{
     futures::StreamExt,
+    identity::Keypair,
+    Multiaddr,
+    noise,
+    PeerId,
     request_response::{self, ProtocolSupport},
-    swarm::{NetworkBehaviour, SwarmEvent},
-    Multiaddr, PeerId, Swarm, SwarmBuilder,
+    swarm,
+    Swarm,
+    tcp,
+    tls,
+    yamux,
 };
-
+use libp2p_mplex as mplex;
+use libp2p_webrtc as webrtc;
 use protocol::{PerfCodec, PerfRequest, PerfResponse, PERF_PROTOCOL};
-
-// Perf protocol behaviour
-#[derive(NetworkBehaviour)]
-struct PerfBehaviour {
-    request_response: request_response::Behaviour<PerfCodec>,
-}
+use redis::AsyncCommands;
+use std::{env, str, time::Instant};
+use strum::{Display, EnumString};
+use tokio::time::Duration;
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<()> {
     // Read configuration from environment variables
-    let debug = env::var("DEBUG").unwrap_or_else(|_| "false".to_string()) == "true";
-    let is_dialer = env::var("IS_DIALER").unwrap_or_else(|_| "false".to_string()) == "true";
-    let redis_addr = env::var("REDIS_ADDR").unwrap_or_else(|_| "redis:6379".to_string());
-    let test_key = env::var("TEST_KEY").unwrap_or_else(|_| "default".to_string());
-    let transport = env::var("TRANSPORT").unwrap_or_else(|_| "quic-v1".to_string());
-    let secure = env::var("SECURE_CHANNEL").ok();
-    let muxer = env::var("MUXER").ok();
+    
+    // optional, defaults to false
+    let debug = env::var("DEBUG").ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(false);
+
+    // required, ex. "true" or "false"
+    let is_dialer = env::var("IS_DIALER")
+        .context("IS_DIALER environment variable is not set")?
+        .parse::<bool>()
+        .context("invalid value for IS_DIALER environment variable")?;
+
+    // required, ex. "redis:6379"
+    let redis_addr = env::var("REDIS_ADDR")
+        .context("REDIS_ADDR environment variable is not set")
+        .map(|addr| format!("redis://{addr}"))?;
+
+    // required, ex. "a1b2c3d4"
+    let test_key = env::var("TEST_KEY").context("TEST_KEY environment variable is not set")?;
+
+    // required, ex. "tcp", "quic-v1", "webrtc-direct", "ws", "webtransport"
+    let transport: Transport = env::var("TRANSPORT")
+        .context("TRANSPORT environment variable is not set")?
+        .parse()
+        .context("invalid value for TRANSPORT environment variable")?;
+
+    // required, ex. "noise", "tls"
+    let secure_channel: Option<SecureChannel> = env::var("SECURE_CHANNEL").ok()
+        .and_then(|sc| sc.parse().ok());
+
+    // required, ex. "mplex", "yamux"
+    let muxer: Option<Muxer> = env::var("MUXER").ok()
+        .and_then(|m| m.parse().ok());
 
     eprintln!("DEBUG: {debug}");
     eprintln!("IS_DIALER: {is_dialer}");
     eprintln!("REDIS_ADDR: {redis_addr}");
     eprintln!("TEST_KEY: {test_key}");
     eprintln!("TRANSPORT: {transport}");
-    eprintln!("SECURE_CHANNEL: {:?}", secure);
+    eprintln!("SECURE_CHANNEL: {:?}", secure_channel);
     eprintln!("MUXER: {:?}", muxer);
 
     if is_dialer {
-        run_dialer(redis_addr, test_key, transport, secure, muxer, debug).await;
+        run_dialer(redis_addr, test_key, transport, secure_channel, muxer, debug).await
     } else {
-        run_listener(redis_addr, test_key, transport, secure, muxer, debug).await;
+        run_listener(redis_addr, test_key, transport, secure_channel, muxer, debug).await
     }
 }
 
 async fn run_listener(
     redis_addr: String,
     test_key: String,
-    transport: String,
-    secure: Option<String>,
-    muxer: Option<String>,
-    _debug: bool,
-) {
-    // Read LISTENER_IP from environment if set
-    let listener_ip = env::var("LISTENER_IP").unwrap_or_else(|_| "0.0.0.0".to_string());
+    transport: Transport,
+    secure_channel: Option<SecureChannel>,
+    muxer: Option<Muxer>,
+    debug: bool,
+) -> Result<()> {
+
+    // optional, defaults to "0.0.0.0"
+    let listener_ip = env::var("LISTENER_IP").unwrap_or("0.0.0.0".to_string());
 
     eprintln!("Starting perf listener...");
     eprintln!("LISTENER_IP: {listener_ip}");
 
     // Connect to Redis
-    let redis_url = format!("redis://{}", redis_addr);
-    let client = redis::Client::open(redis_url).expect("Failed to create Redis client");
+    eprintln!("Connecting to Redis at: {redis_addr}");
+    let client = redis::Client::open(redis_addr.clone()).expect("Failed to create Redis client");
     let mut con = client
         .get_multiplexed_async_connection()
         .await
         .expect("Failed to connect to Redis");
 
-    eprintln!("Connected to Redis at {}", redis_addr);
+    eprintln!("Connected to Redis at {redis_addr}");
 
     // Build libp2p swarm
-    let mut swarm = build_swarm(&transport, &secure, &muxer);
+    let (mut swarm, multiaddr) = build_swarm(
+        Some(listener_ip),
+        transport,
+        secure_channel,
+        muxer,
+        build_behaviour
+    ).await?;
+
+    // get peer id and multiaddr to listen on
     let peer_id = *swarm.local_peer_id();
-
-    eprintln!("Peer ID: {}", peer_id);
-
-    // Construct listen multiaddr using LISTENER_IP
-    let listen_multiaddr: Multiaddr = if transport == "quic-v1" {
-        format!("/ip4/{}/udp/4001/quic-v1", listener_ip)
-            .parse()
-            .expect("Invalid multiaddr")
-    } else {
-        format!("/ip4/{}/tcp/4001", listener_ip)
-            .parse()
-            .expect("Invalid multiaddr")
+    let listener_multiaddr = match multiaddr {
+        Some(addr) => addr,
+        None => bail!("failed to build listener multiaddr")
     };
 
-    eprintln!("Will listen on: {}", listen_multiaddr);
+    eprintln!("Peer ID: {peer_id}");
+    eprintln!("Will listen on: {listener_multiaddr}");
 
     // Start listening
     let id = swarm
-        .listen_on(listen_multiaddr.clone())
+        .listen_on(listener_multiaddr.clone())
         .expect("Failed to listen");
 
     // Wait for listener to be ready and publish multiaddr
     loop {
-        if let Some(SwarmEvent::NewListenAddr {
+        if let Some(swarm::SwarmEvent::NewListenAddr {
             listener_id,
             address,
         }) = swarm.next().await
@@ -113,20 +141,19 @@ async fn run_listener(
                 continue;
             }
             if listener_id == id {
-                let full_multiaddr = format!("{}/p2p/{}", address, peer_id);
-                eprintln!("Listening on: {}", full_multiaddr);
+                let full_multiaddr = format!("{address}/p2p/{peer_id}");
+                eprintln!("Listening on: {full_multiaddr}");
 
                 // Publish to Redis with TEST_KEY namespacing
-                let listener_addr_key = format!("{}_listener_multiaddr", test_key);
+                let listener_addr_key = format!("{test_key}_listener_multiaddr");
                 let _: () = con
                     .set(&listener_addr_key, full_multiaddr.clone())
                     .await
                     .expect(&format!(
-                        "Failed to publish multiaddr to Redis (key: {})",
-                        listener_addr_key
+                        "Failed to publish multiaddr to Redis (key: {listener_addr_key})"
                     ));
 
-                eprintln!("Published multiaddr to Redis (key: {})", listener_addr_key);
+                eprintln!("Published multiaddr to Redis (key: {listener_addr_key})");
                 break;
             }
         }
@@ -138,20 +165,21 @@ async fn run_listener(
     loop {
         if let Some(event) = swarm.next().await {
             match event {
-                SwarmEvent::ConnectionEstablished {
+                swarm::SwarmEvent::ConnectionEstablished {
                     peer_id,
                     connection_id,
                     ..
                 } => {
                     eprintln!(
-                        "Connection established with: {} (connection: {:?})",
-                        peer_id, connection_id
+                        "Connection established with: {peer_id} (connection: {connection_id:?})",
                     );
                 }
-                SwarmEvent::ConnectionClosed { peer_id, cause, .. } => {
-                    eprintln!("Connection closed with {}: {:?}", peer_id, cause);
+
+                swarm::SwarmEvent::ConnectionClosed { peer_id, cause, .. } => {
+                    eprintln!("Connection closed with {peer_id}: {cause:?}");
                 }
-                SwarmEvent::Behaviour(PerfBehaviourEvent::RequestResponse(
+
+                swarm::SwarmEvent::Behaviour(BehaviourEvent::RequestResponse(
                     request_response::Event::Message {
                         peer,
                         message:
@@ -180,12 +208,18 @@ async fn run_listener(
 
                     eprintln!("Sent response: {} bytes", request.recv_bytes);
                 }
-                SwarmEvent::Behaviour(PerfBehaviourEvent::RequestResponse(
+
+                swarm::SwarmEvent::Behaviour(BehaviourEvent::RequestResponse(
                     request_response::Event::ResponseSent { peer, .. },
                 )) => {
                     eprintln!("Response sent to {}", peer);
                 }
-                _ => {}
+
+                other => {
+                    if debug {
+                        eprintln!("{other:?}")
+                    }
+                }
             }
         }
     }
@@ -194,31 +228,35 @@ async fn run_listener(
 async fn run_dialer(
     redis_addr: String,
     test_key: String,
-    transport: String,
-    secure: Option<String>,
-    muxer: Option<String>,
-    _debug: bool,
-) {
-    // Read test parameters from environment
-    let upload_bytes: u64 = env::var("UPLOAD_BYTES")
-        .unwrap_or_else(|_| "1073741824".to_string())
-        .parse()
+    transport: Transport,
+    secure_channel: Option<SecureChannel>,
+    muxer: Option<Muxer>,
+    debug: bool,
+) -> Result<()> {
+
+    // optional, defaults to 1 GiB (i.e. 1073741824 bytes)
+    let upload_bytes: u64 = env::var("UPLOAD_BYTES").ok()
+        .and_then(|v| v.parse().ok())
         .unwrap_or(1073741824);
-    let download_bytes: u64 = env::var("DOWNLOAD_BYTES")
-        .unwrap_or_else(|_| "1073741824".to_string())
-        .parse()
+
+    // optional, defaults to 1 GiB (i.e. 1073741824 bytes)
+    let download_bytes: u64 = env::var("DOWNLOAD_BYTES").ok()
+        .and_then(|v| v.parse().ok())
         .unwrap_or(1073741824);
-    let upload_iterations: u32 = env::var("UPLOAD_ITERATIONS")
-        .unwrap_or_else(|_| "10".to_string())
-        .parse()
+   
+    // optional, defaults to 10
+    let upload_iterations: u32 = env::var("UPLOAD_ITERATIONS").ok()
+        .and_then(|v| v.parse().ok())
         .unwrap_or(10);
-    let download_iterations: u32 = env::var("DOWNLOAD_ITERATIONS")
-        .unwrap_or_else(|_| "10".to_string())
-        .parse()
+
+    // optional, defaults to 10
+    let download_iterations: u32 = env::var("DOWNLOAD_ITERATIONS").ok()
+        .and_then(|v| v.parse().ok())
         .unwrap_or(10);
-    let latency_iterations: u32 = env::var("LATENCY_ITERATIONS")
-        .unwrap_or_else(|_| "100".to_string())
-        .parse()
+
+    // optional, defaults to 100
+    let latency_iterations: u32 = env::var("LATENCY_ITERATIONS").ok()
+        .and_then(|v| v.parse().ok())
         .unwrap_or(100);
 
     eprintln!("Starting perf dialer...");
@@ -229,50 +267,59 @@ async fn run_dialer(
     eprintln!("LATENCY_ITERATIONS: {latency_iterations}");
 
     // Connect to Redis
-    let redis_url = format!("redis://{}", redis_addr);
-    let client = redis::Client::open(redis_url).expect("Failed to create Redis client");
+    eprintln!("Connecting to Redis at: {redis_addr}");
+    let client = redis::Client::open(redis_addr.clone()).expect("Failed to create Redis client");
     let mut con = client
         .get_multiplexed_async_connection()
         .await
         .expect("Failed to connect to Redis");
 
-    eprintln!("Connected to Redis at {}", redis_addr);
+    eprintln!("Connected to Redis at {redis_addr}");
 
     // Wait for listener multiaddr (with retries)
-    let listener_addr_str = wait_for_listener(&mut con, &test_key).await;
-
-    // Parse listener multiaddr
-    let listener_addr: Multiaddr = listener_addr_str
-        .parse()
-        .expect("Invalid multiaddr from Redis");
+    let listener_addr = wait_for_listener(&mut con, &test_key).await?;
 
     // Build libp2p swarm
-    let mut swarm = build_swarm(&transport, &secure, &muxer);
-    eprintln!("Client peer ID: {}", swarm.local_peer_id());
+    let (mut swarm, _) = build_swarm(
+        None,
+        transport,
+        secure_channel,
+        muxer,
+        build_behaviour
+    ).await?;
+
+    // get our peer id
+    let peer_id = *swarm.local_peer_id();
+    eprintln!("Peer ID: {peer_id}");
 
     // Dial listener
-    eprintln!("Dialing listener at: {}", listener_addr);
+    eprintln!("Dialing listener at: {listener_addr}");
     swarm.dial(listener_addr.clone()).expect("Failed to dial");
 
     // Wait for connection to be established
     let connected_peer_id = loop {
-        match swarm.next().await {
-            Some(SwarmEvent::ConnectionEstablished {
-                peer_id,
-                connection_id,
-                ..
-            }) => {
-                eprintln!(
-                    "Connected to listener: {} (connection: {:?})",
-                    peer_id, connection_id
-                );
-                break peer_id;
+        if let Some(event) = swarm.next().await {
+            match event {
+                swarm::SwarmEvent::ConnectionEstablished {
+                    peer_id,
+                    connection_id,
+                    ..
+                } => {
+                    eprintln!(
+                        "Connected to listener: {peer_id} (connection: {connection_id:?})"
+                    );
+                    break peer_id;
+                }
+                swarm::SwarmEvent::OutgoingConnectionError { error, .. } => {
+                    eprintln!("Failed to connect: {error:?}");
+                    std::process::exit(1);
+                }
+                other => {
+                    if debug {
+                        eprintln!("{other:?}");
+                    }
+                }
             }
-            Some(SwarmEvent::OutgoingConnectionError { error, .. }) => {
-                eprintln!("Failed to connect: {:?}", error);
-                std::process::exit(1);
-            }
-            _ => {}
         }
     };
 
@@ -290,8 +337,9 @@ async fn run_dialer(
         upload_bytes,
         0,
         upload_iterations,
+        debug,
     )
-    .await;
+    .await?;
 
     // Measurement 2: Download
     eprintln!(
@@ -304,8 +352,9 @@ async fn run_dialer(
         0,
         download_bytes,
         download_iterations,
+        debug,
     )
-    .await;
+    .await?;
 
     // Measurement 3: Latency
     eprintln!(
@@ -313,7 +362,7 @@ async fn run_dialer(
         latency_iterations
     );
     let latency_stats =
-        run_measurement(&mut swarm, connected_peer_id, 1, 1, latency_iterations).await;
+        run_measurement(&mut swarm, connected_peer_id, 1, 1, latency_iterations, debug).await?;
 
     // Output complete results as YAML to stdout
     println!("# Upload measurement");
@@ -425,18 +474,20 @@ async fn run_dialer(
     println!("  unit: ms");
 
     eprintln!("All measurements complete!");
+    Ok(())
 }
 
-async fn wait_for_listener(con: &mut redis::aio::MultiplexedConnection, test_key: &str) -> String {
+async fn wait_for_listener(con: &mut redis::aio::MultiplexedConnection, test_key: &str) -> Result<Multiaddr> {
     let listener_addr_key = format!("{}_listener_multiaddr", test_key);
     eprintln!(
         "Waiting for listener multiaddr from Redis (key: {})...",
         listener_addr_key
     );
+    // retries 30 times, waiting a total of 15 seconds before panicking
     for _ in 0..30 {
         if let Ok(Some(addr)) = con.get::<_, Option<String>>(&listener_addr_key).await {
             eprintln!("Got listener multiaddr (key: {})", listener_addr_key);
-            return addr;
+            return addr.parse().context("Invalid listener multiaddr from Redis");
         }
         tokio::time::sleep(Duration::from_millis(500)).await;
     }
@@ -457,12 +508,13 @@ struct Stats {
 }
 
 async fn run_measurement(
-    swarm: &mut Swarm<PerfBehaviour>,
+    swarm: &mut Swarm<Behaviour>,
     peer_id: PeerId,
     upload_bytes: u64,
     download_bytes: u64,
     iterations: u32,
-) -> Stats {
+    debug: bool,
+) -> Result<Stats> {
     let mut values = Vec::new();
 
     for i in 0..iterations {
@@ -482,30 +534,32 @@ async fn run_measurement(
 
         // Wait for response
         let response_result = loop {
-            match swarm.next().await {
-                Some(SwarmEvent::Behaviour(PerfBehaviourEvent::RequestResponse(
-                    request_response::Event::Message {
-                        message:
-                            request_response::Message::Response {
-                                request_id: id,
-                                response,
-                            },
-                        ..
-                    },
-                ))) if id == request_id => {
-                    break Some(response);
+            if let Some(event) = swarm.next().await {
+                match event {
+                    swarm::SwarmEvent::Behaviour(BehaviourEvent::RequestResponse(
+                        request_response::Event::Message {
+                            message:
+                                request_response::Message::Response {
+                                    request_id: id,
+                                    response,
+                                },
+                            ..
+                        },
+                    )) if id == request_id => {
+                        break Some(response);
+                    }
+                    swarm::SwarmEvent::Behaviour(BehaviourEvent::RequestResponse(
+                        request_response::Event::OutboundFailure {
+                            request_id: id,
+                            error,
+                            ..
+                        },
+                    )) if id == request_id => {
+                        eprintln!("  Iteration {}/{} failed: {:?}", i + 1, iterations, error);
+                        break None;
+                    }
+                    _ => {}
                 }
-                Some(SwarmEvent::Behaviour(PerfBehaviourEvent::RequestResponse(
-                    request_response::Event::OutboundFailure {
-                        request_id: id,
-                        error,
-                        ..
-                    },
-                ))) if id == request_id => {
-                    eprintln!("  Iteration {}/{} failed: {:?}", i + 1, iterations, error);
-                    break None;
-                }
-                _ => {}
             }
         };
 
@@ -524,10 +578,12 @@ async fn run_measurement(
         } else {
             // Latency in milliseconds
             let converted = elapsed * 1000.0;
-            eprintln!(
-                "DEBUG: Latency - elapsed={:.6}s, converted={:.3}ms",
-                elapsed, converted
-            );
+            if debug {
+                eprintln!(
+                    "DEBUG: Latency - elapsed={:.6}s, converted={:.3}ms",
+                    elapsed, converted
+                );
+            }
             converted
         };
 
@@ -567,7 +623,7 @@ async fn run_measurement(
         (values[0], values[n - 1])
     };
 
-    Stats {
+    Ok(Stats {
         min,
         q1,
         median,
@@ -575,7 +631,7 @@ async fn run_measurement(
         max,
         outliers,
         samples: values,
-    }
+    })
 }
 
 // Helper function to calculate percentile
@@ -593,44 +649,242 @@ fn percentile(sorted_values: &[f64], p: f64) -> f64 {
     }
 }
 
-// Build libp2p swarm with specified transport, security, and muxer
-fn build_swarm(
-    transport: &str,
-    _secure: &Option<String>,
-    _muxer: &Option<String>,
-) -> Swarm<PerfBehaviour> {
-    let local_key = libp2p::identity::Keypair::generate_ed25519();
-
-    // Create perf behaviour
-    let perf_behaviour = || {
-        let protocols = std::iter::once((PERF_PROTOCOL, ProtocolSupport::Full));
-        let cfg = request_response::Config::default();
-
-        PerfBehaviour {
-            request_response: request_response::Behaviour::new(protocols, cfg),
-        }
+async fn build_swarm<B: swarm::NetworkBehaviour>(
+    listen_ip: Option<String>,
+    transport: Transport,
+    secure_channel: Option<SecureChannel>,
+    muxer: Option<Muxer>,
+    behaviour_constructor: impl FnOnce(&Keypair) -> B,
+) -> Result<(Swarm<B>, Option<Multiaddr>)> {
+    let (swarm, addr) = match (transport, secure_channel, muxer) {
+        (Transport::QuicV1, None, None) => (
+            libp2p::SwarmBuilder::with_new_identity()
+                .with_tokio()
+                .with_quic()
+                .with_behaviour(behaviour_constructor)?
+                .build(),
+            listen_ip
+                .and_then(|ip| format!("/ip4/{ip}/udp/0/quic-v1").parse().ok()),
+        ),
+        (Transport::Tcp, Some(SecureChannel::Tls), Some(Muxer::Mplex)) => (
+            libp2p::SwarmBuilder::with_new_identity()
+                .with_tokio()
+                .with_tcp(
+                    tcp::Config::default(),
+                    tls::Config::new,
+                    mplex::Config::default,
+                )?
+                .with_behaviour(behaviour_constructor)?
+                .build(),
+            listen_ip
+                .and_then(|ip| format!("/ip4/{ip}/tcp/0").parse().ok()),
+        ),
+        (Transport::Tcp, Some(SecureChannel::Tls), Some(Muxer::Yamux)) => (
+            libp2p::SwarmBuilder::with_new_identity()
+                .with_tokio()
+                .with_tcp(
+                    tcp::Config::default(),
+                    tls::Config::new,
+                    yamux::Config::default,
+                )?
+                .with_behaviour(behaviour_constructor)?
+                .build(),
+            listen_ip
+                .and_then(|ip| format!("/ip4/{ip}/tcp/0").parse().ok()),
+        ),
+        (Transport::Tcp, Some(SecureChannel::Noise), Some(Muxer::Mplex)) => (
+            libp2p::SwarmBuilder::with_new_identity()
+                .with_tokio()
+                .with_tcp(
+                    tcp::Config::default(),
+                    noise::Config::new,
+                    mplex::Config::default,
+                )?
+                .with_behaviour(behaviour_constructor)?
+                .build(),
+            listen_ip
+                .and_then(|ip| format!("/ip4/{ip}/tcp/0").parse().ok()),
+        ),
+        (Transport::Tcp, Some(SecureChannel::Noise), Some(Muxer::Yamux)) => (
+            libp2p::SwarmBuilder::with_new_identity()
+                .with_tokio()
+                .with_tcp(
+                    tcp::Config::default(),
+                    noise::Config::new,
+                    yamux::Config::default,
+                )?
+                .with_behaviour(behaviour_constructor)?
+                .build(),
+            listen_ip
+                .and_then(|ip| format!("/ip4/{ip}/tcp/0").parse().ok()),
+        ),
+        (Transport::Ws, Some(SecureChannel::Tls), Some(Muxer::Mplex)) => (
+            libp2p::SwarmBuilder::with_new_identity()
+                .with_tokio()
+                .with_websocket(tls::Config::new, mplex::Config::default)
+                .await?
+                .with_behaviour(behaviour_constructor)?
+                .build(),
+            listen_ip
+                .and_then(|ip| format!("/ip4/{ip}/tcp/0/ws").parse().ok()),
+        ),
+        (Transport::Ws, Some(SecureChannel::Tls), Some(Muxer::Yamux)) => (
+            libp2p::SwarmBuilder::with_new_identity()
+                .with_tokio()
+                .with_websocket(tls::Config::new, yamux::Config::default)
+                .await?
+                .with_behaviour(behaviour_constructor)?
+                .build(),
+            listen_ip
+                .and_then(|ip| format!("/ip4/{ip}/tcp/0/ws").parse().ok()),
+        ),
+        (Transport::Ws, Some(SecureChannel::Noise), Some(Muxer::Mplex)) => (
+            libp2p::SwarmBuilder::with_new_identity()
+                .with_tokio()
+                .with_websocket(noise::Config::new, mplex::Config::default)
+                .await?
+                .with_behaviour(behaviour_constructor)?
+                .build(),
+            listen_ip
+                .and_then(|ip| format!("/ip4/{ip}/tcp/0/ws").parse().ok()),
+        ),
+        (Transport::Ws, Some(SecureChannel::Noise), Some(Muxer::Yamux)) => (
+            libp2p::SwarmBuilder::with_new_identity()
+                .with_tokio()
+                .with_websocket(noise::Config::new, yamux::Config::default)
+                .await?
+                .with_behaviour(behaviour_constructor)?
+                .build(),
+            listen_ip
+                .and_then(|ip| format!("/ip4/{ip}/tcp/0/ws").parse().ok()),
+        ),
+        (Transport::WebrtcDirect, None, None) => (
+            libp2p::SwarmBuilder::with_new_identity()
+                .with_tokio()
+                .with_other_transport(|key| {
+                    Ok(webrtc::tokio::Transport::new(
+                        key.clone(),
+                        webrtc::tokio::Certificate::generate(&mut rand::thread_rng())?,
+                    ))
+                })?
+                .with_behaviour(behaviour_constructor)?
+                .build(),
+            listen_ip
+                .and_then(|ip| format!("/ip4/{ip}/udp/0/webrtc-direct").parse().ok()),
+        ),
+        (t, s, m) => bail!("Unsupported communication combination: {t:?} {s:?} {m:?}"),
     };
+    Ok((swarm, addr))
+}
 
-    if transport == "quic-v1" {
-        // QUIC transport (standalone - includes encryption and muxing)
-        SwarmBuilder::with_existing_identity(local_key)
-            .with_tokio()
-            .with_quic()
-            .with_behaviour(|_| perf_behaviour())
-            .expect("Failed to create swarm")
-            .build()
-    } else {
-        // TCP transport with noise and yamux
-        SwarmBuilder::with_existing_identity(local_key)
-            .with_tokio()
-            .with_tcp(
-                Default::default(),
-                libp2p::noise::Config::new,
-                libp2p::yamux::Config::default,
-            )
-            .expect("Failed to create TCP transport")
-            .with_behaviour(|_| perf_behaviour())
-            .expect("Failed to create swarm")
-            .build()
+/// Perf protocol behaviour
+#[derive(swarm::NetworkBehaviour)]
+struct Behaviour {
+    request_response: request_response::Behaviour<PerfCodec>,
+}
+
+// Build the perf Behaviour
+fn build_behaviour(_keypair: &Keypair) -> Behaviour {
+    Behaviour {
+        request_response: request_response::Behaviour::new(
+            std::iter::once((PERF_PROTOCOL, ProtocolSupport::Full)),
+            request_response::Config::default(),
+        ),
+    }
+}
+
+/// Supported transports
+#[derive(Clone, Debug, Display, Eq, PartialEq, EnumString)]
+#[strum(serialize_all = "kebab-case")]
+enum Transport {
+    Tcp,
+    QuicV1,
+    WebrtcDirect,
+    Ws,
+    Webtransport,
+}
+
+/// Supported secure channels
+#[derive(Clone, Debug, Display, Eq, PartialEq, EnumString)]
+#[strum(serialize_all = "kebab-case")]
+enum SecureChannel {
+    Noise,
+    Tls,
+}
+
+/// Supported stream multiplexers
+#[derive(Clone, Debug, Display, Eq, PartialEq, EnumString)]
+#[strum(serialize_all = "kebab-case")]
+enum Muxer {
+    Mplex,
+    Yamux,
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    fn test_display_and_fromstr<V>(examples: &[(V, &str)])
+    where
+        V:  std::fmt::Display + 
+            std::str::FromStr + 
+            std::cmp::PartialEq +
+            std::cmp::Eq +
+            std::fmt::Debug,
+        <V as std::str::FromStr>::Err: std::fmt::Debug
+    {
+        for (variant, expected) in examples {
+            // Serialize using Display trait
+            let serialized = format!("{variant}");
+            assert_eq!(&serialized, *expected);
+
+            // Deserialize using FromStr trait
+            // The trait bounds on str::parse require V: FromStr
+            let deserialized: V = expected.parse().unwrap();
+            assert_eq!(*variant, deserialized);
+
+            // Round trip using to_string() (implemented as part of Display)
+            // and FromStr
+            let s = variant.to_string();
+            assert_eq!(s, *expected);
+            let p: V = s.parse().unwrap();
+            assert_eq!(*variant, p);
+        }
+    }
+
+    #[test]
+    fn transport() {
+        use Transport::*;
+        let examples = [
+            (Tcp, "tcp"),
+            (QuicV1, "quic-v1"),
+            (WebrtcDirect, "webrtc-direct"),
+            (Ws, "ws"),
+            (Webtransport, "webtransport"),
+        ];
+
+        test_display_and_fromstr(&examples);
+    }
+
+    #[test]
+    fn secure_channel() {
+        use SecureChannel::*;
+        let examples = [
+            (Noise, "noise"),
+            (Tls, "tls"),
+        ];
+
+        test_display_and_fromstr(&examples);
+    }
+
+    #[test]
+    fn muxer() {
+        use Muxer::*;
+        let examples = [
+            (Mplex, "mplex"),
+            (Yamux, "yamux"),
+        ];
+
+        test_display_and_fromstr(&examples);
     }
 }

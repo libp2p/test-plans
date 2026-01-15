@@ -1,45 +1,20 @@
-FROM rust:alpine AS builder
-
-WORKDIR /workspace
-
-# Install all required dependencies for rust-libp2p
-RUN apk add --no-cache \
-    musl-dev \
-    protobuf-dev \
-    cmake \
-    perl \
-    pkgconfig \
-    openssl-dev
-
-# Copy manifests first for dependency caching
-COPY Cargo.toml ./
-COPY Cargo.lock* ./
-
-# Create dummy source for dependency fetch
-RUN mkdir -p src && \
-    echo "fn main() {}" > src/main.rs
-
-# Fetch dependencies (this layer will be cached)
-RUN cargo fetch
-
-# Remove dummy source
-RUN rm -rf src
-
-# Copy real source
-COPY src/ ./src/
-
-# Build in release mode
-RUN cargo build --release
-
-# Final stage
-FROM alpine:latest
-
-RUN apk --no-cache add \
-    ca-certificates \
-    libgcc
-
+FROM lukemathwalker/cargo-chef:latest-rust-slim-trixie AS chef
 WORKDIR /app
 
-COPY --from=builder /workspace/target/release/perf-rust .
+FROM chef AS planner
+COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
 
-ENTRYPOINT ["/app/perf-rust"]
+FROM chef AS builder
+COPY --from=planner /app/recipe.json recipe.json
+# Build dependencies - this is the caching Docker layer!
+RUN cargo chef cook --release --recipe-path recipe.json
+# Build application
+COPY . .
+RUN RUSTFLAGS='-C target-feature=+crt-static' cargo build --release --target $(rustc -vV | grep host | awk '{print $2}')
+RUN cp /app/target/$(rustc -vV | grep host | awk '{print $2}')/release/perf-rust /usr/local/bin/perf-rust
+
+FROM debian:trixie-slim
+COPY --from=builder /usr/local/bin/perf-rust /usr/local/bin/perf-rust
+ENV RUST_BACKTRACE=1
+ENTRYPOINT ["/usr/local/bin/perf-rust"]

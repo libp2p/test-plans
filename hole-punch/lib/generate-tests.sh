@@ -12,6 +12,7 @@ trap 'echo "ERROR in generate-tests.sh at line $LINENO: Command exited with stat
 # Source common libraries
 source "${SCRIPT_LIB_DIR}/lib-filter-engine.sh"
 source "${SCRIPT_LIB_DIR}/lib-generate-tests.sh"
+source "${SCRIPT_LIB_DIR}/lib-image-building.sh"
 source "${SCRIPT_LIB_DIR}/lib-output-formatting.sh"
 source "${SCRIPT_LIB_DIR}/lib-test-caching.sh"
 source "${SCRIPT_LIB_DIR}/lib-test-filtering.sh"
@@ -238,7 +239,7 @@ for router_id in "${all_router_ids[@]}"; do
   commit=$(yq eval ".routers[] | select (.id == \"${router_id}\") | .source.commit" "${IMAGES_YAML}" 2>/dev/null || echo "")
 
   if [ -n "${commit}" ]; then
-    relay_commit["${relay_id}"]="${commit}"
+    router_commit["${router_id}"]="${commit}"
   fi
 done
 
@@ -442,6 +443,20 @@ generate_tests_worker() {
             # Skip if no common transports
             [ -z "$common_transports" ] && continue
 
+            # Get commits for snapshot references
+            local dialer_commit="${image_commit[${dialer_id}]:-}"
+            local listener_commit="${image_commit[${listener_id}]:-}"
+            local relay_commit="${relay_image_commit[${relay_id}]:-}"
+            local dialer_router_commit="${router_image_commit[${dialer_router_id}]:-}"
+            local listener_router_commit="${router_image_commit[${listener_router_id}]:-}"
+
+            # Get the image names 
+            local dialer_image_name=$(get_image_name "implementations" "${dialer_id}")
+            local listener_image_name=$(get_image_name "implementations" "${listener_id}")
+            local relay_image_name=$(get_image_name "relays" "${relay_id}")
+            local dialer_router_image_name=$(get_image_name "routers" "${dialer_router_id}")
+            local listener_router_image_name=$(get_image_name "routers" "${listener_router_id}")
+
             # Process each common transport
             for transport in $common_transports; do
               transport_selected=true
@@ -460,13 +475,6 @@ generate_tests_worker() {
               esac
 
               print_debug "selecting transport: ${transport}"
-
-              # Get commits for snapshot references
-              local dialer_commit="${image_commit[${dialer_id}]:-}"
-              local listener_commit="${image_commit[${listener_id}]:-}"
-              local relay_commit="${relay_commit[${relay_id}]:-}"
-              local dialer_router_commit="${router_image_commit[${dialer_router_id}]:-}"
-              local listener_router_commit="${router_image_commit[${listener_router_id}]:-}"
 
               if is_standalone_transport "$transport"; then
 
@@ -491,6 +499,7 @@ generate_tests_worker() {
     muxer: null
     dialer:
       id: ${dialer_id}
+      imageName: ${dialer_image_name}
 EOF
                   if [ -n "${dialer_commit}" ]; then
                     echo "      snapshot: snapshots/${dialer_commit}.zip" >> "${worker_selected}"
@@ -498,6 +507,7 @@ EOF
                   cat >> "${worker_selected}" <<EOF
     listener:
       id: ${listener_id}
+      imageName: ${listener_image_name}
 EOF
                   if [ -n "${listener_commit}" ]; then
                     echo "      snapshot: snapshots/${listener_commit}.zip" >> "${worker_selected}"
@@ -505,6 +515,7 @@ EOF
                   cat >> "${worker_selected}" <<EOF
     relay:
       id: ${relay_id}
+      imageName: ${relay_image_name}
 EOF
                   if [ -n "${relay_commit}" ]; then
                     echo "      snapshot: snapshots/${relay_commit}.zip" >> "${worker_selected}"
@@ -512,6 +523,7 @@ EOF
                   cat >> "${worker_selected}" <<EOF
     dialerRouter:
       id: ${dialer_router_id}
+      imageName: ${dialer_router_image_name}
 EOF
                   if [ -n "${dialer_router_commit}" ]; then
                     echo "      snapshot: snapshots/${dialer_router_commit}.zip" >> "${worker_selected}"
@@ -519,6 +531,7 @@ EOF
                   cat >> "${worker_selected}" <<EOF
     listenerRouter:
       id: ${listener_router_id}
+      imageName: ${listener_router_image_name}
 EOF
                   if [ -n "${listener_router_commit}" ]; then
                     echo "      snapshot: snapshots/${listener_router_commit}.zip" >> "${worker_selected}"
@@ -537,6 +550,7 @@ EOF
     muxer: null
     dialer:
       id: ${dialer_id}
+      imageName: ${dialer_image_name}
 EOF
                   if [ -n "${dialer_commit}" ]; then
                     echo "      snapshot: snapshots/${dialer_commit}.zip" >> "${worker_ignored}"
@@ -544,6 +558,7 @@ EOF
                   cat >> "${worker_ignored}" <<EOF
     listener:
       id: ${listener_id}
+      imageName: ${listener_image_name}
 EOF
                   if [ -n "${listener_commit}" ]; then
                     echo "      snapshot: snapshots/${listener_commit}.zip" >> "${worker_ignored}"
@@ -551,6 +566,7 @@ EOF
                   cat >> "${worker_ignored}" <<EOF
     relay:
       id: ${relay_id}
+      imageName: ${relay_image_name}
 EOF
                   if [ -n "${relay_commit}" ]; then
                     echo "      snapshot: snapshots/${relay_commit}.zip" >> "${worker_selected}"
@@ -558,6 +574,7 @@ EOF
                   cat >> "${worker_ignored}" <<EOF
     dialerRouter:
       id: ${dialer_router_id}
+      imageName: ${dialer_router_image_name}
 EOF
                   if [ -n "${dialer_router_commit}" ]; then
                     echo "      snapshot: snapshots/${dialer_router_commit}.zip" >> "${worker_selected}"
@@ -565,6 +582,7 @@ EOF
                   cat >> "${worker_ignored}" <<EOF
     listenerRouter:
       id: ${listener_router_id}
+      imageName: ${listener_router_image_name}
 EOF
                   if [ -n "${listener_router_commit}" ]; then
                     echo "      snapshot: snapshots/${listener_router_commit}.zip" >> "${worker_selected}"
@@ -604,7 +622,7 @@ EOF
 
                     print_debug "selecting muxer: ${muxer}"
 
-                    test_name="$dialer_id x $listener_id ($transport, $secure, $muxer) [dr: $dialer_router_id, rly: $relay_id, lr: $listener_router_id]"
+                    test_id="$dialer_id x $listener_id ($transport, $secure, $muxer) [dr: $dialer_router_id, rly: $relay_id, lr: $listener_router_id]"
                     # Add to selected or ignored list
                     if [ "${dialer_selected}" == "true" ] && \
                        [ "${listener_selected}" == "true" ] && \
@@ -622,10 +640,11 @@ EOF
                       cat >> "${worker_selected}" <<EOF
   - id: "${test_id}"
     transport: ${transport}
-    secureChannel: null
-    muxer: null
+    secureChannel: ${secure}
+    muxer: ${muxer}
     dialer:
       id: ${dialer_id}
+      imageName: ${dialer_image_name}
 EOF
                       if [ -n "${dialer_commit}" ]; then
                         echo "      snapshot: snapshots/${dialer_commit}.zip" >> "${worker_selected}"
@@ -633,6 +652,7 @@ EOF
                       cat >> "${worker_selected}" <<EOF
     listener:
       id: ${listener_id}
+      imageName: ${listener_image_name}
 EOF
                       if [ -n "${listener_commit}" ]; then
                         echo "      snapshot: snapshots/${listener_commit}.zip" >> "${worker_selected}"
@@ -640,6 +660,7 @@ EOF
                       cat >> "${worker_selected}" <<EOF
     relay:
       id: ${relay_id}
+      imageName: ${relay_image_name}
 EOF
                       if [ -n "${relay_commit}" ]; then
                         echo "      snapshot: snapshots/${relay_commit}.zip" >> "${worker_selected}"
@@ -647,6 +668,7 @@ EOF
                       cat >> "${worker_selected}" <<EOF
     dialerRouter:
       id: ${dialer_router_id}
+      imageName: ${dialer_router_image_name}
 EOF
                       if [ -n "${dialer_router_commit}" ]; then
                         echo "      snapshot: snapshots/${dialer_router_commit}.zip" >> "${worker_selected}"
@@ -654,6 +676,7 @@ EOF
                       cat >> "${worker_selected}" <<EOF
     listenerRouter:
       id: ${listener_router_id}
+      imageName: ${listener_router_image_name}
 EOF
                       if [ -n "${listener_router_commit}" ]; then
                         echo "      snapshot: snapshots/${listener_router_commit}.zip" >> "${worker_selected}"
@@ -666,10 +689,11 @@ EOF
                       cat >> "${worker_ignored}" <<EOF
   - id: "${test_id}"
     transport: ${transport}
-    secureChannel: null
-    muxer: null
+    secureChannel: ${secure}
+    muxer: ${muxer}
     dialer:
       id: ${dialer_id}
+      imageName: ${dialer_image_name}
 EOF
                       if [ -n "${dialer_commit}" ]; then
                         echo "      snapshot: snapshots/${dialer_commit}.zip" >> "${worker_ignored}"
@@ -677,6 +701,7 @@ EOF
                       cat >> "${worker_ignored}" <<EOF
     listener:
       id: ${listener_id}
+      imageName: ${listener_image_name}
 EOF
                       if [ -n "${listener_commit}" ]; then
                         echo "      snapshot: snapshots/${listener_commit}.zip" >> "${worker_ignored}"
@@ -684,6 +709,7 @@ EOF
                       cat >> "${worker_ignored}" <<EOF
     relay:
       id: ${relay_id}
+      imageName: ${relay_image_name}
 EOF
                       if [ -n "${relay_commit}" ]; then
                         echo "      snapshot: snapshots/${relay_commit}.zip" >> "${worker_selected}"
@@ -691,6 +717,7 @@ EOF
                       cat >> "${worker_ignored}" <<EOF
     dialerRouter:
       id: ${dialer_router_id}
+      imageName: ${dialer_router_image_name}
 EOF
                       if [ -n "${dialer_router_commit}" ]; then
                         echo "      snapshot: snapshots/${dialer_router_commit}.zip" >> "${worker_selected}"
@@ -698,6 +725,7 @@ EOF
                       cat >> "${worker_ignored}" <<EOF
     listenerRouter:
       id: ${listener_router_id}
+      imageName: ${listener_router_image_name}
 EOF
                       if [ -n "${listener_router_commit}" ]; then
                         echo "      snapshot: snapshots/${listener_router_commit}.zip" >> "${worker_selected}"
@@ -770,6 +798,7 @@ done
 # Export necessary variables and functions for workers
 export -f generate_tests_worker
 export -f get_common
+export -f get_image_name
 export -f is_standalone_transport
 export -f print_debug
 export -f get_source_commit

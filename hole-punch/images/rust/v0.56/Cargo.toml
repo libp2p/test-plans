@@ -1,7 +1,15 @@
 [package]
-name = "perf-rust"
+name = "relay-rust"
 version = "0.1.0"
 edition = "2021"
+
+[[bin]]
+name = "relay"
+path = "src/bin/relay.rs"
+
+[[bin]]
+name = "peer"
+path = "src/bin/peer.rs"
 
 [dependencies]
 # Async runtime
@@ -16,11 +24,14 @@ tokio = { version = "1", features = [
 
 # libp2p core and transports
 libp2p = { version = "0.56", features = [
+  "dcutr",
   "dns",
+  "identify",
   "macros",
   "noise",
+  "ping",
   "quic",
-  "request-response",
+  "relay",
   "rsa",
   "tcp",
   "tls",

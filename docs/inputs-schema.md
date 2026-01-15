@@ -300,11 +300,81 @@ yq eval '.commandLineArgs[]' /srv/cache/test-run/perf-abc123/inputs.yaml
 - **Generation**: `lib/lib-inputs-yaml.sh` - Functions to generate and modify inputs.yaml
   - `generate_inputs_yaml()` function at lines 17-81
   - `modify_inputs_for_snapshot()` function at lines 87-111
+  - Test-type-specific variables added at lines 56-78
 - **Loading**: Inline functions in each test runner's bootstrap section
-  - `perf/run.sh:30-48` - `load_inputs_yaml_inline()`
-  - `perf/run.sh:51-57` - `get_yaml_args_inline()`
-  - `perf/run.sh:60-71` - Bootstrap logic
+  - `perf/run.sh:30-71` - Bootstrap logic with inline load functions
+  - `transport/run.sh:30-71` - Bootstrap logic with inline load functions
+  - `hole-punch/run.sh:30-71` - Bootstrap logic with inline load functions
 - **Usage**:
-  - `perf/run.sh:389` - Calls `generate_inputs_yaml()`
-  - Similar patterns in `transport/run.sh` and `hole-punch/run.sh`
+  - `perf/run.sh:363` - Calls `generate_inputs_yaml()`
+  - `transport/run.sh:~363` - Calls `generate_inputs_yaml()`
+  - `hole-punch/run.sh:363` - Calls `generate_inputs_yaml()`
 - **Snapshot Creation**: `lib/lib-snapshot-creation.sh` - Creates snapshots and modifies inputs.yaml
+
+## Complete Example: Hole-Punch Tests
+
+```yaml
+# Generated inputs.yaml for a "hole-punch" test run
+# This file captures all configuration for reproducibility
+# Created: 2026-01-14T03:04:06Z
+
+testType: hole-punch
+
+commandLineArgs:
+  - "--test-ignore"
+  - "!rust-v0.56"
+  - "--relay-ignore"
+  - "!rust-v0.56"
+  - "--router-ignore"
+  - "!linux"
+  - "--transport-ignore"
+  - "webrtc-direct"
+
+environmentVariables:
+  IMAGES_YAML: "./images.yaml"
+  CACHE_DIR: "/srv/cache"
+  TEST_RUN_DIR: "/srv/cache/test-run"
+  SCRIPT_DIR: "/srv/test-plans/hole-punch/lib"
+  SCRIPT_LIB_DIR: "/srv/test-plans/lib"
+  DEBUG: "false"
+  WORKER_COUNT: "8"
+  TEST_IGNORE: "!rust-v0.56"
+  TRANSPORT_IGNORE: "webrtc-direct"
+  SECURE_IGNORE: ""
+  MUXER_IGNORE: ""
+  FORCE_MATRIX_REBUILD: "false"
+  FORCE_IMAGE_REBUILD: "false"
+  RELAY_IGNORE: "!rust-v0.56"
+  ROUTER_IGNORE: "!linux"
+```
+
+## Complete Example: Transport Tests
+
+```yaml
+# Generated inputs.yaml for a "transport" test run
+# This file captures all configuration for reproducibility
+# Created: 2026-01-14T03:04:06Z
+
+testType: transport
+
+commandLineArgs:
+  - "--test-ignore"
+  - "!~rust"
+  - "--workers"
+  - "8"
+
+environmentVariables:
+  IMAGES_YAML: "./images.yaml"
+  CACHE_DIR: "/srv/cache"
+  TEST_RUN_DIR: "/srv/cache/test-run"
+  SCRIPT_DIR: "/srv/test-plans/transport/lib"
+  SCRIPT_LIB_DIR: "/srv/test-plans/lib"
+  DEBUG: "false"
+  WORKER_COUNT: "8"
+  TEST_IGNORE: "!~rust"
+  TRANSPORT_IGNORE: ""
+  SECURE_IGNORE: ""
+  MUXER_IGNORE: ""
+  FORCE_MATRIX_REBUILD: "false"
+  FORCE_IMAGE_REBUILD: "false"
+```

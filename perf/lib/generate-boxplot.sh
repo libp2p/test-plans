@@ -64,18 +64,18 @@ add_box_data() {
   local boxfile="$4"
   local idx="$5"
 
-    # Get name and stats
-    local name min q1 med q3 max
-    name=$(yq -r "${array_path}[${array_idx}].name" "$RESULTS_FILE")
-    # Insert newline before '(' to create two-line labels
-    name="${name/ (/\\n(}"
-    read -r min q1 med q3 max <<< $(yq -r "${array_path}[${array_idx}].${metric} | [.min, .q1, .median, .q3, .max] | @tsv" "$RESULTS_FILE")
+  # Get name and stats
+  local name min q1 med q3 max
+  name=$(yq -r "${array_path}[${array_idx}].name" "$RESULTS_FILE")
+  # Insert newline before '(' to create two-line labels
+  name="${name/ (/\\n(}"
+  read -r min q1 med q3 max <<< $(yq -r "${array_path}[${array_idx}].${metric} | [.min, .q1, .median, .q3, .max] | @tsv" "$RESULTS_FILE")
 
-    # Only add if we have valid data
-    if [ "$med" != "null" ] && [ -n "$med" ]; then
-      printf "%d\t\"%s\"\t%s\t%s\t%s\t%s\t%s\n" "$idx" "$name" "$min" "$q1" "$med" "$q3" "$max" >> "$boxfile"
-    fi
-  }
+  # Only add if we have valid data
+  if [ "$med" != "null" ] && [ -n "$med" ]; then
+    printf "%d\t\"%s\"\t%s\t%s\t%s\t%s\t%s\n" "$idx" "$name" "$min" "$q1" "$med" "$q3" "$max" >> "$boxfile"
+  fi
+}
 
 # Function to add outlier data for a metric
 add_outlier_data() {
@@ -85,15 +85,15 @@ add_outlier_data() {
   local outfile="$4"
   local idx="$5"
 
-    # Get outliers and prepend idx to each line
-    local outlier_count
-    outlier_count=$(yq "${array_path}[${array_idx}].${metric}.outliers | length" "$RESULTS_FILE" 2>/dev/null || echo "0")
-    if [ "$outlier_count" -gt 0 ]; then
-      yq -r "${array_path}[${array_idx}].${metric}.outliers[]" "$RESULTS_FILE" | while read -r outlier; do
-      [ -n "$outlier" ] && printf "%d\t%s\n" "$idx" "$outlier" >> "$outfile"
-    done
-    fi
-  }
+  # Get outliers and prepend idx to each line
+  local outlier_count
+  outlier_count=$(yq "${array_path}[${array_idx}].${metric}.outliers | length" "$RESULTS_FILE" 2>/dev/null || echo "0")
+  if [ "$outlier_count" -gt 0 ]; then
+    yq -r "${array_path}[${array_idx}].${metric}.outliers[]" "$RESULTS_FILE" | while read -r outlier; do
+    [ -n "$outlier" ] && printf "%d\t%s\n" "$idx" "$outlier" >> "$outfile"
+  done
+  fi
+}
 
 # =============== UPLOAD ===============
 print_message "Extracting upload data..."
@@ -158,8 +158,11 @@ done
 TOTAL_TESTS=$((BASELINE_COUNT + TEST_COUNT))
 XMAX=$(echo "$TOTAL_TESTS + 1.2" | bc -l)
 
+# Calculate dynamic width: 200 + (200 * number of tests)
+IMAGE_WIDTH=$((200 + (200 * TOTAL_TESTS)))
+
 cat > "$OUTPUT_DIR/upload.gp" <<EOF
-set terminal pngcairo size 1400,1400 enhanced font 'Arial,14'
+set terminal pngcairo size $IMAGE_WIDTH,1400 enhanced font 'Arial,14'
 set output '$OUTPUT_DIR/boxplot-upload.png'
 set title 'Upload Throughput Comparison'
 set ylabel 'Throughput (Gbps)'
@@ -177,7 +180,7 @@ plot '$UPLOAD_BOX' using 1:4:3:7:6:xticlabels(2) notitle with candlesticks lc rg
 EOF
 
 cat > "$OUTPUT_DIR/download.gp" <<EOF
-set terminal pngcairo size 1400,1400 enhanced font 'Arial,14'
+set terminal pngcairo size $IMAGE_WIDTH,1400 enhanced font 'Arial,14'
 set output '$OUTPUT_DIR/boxplot-download.png'
 set title 'Download Throughput Comparison'
 set ylabel 'Throughput (Gbps)'
@@ -195,7 +198,7 @@ plot '$DOWNLOAD_BOX' using 1:4:3:7:6:xticlabels(2) notitle with candlesticks lc 
 EOF
 
 cat > "$OUTPUT_DIR/latency.gp" <<EOF
-set terminal pngcairo size 1400,1400 enhanced font 'Arial,14'
+set terminal pngcairo size $IMAGE_WIDTH,1400 enhanced font 'Arial,14'
 set output '$OUTPUT_DIR/boxplot-latency.png'
 set title 'Latency Comparison'
 set ylabel 'Latency (ms)'
