@@ -34,6 +34,8 @@ Example:
 
 These variables are included for all test types:
 
+**Paths and Settings:**
+
 | Variable | Description |
 |----------|-------------|
 | `IMAGES_YAML` | The images YAML file used to run the tests (default: `./images.yaml`) |
@@ -43,31 +45,53 @@ These variables are included for all test types:
 | `SCRIPT_LIB_DIR` | Shared library scripts directory path |
 | `DEBUG` | Debug mode flag (`true` or `false`) |
 | `WORKER_COUNT` | Number of parallel test workers |
+| `FORCE_MATRIX_REBUILD` | Force test matrix regeneration flag |
+| `FORCE_IMAGE_REBUILD` | Force Docker image rebuild flag |
+
+**Implementation Filtering (Two-Stage):**
+
+| Variable | Description |
+|----------|-------------|
+| `IMPL_SELECT` | Select implementations (empty = select all) |
+| `IMPL_IGNORE` | Ignore implementations (empty = ignore none) |
+
+**Component Filtering (Two-Stage):**
+
+| Variable | Description |
+|----------|-------------|
+| `TRANSPORT_SELECT` | Select transports (empty = select all) |
+| `TRANSPORT_IGNORE` | Ignore transports (empty = ignore none) |
+| `SECURE_SELECT` | Select secure channels (empty = select all) |
+| `SECURE_IGNORE` | Ignore secure channels (empty = ignore none) |
+| `MUXER_SELECT` | Select muxers (empty = select all) |
+| `MUXER_IGNORE` | Ignore muxers (empty = ignore none) |
+
+**Test Name Filtering:**
+
+| Variable | Description |
+|----------|-------------|
+| `TEST_SELECT` | Select tests by name pattern (empty = select all test names) |
+| `TEST_IGNORE` | Ignore tests by name pattern (empty = ignore no test names) |
 
 ### Test-Type-Specific Variables
 
 #### Transport Tests
 
-| Variable | Description |
-|----------|-------------|
-| `TEST_IGNORE` | Test ignore filter (pipe-separated patterns) |
-| `TRANSPORT_IGNORE` | Transport ignore filter |
-| `SECURE_IGNORE` | Secure channel ignore filter |
-| `MUXER_IGNORE` | Muxer ignore filter |
-| `FORCE_MATRIX_REBUILD` | Force test matrix regeneration flag |
-| `FORCE_IMAGE_REBUILD` | Force Docker image rebuild flag |
+No additional variables beyond common variables.
 
 #### Perf Tests
 
+**Perf-Specific Filtering:**
+
 | Variable | Description |
 |----------|-------------|
-| `TEST_IGNORE` | Implementation ignore filter |
-| `BASELINE_IGNORE` | Baseline test ignore filter |
-| `TRANSPORT_IGNORE` | Transport ignore filter |
-| `SECURE_IGNORE` | Secure channel ignore filter |
-| `MUXER_IGNORE` | Muxer ignore filter |
-| `FORCE_MATRIX_REBUILD` | Force test matrix regeneration flag |
-| `FORCE_IMAGE_REBUILD` | Force Docker image rebuild flag |
+| `BASELINE_SELECT` | Select baseline tests (empty = select all) |
+| `BASELINE_IGNORE` | Ignore baseline tests (empty = ignore none) |
+
+**Perf-Specific Settings:**
+
+| Variable | Description |
+|----------|-------------|
 | `ITERATIONS` | Number of iterations per test (default: 10) |
 | `UPLOAD_BYTES` | Bytes to upload per test (default: 1073741824 = 1GB) |
 | `DOWNLOAD_BYTES` | Bytes to download per test (default: 1073741824 = 1GB) |
@@ -76,16 +100,78 @@ These variables are included for all test types:
 
 #### Hole-Punch Tests
 
+**Hole-Punch-Specific Filtering:**
+
 | Variable | Description |
 |----------|-------------|
-| `TEST_IGNORE` | Peer implementation ignore filter |
-| `RELAY_IGNORE` | Relay implementation ignore filter |
-| `ROUTER_IGNORE` | Router implementation ignore filter |
-| `TRANSPORT_IGNORE` | Transport ignore filter |
-| `SECURE_IGNORE` | Secure channel ignore filter |
-| `MUXER_IGNORE` | Muxer ignore filter |
-| `FORCE_MATRIX_REBUILD` | Force test matrix regeneration flag |
-| `FORCE_IMAGE_REBUILD` | Force Docker image rebuild flag |
+| `RELAY_SELECT` | Select relay implementations (empty = select all) |
+| `RELAY_IGNORE` | Ignore relay implementations (empty = ignore none) |
+| `ROUTER_SELECT` | Select router implementations (empty = select all) |
+| `ROUTER_IGNORE` | Ignore router implementations (empty = ignore none) |
+
+## Filtering Model
+
+### Two-Stage Filtering
+
+All test suites use a two-stage filtering model with SELECT and IGNORE filters:
+
+**Stage 1: SELECT filters** (Positive Filtering)
+- **Purpose**: Narrow from the complete list of available items
+- **Default**: Empty SELECT = select all items
+- **Usage**: `--impl-select "~rust"` selects only rust implementations
+
+**Stage 2: IGNORE filters** (Negative Filtering)
+- **Purpose**: Remove unwanted items from the selected set
+- **Default**: Empty IGNORE = ignore none
+- **Usage**: `--impl-ignore "experimental"` removes experimental implementations
+
+**Stage 3: TEST filters** (Test Name Filtering)
+- **Purpose**: Filter by complete test name/ID patterns
+- **Applied**: During test generation (inline)
+- **Usage**: `--test-select "rust-v0.56 x"` matches test names
+
+### Filter Patterns
+
+Filters support sophisticated pattern matching:
+
+- **Literal match**: `"rust-v0.56"` matches exactly
+- **Pipe-separated OR**: `"rust-v0.56|go-v0.45"` matches either
+- **Alias expansion**: `"~rust"` expands to all rust versions (from images.yaml)
+- **Negation**: `"!~rust"` matches everything EXCEPT rust
+- **Substring match**: `"experimental"` matches any ID containing this substring
+
+### Filter Processing Order
+
+1. **Expand aliases**: Resolve `~rust` to actual version list
+2. **Apply SELECT**: Narrow scope from all items
+3. **Apply IGNORE**: Remove unwanted items from selected set
+4. **Apply TEST filters**: Match against complete test IDs (during generation)
+
+### Examples
+
+**Run only rust implementations:**
+```bash
+--impl-select "~rust"
+```
+
+**Run rust and go, but not experimental:**
+```bash
+--impl-select "~rust|~go" --impl-ignore "experimental"
+```
+
+**Run everything except QUIC transport:**
+```bash
+--transport-ignore "quic-v1"
+```
+
+**Complex filtering:**
+```bash
+--impl-select "~rust" \
+--transport-select "tcp|quic-v1" \
+--secure-select "noise" \
+--impl-ignore "experimental" \
+--test-ignore "cross-version"
+```
 
 ## Example
 
@@ -97,16 +183,18 @@ These variables are included for all test types:
 testType: perf
 
 commandLineArgs:
-  - "--test-ignore"
-  - "!rust-v0.56"
-  - "--baseline-ignore"
-  - "~all"
+  - "--impl-select"
+  - "~rust"
+  - "--impl-ignore"
+  - "experimental"
+  - "--baseline-select"
+  - "iperf"
   - "--transport-ignore"
   - "quic-v1"
-  - "--secure-ignore"
-  - "tls"
-  - "--muxer-ignore"
-  - "mplex"
+  - "--secure-select"
+  - "noise"
+  - "--test-ignore"
+  - "experimental"
   - "--force-matrix-rebuild"
   - "--yes"
 
@@ -118,13 +206,32 @@ environmentVariables:
   SCRIPT_LIB_DIR: "/srv/test-plans/perf/lib/../../lib"
   DEBUG: "false"
   WORKER_COUNT: "1"
-  TEST_IGNORE: "!rust-v0.56"
+
+  # Implementation filtering
+  IMPL_SELECT: "~rust"
+  IMPL_IGNORE: "experimental"
+
+  # Component filtering
+  TRANSPORT_SELECT: ""
   TRANSPORT_IGNORE: "quic-v1"
-  SECURE_IGNORE: "tls"
-  MUXER_IGNORE: "mplex"
+  SECURE_SELECT: "noise"
+  SECURE_IGNORE: ""
+  MUXER_SELECT: ""
+  MUXER_IGNORE: ""
+
+  # Test name filtering
+  TEST_SELECT: ""
+  TEST_IGNORE: "experimental"
+
+  # Perf-specific filtering
+  BASELINE_SELECT: "iperf"
+  BASELINE_IGNORE: ""
+
+  # Other settings
   FORCE_MATRIX_REBUILD: "true"
   FORCE_IMAGE_REBUILD: "false"
-  BASELINE_IGNORE: "~all"
+
+  # Perf-specific settings
   ITERATIONS: "10"
   UPLOAD_BYTES: "1073741824"
   DOWNLOAD_BYTES: "1073741824"

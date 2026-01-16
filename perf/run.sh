@@ -105,8 +105,11 @@ trap handle_shutdown INT
 # performance results
 WORKER_COUNT=1
 
-# Perf-specific variables
+# Perf-specific filtering variables
+export BASELINE_SELECT="${BASELINE_SELECT:-}"
 export BASELINE_IGNORE="${BASELINE_IGNORE:-}"
+
+# Perf-specific test parameters
 export UPLOAD_BYTES=1073741824     # 1GB default
 export DOWNLOAD_BYTES=1073741824   # 1GB default
 export ITERATIONS=10
@@ -137,38 +140,86 @@ libp2p Performance Test Runner
 
 Usage: ${0} [options]
 
-Options:
-  --test-ignore VALUE           Ignore implementations (pipe-separated)
-  --baseline-ignore VALUE       Ignore baseline tests (pipe-separated)
-  --transport-ignore VALUE      Ignore given transport (pipe-separated)
-  --secure-ignore VALUE         Ignore given secure channel (pipe-separated)
-  --muxer-ignore VALUE          Ignore given muxer (pipe-separated)
+Filtering Options:
+  Implementation Filtering:
+    --impl-select VALUE         Select implementations (pipe-separated patterns)
+    --impl-ignore VALUE         Ignore implementations (pipe-separated patterns)
+
+  Baseline Filtering:
+    --baseline-select VALUE     Select baseline tests (pipe-separated patterns)
+    --baseline-ignore VALUE     Ignore baseline tests (pipe-separated patterns)
+
+  Component Filtering:
+    --transport-select VALUE    Select transports (pipe-separated patterns)
+    --transport-ignore VALUE    Ignore transports (pipe-separated patterns)
+    --secure-select VALUE       Select secure channels (pipe-separated patterns)
+    --secure-ignore VALUE       Ignore secure channels (pipe-separated patterns)
+    --muxer-select VALUE        Select muxers (pipe-separated patterns)
+    --muxer-ignore VALUE        Ignore muxers (pipe-separated patterns)
+
+  Test Name Filtering:
+    --test-select VALUE         Select tests by name/ID (pipe-separated patterns)
+    --test-ignore VALUE         Ignore tests by name/ID (pipe-separated patterns)
+
+Configuration Options:
   --upload-bytes VALUE          Bytes to upload per test (default: 1GB)
   --download-bytes VALUE        Bytes to download per test (default: 1GB)
   --iterations VALUE            Number of iterations per test (default: 10)
   --duration VALUE              Duration per iteration for throughput (default: 20s)
   --latency-iterations VALUE    Iterations for latency test (default: 100)
   --cache-dir VALUE             Cache directory (default: /srv/cache)
+
+Execution Options:
   --snapshot                    Create test pass snapshot after completion
   --debug                       Enable debug mode
   --force-matrix-rebuild        Force test matrix regeneration (bypass cache)
   --force-image-rebuild         Force Docker image rebuilds (bypass cache)
   --yes, -y                     Skip confirmation prompts
+
+Information Options:
   --check-deps                  Only check dependencies and exit
-  --list-images                 List all image types used by this test suite and exit
+  --list-images                 List all image types and exit
   --list-tests                  List all selected tests and exit
-  --show-ignored                Shows the list of ignored tests
+  --show-ignored                Show the list of ignored tests
   --help, -h                    Show this help message
 
+Filter Syntax:
+  Basic patterns:      "rust-v0.56|go-v0.45"    (match any)
+  Alias expansion:     "~rust"                  (expand rust alias)
+  Negated alias:       "!~rust"                 (everything NOT matching rust)
+  Negated pattern:     "!experimental"          (everything NOT matching experimental)
+
+Filter Processing Order:
+  1. SELECT filters narrow from complete list (empty = select all)
+  2. IGNORE filters remove from selected set (empty = ignore none)
+  3. TEST filters apply to final test names/IDs
+
 Examples:
-  ${0} --test-ignore "js-v3.x"
+  # Select only rust implementations
+  ${0} --impl-select "~rust"
+
+  # Select rust, but ignore experimental versions
+  ${0} --impl-select "~rust" --impl-ignore "experimental"
+
+  # Test only TCP transport with TLS
+  ${0} --transport-select "tcp" --secure-select "tls"
+
+  # Run specific test by name
+  ${0} --test-select "rust-v0.56 x rust-v0.56"
+
+  # Exclude specific baseline
+  ${0} --baseline-ignore "https"
+
+  # Traditional usage (still supported)
   ${0} --upload-bytes 5368709120 --download-bytes 5368709120
-  ${0} --list-images
-  ${0} --list-tests --test-ignore "!~rust"
-  ${0} --snapshot --force-image-rebuild
 
 Dependencies:
-  bash 4.0+, docker 20.10+, yq 4.0+, wget, zip, unzip, bc, sha256sum
+  Required: bash 4.0+, docker 20.10+ (or podman), docker-compose, yq 4.0+
+            wget, zip, unzip, tar, gzip, bc, sha256sum, cut, timeout, flock
+            Text utilities: awk, sed, grep, sort, head, tail, wc, tr, paste, cat
+            File utilities: mkdir, cp, mv, rm, chmod, find, xargs, basename, dirname, mktemp
+            System utilities: date, sleep, nproc, uname, hostname, ps
+  Optional: gnuplot (box plots), git (submodule-based builds)
   Run with --check-deps to verify installation.
 
 EOF
@@ -177,27 +228,48 @@ EOF
 # Parse command line arguments
 while [ $# -gt 0 ]; do
   case "${1}" in
-    --test-ignore) TEST_IGNORE="${2}"; shift 2 ;;
+    # Implementation filtering
+    --impl-select) IMPL_SELECT="${2}"; shift 2 ;;
+    --impl-ignore) IMPL_IGNORE="${2}"; shift 2 ;;
+
+    # Baseline filtering (perf only)
+    --baseline-select) BASELINE_SELECT="${2}"; shift 2 ;;
     --baseline-ignore) BASELINE_IGNORE="${2}"; shift 2 ;;
-    --transport-ignore) TRANSPORT_IGNORE="${2}"; shift 2;;
-    --secure-ignore) SECURE_IGNORE="${2}"; shift 2;;
-    --muxer-ignore) MUXER_IGNORE="${2}"; shift 2;;
+
+    # Component filtering
+    --transport-select) TRANSPORT_SELECT="${2}"; shift 2 ;;
+    --transport-ignore) TRANSPORT_IGNORE="${2}"; shift 2 ;;
+    --secure-select) SECURE_SELECT="${2}"; shift 2 ;;
+    --secure-ignore) SECURE_IGNORE="${2}"; shift 2 ;;
+    --muxer-select) MUXER_SELECT="${2}"; shift 2 ;;
+    --muxer-ignore) MUXER_IGNORE="${2}"; shift 2 ;;
+
+    # Test name filtering
+    --test-select) TEST_SELECT="${2}"; shift 2 ;;
+    --test-ignore) TEST_IGNORE="${2}"; shift 2 ;;
+
+    # Configuration options
     --upload-bytes) UPLOAD_BYTES="${2}"; shift 2 ;;
     --download-bytes) DOWNLOAD_BYTES="${2}"; shift 2 ;;
     --iterations) ITERATIONS="${2}"; shift 2 ;;
     --duration) DURATION_PER_ITERATION="${2}"; shift 2 ;;
     --latency-iterations) LATENCY_ITERATIONS="${2}"; shift 2 ;;
     --cache-dir) CACHE_DIR="${2}"; shift 2 ;;
+
+    # Execution options
     --snapshot) CREATE_SNAPSHOT=true; shift ;;
     --debug) DEBUG=true; shift ;;
     --force-matrix-rebuild) FORCE_MATRIX_REBUILD=true; shift ;;
     --force-image-rebuild) FORCE_IMAGE_REBUILD=true; shift ;;
     -y|--yes) AUTO_YES=true; shift ;;
+
+    # Information options
     --check-deps) CHECK_DEPS=true; shift ;;
     --list-images) LIST_IMAGES=true; shift ;;
     --list-tests) LIST_TESTS=true; shift ;;
     --show-ignored) SHOW_IGNORED=true; shift ;;
     --help|-h) show_help; exit 0 ;;
+
     *)
       echo "Unknown option: ${1}"
       echo ""
@@ -211,11 +283,18 @@ done
 export TEST_TYPE="perf"
 export TEST_RUN_KEY=$(compute_test_run_key \
   "${IMAGES_YAML}" \
-  "${TEST_IGNORE}" \
+  "${IMPL_SELECT}" \
+  "${IMPL_IGNORE}" \
+  "${BASELINE_SELECT}" \
   "${BASELINE_IGNORE}" \
+  "${TRANSPORT_SELECT}" \
   "${TRANSPORT_IGNORE}" \
+  "${SECURE_SELECT}" \
   "${SECURE_IGNORE}" \
+  "${MUXER_SELECT}" \
   "${MUXER_IGNORE}" \
+  "${TEST_SELECT}" \
+  "${TEST_IGNORE}" \
   "${DEBUG}" \
 )
 export TEST_PASS_NAME="${TEST_TYPE}-${TEST_RUN_KEY}-$(date +%H%M%S-%d-%m-%Y)"
@@ -371,10 +450,21 @@ print_message "Test Pass: ${TEST_PASS_NAME}"
 print_message "Test Pass Dir: ${TEST_PASS_DIR}"
 print_message "Cache Dir: ${CACHE_DIR}"
 print_message "Workers: ${WORKER_COUNT}"
-[ -n "${TEST_IGNORE}" ] && print_message "Test Ignore: ${TEST_IGNORE}"
+
+# Display filters (only if set)
+[ -n "${IMPL_SELECT}" ] && print_message "Impl Select: ${IMPL_SELECT}"
+[ -n "${IMPL_IGNORE}" ] && print_message "Impl Ignore: ${IMPL_IGNORE}"
+[ -n "${BASELINE_SELECT}" ] && print_message "Baseline Select: ${BASELINE_SELECT}"
+[ -n "${BASELINE_IGNORE}" ] && print_message "Baseline Ignore: ${BASELINE_IGNORE}"
+[ -n "${TRANSPORT_SELECT}" ] && print_message "Transport Select: ${TRANSPORT_SELECT}"
 [ -n "${TRANSPORT_IGNORE}" ] && print_message "Transport Ignore: ${TRANSPORT_IGNORE}"
+[ -n "${SECURE_SELECT}" ] && print_message "Secure Select: ${SECURE_SELECT}"
 [ -n "${SECURE_IGNORE}" ] && print_message "Secure Ignore: ${SECURE_IGNORE}"
+[ -n "${MUXER_SELECT}" ] && print_message "Muxer Select: ${MUXER_SELECT}"
 [ -n "${MUXER_IGNORE}" ] && print_message "Muxer Ignore: ${MUXER_IGNORE}"
+[ -n "${TEST_SELECT}" ] && print_message "Test Select: ${TEST_SELECT}"
+[ -n "${TEST_IGNORE}" ] && print_message "Test Ignore: ${TEST_IGNORE}"
+
 print_message "Upload Bytes: $(numfmt --to=iec --suffix=B "${UPLOAD_BYTES}" 2>/dev/null || echo "${UPLOAD_BYTES} bytes")"
 print_message "Download Bytes: $(numfmt --to=iec --suffix=B "${DOWNLOAD_BYTES}" 2>/dev/null || echo "${DOWNLOAD_BYTES} bytes")"
 print_message "Iterations: ${ITERATIONS}"

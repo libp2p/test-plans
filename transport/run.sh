@@ -138,11 +138,29 @@ libp2p Transport Interoperability Test Runner
 
 Usage: ${0} [options]
 
-Options:
-  --test-ignore VALUE       Ignore tests (pipe-separated substrings)
-  --transport-ignore VALUE  Ignore given transport (pipe-separated)
-  --secure-ignore VALUE     Ignore given secure channel (pipe-separated)
-  --muxer-ignore VALUE      Ignore given muxer (pipe-separated)
+Filter Options (Two-Stage Filtering):
+  Filters are applied in two stages:
+    Stage 1: SELECT filters narrow from complete list (empty = select all)
+    Stage 2: IGNORE filters remove from selected set (empty = ignore none)
+    Stage 3: TEST filters match complete test names (applied during generation)
+
+  Implementation Filtering:
+    --impl-select VALUE       Select implementations (pipe-separated patterns)
+    --impl-ignore VALUE       Ignore implementations (pipe-separated patterns)
+
+  Component Filtering:
+    --transport-select VALUE  Select transports (pipe-separated patterns)
+    --transport-ignore VALUE  Ignore transports (pipe-separated patterns)
+    --secure-select VALUE     Select secure channels (pipe-separated patterns)
+    --secure-ignore VALUE     Ignore secure channels (pipe-separated patterns)
+    --muxer-select VALUE      Select muxers (pipe-separated patterns)
+    --muxer-ignore VALUE      Ignore muxers (pipe-separated patterns)
+
+  Test Name Filtering:
+    --test-select VALUE       Select tests by name pattern (pipe-separated patterns)
+    --test-ignore VALUE       Ignore tests by name pattern (pipe-separated patterns)
+
+Other Options:
   --workers VALUE           Number of parallel workers (default: $(nproc 2>/dev/null || echo 4))
   --cache-dir VALUE         Cache directory (default: /srv/cache)
   --snapshot                Create test pass snapshot after completion
@@ -156,15 +174,36 @@ Options:
   --show-ignored            Shows the list of ignored tests
   --help, -h                Show this help message
 
+Filter Pattern Syntax:
+  - Literal match:          "rust-v0.56"
+  - Pipe-separated OR:      "rust-v0.56|go-v0.45"
+  - Alias expansion:        "~rust" (expands to all rust versions)
+  - Negation:               "!~rust" (everything NOT matching rust)
+  - Substring match:        "experimental" (matches any ID containing this)
+
 Examples:
-  ${0} --cache-dir /srv/cache --workers 4
+  # Run only rust implementations
+  ${0} --impl-select "~rust"
+
+  # Run rust and go, but not experimental versions
+  ${0} --impl-select "~rust|~go" --impl-ignore "experimental"
+
+  # Run only tests with rust-v0.56 as dialer
+  ${0} --test-select "rust-v0.56 x"
+
+  # Run all except WebRTC transport
   ${0} --transport-ignore "webrtc"
-  ${0} --list-images
-  ${0} --list-tests --test-ignore "!~go"
-  ${0} --snapshot --force-image-rebuild
+
+  # Combined filtering
+  ${0} --impl-select "~rust" --transport-ignore "quic-v1" --test-ignore "experimental"
 
 Dependencies:
-  bash 4.0+, docker 20.10+, yq 4.0+, wget, zip, unzip, bc
+  Required: bash 4.0+, docker 20.10+ (or podman), docker-compose, yq 4.0+
+            wget, zip, unzip, tar, gzip, bc, sha256sum, cut, timeout, flock
+            Text utilities: awk, sed, grep, sort, head, tail, wc, tr, paste, cat
+            File utilities: mkdir, cp, mv, rm, chmod, find, xargs, basename, dirname, mktemp
+            System utilities: date, sleep, nproc, uname, hostname, ps
+  Optional: gnuplot (box plots), git (submodule-based builds)
   Run with --check-deps to verify installation.
 
 EOF
@@ -173,10 +212,23 @@ EOF
 # Parse arguments
 while [ $# -gt 0 ]; do
   case "${1}" in
+    # Implementation filtering
+    --impl-select) IMPL_SELECT="${2}"; shift 2 ;;
+    --impl-ignore) IMPL_IGNORE="${2}"; shift 2 ;;
+
+    # Component filtering
+    --transport-select) TRANSPORT_SELECT="${2}"; shift 2 ;;
+    --transport-ignore) TRANSPORT_IGNORE="${2}"; shift 2 ;;
+    --secure-select) SECURE_SELECT="${2}"; shift 2 ;;
+    --secure-ignore) SECURE_IGNORE="${2}"; shift 2 ;;
+    --muxer-select) MUXER_SELECT="${2}"; shift 2 ;;
+    --muxer-ignore) MUXER_IGNORE="${2}"; shift 2 ;;
+
+    # Test name filtering
+    --test-select) TEST_SELECT="${2}"; shift 2 ;;
     --test-ignore) TEST_IGNORE="${2}"; shift 2 ;;
-    --transport-ignore) TRANSPORT_IGNORE="${2}"; shift 2;;
-    --secure-ignore) SECURE_IGNORE="${2}"; shift 2;;
-    --muxer-ignore) MUXER_IGNORE="${2}"; shift 2;;
+
+    # Other options
     --workers) WORKER_COUNT="${2}"; shift 2 ;;
     --cache-dir) CACHE_DIR="${2}"; shift 2 ;;
     --snapshot) CREATE_SNAPSHOT=true; shift ;;
@@ -184,7 +236,7 @@ while [ $# -gt 0 ]; do
     --force-matrix-rebuild) FORCE_MATRIX_REBUILD=true; shift ;;
     --force-image-rebuild) FORCE_IMAGE_REBUILD=true; shift ;;
     --yes|-y) AUTO_YES=true; shift ;;
-    --check-deps) CHECK_DEPS_ONLY=true; shift ;;
+    --check-deps) CHECK_DEPS=true; shift ;;
     --list-images) LIST_IMAGES=true; shift ;;
     --list-tests) LIST_TESTS=true; shift ;;
     --show-ignored) SHOW_IGNORED=true; shift ;;
@@ -202,10 +254,16 @@ done
 export TEST_TYPE="transport"
 export TEST_RUN_KEY=$(compute_test_run_key \
   "${IMAGES_YAML}" \
-  "${TEST_IGNORE}" \
+  "${IMPL_SELECT}" \
+  "${IMPL_IGNORE}" \
+  "${TRANSPORT_SELECT}" \
   "${TRANSPORT_IGNORE}" \
+  "${SECURE_SELECT}" \
   "${SECURE_IGNORE}" \
+  "${MUXER_SELECT}" \
   "${MUXER_IGNORE}" \
+  "${TEST_SELECT}" \
+  "${TEST_IGNORE}" \
   "${DEBUG}" \
 )
 export TEST_PASS_NAME="${TEST_TYPE}-${TEST_RUN_KEY}-$(date +%H%M%S-%d-%m-%Y)"
@@ -339,10 +397,17 @@ print_message "Test Pass: ${TEST_PASS_NAME}"
 print_message "Test Pass Dir: ${TEST_PASS_DIR}"
 print_message "Cache Dir: ${CACHE_DIR}"
 print_message "Workers: ${WORKER_COUNT}"
-[ -n "${TEST_IGNORE}" ] && print_message "Test Ignore: ${TEST_IGNORE}"
+# Display filters (only if set)
+[ -n "${IMPL_SELECT}" ] && print_message "Impl Select: ${IMPL_SELECT}"
+[ -n "${IMPL_IGNORE}" ] && print_message "Impl Ignore: ${IMPL_IGNORE}"
+[ -n "${TRANSPORT_SELECT}" ] && print_message "Transport Select: ${TRANSPORT_SELECT}"
 [ -n "${TRANSPORT_IGNORE}" ] && print_message "Transport Ignore: ${TRANSPORT_IGNORE}"
+[ -n "${SECURE_SELECT}" ] && print_message "Secure Select: ${SECURE_SELECT}"
 [ -n "${SECURE_IGNORE}" ] && print_message "Secure Ignore: ${SECURE_IGNORE}"
+[ -n "${MUXER_SELECT}" ] && print_message "Muxer Select: ${MUXER_SELECT}"
 [ -n "${MUXER_IGNORE}" ] && print_message "Muxer Ignore: ${MUXER_IGNORE}"
+[ -n "${TEST_SELECT}" ] && print_message "Test Select: ${TEST_SELECT}"
+[ -n "${TEST_IGNORE}" ] && print_message "Test Ignore: ${TEST_IGNORE}"
 print_message "Create Snapshot: ${CREATE_SNAPSHOT}"
 print_message "Debug: ${DEBUG}"
 print_message "Force Matrix Rebuild: ${FORCE_MATRIX_REBUILD}"

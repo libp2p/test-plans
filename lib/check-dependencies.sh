@@ -168,6 +168,100 @@ else
   HAS_ERROR=true
 fi
 
+# Check timeout (part of coreutils)
+if command -v timeout &> /dev/null; then
+  print_success "timeout is installed (coreutils)"
+else
+  print_error "timeout is not installed (required for test timeouts)"
+  indent
+  print_message "Install: apt-get install coreutils"
+  unindent
+  HAS_ERROR=true
+fi
+
+# Check flock (part of util-linux)
+if command -v flock &> /dev/null; then
+  print_success "flock is installed (util-linux)"
+else
+  print_error "flock is not installed (required for file locking)"
+  indent
+  print_message "Install: apt-get install util-linux"
+  unindent
+  HAS_ERROR=true
+fi
+
+# Check tar (for snapshot exports)
+if command -v tar &> /dev/null; then
+  print_success "tar is installed"
+else
+  print_error "tar is not installed"
+  indent
+  print_message "Install: apt-get install tar"
+  unindent
+  HAS_ERROR=true
+fi
+
+# Check gzip (for snapshot exports)
+if command -v gzip &> /dev/null; then
+  print_success "gzip is installed"
+else
+  print_error "gzip is not installed"
+  indent
+  print_message "Install: apt-get install gzip"
+  unindent
+  HAS_ERROR=true
+fi
+
+# Check core text processing utilities
+echo ""
+print_message "Checking text processing utilities..."
+indent
+
+for util in awk sed grep sort head tail wc tr paste cat; do
+  if command -v $util &> /dev/null; then
+    print_success "$util is installed"
+  else
+    print_error "$util is not installed"
+    HAS_ERROR=true
+  fi
+done
+unindent
+
+# Check core file utilities
+echo ""
+print_message "Checking file utilities..."
+indent
+
+for util in mkdir cp mv rm chmod find xargs basename dirname mktemp; do
+  if command -v $util &> /dev/null; then
+    print_success "$util is installed"
+  else
+    print_error "$util is not installed"
+    HAS_ERROR=true
+  fi
+done
+unindent
+
+# Check other required utilities
+echo ""
+print_message "Checking system utilities..."
+indent
+
+for util in date sleep nproc uname hostname ps; do
+  if command -v $util &> /dev/null; then
+    print_success "$util is installed"
+  else
+    print_error "$util is not installed"
+    HAS_ERROR=true
+  fi
+done
+unindent
+
+# Check optional dependencies
+echo ""
+print_message "Checking optional dependencies..."
+indent
+
 # Check gnuplot (optional - for box plot generation)
 if command -v gnuplot &> /dev/null; then
   gnuplot_version=$(gnuplot --version 2>&1 | grep -oE '[0-9]+\.[0-9]+' | head -1)
@@ -179,11 +273,24 @@ else
   unindent
 fi
 
+# Check git (optional - for submodule-based builds)
+if command -v git &> /dev/null; then
+  git_version=$(git --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+  print_success "git ${git_version} (for submodule-based builds)"
+else
+  print_error "git not found (submodule-based builds will fail)"
+  indent
+  print_message "Install: apt-get install git"
+  unindent
+fi
+
+unindent
+
 echo ""
 
 if [ "${HAS_ERROR}" == "true" ]; then
-  print_error "Some dependencies are missing or outdated"
+  print_error "Some required dependencies are missing or outdated"
   exit 1
 else
-  print_success "All dependencies are satisfied"
+  print_success "All required dependencies are satisfied"
 fi

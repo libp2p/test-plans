@@ -101,8 +101,10 @@ init_cache_dirs
 # Hook up ctrl+c handler
 trap handle_shutdown INT
 
-# Hole-punch-specific variables
+# Hole-punch-specific filtering variables
+export RELAY_SELECT="${RELAY_SELECT:-}"
 export RELAY_IGNORE="${RELAY_IGNORE:-}"
+export ROUTER_SELECT="${ROUTER_SELECT:-}"
 export ROUTER_IGNORE="${ROUTER_IGNORE:-}"
 
 # Source common libraries
@@ -129,36 +131,84 @@ libp2p Hole Punch Interoperability Test Runner
 
 Usage: $0 [options]
 
-Options:
-  --test-ignore VALUE        Ignore tests (pipe-separated substrings)
-  --relay-ignore VALUE       Ignore relays (pipe-separated substrings)
-  --router-ignore VALUE      Ignore routers (pipe-separated substrings)
-  --transport-ignore VALUE   Ignore given transport (pipe-separated)
-  --secure-ignore VALUE      Ignore given secure channel (pipe-separated)
-  --muxer-ignore VALUE       Ignore given muxer (pipe-separated)
-  --workers VALUE            Number of parallel workers (default: $WORKER_COUNT)
-  --cache-dir VALUE          Cache directory (default: /srv/cache)
-  --snapshot                 Create test pass snapshot after completion
-  --debug                    Enable debug mode (sets DEBUG=true in test containers)
-  --force-matrix-rebuild     Force regeneration of test matrix (bypass cache)
-  --force-image-rebuild      Force rebuilding of all docker images (bypass cache)
-  --yes, -y                  Skip confirmation prompt and run tests immediately
-  --check-deps               Only check dependencies and exit
-  --list-images              List all image types used by this test suite and exit
-  --list-tests               List all selected tests and exit
-  --show-ignored             Shows the list of ignored tests
-  --help                     Show this help message
+Filtering Options:
+  Implementation Filtering:
+    --impl-select VALUE         Select implementations (pipe-separated patterns)
+    --impl-ignore VALUE         Ignore implementations (pipe-separated patterns)
+
+  Relay/Router Filtering:
+    --relay-select VALUE        Select relays (pipe-separated patterns)
+    --relay-ignore VALUE        Ignore relays (pipe-separated patterns)
+    --router-select VALUE       Select routers (pipe-separated patterns)
+    --router-ignore VALUE       Ignore routers (pipe-separated patterns)
+
+  Component Filtering:
+    --transport-select VALUE    Select transports (pipe-separated patterns)
+    --transport-ignore VALUE    Ignore transports (pipe-separated patterns)
+    --secure-select VALUE       Select secure channels (pipe-separated patterns)
+    --secure-ignore VALUE       Ignore secure channels (pipe-separated patterns)
+    --muxer-select VALUE        Select muxers (pipe-separated patterns)
+    --muxer-ignore VALUE        Ignore muxers (pipe-separated patterns)
+
+  Test Name Filtering:
+    --test-select VALUE         Select tests by name/ID (pipe-separated patterns)
+    --test-ignore VALUE         Ignore tests by name/ID (pipe-separated patterns)
+
+Configuration Options:
+  --workers VALUE               Number of parallel workers (default: $WORKER_COUNT)
+  --cache-dir VALUE             Cache directory (default: /srv/cache)
+
+Execution Options:
+  --snapshot                    Create test pass snapshot after completion
+  --debug                       Enable debug mode (sets DEBUG=true in test containers)
+  --force-matrix-rebuild        Force regeneration of test matrix (bypass cache)
+  --force-image-rebuild         Force rebuilding of all docker images (bypass cache)
+  --yes, -y                     Skip confirmation prompt and run tests immediately
+
+Information Options:
+  --check-deps                  Only check dependencies and exit
+  --list-images                 List all image types and exit
+  --list-tests                  List all selected tests and exit
+  --show-ignored                Show the list of ignored tests
+  --help                        Show this help message
+
+Filter Syntax:
+  Basic patterns:      "rust-v0.56|go-v0.45"    (match any)
+  Alias expansion:     "~rust"                  (expand rust alias)
+  Negated alias:       "!~rust"                 (everything NOT matching rust)
+  Negated pattern:     "!experimental"          (everything NOT matching experimental)
+
+Filter Processing Order:
+  1. SELECT filters narrow from complete list (empty = select all)
+  2. IGNORE filters remove from selected set (empty = ignore none)
+  3. TEST filters apply to final test names/IDs
 
 Examples:
+  # Select only rust implementations
+  $0 --impl-select "~rust"
+
+  # Select rust, but ignore experimental versions
+  $0 --impl-select "~rust" --impl-ignore "experimental"
+
+  # Test only TCP transport
+  $0 --transport-select "tcp"
+
+  # Select specific relay and router
+  $0 --relay-select "linux" --router-select "linux"
+
+  # Run specific test by name
+  $0 --test-select "rust-v0.56 x go-v0.45"
+
+  # Traditional usage
   $0 --cache-dir /srv/cache --workers 4
-  $0 --test-ignore "tcp"
-  $0 --relay-ignore "!linux" --router-ignore "!linux" --force-matrix-rebuild
-  $0 --list-images
-  $0 --list-tests --test-ignore "!~rust"
-  $0 --snapshot --force-image-rebuild
 
 Dependencies:
-  bash 4.0+, docker 20.10+, yq 4.0+, wget, zip, unzip
+  Required: bash 4.0+, docker 20.10+ (or podman), docker-compose, yq 4.0+
+            wget, zip, unzip, tar, gzip, bc, sha256sum, cut, timeout, flock
+            Text utilities: awk, sed, grep, sort, head, tail, wc, tr, paste, cat
+            File utilities: mkdir, cp, mv, rm, chmod, find, xargs, basename, dirname, mktemp
+            System utilities: date, sleep, nproc, uname, hostname, ps
+  Optional: gnuplot (box plots), git (submodule-based builds)
   Run with --check-deps to verify installation.
 
 EOF
@@ -167,24 +217,46 @@ EOF
 # Parse arguments
 while [ $# -gt 0 ]; do
   case "$1" in
-    --test-ignore) TEST_IGNORE="$2"; shift 2 ;;
+    # Implementation filtering
+    --impl-select) IMPL_SELECT="$2"; shift 2 ;;
+    --impl-ignore) IMPL_IGNORE="$2"; shift 2 ;;
+
+    # Relay/Router filtering (hole-punch specific)
+    --relay-select) RELAY_SELECT="$2"; shift 2 ;;
     --relay-ignore) RELAY_IGNORE="$2"; shift 2 ;;
+    --router-select) ROUTER_SELECT="$2"; shift 2 ;;
     --router-ignore) ROUTER_IGNORE="$2"; shift 2 ;;
-    --transport-ignore) TRANSPORT_IGNORE="$2"; shift 2;;
-    --secure-ignore) SECURE_IGNORE="$2"; shift 2;;
-    --muxer-ignore) MUXER_IGNORE="$2"; shift 2;;
+
+    # Component filtering
+    --transport-select) TRANSPORT_SELECT="$2"; shift 2 ;;
+    --transport-ignore) TRANSPORT_IGNORE="$2"; shift 2 ;;
+    --secure-select) SECURE_SELECT="$2"; shift 2 ;;
+    --secure-ignore) SECURE_IGNORE="$2"; shift 2 ;;
+    --muxer-select) MUXER_SELECT="$2"; shift 2 ;;
+    --muxer-ignore) MUXER_IGNORE="$2"; shift 2 ;;
+
+    # Test name filtering
+    --test-select) TEST_SELECT="$2"; shift 2 ;;
+    --test-ignore) TEST_IGNORE="$2"; shift 2 ;;
+
+    # Configuration options
     --workers) WORKER_COUNT="$2"; shift 2 ;;
     --cache-dir) CACHE_DIR="$2"; shift 2 ;;
+
+    # Execution options
     --snapshot) CREATE_SNAPSHOT=true; shift ;;
     --debug) DEBUG=true; shift ;;
     --force-matrix-rebuild) FORCE_MATRIX_REBUILD=true; shift ;;
     --force-image-rebuild) FORCE_IMAGE_REBUILD=true; shift ;;
     -y|--yes) AUTO_YES=true; shift ;;
-    --check-deps) CHECK_DEPS_ONLY=true; shift ;;
+
+    # Information options
+    --check-deps) CHECK_DEPS=true; shift ;;
     --list-images) LIST_IMAGES=true; shift ;;
     --list-tests) LIST_TESTS=true; shift ;;
     --show-ignored) SHOW_IGNORED=true; shift ;;
     --help|-h) show_help; exit 0 ;;
+
     *) echo "Unknown option: ${1}"; echo ""; show_help; exit 1 ;;
   esac
 done
@@ -193,12 +265,20 @@ done
 export TEST_TYPE="hole-punch"
 export TEST_RUN_KEY=$(compute_test_run_key \
   "${IMAGES_YAML}" \
-  "${TEST_IGNORE}" \
+  "${IMPL_SELECT}" \
+  "${IMPL_IGNORE}" \
+  "${RELAY_SELECT}" \
   "${RELAY_IGNORE}" \
+  "${ROUTER_SELECT}" \
   "${ROUTER_IGNORE}" \
+  "${TRANSPORT_SELECT}" \
   "${TRANSPORT_IGNORE}" \
+  "${SECURE_SELECT}" \
   "${SECURE_IGNORE}" \
+  "${MUXER_SELECT}" \
   "${MUXER_IGNORE}" \
+  "${TEST_SELECT}" \
+  "${TEST_IGNORE}" \
   "${DEBUG}" \
 )
 export TEST_PASS_NAME="${TEST_TYPE}-${TEST_RUN_KEY}-$(date +%H%M%S-%d-%m-%Y)"
@@ -344,12 +424,21 @@ print_message "Test Pass: ${TEST_PASS_NAME}"
 print_message "Test Pass Dir: ${TEST_PASS_DIR}"
 print_message "Cache Dir: ${CACHE_DIR}"
 print_message "Workers: ${WORKER_COUNT}"
-[ -n "${TEST_IGNORE}" ] && print_message "Test Ignore: ${TEST_IGNORE}"
+# Display filters (only if set)
+[ -n "${IMPL_SELECT}" ] && print_message "Impl Select: ${IMPL_SELECT}"
+[ -n "${IMPL_IGNORE}" ] && print_message "Impl Ignore: ${IMPL_IGNORE}"
+[ -n "${RELAY_SELECT}" ] && print_message "Relay Select: ${RELAY_SELECT}"
 [ -n "${RELAY_IGNORE}" ] && print_message "Relay Ignore: ${RELAY_IGNORE}"
+[ -n "${ROUTER_SELECT}" ] && print_message "Router Select: ${ROUTER_SELECT}"
 [ -n "${ROUTER_IGNORE}" ] && print_message "Router Ignore: ${ROUTER_IGNORE}"
+[ -n "${TRANSPORT_SELECT}" ] && print_message "Transport Select: ${TRANSPORT_SELECT}"
 [ -n "${TRANSPORT_IGNORE}" ] && print_message "Transport Ignore: ${TRANSPORT_IGNORE}"
+[ -n "${SECURE_SELECT}" ] && print_message "Secure Select: ${SECURE_SELECT}"
 [ -n "${SECURE_IGNORE}" ] && print_message "Secure Ignore: ${SECURE_IGNORE}"
+[ -n "${MUXER_SELECT}" ] && print_message "Muxer Select: ${MUXER_SELECT}"
 [ -n "${MUXER_IGNORE}" ] && print_message "Muxer Ignore: ${MUXER_IGNORE}"
+[ -n "${TEST_SELECT}" ] && print_message "Test Select: ${TEST_SELECT}"
+[ -n "${TEST_IGNORE}" ] && print_message "Test Ignore: ${TEST_IGNORE}"
 print_message "Create Snapshot: ${CREATE_SNAPSHOT}"
 print_message "Debug: ${DEBUG}"
 print_message "Force Matrix Rebuild: ${FORCE_MATRIX_REBUILD}"

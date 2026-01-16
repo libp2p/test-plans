@@ -65,13 +65,24 @@ ignoredBaselines:   # Ignored baseline tests
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `ignore` | string | Test/implementation ignore filter used |
-| `transportIgnore` | string | Transport ignore filter used |
-| `secureIgnore` | string | Secure channel ignore filter used |
-| `muxerIgnore` | string | Muxer ignore filter used |
+| `implSelect` | string | Implementation SELECT filter (narrows scope) |
+| `implIgnore` | string | Implementation IGNORE filter (removes from selection) |
+| `transportSelect` | string | Transport SELECT filter |
+| `transportIgnore` | string | Transport IGNORE filter |
+| `secureSelect` | string | Secure channel SELECT filter |
+| `secureIgnore` | string | Secure channel IGNORE filter |
+| `muxerSelect` | string | Muxer SELECT filter |
+| `muxerIgnore` | string | Muxer IGNORE filter |
+| `testSelect` | string | Test name SELECT filter (matches test IDs) |
+| `testIgnore` | string | Test name IGNORE filter (matches test IDs) |
 | `totalTests` | integer | Number of selected tests |
 | `ignoredTests` | integer | Number of ignored tests |
 | `debug` | boolean | Debug mode enabled (`true`/`false`) |
+
+**Filtering Model**: Two-stage filtering is applied:
+1. **Stage 1: SELECT** - Narrows from complete list (empty = select all)
+2. **Stage 2: IGNORE** - Removes from selected set (empty = ignore none)
+3. **Stage 3: TEST** - Filters by test name/ID during generation
 
 ### Perf-Specific Metadata
 
@@ -79,7 +90,8 @@ Additional fields for perf tests:
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `baselineIgnore` | string | Baseline ignore filter used |
+| `baselineSelect` | string | Baseline SELECT filter |
+| `baselineIgnore` | string | Baseline IGNORE filter |
 | `uploadBytes` | integer | Bytes to upload per test (default: 1073741824) |
 | `downloadBytes` | integer | Bytes to download per test (default: 1073741824) |
 | `iterations` | integer | Number of iterations per test (default: 10) |
@@ -94,18 +106,27 @@ Additional fields for hole-punch tests:
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `relayIgnore` | string | Relay implementation ignore filter used |
-| `routerIgnore` | string | Router implementation ignore filter used |
+| `relaySelect` | string | Relay implementation SELECT filter |
+| `relayIgnore` | string | Relay implementation IGNORE filter |
+| `routerSelect` | string | Router implementation SELECT filter |
+| `routerIgnore` | string | Router implementation IGNORE filter |
 
 ### Example: Perf Metadata
 
 ```yaml
 metadata:
-  ignore: "!rust-v0.56"
-  baselineIgnore: "~all"
+  implSelect: "rust|go"
+  implIgnore: "v0.54"
+  baselineSelect: "iperf"
+  baselineIgnore: ""
+  transportSelect: ""
   transportIgnore: "quic-v1"
+  secureSelect: ""
   secureIgnore: "tls"
+  muxerSelect: ""
   muxerIgnore: "mplex"
+  testSelect: ""
+  testIgnore: ""
   uploadBytes: 1073741824
   downloadBytes: 1073741824
   iterations: 10
@@ -118,33 +139,65 @@ metadata:
   debug: false
 ```
 
+**Explanation**:
+- Select rust and go implementations (Stage 1)
+- Remove v0.54 versions (Stage 2)
+- Select only iperf baseline
+- Ignore quic-v1 transport, tls secure channel, mplex muxer
+- No test name filtering
+
 ### Example: Transport Metadata
 
 ```yaml
 metadata:
-  ignore: "!rust-v0.56|~browsers"
+  implSelect: "rust-v0.56"
+  implIgnore: ""
+  transportSelect: ""
   transportIgnore: ""
+  secureSelect: ""
   secureIgnore: ""
+  muxerSelect: ""
   muxerIgnore: ""
+  testSelect: "rust-v0.56 x rust"
+  testIgnore: "experimental"
   totalTests: 10
   ignoredTests: 2340
   debug: true
 ```
 
+**Explanation**:
+- Select only rust-v0.56 implementation
+- No component filtering
+- Test name filtering: select tests with "rust-v0.56 x rust", ignore "experimental"
+
 ### Example: Hole-Punch Metadata
 
 ```yaml
 metadata:
-  ignore: "!rust-v0.56"
-  relayIgnore: "!rust-v0.56"
-  routerIgnore: "!linux"
+  implSelect: "rust|go"
+  implIgnore: ""
+  relaySelect: "rust-v0.56"
+  relayIgnore: ""
+  routerSelect: "linux"
+  routerIgnore: ""
+  transportSelect: ""
   transportIgnore: "webrtc-direct"
+  secureSelect: ""
   secureIgnore: ""
+  muxerSelect: ""
   muxerIgnore: ""
+  testSelect: ""
+  testIgnore: ""
   totalTests: 8
   ignoredTests: 0
   debug: false
 ```
+
+**Explanation**:
+- Select rust and go implementations
+- Select only rust-v0.56 relay
+- Select only linux router
+- Ignore webrtc-direct transport
 
 ---
 
@@ -197,11 +250,18 @@ Hole-punch tests include additional fields:
 
 ```yaml
 metadata:
-  ignore: "!rust-v0.56"
+  implSelect: "rust-v0.56"
+  implIgnore: ""
+  baselineSelect: ""
   baselineIgnore: ""
+  transportSelect: ""
   transportIgnore: ""
+  secureSelect: ""
   secureIgnore: ""
+  muxerSelect: ""
   muxerIgnore: ""
+  testSelect: ""
+  testIgnore: ""
   uploadBytes: 1073741824
   downloadBytes: 1073741824
   iterations: 10
@@ -278,10 +338,16 @@ ignoredTests:
 
 ```yaml
 metadata:
-  ignore: "!rust-v0.56|~browsers"
+  implSelect: "rust-v0.56"
+  implIgnore: ""
+  transportSelect: ""
   transportIgnore: ""
+  secureSelect: ""
   secureIgnore: ""
+  muxerSelect: ""
   muxerIgnore: ""
+  testSelect: ""
+  testIgnore: ""
   totalTests: 10
   ignoredTests: 2340
   debug: true
@@ -346,12 +412,20 @@ ignoredTests:
 
 ```yaml
 metadata:
-  ignore: "!rust-v0.56"
-  relayIgnore: "!rust-v0.56"
-  routerIgnore: "!linux"
+  implSelect: "rust-v0.56"
+  implIgnore: ""
+  relaySelect: "rust-v0.56"
+  relayIgnore: ""
+  routerSelect: "linux"
+  routerIgnore: ""
+  transportSelect: ""
   transportIgnore: ""
+  secureSelect: ""
   secureIgnore: ""
+  muxerSelect: ""
   muxerIgnore: ""
+  testSelect: ""
+  testIgnore: ""
   totalTests: 8
   ignoredTests: 0
   debug: false
@@ -422,16 +496,23 @@ The test matrix is generated by permuting implementations across dimensions:
 
 ### Generation Flow
 
-**Step 1: Load and Expand Filters** (generate-tests.sh lines 21-76)
+**Step 1: Load and Expand Filters** (generate-tests.sh lines ~40-110)
 ```bash
 # Load aliases from images.yaml
 load_aliases
 
-# Expand filter strings with alias resolution
-EXPANDED_TEST_IGNORE=$(expand_filter_string "${TEST_IGNORE}" all_image_ids)
+# Expand SELECT filters with alias resolution
+EXPANDED_IMPL_SELECT=$(expand_filter_string "${IMPL_SELECT}" all_image_ids)
+EXPANDED_TRANSPORT_SELECT=$(expand_filter_string "${TRANSPORT_SELECT}" all_transport_names)
+# ... expand all SELECT filters
+
+# Expand IGNORE filters with alias resolution
+EXPANDED_IMPL_IGNORE=$(expand_filter_string "${IMPL_IGNORE}" all_image_ids)
+EXPANDED_TRANSPORT_IGNORE=$(expand_filter_string "${TRANSPORT_IGNORE}" all_transport_names)
+# ... expand all IGNORE filters
 ```
 
-**Step 2: Check Cache** (generate-tests.sh lines ~120-130)
+**Step 2: Check Cache** (generate-tests.sh lines ~180-210)
 ```bash
 # Check if cached test-matrix.yaml exists for this configuration
 if check_and_load_cache; then
@@ -439,13 +520,19 @@ if check_and_load_cache; then
 fi
 ```
 
-**Step 3: Apply Filters** (generate-tests.sh lines ~135-165)
+**Step 3: Apply Two-Stage Filters** (generate-tests.sh lines ~220-260)
 ```bash
-# Filter implementations, transports, secure channels, muxers
-filtered_image_ids=($(filter_entities "implementations"))
-filtered_transport_names=($(filter_names "transports"))
-filtered_secure_names=($(filter_names "secureChannels"))
-filtered_muxer_names=($(filter_names "muxers"))
+# Two-stage filtering for each dimension
+
+# Stage 1: SELECT (narrows scope)
+readarray -t selected_image_ids < <(select_from_list all_image_ids "${EXPANDED_IMPL_SELECT}")
+# Stage 2: IGNORE (removes from selection)
+readarray -t filtered_image_ids < <(ignore_from_list selected_image_ids "${EXPANDED_IMPL_IGNORE}")
+
+# Repeat for transports, secure channels, muxers
+readarray -t selected_transport_names < <(select_from_list all_transport_names "${EXPANDED_TRANSPORT_SELECT}")
+readarray -t filtered_transport_names < <(ignore_from_list selected_transport_names "${EXPANDED_TRANSPORT_IGNORE}")
+# ... apply to all dimensions
 ```
 
 **Step 4: Generate Test Combinations** (generate-tests.sh lines ~213-385)
@@ -497,10 +584,11 @@ save_to_cache "${TEST_PASS_DIR}/test-matrix.yaml" "${TEST_RUN_KEY}" \
 
 The cache key is computed from:
 - Content hash of images.yaml
-- All filter values (TEST_IGNORE, TRANSPORT_IGNORE, etc.)
+- All SELECT filter values (IMPL_SELECT, BASELINE_SELECT, RELAY_SELECT, ROUTER_SELECT, TRANSPORT_SELECT, SECURE_SELECT, MUXER_SELECT, TEST_SELECT)
+- All IGNORE filter values (IMPL_IGNORE, BASELINE_IGNORE, RELAY_IGNORE, ROUTER_IGNORE, TRANSPORT_IGNORE, SECURE_IGNORE, MUXER_IGNORE, TEST_IGNORE)
 - Debug flag
 
-This ensures identical configurations reuse cached matrices.
+This ensures identical configurations reuse cached matrices. Any change to filter values invalidates the cache.
 
 ### Cache Locations
 

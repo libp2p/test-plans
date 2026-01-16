@@ -14,6 +14,12 @@
 #   # For perf:
 #   WORKER_COUNT=1  # Perf must run sequentially (1 test at a time)
 #   BASELINE_SELECT="${BASELINE_SELECT:-}"
+#   BASELINE_IGNORE="${BASELINE_IGNORE:-}"
+#   # For hole-punch:
+#   RELAY_SELECT="${RELAY_SELECT:-}"
+#   RELAY_IGNORE="${RELAY_IGNORE:-}"
+#   ROUTER_SELECT="${ROUTER_SELECT:-}"
+#   ROUTER_IGNORE="${ROUTER_IGNORE:-}"
 #   # etc.
 init_common_variables() {
   # Shutdown
@@ -26,11 +32,17 @@ init_common_variables() {
   CACHE_DIR="${CACHE_DIR:-/srv/cache}"
   TEST_RUN_DIR="${TEST_RUN_DIR:-${CACHE_DIR}/test-run}"
 
-  # Common filtering variables
-  TEST_IGNORE="${TEST_IGNORE:-}"
-  TRANSPORT_IGNORE="${TRANSPORT_IGNORE:-}"
-  SECURE_IGNORE="${SECURE_IGNORE:-}"
-  MUXER_IGNORE="${MUXER_IGNORE:-}"
+  # Common filtering variables (dimension-based)
+  IMPL_SELECT="${IMPL_SELECT:-}"           # Implementation select filter
+  IMPL_IGNORE="${IMPL_IGNORE:-}"           # Implementation ignore filter (renamed from TEST_IGNORE)
+  TRANSPORT_SELECT="${TRANSPORT_SELECT:-}" # Transport select filter
+  TRANSPORT_IGNORE="${TRANSPORT_IGNORE:-}" # Transport ignore filter
+  SECURE_SELECT="${SECURE_SELECT:-}"       # Secure channel select filter
+  SECURE_IGNORE="${SECURE_IGNORE:-}"       # Secure channel ignore filter
+  MUXER_SELECT="${MUXER_SELECT:-}"         # Muxer select filter
+  MUXER_IGNORE="${MUXER_IGNORE:-}"         # Muxer ignore filter
+  TEST_SELECT="${TEST_SELECT:-}"           # Test name select filter (NEW)
+  TEST_IGNORE="${TEST_IGNORE:-}"           # Test name ignore filter (NEW)
 
   # Execution settings
   WORKER_COUNT="${WORKER_COUNT:-$(nproc 2>/dev/null || echo 4)}"
@@ -51,10 +63,12 @@ init_common_variables() {
   export IMAGES_YAML
   export CACHE_DIR
   export TEST_RUN_DIR
-  export TEST_IGNORE
-  export TRANSPORT_IGNORE
-  export SECURE_IGNORE
-  export MUXER_IGNORE
+  # Export filter variables (dimension-based)
+  export IMPL_SELECT IMPL_IGNORE
+  export TRANSPORT_SELECT TRANSPORT_IGNORE
+  export SECURE_SELECT SECURE_IGNORE
+  export MUXER_SELECT MUXER_IGNORE
+  export TEST_SELECT TEST_IGNORE
   export WORKER_COUNT
   export DEBUG
   export CHECK_DEPS

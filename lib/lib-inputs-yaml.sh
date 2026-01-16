@@ -45,10 +45,24 @@ environmentVariables:
   SCRIPT_LIB_DIR: "${SCRIPT_LIB_DIR}"
   DEBUG: "${DEBUG}"
   WORKER_COUNT: "${WORKER_COUNT}"
-  TEST_IGNORE: "${TEST_IGNORE}"
+
+  # Implementation filtering
+  IMPL_SELECT: "${IMPL_SELECT}"
+  IMPL_IGNORE: "${IMPL_IGNORE}"
+
+  # Component filtering
+  TRANSPORT_SELECT: "${TRANSPORT_SELECT}"
   TRANSPORT_IGNORE: "${TRANSPORT_IGNORE}"
+  SECURE_SELECT: "${SECURE_SELECT}"
   SECURE_IGNORE: "${SECURE_IGNORE}"
+  MUXER_SELECT: "${MUXER_SELECT}"
   MUXER_IGNORE: "${MUXER_IGNORE}"
+
+  # Test name filtering
+  TEST_SELECT: "${TEST_SELECT}"
+  TEST_IGNORE: "${TEST_IGNORE}"
+
+  # Other settings
   FORCE_MATRIX_REBUILD: "${FORCE_MATRIX_REBUILD}"
   FORCE_IMAGE_REBUILD: "${FORCE_IMAGE_REBUILD}"
 EOF
@@ -61,7 +75,11 @@ EOF
             ;;
         perf)
             cat >> "${output_file}" <<EOF
+  # Perf-specific filtering
+  BASELINE_SELECT: "${BASELINE_SELECT:-}"
   BASELINE_IGNORE: "${BASELINE_IGNORE:-}"
+
+  # Perf-specific settings
   ITERATIONS: "${ITERATIONS:-10}"
   UPLOAD_BYTES: "${UPLOAD_BYTES:-}"
   DOWNLOAD_BYTES: "${DOWNLOAD_BYTES:-}"
@@ -71,7 +89,10 @@ EOF
             ;;
         hole-punch)
             cat >> "${output_file}" <<EOF
+  # Hole-punch-specific filtering
+  RELAY_SELECT: "${RELAY_SELECT:-}"
   RELAY_IGNORE: "${RELAY_IGNORE:-}"
+  ROUTER_SELECT: "${ROUTER_SELECT:-}"
   ROUTER_IGNORE: "${ROUTER_IGNORE:-}"
 EOF
             ;;

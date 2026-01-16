@@ -54,92 +54,199 @@ readarray -t all_muxer_names < <(
 )
 
 # Save original filters for display
-ORIGINAL_TEST_IGNORE="${TEST_IGNORE}"
+ORIGINAL_IMPL_SELECT="${IMPL_SELECT}"
+ORIGINAL_IMPL_IGNORE="${IMPL_IGNORE}"
+ORIGINAL_RELAY_SELECT="${RELAY_SELECT}"
 ORIGINAL_RELAY_IGNORE="${RELAY_IGNORE}"
+ORIGINAL_ROUTER_SELECT="${ROUTER_SELECT}"
 ORIGINAL_ROUTER_IGNORE="${ROUTER_IGNORE}"
+ORIGINAL_TRANSPORT_SELECT="${TRANSPORT_SELECT}"
 ORIGINAL_TRANSPORT_IGNORE="${TRANSPORT_IGNORE}"
+ORIGINAL_SECURE_SELECT="${SECURE_SELECT}"
 ORIGINAL_SECURE_IGNORE="${SECURE_IGNORE}"
+ORIGINAL_MUXER_SELECT="${MUXER_SELECT}"
 ORIGINAL_MUXER_IGNORE="${MUXER_IGNORE}"
+ORIGINAL_TEST_SELECT="${TEST_SELECT}"
+ORIGINAL_TEST_IGNORE="${TEST_IGNORE}"
 
-if [ -n "${TEST_IGNORE}" ]; then
-  EXPANDED_TEST_IGNORE=$(expand_filter_string "${TEST_IGNORE}" all_image_ids)
+# Expand implementation SELECT filter
+if [ -n "${IMPL_SELECT}" ]; then
+  EXPANDED_IMPL_SELECT=$(expand_filter_string "${IMPL_SELECT}" all_image_ids)
 else
-  EXPANDED_TEST_IGNORE=""
+  EXPANDED_IMPL_SELECT=""
 fi
 
+# Expand implementation IGNORE filter
+if [ -n "${IMPL_IGNORE}" ]; then
+  EXPANDED_IMPL_IGNORE=$(expand_filter_string "${IMPL_IGNORE}" all_image_ids)
+else
+  EXPANDED_IMPL_IGNORE=""
+fi
+
+# Expand relay SELECT filter
+if [ -n "${RELAY_SELECT}" ]; then
+  EXPANDED_RELAY_SELECT=$(expand_filter_string "${RELAY_SELECT}" all_relay_ids)
+else
+  EXPANDED_RELAY_SELECT=""
+fi
+
+# Expand relay IGNORE filter
 if [ -n "${RELAY_IGNORE}" ]; then
-  EXPANDED_RELAY_IGNORE=$(expand_filter_string "${RELAY_IGNORE}" all_baseline_ids)
+  EXPANDED_RELAY_IGNORE=$(expand_filter_string "${RELAY_IGNORE}" all_relay_ids)
 else
   EXPANDED_RELAY_IGNORE=""
 fi
 
+# Expand router SELECT filter
+if [ -n "${ROUTER_SELECT}" ]; then
+  EXPANDED_ROUTER_SELECT=$(expand_filter_string "${ROUTER_SELECT}" all_router_ids)
+else
+  EXPANDED_ROUTER_SELECT=""
+fi
+
+# Expand router IGNORE filter
 if [ -n "${ROUTER_IGNORE}" ]; then
-  EXPANDED_ROUTER_IGNORE=$(expand_filter_string "${ROUTER_IGNORE}" all_baseline_ids)
+  EXPANDED_ROUTER_IGNORE=$(expand_filter_string "${ROUTER_IGNORE}" all_router_ids)
 else
   EXPANDED_ROUTER_IGNORE=""
 fi
 
+# Expand transport SELECT filter
+if [ -n "${TRANSPORT_SELECT}" ]; then
+  EXPANDED_TRANSPORT_SELECT=$(expand_filter_string "${TRANSPORT_SELECT}" all_transport_names)
+else
+  EXPANDED_TRANSPORT_SELECT=""
+fi
+
+# Expand transport IGNORE filter
 if [ -n "${TRANSPORT_IGNORE}" ]; then
   EXPANDED_TRANSPORT_IGNORE=$(expand_filter_string "${TRANSPORT_IGNORE}" all_transport_names)
 else
   EXPANDED_TRANSPORT_IGNORE=""
 fi
 
+# Expand secure SELECT filter
+if [ -n "${SECURE_SELECT}" ]; then
+  EXPANDED_SECURE_SELECT=$(expand_filter_string "${SECURE_SELECT}" all_secure_names)
+else
+  EXPANDED_SECURE_SELECT=""
+fi
+
+# Expand secure IGNORE filter
 if [ -n "${SECURE_IGNORE}" ]; then
   EXPANDED_SECURE_IGNORE=$(expand_filter_string "${SECURE_IGNORE}" all_secure_names)
 else
   EXPANDED_SECURE_IGNORE=""
 fi
 
+# Expand muxer SELECT filter
+if [ -n "${MUXER_SELECT}" ]; then
+  EXPANDED_MUXER_SELECT=$(expand_filter_string "${MUXER_SELECT}" all_muxer_names)
+else
+  EXPANDED_MUXER_SELECT=""
+fi
+
+# Expand muxer IGNORE filter
 if [ -n "${MUXER_IGNORE}" ]; then
   EXPANDED_MUXER_IGNORE=$(expand_filter_string "${MUXER_IGNORE}" all_muxer_names)
 else
   EXPANDED_MUXER_IGNORE=""
 fi
 
+# Note: TEST_SELECT and TEST_IGNORE are NOT expanded (they're literal patterns for test names)
+
 ##### 3. DISPLAY FILTER EXPANSION
 
-# test ignore
+# Implementation filters
 print_filter_expansion \
-  "ORIGINAL_TEST_IGNORE" \
-  "EXPANDED_TEST_IGNORE" \
-  "Test ignore" \
-  "No test-ignore specified (will ignore none)"
+  "ORIGINAL_IMPL_SELECT" \
+  "EXPANDED_IMPL_SELECT" \
+  "Implementation select" \
+  "No impl-select specified (will select all implementations)"
 
-# relay ignore
+print_filter_expansion \
+  "ORIGINAL_IMPL_IGNORE" \
+  "EXPANDED_IMPL_IGNORE" \
+  "Implementation ignore" \
+  "No impl-ignore specified (will ignore none)"
+
+# Relay filters
+print_filter_expansion \
+  "ORIGINAL_RELAY_SELECT" \
+  "EXPANDED_RELAY_SELECT" \
+  "Relay select" \
+  "No relay-select specified (will select all relays)"
+
 print_filter_expansion \
   "ORIGINAL_RELAY_IGNORE" \
   "EXPANDED_RELAY_IGNORE" \
   "Relay ignore" \
   "No relay-ignore specified (will ignore none)"
 
-# relay ignore
+# Router filters
+print_filter_expansion \
+  "ORIGINAL_ROUTER_SELECT" \
+  "EXPANDED_ROUTER_SELECT" \
+  "Router select" \
+  "No router-select specified (will select all routers)"
+
 print_filter_expansion \
   "ORIGINAL_ROUTER_IGNORE" \
   "EXPANDED_ROUTER_IGNORE" \
   "Router ignore" \
   "No router-ignore specified (will ignore none)"
 
-# transort ignore
+# Transport filters
+print_filter_expansion \
+  "ORIGINAL_TRANSPORT_SELECT" \
+  "EXPANDED_TRANSPORT_SELECT" \
+  "Transport select" \
+  "No transport-select specified (will select all transports)"
+
 print_filter_expansion \
   "ORIGINAL_TRANSPORT_IGNORE" \
   "EXPANDED_TRANSPORT_IGNORE" \
   "Transport ignore" \
-  "No transort-ignore specified (will ignore none)"
+  "No transport-ignore specified (will ignore none)"
 
-# secure ignore
+# Secure channel filters
+print_filter_expansion \
+  "ORIGINAL_SECURE_SELECT" \
+  "EXPANDED_SECURE_SELECT" \
+  "Secure channel select" \
+  "No secure-select specified (will select all secure channels)"
+
 print_filter_expansion \
   "ORIGINAL_SECURE_IGNORE" \
   "EXPANDED_SECURE_IGNORE" \
   "Secure channel ignore" \
   "No secure-ignore specified (will ignore none)"
 
-# muxer ignore
+# Muxer filters
+print_filter_expansion \
+  "ORIGINAL_MUXER_SELECT" \
+  "EXPANDED_MUXER_SELECT" \
+  "Muxer select" \
+  "No muxer-select specified (will select all muxers)"
+
 print_filter_expansion \
   "ORIGINAL_MUXER_IGNORE" \
   "EXPANDED_MUXER_IGNORE" \
   "Muxer ignore" \
   "No muxer-ignore specified (will ignore none)"
+
+# Test name filters (note: NOT expanded)
+if [ -n "${ORIGINAL_TEST_SELECT}" ]; then
+  print_message "Test name select: ${ORIGINAL_TEST_SELECT}"
+else
+  print_message "No test-select specified (will select all test names)"
+fi
+
+if [ -n "${ORIGINAL_TEST_IGNORE}" ]; then
+  print_message "Test name ignore: ${ORIGINAL_TEST_IGNORE}"
+else
+  print_message "No test-ignore specified (will ignore no test names)"
+fi
 
 echo ""
 
@@ -161,37 +268,55 @@ echo ""
 ##### 5. FILTERING
 
 print_message "Filtering implementations..."
-readarray -t filtered_image_ids < <(filter all_image_ids "${EXPANDED_TEST_IGNORE}")
+# Stage 1: SELECT
+readarray -t selected_image_ids < <(select_from_list all_image_ids "${EXPANDED_IMPL_SELECT}")
+# Stage 2: IGNORE
+readarray -t filtered_image_ids < <(ignore_from_list selected_image_ids "${EXPANDED_IMPL_IGNORE}")
 indent
 print_success "Filtered to ${#filtered_image_ids[@]} implementations (${#all_image_ids[@]} total)"
 unindent
 
-print_message "Filtering relay..."
-readarray -t filtered_relay_ids < <(filter all_relay_ids "${EXPANDED_RELAY_IGNORE}")
+print_message "Filtering relays..."
+# Stage 1: SELECT
+readarray -t selected_relay_ids < <(select_from_list all_relay_ids "${EXPANDED_RELAY_SELECT}")
+# Stage 2: IGNORE
+readarray -t filtered_relay_ids < <(ignore_from_list selected_relay_ids "${EXPANDED_RELAY_IGNORE}")
 indent
-print_success "Filtered to ${#filtered_relay_ids[@]} baselines (${#all_relay_ids[@]} total)"
+print_success "Filtered to ${#filtered_relay_ids[@]} relays (${#all_relay_ids[@]} total)"
 unindent
 
-print_message "Filtering router..."
-readarray -t filtered_router_ids < <(filter all_router_ids "${EXPANDED_ROUTER_IGNORE}")
+print_message "Filtering routers..."
+# Stage 1: SELECT
+readarray -t selected_router_ids < <(select_from_list all_router_ids "${EXPANDED_ROUTER_SELECT}")
+# Stage 2: IGNORE
+readarray -t filtered_router_ids < <(ignore_from_list selected_router_ids "${EXPANDED_ROUTER_IGNORE}")
 indent
-print_success "Filtered to ${#filtered_router_ids[@]} baselines (${#all_router_ids[@]} total)"
+print_success "Filtered to ${#filtered_router_ids[@]} routers (${#all_router_ids[@]} total)"
 unindent
 
 print_message "Filtering transports..."
-readarray -t filtered_transport_names < <(filter all_transport_names "${EXPANDED_TRANSPORT_IGNORE}")
+# Stage 1: SELECT
+readarray -t selected_transport_names < <(select_from_list all_transport_names "${EXPANDED_TRANSPORT_SELECT}")
+# Stage 2: IGNORE
+readarray -t filtered_transport_names < <(ignore_from_list selected_transport_names "${EXPANDED_TRANSPORT_IGNORE}")
 indent
 print_success "Filtered to ${#filtered_transport_names[@]} transports (${#all_transport_names[@]} total)"
 unindent
 
 print_message "Filtering secure channels..."
-readarray -t filtered_secure_names < <(filter all_secure_names "${EXPANDED_SECURE_IGNORE}")
+# Stage 1: SELECT
+readarray -t selected_secure_names < <(select_from_list all_secure_names "${EXPANDED_SECURE_SELECT}")
+# Stage 2: IGNORE
+readarray -t filtered_secure_names < <(ignore_from_list selected_secure_names "${EXPANDED_SECURE_IGNORE}")
 indent
 print_success "Filtered to ${#filtered_secure_names[@]} secure channels (${#all_secure_names[@]} total)"
 unindent
 
 print_message "Filtering muxers..."
-readarray -t filtered_muxer_names < <(filter all_muxer_names "${EXPANDED_MUXER_IGNORE}")
+# Stage 1: SELECT
+readarray -t selected_muxer_names < <(select_from_list all_muxer_names "${EXPANDED_MUXER_SELECT}")
+# Stage 2: IGNORE
+readarray -t filtered_muxer_names < <(ignore_from_list selected_muxer_names "${EXPANDED_MUXER_IGNORE}")
 indent
 print_success "Filtered to ${#filtered_muxer_names[@]} muxers (${#all_muxer_names[@]} total)"
 unindent
@@ -480,13 +605,38 @@ generate_tests_worker() {
 
                 # Integrated transport with built-in secure channel and muxer
                 test_id="${dialer_id} x ${listener_id} (${transport}) [dr: ${dialer_router_id}, rly: ${relay_id}, lr: ${listener_router_id}]"
-                # Add to selected or ignored list
+
+                # Determine dimension-based selection
+                test_is_selected=false
                 if [ "${dialer_selected}" == "true" ] && \
                    [ "${listener_selected}" == "true" ] && \
                    [ "${relay_selected}" == "true" ] && \
                    [ "${dialer_router_selected}" == "true" ] && \
                    [ "${listener_router_selected}" == "true" ] && \
                    [ "${transport_selected}" == "true" ]; then
+                  test_is_selected=true
+                fi
+
+                # Apply test name filtering (Stage 3: TEST filters)
+                test_name_selected=true
+
+                # Stage 3.1: Apply TEST_SELECT filter
+                if [ -n "${TEST_SELECT}" ]; then
+                  test_name_selected=false
+                  if filter_matches "${test_id}" "${TEST_SELECT}"; then
+                    test_name_selected=true
+                  fi
+                fi
+
+                # Stage 3.2: Apply TEST_IGNORE filter
+                if [ "${test_name_selected}" == "true" ] && [ -n "${TEST_IGNORE}" ]; then
+                  if filter_matches "${test_id}" "${TEST_IGNORE}"; then
+                    test_name_selected=false
+                  fi
+                fi
+
+                # Determine final selection status
+                if [ "${test_is_selected}" == "true" ] && [ "${test_name_selected}" == "true" ]; then
 
                   # Select main test
                   print_debug "${test_id} is selected"
@@ -623,7 +773,9 @@ EOF
                     print_debug "selecting muxer: ${muxer}"
 
                     test_id="$dialer_id x $listener_id ($transport, $secure, $muxer) [dr: $dialer_router_id, rly: $relay_id, lr: $listener_router_id]"
-                    # Add to selected or ignored list
+
+                    # Determine dimension-based selection
+                    test_is_selected=false
                     if [ "${dialer_selected}" == "true" ] && \
                        [ "${listener_selected}" == "true" ] && \
                        [ "${relay_selected}" == "true" ] && \
@@ -632,6 +784,29 @@ EOF
                        [ "${transport_selected}" == "true" ] && \
                        [ "${secure_selected}" == "true" ] && \
                        [ "${muxer_selected}" == "true" ]; then
+                      test_is_selected=true
+                    fi
+
+                    # Apply test name filtering (Stage 3: TEST filters)
+                    test_name_selected=true
+
+                    # Stage 3.1: Apply TEST_SELECT filter
+                    if [ -n "${TEST_SELECT}" ]; then
+                      test_name_selected=false
+                      if filter_matches "${test_id}" "${TEST_SELECT}"; then
+                        test_name_selected=true
+                      fi
+                    fi
+
+                    # Stage 3.2: Apply TEST_IGNORE filter
+                    if [ "${test_name_selected}" == "true" ] && [ -n "${TEST_IGNORE}" ]; then
+                      if filter_matches "${test_id}" "${TEST_IGNORE}"; then
+                        test_name_selected=false
+                      fi
+                    fi
+
+                    # Determine final selection status
+                    if [ "${test_is_selected}" == "true" ] && [ "${test_name_selected}" == "true" ]; then
 
                       # Select main test
                       print_debug "${test_id} is selected"
@@ -878,18 +1053,34 @@ echo ""
 # Generate metadata section
 cat > "${TEST_PASS_DIR}/test-matrix.yaml" <<EOF
 metadata:
-  ignore: |-
-    ${TEST_IGNORE}
+  implSelect: |-
+    ${IMPL_SELECT}
+  implIgnore: |-
+    ${IMPL_IGNORE}
+  relaySelect: |-
+    ${RELAY_SELECT}
   relayIgnore: |-
     ${RELAY_IGNORE}
+  routerSelect: |-
+    ${ROUTER_SELECT}
   routerIgnore: |-
     ${ROUTER_IGNORE}
+  transportSelect: |-
+    ${TRANSPORT_SELECT}
   transportIgnore: |-
     ${TRANSPORT_IGNORE}
+  secureSelect: |-
+    ${SECURE_SELECT}
   secureIgnore: |-
     ${SECURE_IGNORE}
+  muxerSelect: |-
+    ${MUXER_SELECT}
   muxerIgnore: |-
     ${MUXER_IGNORE}
+  testSelect: |-
+    ${TEST_SELECT}
+  testIgnore: |-
+    ${TEST_IGNORE}
   totalTests: ${total_selected}
   ignoredTests: ${total_ignored}
   debug: ${DEBUG}

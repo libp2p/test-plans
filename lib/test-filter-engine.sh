@@ -236,13 +236,13 @@ test_filter_matches() {
   return 0
 }
 
-# Test 12: filter function (ignore filtering)
-test_filter_function() {
+# Test 12: ignore function (ignore filtering)
+test_ignore_function() {
   local all_names=("rust-v0.56" "rust-v0.55" "go-v0.45" "python-v0.4")
   local input_ids=("rust-v0.56" "rust-v0.55" "go-v0.45")
 
   # Test 1: No ignore filter - should keep all
-  local result=$(filter input_ids "")
+  local result=$(ignore_from_list input_ids "")
   local count=$(echo "$result" | wc -l)
   assert_equals "$count" "3" "No ignore filter should keep all 3 items"
 
@@ -250,7 +250,7 @@ test_filter_function() {
   ALIASES["rust"]="rust-v0.56|rust-v0.55"
   local all_names_for_expansion=("rust-v0.56" "rust-v0.55" "go-v0.45" "python-v0.4")
   local ignore_expanded=$(expand_filter_string "~rust" all_names_for_expansion)
-  result=$(filter input_ids "$ignore_expanded")
+  result=$(ignore_from_list input_ids "$ignore_expanded")
   assert_not_contains "$result" "rust-v0.56" "Should exclude rust-v0.56"
   assert_not_contains "$result" "rust-v0.55" "Should exclude rust-v0.55"
   assert_contains "$result" "go-v0.45" "Should include go-v0.45"
@@ -390,7 +390,7 @@ test_filter_with_all_selected() {
   local ignore_expanded=$(expand_filter_string "~rust" all_names)
 
   # Filter out rust items
-  local result=$(filter input_ids "$ignore_expanded")
+  local result=$(ignore_from_list input_ids "$ignore_expanded")
   assert_not_contains "$result" "rust-v0.56" "Should exclude rust-v0.56"
   assert_not_contains "$result" "rust-v0.55" "Should exclude rust-v0.55"
   assert_contains "$result" "go-v0.45" "Should keep go-v0.45"
@@ -445,9 +445,138 @@ test_combined_filters() {
   done
 
   # Filter out v0.56
-  local result=$(filter input_ids "v0.56")
+  local result=$(ignore_from_list input_ids "v0.56")
   assert_not_contains "$result" "rust-v0.56" "Should exclude rust-v0.56"
   assert_contains "$result" "rust-v0.55" "Should include rust-v0.55"
+}
+
+# Test 29: select function with empty filter
+test_select_empty_filter() {
+  local input_ids=("rust-v0.56" "rust-v0.55" "go-v0.45")
+
+  # Empty select should return all items
+  local result=$(select_from_list input_ids "")
+  local count=$(echo "$result" | wc -l)
+  assert_equals "$count" "3" "Empty select should return all 3 items"
+  assert_contains "$result" "rust-v0.56" "Should include rust-v0.56"
+  assert_contains "$result" "rust-v0.55" "Should include rust-v0.55"
+  assert_contains "$result" "go-v0.45" "Should include go-v0.45"
+}
+
+# Test 30: select function with single pattern
+test_select_single_pattern() {
+  local input_ids=("rust-v0.56" "rust-v0.55" "go-v0.45" "js-v1.0")
+
+  # Select only rust items
+  local result=$(select_from_list input_ids "rust")
+  assert_contains "$result" "rust-v0.56" "Should include rust-v0.56"
+  assert_contains "$result" "rust-v0.55" "Should include rust-v0.55"
+  assert_not_contains "$result" "go-v0.45" "Should not include go-v0.45"
+  assert_not_contains "$result" "js-v1.0" "Should not include js-v1.0"
+}
+
+# Test 31: select function with pipe-separated patterns
+test_select_multiple_patterns() {
+  local input_ids=("rust-v0.56" "go-v0.45" "js-v1.0" "python-v0.4")
+
+  # Select rust OR go items
+  local result=$(select_from_list input_ids "rust|go")
+  assert_contains "$result" "rust-v0.56" "Should include rust-v0.56"
+  assert_contains "$result" "go-v0.45" "Should include go-v0.45"
+  assert_not_contains "$result" "js-v1.0" "Should not include js-v1.0"
+  assert_not_contains "$result" "python-v0.4" "Should not include python-v0.4"
+}
+
+# Test 32: select function with expanded alias
+test_select_with_alias() {
+  local all_names=("rust-v0.56" "rust-v0.55" "go-v0.45" "js-v1.0")
+  ALIASES["rust"]="rust-v0.56|rust-v0.55"
+
+  # Expand alias first
+  local select_expanded=$(expand_filter_string "~rust" all_names)
+
+  # Select using expanded filter
+  local result=$(select_from_list all_names "$select_expanded")
+  assert_contains "$result" "rust-v0.56" "Should include rust-v0.56"
+  assert_contains "$result" "rust-v0.55" "Should include rust-v0.55"
+  assert_not_contains "$result" "go-v0.45" "Should not include go-v0.45"
+  assert_not_contains "$result" "js-v1.0" "Should not include js-v1.0"
+}
+
+# Test 33: Two-stage filtering (select then ignore)
+test_two_stage_filtering() {
+  local all_ids=("rust-v0.56" "rust-v0.55" "rust-experimental" "go-v0.45" "js-v1.0")
+  ALIASES["rust"]="rust-v0.56|rust-v0.55|rust-experimental"
+
+  # Stage 1: SELECT rust items
+  local select_expanded=$(expand_filter_string "~rust" all_ids)
+  local selected_ids=()
+  readarray -t selected_ids < <(select_from_list all_ids "$select_expanded")
+
+  # Stage 2: IGNORE experimental from selected
+  local ignore_expanded=$(expand_filter_string "experimental" all_ids)
+  local result=$(ignore_from_list selected_ids "$ignore_expanded")
+
+  # Should have rust-v0.56 and rust-v0.55, but not rust-experimental
+  assert_contains "$result" "rust-v0.56" "Should include rust-v0.56"
+  assert_contains "$result" "rust-v0.55" "Should include rust-v0.55"
+  assert_not_contains "$result" "rust-experimental" "Should exclude rust-experimental"
+  assert_not_contains "$result" "go-v0.45" "Should not include go-v0.45 (not selected)"
+}
+
+# Test 34: Two-stage with multiple dimensions
+test_two_stage_multiple_select_ignore() {
+  local all_ids=("rust-v0.56" "rust-v0.55" "go-v0.45" "go-v0.44" "js-v1.0")
+  ALIASES["rust"]="rust-v0.56|rust-v0.55"
+  ALIASES["go"]="go-v0.45|go-v0.44"
+
+  # Stage 1: SELECT rust AND go
+  local select_expanded=$(expand_filter_string "~rust|~go" all_ids)
+  local selected_ids=()
+  readarray -t selected_ids < <(select_from_list all_ids "$select_expanded")
+
+  # Verify 4 items selected (all rust and go)
+  local count=${#selected_ids[@]}
+  assert_equals "$count" "4" "Should select 4 items (rust + go)"
+
+  # Stage 2: IGNORE v0.55 and v0.44
+  local result=$(ignore_from_list selected_ids "v0.55|v0.44")
+
+  # Should have rust-v0.56 and go-v0.45 only
+  assert_contains "$result" "rust-v0.56" "Should include rust-v0.56"
+  assert_contains "$result" "go-v0.45" "Should include go-v0.45"
+  assert_not_contains "$result" "rust-v0.55" "Should exclude rust-v0.55"
+  assert_not_contains "$result" "go-v0.44" "Should exclude go-v0.44"
+  assert_not_contains "$result" "js-v1.0" "Should not include js-v1.0"
+}
+
+# Test 35: select with no matches
+test_select_no_matches() {
+  local input_ids=("rust-v0.56" "go-v0.45" "js-v1.0")
+
+  # Select pattern that doesn't match anything
+  local result=$(select_from_list input_ids "python")
+
+  # Result should be empty or contain no lines
+  if [ -n "$result" ]; then
+    local count=$(echo "$result" | grep -c '^' || true)
+    assert_equals "$count" "0" "Select with no matches should return empty"
+  fi
+}
+
+# Test 36: ignore vs select inverse relationship
+test_ignore_select_inverse() {
+  local input_ids=("rust-v0.56" "rust-v0.55" "go-v0.45" "js-v1.0")
+
+  # select "rust" should be inverse of ignore "!rust" (everything except rust)
+  local selected=$(select_from_list input_ids "rust")
+  local ignored=$(ignore_from_list input_ids "!rust")
+
+  # Both should produce same result (only rust items)
+  assert_contains "$selected" "rust-v0.56" "Select rust should include rust-v0.56"
+  assert_contains "$selected" "rust-v0.55" "Select rust should include rust-v0.55"
+  assert_contains "$ignored" "rust-v0.56" "Ignore !rust should include rust-v0.56"
+  assert_contains "$ignored" "rust-v0.55" "Ignore !rust should include rust-v0.55"
 }
 
 # =============================================================================
@@ -473,7 +602,7 @@ run_test "Inverted value (!pattern)" test_inverted_value
 run_test "Inverted alias (!~alias)" test_inverted_alias
 run_test "Mixed patterns" test_mixed_patterns
 run_test "filter_matches function" test_filter_matches
-run_test "filter function" test_filter_function
+run_test "ignore function" test_ignore_function
 run_test "Unknown alias handling" test_unknown_alias
 run_test "Complex inverted alias" test_complex_inverted_alias
 run_test "Multiple inversions" test_multiple_inversions
@@ -490,6 +619,14 @@ run_test "Inverted partial match" test_inverted_partial_match
 run_test "Multiple regular values" test_multiple_regular_values
 run_test "Alias deduplication" test_alias_deduplication
 run_test "Combined filters" test_combined_filters
+run_test "select: empty filter" test_select_empty_filter
+run_test "select: single pattern" test_select_single_pattern
+run_test "select: multiple patterns" test_select_multiple_patterns
+run_test "select: with alias expansion" test_select_with_alias
+run_test "Two-stage filtering (select→ignore)" test_two_stage_filtering
+run_test "Two-stage: multiple select & ignore" test_two_stage_multiple_select_ignore
+run_test "select: no matches" test_select_no_matches
+run_test "ignore vs select inverse" test_ignore_select_inverse
 
 echo ""
 echo "════════════════════════════════════════════════════════════════"

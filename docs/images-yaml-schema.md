@@ -44,7 +44,7 @@ relays:               # Relay server implementations
 
 ## test-aliases Section
 
-Defines reusable patterns for test filtering with `--test-ignore` and related flags.
+Defines reusable patterns for test filtering with `--impl-select`, `--impl-ignore`, and related flags.
 
 ### Schema
 
@@ -77,14 +77,17 @@ test-aliases:
 ### Usage
 
 ```bash
-# Select only rust implementations
-./run.sh --test-ignore "!~rust"
+# Select only rust implementations (Stage 1: SELECT)
+./run.sh --impl-select "~rust"
 
-# Ignore all browsers
-./run.sh --test-ignore "~browsers"
+# Select rust and go, ignore experimental (Two-stage filtering)
+./run.sh --impl-select "rust|go" --impl-ignore "experimental"
 
-# Select everything except failing implementations
-./run.sh --test-ignore "~failing"
+# Ignore all browsers (Stage 2: IGNORE)
+./run.sh --impl-ignore "~browsers"
+
+# Ignore failing implementations
+./run.sh --impl-ignore "~failing"
 ```
 
 ---
@@ -665,17 +668,26 @@ The build system:
 Command-line filters reference IDs and aliases:
 
 ```bash
-# By ID
-./run.sh --test-ignore "rust-v0.53"
+# SELECT by ID (Stage 1: narrow scope)
+./run.sh --impl-select "rust-v0.56"
 
-# By alias
-./run.sh --test-ignore "~browsers"
+# SELECT by alias
+./run.sh --impl-select "~rust"
 
-# Negation (select only)
-./run.sh --test-ignore "!rust-v0.56"
+# IGNORE by ID (Stage 2: remove from selection)
+./run.sh --impl-ignore "rust-v0.53"
 
-# Combination
-./run.sh --test-ignore "~browsers|rust-v0.53"
+# IGNORE by alias
+./run.sh --impl-ignore "~browsers"
+
+# Two-stage filtering (select rust|go, then ignore experimental)
+./run.sh --impl-select "rust|go" --impl-ignore "experimental"
+
+# Combination with negation (select only rust-v0.56)
+./run.sh --impl-ignore "!rust-v0.56"
+
+# Complex combination
+./run.sh --impl-select "~rust|~go" --impl-ignore "experimental|v0.53"
 ```
 
 ---

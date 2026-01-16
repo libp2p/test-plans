@@ -153,16 +153,24 @@ The `inputs.yaml` file must be loaded *before* libraries are sourced because it 
    - `TEST_RUN_DIR` (default: `/srv/cache/test-run`)
    - `DEBUG` (default: `false`)
    - `WORKER_COUNT` (default: varies by test type)
-   - Filter variables (TEST_IGNORE, TRANSPORT_IGNORE, etc.)
+   - Filter variables (SELECT and IGNORE for: impl, transport, secure, muxer, test)
 
 3. Parse command-line arguments:
    ```bash
    while [[ $# -gt 0 ]]; do
      case $1 in
-       --test-ignore)     TEST_IGNORE="$2"; shift 2 ;;
+       --impl-select)      IMPL_SELECT="$2"; shift 2 ;;
+       --impl-ignore)      IMPL_IGNORE="$2"; shift 2 ;;
+       --transport-select) TRANSPORT_SELECT="$2"; shift 2 ;;
        --transport-ignore) TRANSPORT_IGNORE="$2"; shift 2 ;;
-       --debug)           DEBUG=true; shift ;;
-       --yes)             AUTO_YES=true; shift ;;
+       --secure-select)    SECURE_SELECT="$2"; shift 2 ;;
+       --secure-ignore)    SECURE_IGNORE="$2"; shift 2 ;;
+       --muxer-select)     MUXER_SELECT="$2"; shift 2 ;;
+       --muxer-ignore)     MUXER_IGNORE="$2"; shift 2 ;;
+       --test-select)      TEST_SELECT="$2"; shift 2 ;;
+       --test-ignore)      TEST_IGNORE="$2"; shift 2 ;;
+       --debug)            DEBUG=true; shift ;;
+       --yes)              AUTO_YES=true; shift ;;
        ...
      esac
    done
@@ -198,7 +206,7 @@ The `inputs.yaml` file must be loaded *before* libraries are sourced because it 
 #### Option 2: `--list-tests`
 
 ```bash
-./run.sh --test-ignore "~browsers" --list-tests
+./run.sh --impl-select "rust|go" --transport-ignore "quic-v1" --list-tests
 ```
 
 **Actions**:
@@ -241,15 +249,23 @@ The `inputs.yaml` file must be loaded *before* libraries are sourced because it 
    ```bash
    TEST_RUN_KEY=$(compute_test_run_key \
      "$IMAGES_YAML" \
-     "$TEST_IGNORE" \
+     "$IMPL_SELECT" \
+     "$IMPL_IGNORE" \
+     "$BASELINE_SELECT" \
      "$BASELINE_IGNORE" \
+     "$TRANSPORT_SELECT" \
      "$TRANSPORT_IGNORE" \
+     "$SECURE_SELECT" \
      "$SECURE_IGNORE" \
+     "$MUXER_SELECT" \
      "$MUXER_IGNORE" \
+     "$TEST_SELECT" \
+     "$TEST_IGNORE" \
      "$DEBUG")
    ```
-   - Hash of images.yaml content + all filters
+   - Hash of images.yaml content + all SELECT/IGNORE filters
    - Returns 8-character hex string (e.g., `e5b6ea57`)
+   - **Note**: Hole-punch includes RELAY_SELECT/IGNORE, ROUTER_SELECT/IGNORE
 
 2. **Generate TEST_PASS_NAME**:
    ```
@@ -318,7 +334,16 @@ The `inputs.yaml` file must be loaded *before* libraries are sourced because it 
    a. **Load and expand filters**:
    ```bash
    load_aliases  # From images.yaml test-aliases section
-   EXPANDED_TEST_IGNORE=$(expand_filter_string "${TEST_IGNORE}" all_image_ids)
+
+   # Expand SELECT filters
+   EXPANDED_IMPL_SELECT=$(expand_filter_string "${IMPL_SELECT}" all_image_ids)
+   EXPANDED_TRANSPORT_SELECT=$(expand_filter_string "${TRANSPORT_SELECT}" all_transport_names)
+   # ... expand all SELECT filters
+
+   # Expand IGNORE filters
+   EXPANDED_IMPL_IGNORE=$(expand_filter_string "${IMPL_IGNORE}" all_image_ids)
+   EXPANDED_TRANSPORT_IGNORE=$(expand_filter_string "${TRANSPORT_IGNORE}" all_transport_names)
+   # ... expand all IGNORE filters
    ```
 
    Example expansion:
@@ -339,12 +364,22 @@ The `inputs.yaml` file must be loaded *before* libraries are sourced because it 
    fi
    ```
 
-   c. **Apply filters**:
+   c. **Apply two-stage filters**:
    ```bash
-   filtered_image_ids=($(filter_entities "implementations"))
-   filtered_transport_names=($(filter_names "transports"))
-   filtered_secure_names=($(filter_names "secureChannels"))
-   filtered_muxer_names=($(filter_names "muxers"))
+   # Stage 1: SELECT (narrows scope)
+   readarray -t selected_image_ids < <(select_from_list all_image_ids "${EXPANDED_IMPL_SELECT}")
+   # Stage 2: IGNORE (removes from selection)
+   readarray -t filtered_image_ids < <(ignore_from_list selected_image_ids "${EXPANDED_IMPL_IGNORE}")
+
+   # Repeat for all dimensions
+   readarray -t selected_transport_names < <(select_from_list all_transport_names "${EXPANDED_TRANSPORT_SELECT}")
+   readarray -t filtered_transport_names < <(ignore_from_list selected_transport_names "${EXPANDED_TRANSPORT_IGNORE}")
+
+   readarray -t selected_secure_names < <(select_from_list all_secure_names "${EXPANDED_SECURE_SELECT}")
+   readarray -t filtered_secure_names < <(ignore_from_list selected_secure_names "${EXPANDED_SECURE_IGNORE}")
+
+   readarray -t selected_muxer_names < <(select_from_list all_muxer_names "${EXPANDED_MUXER_SELECT}")
+   readarray -t filtered_muxer_names < <(ignore_from_list selected_muxer_names "${EXPANDED_MUXER_IGNORE}")
    ```
 
    d. **Generate test combinations**:
@@ -376,8 +411,16 @@ The `inputs.yaml` file must be loaded *before* libraries are sourced because it 
    e. **Write test-matrix.yaml**:
    ```yaml
    metadata:
-     ignore: "${TEST_IGNORE}"
+     implSelect: "${IMPL_SELECT}"
+     implIgnore: "${IMPL_IGNORE}"
+     transportSelect: "${TRANSPORT_SELECT}"
      transportIgnore: "${TRANSPORT_IGNORE}"
+     secureSelect: "${SECURE_SELECT}"
+     secureIgnore: "${SECURE_IGNORE}"
+     muxerSelect: "${MUXER_SELECT}"
+     muxerIgnore: "${MUXER_IGNORE}"
+     testSelect: "${TEST_SELECT}"
+     testIgnore: "${TEST_IGNORE}"
      ...
      totalTests: ${#main_tests[@]}
      ignoredTests: ${#ignored_main_tests[@]}
@@ -1051,7 +1094,7 @@ The `inputs.yaml` file must be loaded *before* libraries are sourced because it 
 
 | Item | Cache Location | Cache Key | Invalidate When |
 |------|----------------|-----------|-----------------|
-| Test Matrix | `/srv/cache/test-run-matrix/` | Hash of images.yaml + filters | images.yaml or filters change |
+| Test Matrix | `/srv/cache/test-run-matrix/` | Hash of images.yaml + all SELECT/IGNORE filters | images.yaml or any filter changes |
 | GitHub Snapshots | `/srv/cache/snapshots/` | Commit hash | Never (immutable) |
 | Git Repos | `/srv/cache/git-repos/` | Repo + commit hash | Never (immutable) |
 | Docker Images | Docker daemon | Image name | `--force-image-rebuild` |

@@ -282,36 +282,61 @@ filter_matches() {
 }
 
 # Generic filtering: filter a list of ids using ignore filters
-# Implements the two-step pattern:
-#   1. Apply ignore filter to selected set to get final set
 # Args:
 #   $1: input_ids_ref - Name of array variable with ids to filter
 #   $2: ignore_filter - The ignore filter, expanded using expand_filter_string
 # Returns:
-#   Filtered ids, one per line
+#   Filtered ids (non-matches), one per line
 # Usage:
 #   input_ids=("rust-v0.56" "rust-v0.55" "go-v0.45")
 #   ignore_filter="v0.56|v0.45"
 #   Returns: rust-v0.55
-filter() {
+ignore_from_list() {
   local -n input_ids_ref="${1}"
   local ignore_filter="${2}"
-  local selected=("${input_ids_ref[@]}")
-
-  # Apply IGNORE filter
   local final=()
+
   if [ -z "${ignore_filter}" ]; then
-    # No ignore filter, include all selected ids
-    final=("${selected[@]}")
+    # No ignore filter, include all input ids
+    final=("${input_ids_ref[@]}")
   else
-    for id in "${selected[@]}"; do
+    for id in "${input_ids_ref[@]}"; do
       if ! filter_matches "${id}" "${ignore_filter}"; then
-        # Include the ID that does NOT match any of the ignore filter substrings
+        # Include the ID that does NOT match any of the ignore filter
         final+=("${id}")
       fi
     done
   fi
 
-  # Step 3: Return the filtered ids, one per line
+  printf '%s\n' "${final[@]}"
+}
+
+# Generic filtering: filter a list of ids using select filters
+# Args:
+#   $1: input_ids_ref - Name of array variable with ids to filter
+#   $2: select_filter - The select filter, expanded using expand_filter_string
+# Returns:
+#   Filtered ids (matches only), one per line
+# Usage:
+#   input_ids=("rust-v0.56" "rust-v0.55" "go-v0.45")
+#   select_filter="rust"
+#   Returns: rust-v0.56, rust-v0.55
+select_from_list() {
+  local -n input_ids_ref="${1}"
+  local select_filter="${2}"
+  local final=()
+
+  if [ -z "${select_filter}" ]; then
+    # No select filter, include all input ids (default to everything)
+    final=("${input_ids_ref[@]}")
+  else
+    for id in "${input_ids_ref[@]}"; do
+      if filter_matches "${id}" "${select_filter}"; then
+        # Include the ID that DOES match the select filter
+        final+=("${id}")
+      fi
+    done
+  fi
+
   printf '%s\n' "${final[@]}"
 }
