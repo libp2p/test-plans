@@ -151,7 +151,7 @@ jobs:
           else
             # Automatic trigger - check for changes in last 24 hours
             CHANGES=$(git log --oneline --since="24 hours ago" -- "transport/**" | wc -l)
-            IMPLS_CHANGES=$(git log --oneline --since="24 hours ago" -- "transport/impls.yaml" | wc -l)
+            IMPLS_CHANGES=$(git log --oneline --since="24 hours ago" -- "transport/images.yaml" | wc -l)
 
             echo "test-select=" >> $GITHUB_OUTPUT
             echo "test-ignore=~failing" >> $GITHUB_OUTPUT
@@ -162,7 +162,7 @@ jobs:
               echo "should-run-tests=true" >> $GITHUB_OUTPUT
               if [ "$IMPLS_CHANGES" -gt 0 ]; then
                 echo "force-matrix-rebuild=true" >> $GITHUB_OUTPUT
-                echo "→ Automatic trigger: transport changes detected, impls.yaml changed"
+                echo "→ Automatic trigger: transport changes detected, images.yaml changed"
               else
                 echo "force-matrix-rebuild=false" >> $GITHUB_OUTPUT
                 echo "→ Automatic trigger: transport changes detected"
@@ -219,7 +219,7 @@ jobs:
           else
             # Automatic trigger - check for changes in last 24 hours
             CHANGES=$(git log --oneline --since="24 hours ago" -- "hole-punch/**" | wc -l)
-            IMPLS_CHANGES=$(git log --oneline --since="24 hours ago" -- "hole-punch/impls.yaml" | wc -l)
+            IMPLS_CHANGES=$(git log --oneline --since="24 hours ago" -- "hole-punch/images.yaml" | wc -l)
 
             echo "test-select=" >> $GITHUB_OUTPUT
             echo "test-ignore=~failing" >> $GITHUB_OUTPUT
@@ -234,7 +234,7 @@ jobs:
               echo "should-run-tests=true" >> $GITHUB_OUTPUT
               if [ "$IMPLS_CHANGES" -gt 0 ]; then
                 echo "force-matrix-rebuild=true" >> $GITHUB_OUTPUT
-                echo "→ Automatic trigger: hole-punch changes detected, impls.yaml changed"
+                echo "→ Automatic trigger: hole-punch changes detected, images.yaml changed"
               else
                 echo "force-matrix-rebuild=false" >> $GITHUB_OUTPUT
                 echo "→ Automatic trigger: hole-punch changes detected"
@@ -283,7 +283,7 @@ jobs:
           else
             # Automatic trigger - check for changes in last 24 hours
             CHANGES=$(git log --oneline --since="24 hours ago" -- "perf/**" | wc -l)
-            IMPLS_CHANGES=$(git log --oneline --since="24 hours ago" -- "perf/impls.yaml" | wc -l)
+            IMPLS_CHANGES=$(git log --oneline --since="24 hours ago" -- "perf/images.yaml" | wc -l)
 
             echo "test-select=" >> $GITHUB_OUTPUT
             echo "test-ignore=~failing" >> $GITHUB_OUTPUT
@@ -297,7 +297,7 @@ jobs:
               echo "should-run-tests=true" >> $GITHUB_OUTPUT
               if [ "$IMPLS_CHANGES" -gt 0 ]; then
                 echo "force-matrix-rebuild=true" >> $GITHUB_OUTPUT
-                echo "→ Automatic trigger: perf changes detected, impls.yaml changed"
+                echo "→ Automatic trigger: perf changes detected, images.yaml changed"
               else
                 echo "force-matrix-rebuild=false" >> $GITHUB_OUTPUT
                 echo "→ Automatic trigger: perf changes detected"
@@ -432,7 +432,7 @@ jobs:
           echo "→ Found transport results: $RESULTS_MD"
 
           # Update README using script
-          bash scripts/update-readme-results.sh transport/README.md "$RESULTS_MD"
+          bash lib/update-readme-results.sh transport/README.md "$RESULTS_MD"
 
       - name: Update hole-punch README
         if: needs.run-hole-punch-full.result != 'skipped'
@@ -451,7 +451,7 @@ jobs:
           echo "→ Found hole-punch results: $RESULTS_MD"
 
           # Update README using script
-          bash scripts/update-readme-results.sh hole-punch/README.md "$RESULTS_MD"
+          bash lib/update-readme-results.sh hole-punch/README.md "$RESULTS_MD"
 
       - name: Update perf README
         if: needs.run-perf-full.result != 'skipped'
@@ -470,7 +470,7 @@ jobs:
           echo "→ Found perf results: $RESULTS_MD"
 
           # Update README using script
-          bash scripts/update-readme-results.sh perf/README.md "$RESULTS_MD"
+          bash lib/update-readme-results.sh perf/README.md "$RESULTS_MD"
 
       - name: Commit and push changes
         shell: bash
@@ -481,12 +481,12 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           # Check if there are changes
-          if git diff --quiet transport/README.md hole-punch/README.md perf/README.md 2>/dev/null; then
+          if git diff --quiet transport/README.md transport/LATEST_TEST_RESULTS.md hole-punch/README.md hole-punch/LATEST_TEST_RESULTS.md perf/README.md perf/LATEST_TEST_RESULTS.md perf/upload_boxplot.png perf/download_boxplot.png perf/latency_boxplot.png 2>/dev/null; then
             echo "→ No changes to commit"
             exit 0
           fi
 
-          git add transport/README.md hole-punch/README.md perf/README.md 2>/dev/null || true
+          git add transport/README.md transport/LATEST_TEST_RESULTS.md hole-punch/README.md hole-punch/LATEST_TEST_RESULTS.md perf/README.md perf/LATEST_TEST_RESULTS.md perf/upload_boxplot.png perf/download_boxplot.png perf/latency_boxplot.png 2>/dev/null || true
 
           # Only commit if there are staged changes
           if git diff --cached --quiet 2>/dev/null; then
@@ -529,12 +529,18 @@ jobs:
               else
                 echo "✗ Rebase conflict detected, resolving..."
 
-                # For README files, prefer our changes (fresh test results)
+                # For README and results files, prefer our changes (fresh test results)
                 git checkout --ours transport/README.md 2>/dev/null || true
+                git checkout --ours transport/LATEST_TEST_RESULTS.md 2>/dev/null || true
                 git checkout --ours hole-punch/README.md 2>/dev/null || true
+                git checkout --ours hole-punch/LATEST_TEST_RESULTS.md 2>/dev/null || true
                 git checkout --ours perf/README.md 2>/dev/null || true
+                git checkout --ours perf/LATEST_TEST_RESULTS.md 2>/dev/null || true
+                git checkout --ours perf/upload_boxplot.png 2>/dev/null || true
+                git checkout --ours perf/download_boxplot.png 2>/dev/null || true
+                git checkout --ours perf/latency_boxplot.png 2>/dev/null || true
 
-                git add transport/README.md hole-punch/README.md perf/README.md 2>/dev/null || true
+                git add transport/README.md transport/LATEST_TEST_RESULTS.md hole-punch/README.md hole-punch/LATEST_TEST_RESULTS.md perf/README.md perf/LATEST_TEST_RESULTS.md perf/upload_boxplot.png perf/download_boxplot.png perf/latency_boxplot.png 2>/dev/null || true
                 git rebase --continue || {
                   echo "✗ Failed to resolve rebase conflict"
                   git rebase --abort

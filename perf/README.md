@@ -1,389 +1,599 @@
-# libp2p performance benchmarking
+# Performance Tests
 
-This project includes the following components:
+Pure-bash implementation of performance tests for libp2p implementations using the libp2p perf protocol.
 
-- `terraform/`: Terraform scripts to provision AWS infrastructure
-- `impl/`: implementations of the [libp2p perf protocol](https://github.com/libp2p/specs/blob/master/perf/perf.md) running on top of e.g. go-libp2p, rust-libp2p or Go's std-library https stack
-- `runner/`: Node.js scripts for building and running tests on AWS infrastructure
-- **NEW:** `scripts/`: Bash-based test runner for local/remote hardware (no AWS required)
-- **NEW:** `impls/`: Dockerized implementations following hole-punch/transport patterns
+## Overview
 
-Benchmark results can be visualized with https://observablehq.com/@libp2p-workspace/performance-dashboard.
+The perf test suite measures performance characteristics of libp2p implementations by running all combinations of:
+- **Implementations**: rust-libp2p (v0.56), go-libp2p (v0.45), js-libp2p (v3.x), dotnet-libp2p (v1.0)
+- **Transports**: tcp, quic-v1, webtransport, webrtc-direct, ws
+- **Secure Channels**: noise, tls
+- **Muxers**: yamux, mplex
 
-## Quick Start (Bash-Based Tests - Recommended)
+Additionally, baseline tests measure raw protocol performance for comparison:
+- **iperf**: TCP baseline (raw TCP throughput)
+- **HTTPS**: Go stdlib HTTPS baseline
+- **QUIC-Go**: QUIC baseline using quic-go library
 
-**NEW:** Run performance tests on your own hardware without AWS!
+## What It Measures
 
+Each test runs a **dialer** (client) against a **listener** (server) using Docker containers and measures:
+
+- **Upload Throughput**: How fast the dialer can send data to the listener (bytes/second)
+- **Download Throughput**: How fast the dialer can receive data from the listener (bytes/second)
+- **Latency**: Round-trip time for ping messages (milliseconds)
+  - Statistical distribution: p50, p75, p90, p99, p999
+
+Tests run multiple iterations (default: 10) to collect reliable statistical data. The dialer and listener coordinate via Redis for test synchronization.
+
+## When Tests Run
+
+- **On Pull Requests**: Tests implementations changed in the PR
+- **Daily Full Run**: Complete test matrix (all implementations)
+- **Manual Trigger**: Via GitHub Actions workflow dispatch
+
+## How to Run Tests
+
+### Prerequisites
+
+Check dependencies:
 ```bash
-# Quick test on single machine
-./run_tests.sh --test-select "go-libp2p" --iterations 3
-
-# See QUICKSTART.md for detailed setup instructions
+./run.sh --check-deps
 ```
 
-**Features:**
-- ✅ No AWS account required
-- ✅ Run on local hardware or remote servers
-- ✅ Docker-based implementations
-- ✅ Results in YAML, Markdown, and HTML formats
-- ✅ Compatible with hole-punch/transport test patterns
+Required: bash 4.0+, docker 20.10+, yq 4.0+, wget, unzip, gnuplot (optional, for box plots)
 
-See **[QUICKSTART.md](QUICKSTART.md)** for complete setup and usage instructions.
-
----
-
-## Setup for Multi-Machine Testing
-
-### SSH Key-Based Authentication
-
-For remote server testing, setup passwordless SSH authentication between your test runner (Computer 1) and server (Computer 2):
-
-#### 1. Generate SSH Key (Computer 1)
+### Basic Usage
 
 ```bash
-# Generate dedicated key for perf testing
-ssh-keygen -t ed25519 -f ~/.ssh/perf_server -N ""
+# Run all tests (all implementations + all baselines)
+./run.sh
+
+# Run specific implementation
+./run.sh --test-ignore "!rust-v0.56"
+
+# Skip specific tests
+./run.sh --test-ignore "rust-v0.56"
+
+# Run with custom parameters
+./run.sh --iterations 20 --upload-bytes 5368709120 --download-bytes 5368709120
+
+# Enable debug logging
+./run.sh --debug
 ```
 
-This creates two files:
-- `~/.ssh/perf_server` - Private key (keep secure)
-- `~/.ssh/perf_server.pub` - Public key (copy to server)
+### Performance Test Parameters
 
-#### 2. Copy Public Key to Server (Computer 2)
+Control test behavior with these options:
 
 ```bash
-# Replace with your server's username and IP/hostname
-ssh-copy-id -i ~/.ssh/perf_server.pub perfuser@192.168.1.100
+# Data transfer amounts (default: 1GB each)
+./run.sh --upload-bytes 1073741824 --download-bytes 1073741824
+
+# Number of iterations for upload/download tests (default: 10)
+./run.sh --iterations 10
+
+# Duration per iteration for throughput tests in seconds (default: 20)
+./run.sh --duration 20
+
+# Number of iterations for latency tests (default: 100)
+./run.sh --latency-iterations 100
+
+# Cache directory for test artifacts (default: /srv/cache)
+./run.sh --cache-dir /srv/cache
 ```
 
-You'll be prompted for the password **once**. After this, SSH will use key-based authentication.
+**Note**: The `--iterations` flag controls both upload and download iterations. The framework measures throughput by transferring data over a time period and measuring bytes/second.
 
-#### 3. Test Connection
+## Test Filtering
+
+### Basic Filtering
+
+Use pipe-separated patterns to filter tests:
 
 ```bash
-# Should connect without password prompt
-ssh -i ~/.ssh/perf_server perfuser@192.168.1.100 "echo 'Connection successful'"
+# Test only rust and go implementations
+./run.sh --test-ignore "!rust-v0.56|!go-v0.45"
+
+# Ignore specific implementation
+./run.sh --test-ignore "js-v3.x"
+
+# Ignore specific transport protocols
+./run.sh --transport-ignore "quic-v1|webtransport"
+
+# Ignore specific secure channels
+./run.sh --secure-ignore "tls"
+
+# Ignore specific muxers
+./run.sh --muxer-ignore "mplex"
+
+# Ignore baseline tests
+./run.sh --baseline-ignore "iperf"
+
+# Combine filters
+./run.sh --test-ignore "!~rust" --transport-ignore "quic-v1" --secure-ignore "tls"
 ```
 
-#### 4. Configure in impls.yaml
+### Alias Expansion
 
-Edit `perf/impls.yaml` to add your remote server:
+Use `~alias` syntax for convenient test selection:
 
+```bash
+# Test ONLY rust implementations (expands to all rust versions)
+./run.sh --test-ignore "!~rust"
+
+# Exclude all rust versions
+./run.sh --test-ignore "~rust"
+
+# Test ONLY go implementations
+./run.sh --test-ignore "!~go"
+```
+
+**Available aliases** are defined in `images.yaml` under `test-aliases`:
+- `~all`: All implementations and baselines (equivalent to `~baselines|~images`)
+- `~images`: All libp2p implementations (dotnet-v1.0, go-v0.45, js-v3.x, rust-v0.56)
+- `~baselines`: All baseline tests (https, quic-go, iperf)
+- `~rust`: rust-libp2p v0.56
+- `~go`: go-libp2p v0.45
+- `~js`: js-libp2p v3.x
+- `~dotnet`: dotnet-libp2p v1.0
+- `~failing`: Known failing implementations (go-v0.45, js-v3.x)
+- `~none`: Nothing (equivalent to `!~all`)
+
+### Best Practice: Limit to Specific Alias
+
+To test ONLY implementations in an alias (not just tests containing the alias pattern):
+
+```bash
+# Test ONLY rust implementations
+./run.sh --test-ignore '!~rust'
+
+# Test ONLY go implementations
+./run.sh --test-ignore '!~go'
+
+# Test ONLY baselines
+./run.sh --baseline-ignore '!~baselines' --test-ignore '~images'
+```
+
+## How Tests Work
+
+The performance test framework executes tests through the following workflow:
+
+### Test Execution Flow
+
+1. **Initialization** (`perf/run.sh`)
+   - Load configuration from `inputs.yaml` (if re-running from snapshot)
+   - Parse command-line arguments (override inputs.yaml)
+   - Initialize common variables and cache directories
+   - Set perf-specific defaults (ITERATIONS=10, UPLOAD_BYTES=1GB, etc.)
+
+2. **Test Matrix Generation** (`perf/lib/generate-tests.sh`)
+   - Load test aliases from `images.yaml`
+   - Expand filter strings (e.g., `~rust` → `rust-v0.56`)
+   - Generate all test combinations: dialer × listener × transport × secure × muxer
+   - Apply filtering (TEST_IGNORE, BASELINE_IGNORE, TRANSPORT_IGNORE, etc.)
+   - Cache the test matrix for reuse (content-addressed by filters + images.yaml hash)
+
+3. **Docker Image Building**
+   - Build required Docker images from `images.yaml` definitions
+   - Support both local builds (from `images/` directory) and GitHub snapshots
+   - Skip already-built images unless `--force-image-rebuild` specified
+
+4. **Test Execution** (`perf/lib/run-single-test.sh`)
+   - Start global services (Redis for test coordination)
+   - Run baseline tests sequentially (1 worker for accurate performance measurements)
+   - Run main tests sequentially
+   - For each test:
+     - Generate docker-compose file with listener and dialer containers
+     - Assign static networking (listener at predictable address)
+     - Listener starts and registers its multiaddr in Redis
+     - Dialer connects to listener via multiaddr from Redis
+     - Dialer runs perf protocol tests and outputs results
+     - Extract YAML results from dialer logs
+   - Stop global services
+
+5. **Results Collection**
+   - Combine all individual test results into `results.yaml`
+   - Generate results dashboard (`results.md` and `results.html`)
+   - Generate box plots (if gnuplot available) showing throughput/latency distributions
+   - Create test pass snapshot (if `--snapshot` flag set)
+
+### Test Coordination
+
+Tests use **Redis** for dialer/listener coordination:
+- **Listener**: Starts first, publishes its multiaddr to Redis under a test-specific key
+- **Dialer**: Waits for listener multiaddr, connects, runs perf protocol tests, outputs results
+- **Test Key**: Each test gets a unique 8-character hash key for Redis namespace isolation
+
+### Test Matrix Caching
+
+The test matrix is cached based on a **TEST_RUN_KEY** computed from:
+- Content hash of `images.yaml`
+- All filter arguments (TEST_IGNORE, BASELINE_IGNORE, TRANSPORT_IGNORE, SECURE_IGNORE, MUXER_IGNORE)
+- Debug flag
+
+Cache location: `$CACHE_DIR/test-run-matrix/perf-<TEST_RUN_KEY>.yaml`
+
+Use `--force-matrix-rebuild` to bypass cache and regenerate the matrix.
+
+## Snapshot Generation
+
+### Creating Snapshots
+
+Generate a self-contained, reproducible test snapshot:
+
+```bash
+./run.sh --snapshot
+```
+
+This creates a snapshot directory in `/srv/cache/test-run/perf-HHMMSS-DD-MM-YYYY/` containing:
+- Complete test configuration (images.yaml, test-matrix.yaml, inputs.yaml)
+- All test results (results.yaml, results.md, box plots)
+- All source code snapshots
+- All Docker images (saved as tar.gz)
+- All test scripts
+- Re-run script for exact reproduction
+
+### Reproducing from Snapshot
+
+```bash
+cd /srv/cache/test-run/perf-HHMMSS-DD-MM-YYYY/
+./run.sh
+
+# Force rebuild images from snapshots
+./run.sh --force-image-rebuild
+```
+
+## Downloading Snapshots
+
+Snapshots are available as GitHub Actions artifacts:
+
+1. Go to [Actions tab](https://github.com/libp2p/test-plans/actions)
+2. Select the workflow run
+3. Download artifacts from the "Artifacts" section
+4. Extract and run `./run.sh`
+
+## Understanding Results
+
+### Results Files
+
+After a test run, results are in `${TEST_PASS_DIR}`:
+
+- **results.yaml**: Complete test results in YAML format
+- **results.md**: Markdown dashboard with summary and detailed results
+- **results.html**: HTML dashboard (same content as markdown)
+- **LATEST_TEST_RESULTS.md**: Detailed results with statistics
+- **logs/**: Individual test logs
+- **results/**: Individual test result YAML files
+- **boxplots/**: Box plot visualizations (PNG, if gnuplot available)
+
+### Result Format
+
+The `results.yaml` file contains metadata, summary statistics, and individual test results:
+
+```yaml
+metadata:
+  testPass: perf-a3f7b21c-183045-14-01-2026
+  startedAt: 2026-01-14T18:30:45Z
+  completedAt: 2026-01-14T20:15:23Z
+  duration: 6338s
+  platform: x86_64
+  os: Linux
+  workerCount: 1
+
+summary:
+  totalBaselines: 3
+  baselinesPassed: 3
+  baselinesFailed: 0
+  totalTests: 20
+  testsPassed: 18
+  testsFailed: 2
+  totalAll: 23
+  passedAll: 21
+  failedAll: 2
+
+baselineResults:
+  - name: "iperf x iperf (tcp)"
+    status: pass
+    upload:
+      bytesPerSecond: 1234567890
+      iterationsCompleted: 10
+    download:
+      bytesPerSecond: 1234567890
+      iterationsCompleted: 10
+    latency:
+      p50: 1.23
+      p75: 1.45
+      p90: 1.67
+      p99: 2.01
+      p999: 2.50
+
+testResults:
+  - name: "rust-v0.56 x rust-v0.56 (tcp, noise, yamux)"
+    status: pass
+    upload:
+      bytesPerSecond: 987654321
+      iterationsCompleted: 10
+    download:
+      bytesPerSecond: 876543210
+      iterationsCompleted: 10
+    latency:
+      p50: 2.34
+      p75: 2.56
+      p90: 2.78
+      p99: 3.12
+      p999: 3.89
+```
+
+**Status values**: `pass` (test completed successfully) or `fail` (test failed or timed out)
+
+### Box Plots
+
+If gnuplot is installed, box plots are generated showing distribution of results:
+- Upload throughput across all tests
+- Download throughput across all tests
+- Latency across all tests
+
+## Architecture and Scripts
+
+### Directory Structure
+
+```
+perf/
+├── run.sh                      # Main test runner (841 lines)
+├── images.yaml                 # Implementation definitions and test aliases
+├── README.md                   # This file
+└── lib/
+    ├── generate-tests.sh       # Test matrix generation with filtering
+    ├── run-single-test.sh      # Individual test execution via docker-compose
+    ├── generate-dashboard.sh   # Results dashboard (MD/HTML) generation
+    ├── generate-boxplot.sh     # Box plot visualization generation
+    └── setup-remote-server.sh  # Remote server setup (multi-machine testing)
+```
+
+### Key Scripts
+
+**`perf/run.sh`** - Main entry point
+- Handles bootstrapping, initialization, test execution, and results collection
+- Coordinates all test phases from matrix generation to snapshot creation
+- Supports both standalone runs and re-runs from snapshots
+
+**`perf/lib/generate-tests.sh`** - Test matrix generator
+- Expands filter aliases (e.g., `~rust` → `rust-v0.56`)
+- Generates all test combinations: dialer × listener × transport × secure × muxer
+- Applies filtering based on TEST_IGNORE, BASELINE_IGNORE, etc.
+- Caches generated matrix for performance
+
+**`perf/lib/run-single-test.sh`** - Individual test executor
+- Generates docker-compose configuration for each test
+- Coordinates listener/dialer via Redis
+- Extracts results from dialer container logs
+- Handles test timeouts and failures
+
+**`perf/lib/generate-dashboard.sh`** - Results dashboard generator
+- Creates markdown and HTML dashboards from results.yaml
+- Generates summary statistics and detailed test listings
+- Supports injection into README.md for CI/CD
+
+**`perf/lib/generate-boxplot.sh`** - Box plot generator
+- Creates box plot visualizations using gnuplot
+- Generates separate plots for upload, download, and latency metrics
+- Requires gnuplot to be installed
+
+### Common Libraries (../lib/)
+
+The perf test suite uses shared libraries from `lib/` directory:
+- **lib-common-init.sh**: Variable initialization and cache directory setup
+- **lib-filter-engine.sh**: Alias expansion and filter processing
+- **lib-test-caching.sh**: Cache key computation and cache management
+- **lib-image-building.sh**: Docker image building from local or GitHub sources
+- **lib-global-services.sh**: Redis service management for test coordination
+- **lib-output-formatting.sh**: Consistent terminal output formatting
+- **lib-snapshot-creation.sh**: Snapshot generation for reproducibility
+- **lib-inputs-yaml.sh**: inputs.yaml generation and loading
+
+### Configuration Files
+
+**`images.yaml`** - Defines implementations and test aliases
+- **baselines**: Baseline implementations (iperf, https, quic-go)
+- **implementations**: libp2p implementations (rust, go, js, dotnet)
+- **test-aliases**: Reusable filter patterns for test selection
+
+**`inputs.yaml`** - Generated at test run start (for reproducibility)
+- Captures all environment variables
+- Captures all command-line arguments
+- Enables exact reproduction from snapshots
+
+**`test-matrix.yaml`** - Generated test combinations (cached)
+- Lists all selected baseline tests
+- Lists all selected main tests
+- Lists all ignored tests
+- Contains test metadata (iterations, bytes, duration, etc.)
+
+### Documentation
+
+For comprehensive framework documentation, see:
+- **[CLAUDE.md](../CLAUDE.md)** - Complete technical documentation
+- **[docs/inputs-schema.md](../docs/inputs-schema.md)** - inputs.yaml specification
+
+## Additional Options
+
+```bash
+# List all available implementations and baselines
+./run.sh --list-images
+
+# List tests that would be run (without running them)
+./run.sh --test-ignore "!rust-v0.56" --list-tests
+
+# Show ignored tests in addition to selected tests
+./run.sh --test-ignore "rust-v0.56" --list-tests --show-ignored
+
+# Force rebuild all Docker images
+./run.sh --force-image-rebuild
+
+# Force regenerate test matrix (bypass cache)
+./run.sh --force-matrix-rebuild
+
+# Skip confirmation prompts
+./run.sh --yes
+
+# Check dependencies only
+./run.sh --check-deps
+```
+
+## Remote Testing
+
+**Note**: Remote testing functionality is currently under development and commented out in the codebase (see perf/run.sh:416-443).
+
+Performance tests can be extended to run distributed across multiple machines for more realistic network conditions. The planned architecture will:
+
+1. Configure remote servers in `images.yaml`:
 ```yaml
 servers:
   - id: remote-1
     type: remote
-    hostname: "192.168.1.100"    # Your Computer 2 IP/hostname
-    username: "perfuser"          # SSH username on Computer 2
-    description: "Remote server"
-
-implementations:
-  - id: rust-libp2p-v0.53
-    # ... other configuration ...
-    server: remote-1  # Use remote server for this implementation
+    hostname: "192.168.1.100"
+    username: "perfuser"
+    sshKey: "~/.ssh/perf_key"
+    description: "Remote test server"
 ```
 
-#### 5. Server Requirements (Computer 2)
+2. Assign implementations to specific servers:
+```yaml
+implementations:
+  - id: rust-v0.56
+    server: remote-1  # This implementation runs on remote-1
+    ...
+```
 
-On the remote server, ensure:
+3. Use SSH for remote Docker operations
 
-- **Docker installed and running:**
-  ```bash
-  curl -fsSL https://get.docker.com | sh
-  sudo usermod -aG docker $USER
-  # Log out and back in
-  ```
+For now, all tests run locally using Docker networking. Multi-machine testing support will be added in a future update.
 
-- **Port 4001 accessible** (default perf protocol port):
-  ```bash
-  sudo ufw allow 4001/tcp  # If firewall enabled
-  ```
+## Troubleshooting
 
-- **User in docker group** (run Docker without sudo):
-  ```bash
-  # Verify
-  docker ps
-  ```
+### Common Issues
 
-See **[QUICKSTART.md](QUICKSTART.md)** for detailed troubleshooting and setup instructions.
+**Tests failing with timeout**
+- Check container logs: `$TEST_PASS_DIR/logs/<test-name>.log`
+- Increase test duration: `--duration 30`
+- Enable debug mode: `--debug`
 
----
+**Cache not working / Matrix regenerates every time**
+- Check TEST_RUN_KEY in output (should be consistent for same configuration)
+- Verify cache directory: `ls -la /srv/cache/test-run-matrix/`
+- Force rebuild to clear corrupted cache: `--force-matrix-rebuild`
 
-## Running via GitHub Action (AWS-Based)
+**Docker images not building**
+- Check Docker daemon is running: `docker ps`
+- Check available disk space: `df -h`
+- Force rebuild: `--force-image-rebuild`
+- Check build logs in terminal output
 
-1. Create a pull request with your changes on https://github.com/libp2p/test-plans/.
-2. Trigger GitHub Action for branch on https://github.com/libp2p/test-plans/actions/workflows/perf.yml (see _Run workflow_ button).
-3. Wait for action run to finish and to push a commit to your branch.
-4. Visualize results on https://observablehq.com/@libp2p-workspace/performance-dashboard.
+**Redis connection errors**
+- Redis container may not have started properly
+- Check: `docker ps | grep perf-redis`
+- Check logs: `docker logs perf-redis`
+- Ensure port 6379 is not already in use
 
-## Running manually
+**Filter not working as expected**
+- Check filter expansion in test matrix generation output
+- Verify aliases in images.yaml: `yq eval '.test-aliases' images.yaml`
+- Use `--list-tests` to preview test selection before running
 
-### Prerequisites
+### Debug Mode
 
-- Terraform 1.5.4 or later
-- Node.js 18 or later
-- [an AWS IAM user](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users.html)
+Enable comprehensive logging with `--debug`:
 
+```bash
+# Run with debug output
+./run.sh --debug --test-ignore "!~rust"
 
-### Provision infrastructure
+# Or set environment variable
+DEBUG=true ./run.sh --test-ignore "!~rust"
+```
 
-1. Save your public SSH key as the file `./terraform/modules/short_lived/files/perf.pub`; or generate a new key pair with `make ssh-keygen` and add it to your SSH agent with `make ssh-add`.
-2. `cd terraform/configs/local`
-3. `terraform init`
-4. `terraform apply`
-5. `CLIENT_IP=$(terraform output -raw client_ip)`
-6. `SERVER_IP=$(terraform output -raw server_ip)`
+Debug mode shows:
+- Detailed test execution steps
+- Filter expansion details
+- Docker commands being executed
+- Redis coordination messages
 
-**Notes**
-- While running terraform you may encounter the following error:
-  ```bash
-    Error: collecting instance settings: reading EC2 Launch Template versions: couldn't find resource
-    │
-    │   with module.short_lived_server[0].aws_instance.perf,
-    │   on ../../modules/short_lived/main.tf line 15, in resource "aws_instance" "perf":
-    │   15: resource "aws_instance" "perf" {
-  ```
-- This implies that you haven't deployed the long-lived infrastructure on your AWS account. To do so along with each short-lived deployment, you can set *TF_VAR* [`long_lived_enabled`](./terraform/configs/local/terraform.tf#L42) env variable to default to `true`. Terraform should then spin up the long-lived resources that are required for the short-lived resources to be created.
+### Viewing Test Logs
 
-- It's best to destroy the infrastructure after you're done with your testing, you can do that by running `terraform destroy`.
+Individual test logs are stored in `$TEST_PASS_DIR/logs/`:
 
-### Build and run libp2p implementations
+```bash
+# Find your test pass directory
+ls -lt /srv/cache/test-run/ | head
 
-Given you have provisioned your infrastructure, you can now build and run the libp2p implementations on the AWS instances.
+# View a specific test log
+cat /srv/cache/test-run/perf-<key>-<timestamp>/logs/<test-name>.log
 
-1. `cd runner`
-2. `npm ci`
-3. `npm run start -- --client-public-ip $CLIENT_IP --server-public-ip $SERVER_IP`
-   * Note: The default number of iterations that perf will run is 10; desired iterations can be set with the  `--iterations <value>` option.
+# Search for errors across all logs
+grep -r "error" /srv/cache/test-run/perf-<key>-<timestamp>/logs/
+```
 
-### Deprovision infrastructure
+### Checking Test Results
 
-1. `cd terraform/configs/local`
-2. `terraform destroy`
+Results are available in multiple formats:
 
-## Adding a new implementation or a new version
+```bash
+# YAML format (machine-readable)
+cat $TEST_PASS_DIR/results.yaml
 
-1. Add the implementation to new subdirectory in [`impl/*`](./impl/).
-    - For a new implementation, create a folder `impl/<your-implementation-name>/` e.g. `go-libp2p`
-    - For a new version of an existing implementation, create a folder `impl/<your-implementation-name>/<your-implementation-version>`.
-    - In that folder include a `Makefile` that builds an executable and stores it next to the `Makefile` under the name `perf`.
-    - Requirements for the executable:
-      - Running as a libp2p-perf server:
-        - The perf server must not exit as it will be closed by the test runner.
-        - The executable must accept the command flag `--run-server` which indicates it's running as server.
-      - Running as a libp2p-perf client
-        - Given that perf is a client driven set of benchmarks, the performance will be measured by the client.
-          - Input via command line
-            - `--server-address`
-            - `--transport` (see [`runner/versions.ts`](./runner/src/versions.ts#L7-L43) for possible variants)
-            - `--upload-bytes` number of bytes to upload per stream in 64KiB chunks.
-            - `--download-bytes` number of bytes to download per stream in 64KiB chunks.
-          - Output
-            - Logging MUST go to `stderr`.
-            - Measurement output is printed to `stdout` as JSON.
-            - The output schema is:
-               ``` typescript
-               interface Data {
-                 type: "intermediary" | "final";
-                 timeSeconds: number;
-                 uploadBytes: number;
-                 downloadBytes: number;
-               }
-               ```
-            - Every second the client must print the current progress to stdout. See example below. Note the `type: "intermediary"`.
-               ``` json
-               {
-                 "type": "intermediary",
-                 "timeSeconds": 1.004957645,
-                 "uploadBytes": 73039872,
-                 "downloadBytes": 0
-               },
-               ```
-            - Before terminating the client must print a final summary. See example below. Note the `type: "final"`. Also note that the measurement includes the time to (1) establish the connection, (2) upload the bytes and (3) download the bytes.
-               ``` json
-               {
-                 "type": "final",
-                 "timeSeconds": 60.127230659,
-                 "uploadBytes": 4382392320,
-                 "downloadBytes": 0
-               }
-               ```
-2. For a new implementation, in [`impl/Makefile` include your implementation in the `all` target.](./impl/Makefile#L7)
-3. For a new version, reference version in [`runner/src/versions.ts`](./runner/src/versions.ts#L7-L43).
+# Markdown dashboard (human-readable)
+cat $TEST_PASS_DIR/results.md
 
-## Latest Test Results
+# Individual test results
+ls $TEST_PASS_DIR/results/
+cat $TEST_PASS_DIR/results/<test-name>.yaml
+```
+
+## Quick Reference
+
+### Most Common Commands
+
+```bash
+# Check what will run
+./run.sh --list-tests
+
+# Run only rust tests
+./run.sh --test-ignore "!~rust"
+
+# Run only baselines
+./run.sh --baseline-ignore "!~baselines" --test-ignore "~images"
+
+# Run with custom iterations and data size
+./run.sh --iterations 20 --upload-bytes 5368709120
+
+# Run and create snapshot for reproducibility
+./run.sh --snapshot
+
+# Re-run from a previous snapshot
+cd /srv/cache/test-run/perf-<key>-<timestamp>/
+./run.sh
+
+# Debug a failing test
+./run.sh --debug --test-ignore "!rust-v0.56"
+```
+
+### Performance Tips
+
+1. **Use filtering** to reduce test time during development
+2. **Cache is your friend** - matrix regeneration is expensive
+3. **Use `--list-tests`** to verify selection before running
+4. **Enable `--debug`** only when troubleshooting (verbose output)
+5. **Create snapshots** for reproducible benchmark comparisons
+6. **Lower iterations** for faster feedback during development: `--iterations 3`
+
+### Exit Codes
+
+- **0**: All tests passed
+- **1**: One or more tests failed
+- **Other**: Script error (check terminal output)
+
+## Current Status
 
 <!-- TEST_RESULTS_START -->
-# Performance Test Results
-
-**Test Pass:** perf-024521-16-01-2026
-**Started:** 2026-01-16T02:45:21Z
-**Completed:** 2026-01-16T03:08:57Z
-**Duration:** 1416s
-**Platform:** x86_64 (Linux)
-
-## Summary
-
-- **Total Tests:** 23 (3 baseline + 20 main)
-- **Passed:** 11 (47.8%)
-- **Failed:** 12
-
-### Baseline Results
-- Total: 3
-- Passed: 2
-- Failed: 1
-
-### Main Test Results
-- Total: 20
-- Passed: 9
-- Failed: 11
-
-## Box Plot Statistics
-
-### Upload Throughput (Gbps)
-
-| Test | Min | Q1 | Median | Q3 | Max | Outliers |
-|------|-----|-------|--------|-------|-----|----------|
-| rust-v0.56 x rust-v0.56 (tcp, noise, yamux) | 1.86 | 2.05 | 2.19 | 2.27 | 2.57 | 1 |
-| rust-v0.56 x rust-v0.56 (tcp, noise, mplex) | 1.74 | 1.82 | 1.94 | 1.97 | 2.15 | 0 |
-| rust-v0.56 x rust-v0.56 (tcp, tls, yamux) | 1.77 | 2.04 | 2.15 | 2.30 | 2.48 | 0 |
-| rust-v0.56 x rust-v0.56 (tcp, tls, mplex) | 1.77 | 1.85 | 2.14 | 2.29 | 2.36 | 0 |
-| rust-v0.56 x rust-v0.56 (quic-v1) | 1.27 | 1.30 | 1.37 | 1.37 | 1.41 | 0 |
-| rust-v0.56 x dotnet-v1.0 (tcp, noise, yamux) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0 |
-| rust-v0.56 x dotnet-v1.0 (tcp, noise, mplex) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0 |
-| rust-v0.56 x dotnet-v1.0 (tcp, tls, yamux) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0 |
-| rust-v0.56 x dotnet-v1.0 (tcp, tls, mplex) | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0 |
-| rust-v0.56 x dotnet-v1.0 (quic-v1) | null | null | null | null | null | 0 |
-| dotnet-v1.0 x rust-v0.56 (tcp, noise, yamux) | null | null | null | null | null | 0 |
-| dotnet-v1.0 x rust-v0.56 (tcp, noise, mplex) | null | null | null | null | null | 0 |
-| dotnet-v1.0 x rust-v0.56 (tcp, tls, yamux) | null | null | null | null | null | 0 |
-| dotnet-v1.0 x rust-v0.56 (tcp, tls, mplex) | null | null | null | null | null | 0 |
-| dotnet-v1.0 x rust-v0.56 (quic-v1) | null | null | null | null | null | 0 |
-| dotnet-v1.0 x dotnet-v1.0 (tcp, noise, yamux) | null | null | null | null | null | 0 |
-| dotnet-v1.0 x dotnet-v1.0 (tcp, noise, mplex) | null | null | null | null | null | 0 |
-| dotnet-v1.0 x dotnet-v1.0 (tcp, tls, yamux) | null | null | null | null | null | 0 |
-| dotnet-v1.0 x dotnet-v1.0 (tcp, tls, mplex) | null | null | null | null | null | 0 |
-| dotnet-v1.0 x dotnet-v1.0 (quic-v1) | null | null | null | null | null | 0 |
-
-### Download Throughput (Gbps)
-
-| Test | Min | Q1 | Median | Q3 | Max | Outliers |
-|------|-----|-------|--------|-------|-----|----------|
-| rust-v0.56 x rust-v0.56 (tcp, noise, yamux) | 2.04 | 2.10 | 2.28 | 2.33 | 2.43 | 0 |
-| rust-v0.56 x rust-v0.56 (tcp, noise, mplex) | 2.21 | 2.21 | 2.22 | 2.27 | 2.27 | 4 |
-| rust-v0.56 x rust-v0.56 (tcp, tls, yamux) | 2.08 | 2.11 | 2.21 | 2.29 | 2.37 | 0 |
-| rust-v0.56 x rust-v0.56 (tcp, tls, mplex) | 2.00 | 2.17 | 2.26 | 2.38 | 2.43 | 0 |
-| rust-v0.56 x rust-v0.56 (quic-v1) | 1.35 | 1.36 | 1.37 | 1.38 | 1.39 | 0 |
-| rust-v0.56 x dotnet-v1.0 (tcp, noise, yamux) | 193.85 | 194.05 | 195.38 | 196.49 | 198.29 | 3 |
-| rust-v0.56 x dotnet-v1.0 (tcp, noise, mplex) | 193.60 | 193.90 | 195.50 | 196.18 | 197.65 | 1 |
-| rust-v0.56 x dotnet-v1.0 (tcp, tls, yamux) | 179.05 | 182.34 | 194.26 | 195.65 | 199.92 | 1 |
-| rust-v0.56 x dotnet-v1.0 (tcp, tls, mplex) | 194.58 | 194.66 | 195.31 | 196.29 | 198.70 | 3 |
-| rust-v0.56 x dotnet-v1.0 (quic-v1) | null | null | null | null | null | 0 |
-| dotnet-v1.0 x rust-v0.56 (tcp, noise, yamux) | null | null | null | null | null | 0 |
-| dotnet-v1.0 x rust-v0.56 (tcp, noise, mplex) | null | null | null | null | null | 0 |
-| dotnet-v1.0 x rust-v0.56 (tcp, tls, yamux) | null | null | null | null | null | 0 |
-| dotnet-v1.0 x rust-v0.56 (tcp, tls, mplex) | null | null | null | null | null | 0 |
-| dotnet-v1.0 x rust-v0.56 (quic-v1) | null | null | null | null | null | 0 |
-| dotnet-v1.0 x dotnet-v1.0 (tcp, noise, yamux) | null | null | null | null | null | 0 |
-| dotnet-v1.0 x dotnet-v1.0 (tcp, noise, mplex) | null | null | null | null | null | 0 |
-| dotnet-v1.0 x dotnet-v1.0 (tcp, tls, yamux) | null | null | null | null | null | 0 |
-| dotnet-v1.0 x dotnet-v1.0 (tcp, tls, mplex) | null | null | null | null | null | 0 |
-| dotnet-v1.0 x dotnet-v1.0 (quic-v1) | null | null | null | null | null | 0 |
-
-### Latency (seconds)
-
-| Test | Min | Q1 | Median | Q3 | Max | Outliers |
-|------|-----|-------|--------|-------|-----|----------|
-| rust-v0.56 x rust-v0.56 (tcp, noise, yamux) | 0.551 | 0.610 | 0.633 | 0.675 | 0.761 | 4 |
-| rust-v0.56 x rust-v0.56 (tcp, noise, mplex) | 0.488 | 0.562 | 0.601 | 0.638 | 0.732 | 2 |
-| rust-v0.56 x rust-v0.56 (tcp, tls, yamux) | 0.518 | 0.589 | 0.627 | 0.666 | 0.759 | 2 |
-| rust-v0.56 x rust-v0.56 (tcp, tls, mplex) | 0.558 | 0.646 | 0.691 | 0.716 | 0.810 | 1 |
-| rust-v0.56 x rust-v0.56 (quic-v1) | 0.572 | 0.618 | 0.636 | 0.662 | 0.724 | 4 |
-| rust-v0.56 x dotnet-v1.0 (tcp, noise, yamux) | 87.939 | 87.969 | 87.981 | 87.994 | 88.026 | 15 |
-| rust-v0.56 x dotnet-v1.0 (tcp, noise, mplex) | 87.934 | 87.969 | 87.981 | 87.992 | 88.014 | 7 |
-| rust-v0.56 x dotnet-v1.0 (tcp, tls, yamux) | 87.932 | 87.970 | 87.978 | 87.998 | 88.016 | 19 |
-| rust-v0.56 x dotnet-v1.0 (tcp, tls, mplex) | 87.941 | 87.966 | 87.982 | 87.998 | 88.025 | 22 |
-| rust-v0.56 x dotnet-v1.0 (quic-v1) | null | null | null | null | null | 0 |
-| dotnet-v1.0 x rust-v0.56 (tcp, noise, yamux) | null | null | null | null | null | 0 |
-| dotnet-v1.0 x rust-v0.56 (tcp, noise, mplex) | null | null | null | null | null | 0 |
-| dotnet-v1.0 x rust-v0.56 (tcp, tls, yamux) | null | null | null | null | null | 0 |
-| dotnet-v1.0 x rust-v0.56 (tcp, tls, mplex) | null | null | null | null | null | 0 |
-| dotnet-v1.0 x rust-v0.56 (quic-v1) | null | null | null | null | null | 0 |
-| dotnet-v1.0 x dotnet-v1.0 (tcp, noise, yamux) | null | null | null | null | null | 0 |
-| dotnet-v1.0 x dotnet-v1.0 (tcp, noise, mplex) | null | null | null | null | null | 0 |
-| dotnet-v1.0 x dotnet-v1.0 (tcp, tls, yamux) | null | null | null | null | null | 0 |
-| dotnet-v1.0 x dotnet-v1.0 (tcp, tls, mplex) | null | null | null | null | null | 0 |
-| dotnet-v1.0 x dotnet-v1.0 (quic-v1) | null | null | null | null | null | 0 |
-
-## Test Results
-
-### https x https (https)
-- Status: pass
-
-### quic-go x quic-go (quic)
-- Status: fail
-
-### iperf x iperf (tcp)
-- Status: pass
-
-### rust-v0.56 x rust-v0.56 (tcp, noise, yamux)
-- Status: pass
-
-### rust-v0.56 x rust-v0.56 (tcp, noise, mplex)
-- Status: pass
-
-### rust-v0.56 x rust-v0.56 (tcp, tls, yamux)
-- Status: pass
-
-### rust-v0.56 x rust-v0.56 (tcp, tls, mplex)
-- Status: pass
-
-### rust-v0.56 x rust-v0.56 (quic-v1)
-- Status: pass
-
-### rust-v0.56 x dotnet-v1.0 (tcp, noise, yamux)
-- Status: pass
-
-### rust-v0.56 x dotnet-v1.0 (tcp, noise, mplex)
-- Status: pass
-
-### rust-v0.56 x dotnet-v1.0 (tcp, tls, yamux)
-- Status: pass
-
-### rust-v0.56 x dotnet-v1.0 (tcp, tls, mplex)
-- Status: pass
-
-### rust-v0.56 x dotnet-v1.0 (quic-v1)
-- Status: fail
-
-### dotnet-v1.0 x rust-v0.56 (tcp, noise, yamux)
-- Status: fail
-
-### dotnet-v1.0 x rust-v0.56 (tcp, noise, mplex)
-- Status: fail
-
-### dotnet-v1.0 x rust-v0.56 (tcp, tls, yamux)
-- Status: fail
-
-### dotnet-v1.0 x rust-v0.56 (tcp, tls, mplex)
-- Status: fail
-
-### dotnet-v1.0 x rust-v0.56 (quic-v1)
-- Status: fail
-
-### dotnet-v1.0 x dotnet-v1.0 (tcp, noise, yamux)
-- Status: fail
-
-### dotnet-v1.0 x dotnet-v1.0 (tcp, noise, mplex)
-- Status: fail
-
-### dotnet-v1.0 x dotnet-v1.0 (tcp, tls, yamux)
-- Status: fail
-
-### dotnet-v1.0 x dotnet-v1.0 (tcp, tls, mplex)
-- Status: fail
-
-### dotnet-v1.0 x dotnet-v1.0 (quic-v1)
-- Status: fail
-
 <!-- TEST_RESULTS_END -->

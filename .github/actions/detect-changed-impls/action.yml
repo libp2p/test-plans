@@ -1,5 +1,5 @@
 name: "Detect Changed Implementations"
-description: "Detect which implementations/relays/routers have changed in impls.yaml or impls/ folder during a PR"
+description: "Detect which implementations/relays/routers have changed in images.yaml or impls/ folder during a PR"
 
 inputs:
   test-type:
@@ -27,7 +27,7 @@ outputs:
     description: "Boolean indicating if any changes were detected"
     value: ${{ steps.detect.outputs.has-changes }}
   impls-yaml-changed:
-    description: "Boolean indicating if impls.yaml file changed"
+    description: "Boolean indicating if images.yaml file changed"
     value: ${{ steps.detect.outputs.impls-yaml-changed }}
   impls-folder-changed:
     description: "Boolean indicating if impls/ folder changed"
@@ -47,13 +47,13 @@ runs:
 
         # Set paths based on test type
         if [ "$TEST_TYPE" = "transport" ]; then
-          IMPLS_FILE="transport/impls.yaml"
+          IMPLS_FILE="transport/images.yaml"
           IMPLS_DIR="transport/impls"
         elif [ "$TEST_TYPE" = "hole-punch" ]; then
-          IMPLS_FILE="hole-punch/impls.yaml"
+          IMPLS_FILE="hole-punch/images.yaml"
           IMPLS_DIR="hole-punch/impls"
         elif [ "$TEST_TYPE" = "perf" ]; then
-          IMPLS_FILE="perf/impls.yaml"
+          IMPLS_FILE="perf/images.yaml"
           IMPLS_DIR="perf/impls"
         else
           echo "Error: Invalid test-type. Must be 'transport', 'hole-punch', or 'perf'"
@@ -74,7 +74,7 @@ runs:
         IMPLS_FOLDER_CHANGED="false"
 
         # =================================================================
-        # PART 1: Check if impls.yaml itself changed
+        # PART 1: Check if images.yaml itself changed
         # =================================================================
         if echo "$CHANGED_FILES" | grep -q "^$IMPLS_FILE$"; then
           echo "→ $IMPLS_FILE changed - analyzing YAML diff"

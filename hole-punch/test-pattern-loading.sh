@@ -41,8 +41,11 @@ echo ""
 echo "Testing pattern matching:"
 relay_id="linux"
 echo "  Checking if '$relay_id' matches pattern 'linux'..."
-if [[ "$relay_id" == *"linux"* ]]; then
-    echo "  ✓ Match!"
-else
-    echo "  ✗ No match"
-fi
+case "$relay_id" in
+    *"linux"*)
+        echo "  ✓ Match!"
+        ;;
+    *)
+        echo "  ✗ No match"
+        ;;
+esac

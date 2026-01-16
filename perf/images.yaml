@@ -1,0 +1,98 @@
+# Perf Test - Implementation Definitions
+# This file defines all implementations to test for libp2p performance benchmarking
+
+# Test Aliases - Define reusable patterns for test selection
+# Usage: --test-select "~libp2p" or --test-ignore "~baseline"
+test-aliases:
+  - alias: "all"
+    value: "~baselines|~images"
+  - alias: "none"
+    value: "!~all"
+  - alias: "images"
+    value: "dotnet-v1.0|go-v0.45|js-v3.x|rust-v0.56"
+  - alias: "baselines"
+    value: "https|quic-go|iperf"
+  - alias: "go"
+    value: "go-v0.45"
+  - alias: "rust"
+    value: "rust-v0.56"
+  - alias: "js"
+    value: "js-v3.x"
+  - alias: "dotnet"
+    value: "dotnet-v1.0"
+  - alias: "failing"
+    value: "go-v0.45|js-v3.x"
+
+# Baseline implementations - Separate from main tests
+# These measure raw network/protocol performance for comparison
+# Docker image naming: perf-<id>
+baselines:
+  # HTTPS baseline (standalone transport - no secureChannel/muxer needed)
+  - id: https
+    source:
+      type: local
+      path: images/https/v1.0
+      dockerfile: Dockerfile
+    transports: [https]
+    secureChannels: []
+    muxers: []
+
+  # QUIC-Go baseline (standalone transport - no secureChannel/muxer needed)
+  - id: quic-go
+    source:
+      type: local
+      path: images/quic-go/v1.0
+      dockerfile: Dockerfile
+    transports: [quic]
+    secureChannels: []
+    muxers: []
+
+  # iperf3 baseline (raw TCP performance)
+  - id: iperf
+    source:
+      type: local
+      path: images/iperf/v3.0
+      dockerfile: Dockerfile
+    transports: [tcp]
+    secureChannels: []
+    muxers: []
+
+# Implementation definitions
+# Docker image naming: perf-<id>
+implementations:
+  - id: go-v0.45
+    source:
+      type: local
+      path: images/go/v0.45
+      dockerfile: Dockerfile
+    transports: [tcp, quic-v1, webtransport]
+    secureChannels: [noise, tls]
+    muxers: [yamux, mplex]
+
+  - id: rust-v0.56
+    source:
+      type: local
+      path: images/rust/v0.56
+      dockerfile: Dockerfile
+    transports: [quic-v1, tcp, webrtc-direct, ws]
+    secureChannels: [noise, tls]
+    muxers: [yamux, mplex]
+
+  - id: js-v3.x
+    source:
+      type: local
+      path: images/js/v3.x
+      dockerfile: Dockerfile
+    transports: [tcp, webtransport]
+    secureChannels: [noise, tls]
+    muxers: [yamux, mplex]
+
+  - id: dotnet-v1.0
+    source:
+      type: local
+      path: images/dotnet/v1.0
+      dockerfile: Dockerfile
+    transports: [tcp, quic-v1]
+    secureChannels: [noise, tls]
+    muxers: [yamux, mplex]
+

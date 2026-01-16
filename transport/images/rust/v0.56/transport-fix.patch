@@ -1,0 +1,374 @@
+diff --git a/interop-tests/Dockerfile.chromium b/interop-tests/Dockerfile.chromium
+index 73a9ab82e..749b51334 100644
+--- a/interop-tests/Dockerfile.chromium
++++ b/interop-tests/Dockerfile.chromium
+@@ -1,9 +1,9 @@
+ # syntax=docker/dockerfile:1.5-labs
+-FROM rust:1.83 as chef
++FROM rust:1.92 AS chef
+ RUN rustup target add wasm32-unknown-unknown
+-RUN wget -q -O- https://github.com/rustwasm/wasm-pack/releases/download/v0.12.1/wasm-pack-v0.12.1-x86_64-unknown-linux-musl.tar.gz | tar -zx -C /usr/local/bin --strip-components 1 --wildcards "wasm-pack-*/wasm-pack"
+-RUN wget -q -O- https://github.com/WebAssembly/binaryen/releases/download/version_115/binaryen-version_115-x86_64-linux.tar.gz | tar -zx -C /usr/local/bin --strip-components 2 --wildcards "binaryen-version_*/bin/wasm-opt"
+-RUN wget -q -O- https://github.com/LukeMathWalker/cargo-chef/releases/download/v0.1.62/cargo-chef-x86_64-unknown-linux-gnu.tar.gz | tar -zx -C /usr/local/bin
++RUN wget -q -O- https://github.com/drager/wasm-pack/releases/download/v0.13.1/wasm-pack-v0.13.1-x86_64-unknown-linux-musl.tar.gz | tar -zx -C /usr/local/bin --strip-components 1 --wildcards "wasm-pack-*/wasm-pack"
++RUN wget -q -O- https://github.com/WebAssembly/binaryen/releases/download/version_125/binaryen-version_125-x86_64-linux.tar.gz | tar -zx -C /usr/local/bin --strip-components 2 --wildcards "binaryen-version_*/bin/wasm-opt"
++RUN wget -q -O- https://github.com/LukeMathWalker/cargo-chef/releases/download/v0.1.73/cargo-chef-x86_64-unknown-linux-musl.tar.gz | tar -zx -C /usr/local/bin
+ WORKDIR /app
+ 
+ FROM chef AS planner
+@@ -20,7 +20,7 @@ COPY . .
+ RUN wasm-pack build --target web interop-tests
+ RUN RUSTFLAGS='-C target-feature=+crt-static' cargo build --release --package interop-tests --target x86_64-unknown-linux-gnu --bin wasm_ping
+ 
+-FROM selenium/standalone-chrome:125.0
++FROM selenium/standalone-chrome:143.0-20251212
+ COPY --from=builder /app/target/x86_64-unknown-linux-gnu/release/wasm_ping /usr/local/bin/testplan
+ ENV RUST_BACKTRACE=1
+ ENTRYPOINT ["testplan"]
+diff --git a/interop-tests/Dockerfile.native b/interop-tests/Dockerfile.native
+index fab50dc50..644d3c874 100644
+--- a/interop-tests/Dockerfile.native
++++ b/interop-tests/Dockerfile.native
+@@ -1,5 +1,4 @@
+-# syntax=docker/dockerfile:1.5-labs
+-FROM lukemathwalker/cargo-chef:0.1.68-rust-bullseye as chef
++FROM lukemathwalker/cargo-chef:latest-rust-slim-trixie AS chef
+ WORKDIR /app
+ 
+ FROM chef AS planner
+@@ -15,7 +14,7 @@ COPY . .
+ RUN RUSTFLAGS='-C target-feature=+crt-static' cargo build --release --package interop-tests --target $(rustc -vV | grep host | awk '{print $2}') --bin native_ping
+ RUN cp /app/target/$(rustc -vV | grep host | awk '{print $2}')/release/native_ping /usr/local/bin/testplan
+ 
+-FROM debian:bullseye
++FROM debian:trixie-slim
+ COPY --from=builder /usr/local/bin/testplan /usr/local/bin/testplan
+ ENV RUST_BACKTRACE=1
+ ENTRYPOINT ["testplan"]
+diff --git a/interop-tests/src/arch.rs b/interop-tests/src/arch.rs
+index 88c4c5767..c13d47375 100644
+--- a/interop-tests/src/arch.rs
++++ b/interop-tests/src/arch.rs
+@@ -39,11 +39,11 @@ pub(crate) mod native {
+     pub(crate) async fn build_swarm<B: NetworkBehaviour>(
+         ip: &str,
+         transport: Transport,
+-        sec_protocol: Option<SecProtocol>,
++        secure_channel: Option<SecProtocol>,
+         muxer: Option<Muxer>,
+         behaviour_constructor: impl FnOnce(&Keypair) -> B,
+     ) -> Result<(Swarm<B>, String)> {
+-        let (swarm, addr) = match (transport, sec_protocol, muxer) {
++        let (swarm, addr) = match (transport, secure_channel, muxer) {
+             (Transport::QuicV1, None, None) => (
+                 libp2p::SwarmBuilder::with_new_identity()
+                     .with_tokio()
+@@ -207,11 +207,11 @@ pub(crate) mod wasm {
+     pub(crate) async fn build_swarm<B: NetworkBehaviour>(
+         ip: &str,
+         transport: Transport,
+-        sec_protocol: Option<SecProtocol>,
++        secure_channel: Option<SecProtocol>,
+         muxer: Option<Muxer>,
+         behaviour_constructor: impl FnOnce(&Keypair) -> B,
+     ) -> Result<(Swarm<B>, String)> {
+-        Ok(match (transport, sec_protocol, muxer) {
++        Ok(match (transport, secure_channel, muxer) {
+             (Transport::Webtransport, None, None) => (
+                 libp2p::SwarmBuilder::with_new_identity()
+                     .with_wasm_bindgen()
+diff --git a/interop-tests/src/bin/config/mod.rs b/interop-tests/src/bin/config/mod.rs
+index dff297ef4..578490864 100644
+--- a/interop-tests/src/bin/config/mod.rs
++++ b/interop-tests/src/bin/config/mod.rs
+@@ -5,40 +5,43 @@ use anyhow::{Context, Result};
+ #[derive(Debug, Clone)]
+ pub(crate) struct Config {
+     pub(crate) transport: String,
+-    pub(crate) sec_protocol: Option<String>,
++    pub(crate) secure_channel: Option<String>,
+     pub(crate) muxer: Option<String>,
+-    pub(crate) ip: String,
++    pub(crate) listener_ip: String,
+     pub(crate) is_dialer: bool,
+-    pub(crate) test_timeout: u64,
+     pub(crate) redis_addr: String,
++    pub(crate) debug: bool,
++    pub(crate) test_key: String,
+ }
+ 
+ impl Config {
+     pub(crate) fn from_env() -> Result<Self> {
++        let debug = env::var("DEBUG")
++            .unwrap_or_else(|_| "false".into())
++            .parse::<bool>()?;
+         let transport =
+-            env::var("transport").context("transport environment variable is not set")?;
+-        let ip = env::var("ip").context("ip environment variable is not set")?;
+-        let is_dialer = env::var("is_dialer")
++            env::var("TRANSPORT").context("TRANSPORT environment variable is not set")?;
++        let listener_ip = env::var("LISTENER_IP").context("LISTENER_IP environment variable is not set")?;
++        let test_key = env::var("TEST_KEY").context("TEST_KEY environment variable is not set")?;
++        let is_dialer = env::var("IS_DIALER")
+             .unwrap_or_else(|_| "true".into())
+             .parse::<bool>()?;
+-        let test_timeout = env::var("test_timeout_seconds")
+-            .unwrap_or_else(|_| "180".into())
+-            .parse::<u64>()?;
+-        let redis_addr = env::var("redis_addr")
++        let redis_addr = env::var("REDIS_ADDR")
+             .map(|addr| format!("redis://{addr}"))
+             .unwrap_or_else(|_| "redis://redis:6379".into());
+ 
+-        let sec_protocol = env::var("security").ok();
+-        let muxer = env::var("muxer").ok();
++        let secure_channel = env::var("SECURE_CHANNEL").ok();
++        let muxer = env::var("MUXER").ok();
+ 
+         Ok(Self {
+             transport,
+-            sec_protocol,
++            secure_channel,
+             muxer,
+-            ip,
++            listener_ip,
+             is_dialer,
+-            test_timeout,
+             redis_addr,
++            debug,
++            test_key
+         })
+     }
+ }
+diff --git a/interop-tests/src/bin/native_ping.rs b/interop-tests/src/bin/native_ping.rs
+index 2fb6ce12e..486dddbbd 100644
+--- a/interop-tests/src/bin/native_ping.rs
++++ b/interop-tests/src/bin/native_ping.rs
+@@ -8,16 +8,20 @@ async fn main() -> Result<()> {
+ 
+     let report = interop_tests::run_test(
+         &config.transport,
+-        &config.ip,
++        &config.listener_ip,
+         config.is_dialer,
+-        config.test_timeout,
+         &config.redis_addr,
+-        config.sec_protocol,
++        config.secure_channel,
+         config.muxer,
++        config.debug,
++        &config.test_key,
+     )
+     .await?;
+ 
+-    println!("{}", serde_json::to_string(&report)?);
++    println!("latency:");
++    println!("  handshake_plus_one_rtt: {}", report.handshake_plus_one_rtt_ms);
++    println!("  ping_rtt: {}", report.ping_rtt_ms);
++    println!("  unit: ms");
+ 
+     Ok(())
+ }
+diff --git a/interop-tests/src/bin/wasm_ping.rs b/interop-tests/src/bin/wasm_ping.rs
+index 7730b8694..f9ea7bce9 100644
+--- a/interop-tests/src/bin/wasm_ping.rs
++++ b/interop-tests/src/bin/wasm_ping.rs
+@@ -50,7 +50,7 @@ async fn main() -> Result<()> {
+ 
+     // read env variables
+     let config = config::Config::from_env()?;
+-    let test_timeout = Duration::from_secs(config.test_timeout);
++    let test_timeout = Duration::from_secs(300);
+ 
+     // create a redis client
+     let redis_client =
+@@ -95,7 +95,12 @@ async fn main() -> Result<()> {
+     chrome.kill().await?;
+ 
+     match test_result {
+-        Ok(report) => println!("{}", serde_json::to_string(&report)?),
++        Ok(report) => {
++            println!("latency:");
++            println!("  handshake_plus_one_rtt: {}", report.handshake_plus_one_rtt_ms);
++            println!("  ping_rtt: {}", report.ping_rtt_ms);
++            println!("  unit: ms");
++        }
+         Err(error) => bail!("Tests failed: {error}"),
+     }
+ 
+@@ -181,15 +186,16 @@ async fn post_results(
+ async fn serve_index_html(state: State<TestState>) -> Result<impl IntoResponse, StatusCode> {
+     let config::Config {
+         transport,
+-        ip,
++        listener_ip,
+         is_dialer,
+-        test_timeout,
+-        sec_protocol,
++        secure_channel,
+         muxer,
++        debug,
++        test_key,
+         ..
+     } = state.0.config;
+ 
+-    let sec_protocol = sec_protocol
++    let secure_channel = secure_channel
+         .map(|p| format!(r#""{p}""#))
+         .unwrap_or("null".to_owned());
+     let muxer = muxer
+@@ -212,12 +218,13 @@ async fn serve_index_html(state: State<TestState>) -> Result<impl IntoResponse,
+                 // run our entrypoint with params from the env
+                 await run_test_wasm(
+                     "{transport}",
+-                    "{ip}",
++                    "{listener_ip}",
+                     {is_dialer},
+-                    "{test_timeout}",
+                     "{BIND_ADDR}",
+-                    {sec_protocol},
+-                    {muxer}
++                    {secure_channel},
++                    {muxer},
++                    {debug},
++                    "{test_key}"
+                 )
+             </script>
+         </head>
+diff --git a/interop-tests/src/lib.rs b/interop-tests/src/lib.rs
+index a16dc4b82..6a9c6a9d5 100644
+--- a/interop-tests/src/lib.rs
++++ b/interop-tests/src/lib.rs
+@@ -18,37 +18,38 @@ use arch::{build_swarm, init_logger, Instant, RedisClient};
+ 
+ pub async fn run_test(
+     transport: &str,
+-    ip: &str,
++    listener_ip: &str,
+     is_dialer: bool,
+-    test_timeout_seconds: u64,
+     redis_addr: &str,
+-    sec_protocol: Option<String>,
++    secure_channel: Option<String>,
+     muxer: Option<String>,
++    _debug: bool,
++    test_key: &str,
+ ) -> Result<Report> {
+     init_logger();
+ 
+-    let test_timeout = Duration::from_secs(test_timeout_seconds);
+     let transport = transport.parse().context("Couldn't parse transport")?;
+-    let sec_protocol = sec_protocol
+-        .map(|sec_protocol| {
+-            sec_protocol
++    let secure_channel = secure_channel
++        .map(|secure_channel| {
++            secure_channel
+                 .parse()
+-                .context("Couldn't parse security protocol")
++                .context("Couldn't parse secure_channel protocol")
+         })
+         .transpose()?;
+     let muxer = muxer
+-        .map(|sec_protocol| {
+-            sec_protocol
++        .map(|muxer| {
++            muxer
+                 .parse()
+                 .context("Couldn't parse muxer protocol")
+         })
+         .transpose()?;
+ 
+     let redis_client = RedisClient::new(redis_addr).context("Could not connect to redis")?;
++    let redis_key = format!("{}_listener_multiaddr", test_key);
+ 
+     // Build the transport from the passed ENV var.
+     let (mut swarm, local_addr) =
+-        build_swarm(ip, transport, sec_protocol, muxer, build_behaviour).await?;
++        build_swarm(listener_ip, transport, secure_channel, muxer, build_behaviour).await?;
+ 
+     tracing::info!(local_peer=%swarm.local_peer_id(), "Running ping test");
+ 
+@@ -67,8 +68,9 @@ pub async fn run_test(
+     // `dialerDone` key ready on the redis connection.
+     match is_dialer {
+         true => {
++
+             let result: Vec<String> = redis_client
+-                .blpop("listenerAddr", test_timeout.as_secs())
++                .blpop(&redis_key, 300)
+                 .await?;
+             let other = result
+                 .get(1)
+@@ -92,8 +94,8 @@ pub async fn run_test(
+ 
+             let handshake_plus_ping = handshake_start.elapsed().as_micros() as f32 / 1000.;
+             Ok(Report {
+-                handshake_plus_one_rtt_millis: handshake_plus_ping,
+-                ping_rtt_millis: rtt,
++                handshake_plus_one_rtt_ms: handshake_plus_ping,
++                ping_rtt_ms: rtt,
+             })
+         }
+         false => {
+@@ -120,7 +122,7 @@ pub async fn run_test(
+                     }
+                     if listener_id == id {
+                         let ma = format!("{address}/p2p/{}", swarm.local_peer_id());
+-                        redis_client.rpush("listenerAddr", ma.clone()).await?;
++                        redis_client.rpush(&redis_key, ma.clone()).await?;
+                         break;
+                     }
+                 }
+@@ -136,7 +138,7 @@ pub async fn run_test(
+                     }
+                 }
+                 .boxed(),
+-                arch::sleep(test_timeout),
++                arch::sleep(Duration::from_secs(300)),
+             )
+             .await;
+ 
+@@ -150,21 +152,23 @@ pub async fn run_test(
+ #[wasm_bindgen]
+ pub async fn run_test_wasm(
+     transport: &str,
+-    ip: &str,
++    listener_ip: &str,
+     is_dialer: bool,
+-    test_timeout_secs: u64,
+     base_url: &str,
+-    sec_protocol: Option<String>,
++    secure_channel: Option<String>,
+     muxer: Option<String>,
++    debug: bool,
++    test_key: &str,
+ ) -> Result<(), JsValue> {
+     let result = run_test(
+         transport,
+-        ip,
++        listener_ip,
+         is_dialer,
+-        test_timeout_secs,
+         base_url,
+-        sec_protocol,
++        secure_channel,
+         muxer,
++        debug,
++        test_key,
+     )
+     .await;
+     tracing::info!(?result, "Sending test result");
+@@ -190,10 +194,8 @@ pub struct BlpopRequest {
+ /// A report generated by the test
+ #[derive(Copy, Clone, Debug, serde::Serialize, serde::Deserialize)]
+ pub struct Report {
+-    #[serde(rename = "handshakePlusOneRTTMillis")]
+-    handshake_plus_one_rtt_millis: f32,
+-    #[serde(rename = "pingRTTMilllis")]
+-    ping_rtt_millis: f32,
++    pub handshake_plus_one_rtt_ms: f32,
++    pub ping_rtt_ms: f32,
+ }
+ 
+ /// Supported transports by rust-libp2p.
