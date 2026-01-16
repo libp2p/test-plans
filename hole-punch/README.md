@@ -671,7 +671,7 @@ Hole-punch tests have unique characteristics:
 <!-- TEST_RESULTS_START -->
 # Hole Punch Interoperability Test Results
 
-## Test Pass: `hole-punch-084517-15-01-2026`
+## Test Pass: `hole-punch-030938-16-01-2026`
 
 **Summary:**
 - **Total Tests:** 5
@@ -686,8 +686,8 @@ Hole-punch tests have unique characteristics:
 - **Duration:** 15s
 
 **Timestamps:**
-- **Started:** 2026-01-15T08:45:17Z
-- **Completed:** 2026-01-15T08:45:32Z
+- **Started:** 2026-01-16T03:09:38Z
+- **Completed:** 2026-01-16T03:09:53Z
 
 ---
 
@@ -695,11 +695,11 @@ Hole-punch tests have unique characteristics:
 
 | Test | Dialer | Listener | Transport | Status | Duration |
 |------|--------|----------|-----------|--------|----------|
-| linux x linux (quic-v1) [dr: linux, rly: linux, lr: linux] | linux | linux | quic-v1 | ✅ | 10s |
-| linux x linux (tcp, tls, mplex) [dr: linux, rly: linux, lr: linux] | linux | linux | tcp | ✅ | 11s |
-| linux x linux (tcp, noise, yamux) [dr: linux, rly: linux, lr: linux] | linux | linux | tcp | ✅ | 12s |
-| linux x linux (tcp, noise, mplex) [dr: linux, rly: linux, lr: linux] | linux | linux | tcp | ✅ | 13s |
-| linux x linux (tcp, tls, yamux) [dr: linux, rly: linux, lr: linux] | linux | linux | tcp | ✅ | 14s |
+| linux x linux (tcp, noise, yamux) [dr: linux, rly: linux, lr: linux] | linux | linux | tcp | ✅ | 10s |
+| linux x linux (tcp, noise, mplex) [dr: linux, rly: linux, lr: linux] | linux | linux | tcp | ✅ | 11s |
+| linux x linux (tcp, tls, yamux) [dr: linux, rly: linux, lr: linux] | linux | linux | tcp | ✅ | 11s |
+| linux x linux (tcp, tls, mplex) [dr: linux, rly: linux, lr: linux] | linux | linux | tcp | ✅ | 12s |
+| linux x linux (quic-v1) [dr: linux, rly: linux, lr: linux] | linux | linux | quic-v1 | ✅ | 13s |
 
 ---
 
@@ -720,6 +720,6 @@ Hole-punch tests have unique characteristics:
 
 ---
 
-*Generated: 2026-01-15T08:45:32Z*
+*Generated: 2026-01-16T03:09:53Z*
 <!-- TEST_RESULTS_END -->
 
