@@ -176,7 +176,7 @@ implementations:
   - id: js-v1.x
     source:
       type: local
-      path: impls/js/v1.x
+      path: images/js/v1.x
       dockerfile: Dockerfile
     transports: [tcp, ws, wss]
     secureChannels: [noise]
@@ -186,7 +186,7 @@ implementations:
   - id: js-v2.x
     source:
       type: local
-      path: impls/js/v2.x
+      path: images/js/v2.x
       dockerfile: Dockerfile
     transports: [tcp, ws, wss]
     secureChannels: [noise]
@@ -196,7 +196,7 @@ implementations:
   - id: js-v3.x
     source:
       type: local
-      path: impls/js/v3.x
+      path: images/js/v3.x
       dockerfile: Dockerfile
     transports: [tcp, ws, wss]
     secureChannels: [noise]
@@ -278,7 +278,7 @@ implementations:
       type: browser
       baseImage: js-v1.x
       browser: chromium
-      dockerfile: impls/js/v1.x/BrowserDockerfile
+      dockerfile: images/js/v1.x/BrowserDockerfile
     transports: [webtransport, wss, webrtc-direct, webrtc]
     secureChannels: [noise]
     muxers: [mplex, yamux]
@@ -289,7 +289,7 @@ implementations:
       type: browser
       baseImage: js-v2.x
       browser: chromium
-      dockerfile: impls/js/v2.x/BrowserDockerfile
+      dockerfile: images/js/v2.x/BrowserDockerfile
     transports: [webtransport, wss, webrtc-direct, webrtc]
     secureChannels: [noise]
     muxers: [mplex, yamux]
@@ -300,7 +300,7 @@ implementations:
       type: browser
       baseImage: js-v1.x
       browser: firefox
-      dockerfile: impls/js/v1.x/BrowserDockerfile
+      dockerfile: images/js/v1.x/BrowserDockerfile
     transports: [webtransport, wss, webrtc-direct, webrtc]
     secureChannels: [noise]
     muxers: [mplex, yamux]
@@ -311,7 +311,7 @@ implementations:
       type: browser
       baseImage: js-v2.x
       browser: firefox
-      dockerfile: impls/js/v2.x/BrowserDockerfile
+      dockerfile: images/js/v2.x/BrowserDockerfile
     transports: [webtransport, wss, webrtc-direct, webrtc]
     secureChannels: [noise]
     muxers: [mplex, yamux]
@@ -322,7 +322,7 @@ implementations:
       type: browser
       baseImage: js-v1.x
       browser: webkit
-      dockerfile: impls/js/v1.x/BrowserDockerfile
+      dockerfile: images/js/v1.x/BrowserDockerfile
     transports: [wss, webrtc-direct, webrtc]
     secureChannels: [noise]
     muxers: [mplex, yamux]
@@ -333,7 +333,7 @@ implementations:
       type: browser
       baseImage: js-v2.x
       browser: webkit
-      dockerfile: impls/js/v2.x/BrowserDockerfile
+      dockerfile: images/js/v2.x/BrowserDockerfile
     transports: [wss, webrtc-direct, webrtc]
     secureChannels: [noise]
     muxers: [mplex, yamux]
