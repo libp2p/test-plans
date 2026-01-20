@@ -3,7 +3,7 @@ use futures::channel::mpsc;
 use futures::{SinkExt, StreamExt};
 use libp2p::swarm::{NetworkBehaviour, SwarmEvent};
 use libp2p::{identify, Swarm};
-use libp2p_gossipsub::{self as gossipsub, IdentTopic, Partial};
+use libp2p_gossipsub::{self as gossipsub, partial_messages::Partial, IdentTopic};
 use slog::{error, info, Logger};
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
@@ -181,12 +181,12 @@ impl ScriptedNode {
                                             }).await.unwrap();
                                         }
                                     }
-                                    SwarmEvent::Behaviour(MyBehaviorEvent::Gossipsub(gossipsub::Event::Partial {group_id, topic_id, propagation_source, message, metadata })) => {
-                                        info!(self.stdout_logger, "Received partial message for topic {topic_id} and group {group_id:?}");
+                                    SwarmEvent::Behaviour(MyBehaviorEvent::Gossipsub(gossipsub::Event::Partial {group_id, topic_hash, peer_id, message, metadata })) => {
+                                        info!(self.stdout_logger, "Received partial message for topic {topic_hash} and group {group_id:?}");
 
                                         let topic_partials = self
                                             .partials
-                                            .entry(topic_id.to_string())
+                                            .entry(topic_hash.to_string())
                                             .or_default();
                                         let group_id_array: [u8; 8] = group_id
                                             .as_slice()
@@ -212,7 +212,7 @@ impl ScriptedNode {
                                                 info!(self.stdout_logger, "All parts received";
                                                     // "topic" => topic_id,
                                                     // "group_id" => group_id,
-                                                    "from" => propagation_source.to_string());
+                                                    "from" => peer_id.to_string());
                                             }
 
                                             should_republish = true;
@@ -228,7 +228,7 @@ impl ScriptedNode {
                                             self.swarm
                                                 .behaviour_mut()
                                                 .gossipsub
-                                                .publish_partial(topic_id, partial.clone())?;
+                                                .publish_partial(topic_hash, partial.clone())?;
                                         }
                                     }
                                     ev => {
@@ -277,7 +277,7 @@ impl ScriptedNode {
                     .swarm
                     .behaviour_mut()
                     .gossipsub
-                    .subscribe(&topic, partial, partial)
+                    .subscribe_partial(&topic, partial)
                 {
                     Ok(_) => {
                         info!(self.stderr_logger, "Subscribed to topic {}", topic_id);

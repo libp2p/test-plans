@@ -1510,7 +1510,7 @@ checksum = "37c93d8daa9d8a012fd8ab92f088405fb202ea0b6ab73ee2482ae66af4f42091"
 [[package]]
 name = "libp2p"
 version = "0.56.1"
-source = "git+https://github.com/jxs/rust-libp2p/?branch=gossipsub-partial-messages#5673256a216017679fb5bd6505cea079575527ad"
+source = "git+https://github.com/jxs/rust-libp2p/?branch=gossipsub-partial-messages#bd02db8b960158883545e6c9137c99e61ab8503e"
 dependencies = [
  "bytes",
  "either",
@@ -1541,7 +1541,7 @@ dependencies = [
 [[package]]
 name = "libp2p-allow-block-list"
 version = "0.6.0"
-source = "git+https://github.com/jxs/rust-libp2p/?branch=gossipsub-partial-messages#5673256a216017679fb5bd6505cea079575527ad"
+source = "git+https://github.com/jxs/rust-libp2p/?branch=gossipsub-partial-messages#bd02db8b960158883545e6c9137c99e61ab8503e"
 dependencies = [
  "libp2p-core",
  "libp2p-identity",
@@ -1551,7 +1551,7 @@ dependencies = [
 [[package]]
 name = "libp2p-connection-limits"
 version = "0.6.0"
-source = "git+https://github.com/jxs/rust-libp2p/?branch=gossipsub-partial-messages#5673256a216017679fb5bd6505cea079575527ad"
+source = "git+https://github.com/jxs/rust-libp2p/?branch=gossipsub-partial-messages#bd02db8b960158883545e6c9137c99e61ab8503e"
 dependencies = [
  "libp2p-core",
  "libp2p-identity",
@@ -1561,7 +1561,7 @@ dependencies = [
 [[package]]
 name = "libp2p-core"
 version = "0.43.1"
-source = "git+https://github.com/jxs/rust-libp2p/?branch=gossipsub-partial-messages#5673256a216017679fb5bd6505cea079575527ad"
+source = "git+https://github.com/jxs/rust-libp2p/?branch=gossipsub-partial-messages#bd02db8b960158883545e6c9137c99e61ab8503e"
 dependencies = [
  "either",
  "fnv",
@@ -1585,7 +1585,7 @@ dependencies = [
 [[package]]
 name = "libp2p-dns"
 version = "0.44.0"
-source = "git+https://github.com/jxs/rust-libp2p/?branch=gossipsub-partial-messages#5673256a216017679fb5bd6505cea079575527ad"
+source = "git+https://github.com/jxs/rust-libp2p/?branch=gossipsub-partial-messages#bd02db8b960158883545e6c9137c99e61ab8503e"
 dependencies = [
  "async-trait",
  "futures",
@@ -1600,7 +1600,7 @@ dependencies = [
 [[package]]
 name = "libp2p-gossipsub"
 version = "0.50.0"
-source = "git+https://github.com/jxs/rust-libp2p/?branch=gossipsub-partial-messages#5673256a216017679fb5bd6505cea079575527ad"
+source = "git+https://github.com/jxs/rust-libp2p/?branch=gossipsub-partial-messages#bd02db8b960158883545e6c9137c99e61ab8503e"
 dependencies = [
  "async-channel",
  "asynchronous-codec",
@@ -1629,7 +1629,7 @@ dependencies = [
 [[package]]
 name = "libp2p-identify"
 version = "0.47.0"
-source = "git+https://github.com/jxs/rust-libp2p/?branch=gossipsub-partial-messages#5673256a216017679fb5bd6505cea079575527ad"
+source = "git+https://github.com/jxs/rust-libp2p/?branch=gossipsub-partial-messages#bd02db8b960158883545e6c9137c99e61ab8503e"
 dependencies = [
  "asynchronous-codec",
  "either",
@@ -1667,7 +1667,7 @@ dependencies = [
 [[package]]
 name = "libp2p-mdns"
 version = "0.48.0"
-source = "git+https://github.com/jxs/rust-libp2p/?branch=gossipsub-partial-messages#5673256a216017679fb5bd6505cea079575527ad"
+source = "git+https://github.com/jxs/rust-libp2p/?branch=gossipsub-partial-messages#bd02db8b960158883545e6c9137c99e61ab8503e"
 dependencies = [
  "futures",
  "hickory-proto",
@@ -1685,7 +1685,7 @@ dependencies = [
 [[package]]
 name = "libp2p-metrics"
 version = "0.17.1"
-source = "git+https://github.com/jxs/rust-libp2p/?branch=gossipsub-partial-messages#5673256a216017679fb5bd6505cea079575527ad"
+source = "git+https://github.com/jxs/rust-libp2p/?branch=gossipsub-partial-messages#bd02db8b960158883545e6c9137c99e61ab8503e"
 dependencies = [
  "futures",
  "libp2p-core",
@@ -1700,7 +1700,7 @@ dependencies = [
 [[package]]
 name = "libp2p-noise"
 version = "0.46.1"
-source = "git+https://github.com/jxs/rust-libp2p/?branch=gossipsub-partial-messages#5673256a216017679fb5bd6505cea079575527ad"
+source = "git+https://github.com/jxs/rust-libp2p/?branch=gossipsub-partial-messages#bd02db8b960158883545e6c9137c99e61ab8503e"
 dependencies = [
  "asynchronous-codec",
  "bytes",
@@ -1722,7 +1722,7 @@ dependencies = [
 [[package]]
 name = "libp2p-quic"
 version = "0.13.0"
-source = "git+https://github.com/jxs/rust-libp2p/?branch=gossipsub-partial-messages#5673256a216017679fb5bd6505cea079575527ad"
+source = "git+https://github.com/jxs/rust-libp2p/?branch=gossipsub-partial-messages#bd02db8b960158883545e6c9137c99e61ab8503e"
 dependencies = [
  "futures",
  "futures-timer",
@@ -1743,7 +1743,7 @@ dependencies = [
 [[package]]
 name = "libp2p-swarm"
 version = "0.47.0"
-source = "git+https://github.com/jxs/rust-libp2p/?branch=gossipsub-partial-messages#5673256a216017679fb5bd6505cea079575527ad"
+source = "git+https://github.com/jxs/rust-libp2p/?branch=gossipsub-partial-messages#bd02db8b960158883545e6c9137c99e61ab8503e"
 dependencies = [
  "either",
  "fnv",
@@ -1764,7 +1764,7 @@ dependencies = [
 [[package]]
 name = "libp2p-swarm-derive"
 version = "0.35.1"
-source = "git+https://github.com/jxs/rust-libp2p/?branch=gossipsub-partial-messages#5673256a216017679fb5bd6505cea079575527ad"
+source = "git+https://github.com/jxs/rust-libp2p/?branch=gossipsub-partial-messages#bd02db8b960158883545e6c9137c99e61ab8503e"
 dependencies = [
  "heck",
  "quote",
@@ -1774,7 +1774,7 @@ dependencies = [
 [[package]]
 name = "libp2p-tcp"
 version = "0.44.0"
-source = "git+https://github.com/jxs/rust-libp2p/?branch=gossipsub-partial-messages#5673256a216017679fb5bd6505cea079575527ad"
+source = "git+https://github.com/jxs/rust-libp2p/?branch=gossipsub-partial-messages#bd02db8b960158883545e6c9137c99e61ab8503e"
 dependencies = [
  "futures",
  "futures-timer",
@@ -1789,7 +1789,7 @@ dependencies = [
 [[package]]
 name = "libp2p-tls"
 version = "0.6.2"
-source = "git+https://github.com/jxs/rust-libp2p/?branch=gossipsub-partial-messages#5673256a216017679fb5bd6505cea079575527ad"
+source = "git+https://github.com/jxs/rust-libp2p/?branch=gossipsub-partial-messages#bd02db8b960158883545e6c9137c99e61ab8503e"
 dependencies = [
  "futures",
  "futures-rustls",
@@ -1807,7 +1807,7 @@ dependencies = [
 [[package]]
 name = "libp2p-upnp"
 version = "0.6.0"
-source = "git+https://github.com/jxs/rust-libp2p/?branch=gossipsub-partial-messages#5673256a216017679fb5bd6505cea079575527ad"
+source = "git+https://github.com/jxs/rust-libp2p/?branch=gossipsub-partial-messages#bd02db8b960158883545e6c9137c99e61ab8503e"
 dependencies = [
  "futures",
  "futures-timer",
@@ -1821,7 +1821,7 @@ dependencies = [
 [[package]]
 name = "libp2p-websocket"
 version = "0.45.2"
-source = "git+https://github.com/jxs/rust-libp2p/?branch=gossipsub-partial-messages#5673256a216017679fb5bd6505cea079575527ad"
+source = "git+https://github.com/jxs/rust-libp2p/?branch=gossipsub-partial-messages#bd02db8b960158883545e6c9137c99e61ab8503e"
 dependencies = [
  "either",
  "futures",
@@ -1841,7 +1841,7 @@ dependencies = [
 [[package]]
 name = "libp2p-yamux"
 version = "0.47.0"
-source = "git+https://github.com/jxs/rust-libp2p/?branch=gossipsub-partial-messages#5673256a216017679fb5bd6505cea079575527ad"
+source = "git+https://github.com/jxs/rust-libp2p/?branch=gossipsub-partial-messages#bd02db8b960158883545e6c9137c99e61ab8503e"
 dependencies = [
  "either",
  "futures",
@@ -1996,7 +1996,7 @@ dependencies = [
 [[package]]
 name = "multistream-select"
 version = "0.13.0"
-source = "git+https://github.com/jxs/rust-libp2p/?branch=gossipsub-partial-messages#5673256a216017679fb5bd6505cea079575527ad"
+source = "git+https://github.com/jxs/rust-libp2p/?branch=gossipsub-partial-messages#bd02db8b960158883545e6c9137c99e61ab8503e"
 dependencies = [
  "bytes",
  "futures",
@@ -2385,7 +2385,7 @@ dependencies = [
 [[package]]
 name = "quick-protobuf-codec"
 version = "0.3.1"
-source = "git+https://github.com/jxs/rust-libp2p/?branch=gossipsub-partial-messages#5673256a216017679fb5bd6505cea079575527ad"
+source = "git+https://github.com/jxs/rust-libp2p/?branch=gossipsub-partial-messages#bd02db8b960158883545e6c9137c99e61ab8503e"
 dependencies = [
  "asynchronous-codec",
  "bytes",
@@ -2762,7 +2762,7 @@ checksum = "b39cdef0fa800fc44525c84ccb54a029961a8215f9619753635a9c0d2538d46d"
 [[package]]
 name = "rw-stream-sink"
 version = "0.4.0"
-source = "git+https://github.com/jxs/rust-libp2p/?branch=gossipsub-partial-messages#5673256a216017679fb5bd6505cea079575527ad"
+source = "git+https://github.com/jxs/rust-libp2p/?branch=gossipsub-partial-messages#bd02db8b960158883545e6c9137c99e61ab8503e"
 dependencies = [
  "futures",
  "pin-project",

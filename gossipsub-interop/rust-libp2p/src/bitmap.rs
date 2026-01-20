@@ -1,7 +1,4 @@
-use libp2p_gossipsub::{
-    partial::{Metadata, PublishAction},
-    Partial, PartialMessageError,
-};
+use libp2p_gossipsub::partial_messages::{Metadata, Partial, PartialAction, PartialError};
 
 /// A fixed-size bitmap composed of `TOTAL_FIELDS` fields,
 /// each field storing `FIELD_SIZE` bytes (i.e., `FIELD_SIZE * 8` bits).
@@ -49,22 +46,22 @@ impl Bitmap {
     pub(crate) fn extend_from_encoded_partial_message(
         &mut self,
         data: &[u8],
-    ) -> Result<(), PartialMessageError> {
+    ) -> Result<(), PartialError> {
         if data.len() < 1 + self.group_id.len() {
-            return Err(PartialMessageError::InvalidFormat);
+            return Err(PartialError::InvalidFormat);
         }
 
         let bitmap = data[0];
         let data = &data[1..];
         let (data, group_id) = data.split_at(data.len() - self.group_id.len());
         if group_id != self.group_id {
-            return Err(PartialMessageError::WrongGroup {
+            return Err(PartialError::WrongGroup {
                 received: group_id.to_vec(),
             });
         }
 
         if data.len() % 1024 != 0 {
-            return Err(PartialMessageError::InvalidFormat);
+            return Err(PartialError::InvalidFormat);
         }
 
         let mut offset = 0;
@@ -78,7 +75,7 @@ impl Bitmap {
             }
 
             if offset + 1024 > data.len() {
-                return Err(PartialMessageError::InvalidFormat);
+                return Err(PartialError::InvalidFormat);
             }
 
             self.set |= 1 << i;
@@ -101,9 +98,9 @@ impl Metadata for PeerBitmap {
         self.bitmap.as_slice()
     }
 
-    fn update(&mut self, data: &[u8]) -> Result<bool, PartialMessageError> {
+    fn update(&mut self, data: &[u8]) -> Result<bool, PartialError> {
         if data.len() != 1 {
-            return Err(PartialMessageError::InvalidFormat);
+            return Err(PartialError::InvalidFormat);
         }
 
         let before = self.bitmap[0];
@@ -121,14 +118,15 @@ impl Partial for Bitmap {
         [self.set; 1].to_vec()
     }
 
-    fn partial_message_bytes_from_metadata(
+    fn partial_action_from_metadata(
         &self,
+        _peer_id: libp2p::PeerId,
         metadata: Option<&[u8]>,
-    ) -> Result<PublishAction, PartialMessageError> {
+    ) -> Result<PartialAction, PartialError> {
         let metadata = metadata.unwrap_or(&[0u8]);
 
         if metadata.len() != 1 {
-            return Err(PartialMessageError::InvalidFormat);
+            return Err(PartialError::InvalidFormat);
         }
 
         let bitmap = metadata[0];
@@ -161,7 +159,7 @@ impl Partial for Bitmap {
         }
 
         if response_bitmap == 0 {
-            return Ok(PublishAction {
+            return Ok(PartialAction {
                 need: peer_has_useful_data,
                 send: None,
             });
@@ -174,7 +172,7 @@ impl Partial for Bitmap {
             bitmap: [metadata[0] | response_bitmap],
         };
 
-        Ok(PublishAction {
+        Ok(PartialAction {
             need: peer_has_useful_data,
             send: Some((data, Box::new(bitmap))),
         })
