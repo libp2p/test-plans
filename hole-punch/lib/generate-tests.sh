@@ -13,6 +13,7 @@ trap 'echo "ERROR in generate-tests.sh at line $LINENO: Command exited with stat
 source "${SCRIPT_LIB_DIR}/lib-filter-engine.sh"
 source "${SCRIPT_LIB_DIR}/lib-generate-tests.sh"
 source "${SCRIPT_LIB_DIR}/lib-image-building.sh"
+source "${SCRIPT_LIB_DIR}/lib-image-naming.sh"
 source "${SCRIPT_LIB_DIR}/lib-output-formatting.sh"
 source "${SCRIPT_LIB_DIR}/lib-test-caching.sh"
 source "${SCRIPT_LIB_DIR}/lib-test-filtering.sh"
@@ -575,12 +576,12 @@ generate_tests_worker() {
             local dialer_router_commit="${router_image_commit[${dialer_router_id}]:-}"
             local listener_router_commit="${router_image_commit[${listener_router_id}]:-}"
 
-            # Get the image names 
-            local dialer_image_name=$(get_image_name "implementations" "${dialer_id}")
-            local listener_image_name=$(get_image_name "implementations" "${listener_id}")
-            local relay_image_name=$(get_image_name "relays" "${relay_id}")
-            local dialer_router_image_name=$(get_image_name "routers" "${dialer_router_id}")
-            local listener_router_image_name=$(get_image_name "routers" "${listener_router_id}")
+            # Get the image names
+            local dialer_image_name=$(get_image_name "${TEST_TYPE}" "implementations" "${dialer_id}")
+            local listener_image_name=$(get_image_name "${TEST_TYPE}" "implementations" "${listener_id}")
+            local relay_image_name=$(get_image_name "${TEST_TYPE}" "relays" "${relay_id}")
+            local dialer_router_image_name=$(get_image_name "${TEST_TYPE}" "routers" "${dialer_router_id}")
+            local listener_router_image_name=$(get_image_name "${TEST_TYPE}" "routers" "${listener_router_id}")
 
             # Process each common transport
             for transport in $common_transports; do

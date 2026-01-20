@@ -22,7 +22,7 @@ save_docker_images_for_tests() {
   # Get unique implementations (all test types use .dialer and .listener)
   while read -r impl_id; do
     if [ -n "$impl_id" ] && [ "$impl_id" != "null" ]; then
-      local img_name=$(get_impl_image_name "$impl_id" "$test_type")
+      local img_name=$(get_image_name "$test_type" "implementations" "$impl_id")
       unique_images["$img_name"]=1
     fi
   done < <(yq eval '.tests[] | [.dialer.id, .listener.id][]' "$snapshot_dir/test-matrix.yaml" | sort -u)
@@ -31,7 +31,7 @@ save_docker_images_for_tests() {
   if [ "$test_type" == "perf" ]; then
     while read -r impl_id; do
       if [ -n "$impl_id" ] && [ "$impl_id" != "null" ]; then
-        local img_name=$(get_impl_image_name "$impl_id" "$test_type")
+        local img_name=$(get_image_name "$test_type" "baselines" "$impl_id")
         unique_images["$img_name"]=1
       fi
     done < <(yq eval '.baselines[] | [.dialer.id, .listener.id][]' "$snapshot_dir/test-matrix.yaml" 2>/dev/null | sort -u)
@@ -42,7 +42,7 @@ save_docker_images_for_tests() {
     # Get unique relays
     while read -r relay_id; do
       if [ -n "$relay_id" ]; then
-        local img_name=$(get_relay_image_name "$relay_id" "$test_type")
+        local img_name=$(get_image_name "$test_type" "relays" "$relay_id")
         unique_images["$img_name"]=1
       fi
     done < <(yq eval '.tests[].relay' "$snapshot_dir/test-matrix.yaml" | sort -u)
@@ -50,7 +50,7 @@ save_docker_images_for_tests() {
     # Get unique routers
     while read -r router_id; do
       if [ -n "$router_id" ]; then
-        local img_name=$(get_router_image_name "$router_id" "$test_type")
+        local img_name=$(get_image_name "$test_type" "routers" "$router_id")
         unique_images["$img_name"]=1
       fi
     done < <(yq eval '.tests[] | [.dialerRouter, .listenerRouter][]' "$snapshot_dir/test-matrix.yaml" | sort -u)
@@ -64,12 +64,12 @@ save_docker_images_for_tests() {
       local source_type=$(yq eval ".implementations[$i].source.type" images.yaml)
 
       # Check if this implementation is used in tests
-      if echo "${!unique_images[@]}" | grep -q "transport-interop-${impl_id}"; then
+      if echo "${!unique_images[@]}" | grep -q "transport-implementations-${impl_id}"; then
         # If it's a browser type, add its base image
         if [ "$source_type" == "browser" ]; then
           local base_image=$(yq eval ".implementations[$i].source.baseImage" images.yaml)
           if [ -n "$base_image" ] && [ "$base_image" != "null" ]; then
-            local base_img_name=$(get_impl_image_name "$base_image" "$test_type")
+            local base_img_name=$(get_image_name "$test_type" "implementations" "$base_image")
             unique_images["$base_img_name"]=1
           fi
         fi
