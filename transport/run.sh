@@ -185,8 +185,8 @@ Examples:
   # Run only rust implementations
   ${0} --impl-select "~rust"
 
-  # Run rust and go, but not experimental versions
-  ${0} --impl-select "~rust|~go" --impl-ignore "experimental"
+  # Run rust and go, but not docker images that fail to build
+  ${0} --impl-select "~rust|~go" --test-ignore "~failing"
 
   # Run only tests with rust-v0.56 as dialer
   ${0} --test-select "rust-v0.56 x"

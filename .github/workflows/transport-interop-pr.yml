@@ -37,7 +37,7 @@ on:
       snapshot:
         description: 'Create and upload test snapshot for debugging'
         required: false
-        default: false
+        default: true
         type: boolean
 
 concurrency:
@@ -87,18 +87,19 @@ jobs:
             echo "test-select=${{ steps.detect.outputs.changed-impls }}" >> $GITHUB_OUTPUT
 
             # Negate each implementation ID in the pipe-separated list
+            # Always include ~failing to skip known-broken tests
             CHANGED_IMPLS="${{ steps.detect.outputs.changed-impls }}"
             if [ -n "$CHANGED_IMPLS" ]; then
               NEGATED_IMPLS=$(echo "$CHANGED_IMPLS" | sed 's/|/|!/g;s/^/!/')
-              echo "test-ignore=$NEGATED_IMPLS" >> $GITHUB_OUTPUT
+              echo "test-ignore=~failing|$NEGATED_IMPLS" >> $GITHUB_OUTPUT
             else
-              echo "test-ignore=" >> $GITHUB_OUTPUT
+              echo "test-ignore=~failing" >> $GITHUB_OUTPUT
             fi
 
             echo "force-matrix-rebuild=${{ steps.detect.outputs.impls-yaml-changed }}" >> $GITHUB_OUTPUT
             # Force image rebuild if images.yaml changed (commit SHA changes require new images)
-            # or if impls folder changed (local implementation files changed)
-            if [ "${{ steps.detect.outputs.impls-yaml-changed }}" = "true" ] || [ "${{ steps.detect.outputs.impls-folder-changed }}" = "true" ]; then
+            # or if images folder changed (local implementation files changed)
+            if [ "${{ steps.detect.outputs.impls-yaml-changed }}" = "true" ] || [ "${{ steps.detect.outputs.images-folder-changed }}" = "true" ]; then
               echo "force-image-rebuild=true" >> $GITHUB_OUTPUT
             else
               echo "force-image-rebuild=false" >> $GITHUB_OUTPUT

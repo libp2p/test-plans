@@ -104,7 +104,19 @@ else
   EXPANDED_MUXER_IGNORE=""
 fi
 
-# Note: TEST_SELECT and TEST_IGNORE are NOT expanded (they're literal patterns for test names)
+# Expand test SELECT filter
+if [ -n "${TEST_SELECT}" ]; then
+  EXPANDED_TEST_SELECT=$(expand_filter_string "${TEST_SELECT}" all_image_ids)
+else
+  EXPANDED_TEST_SELECT=""
+fi
+
+# Expand test IGNORE filter
+if [ -n "${TEST_IGNORE}" ]; then
+  EXPANDED_TEST_IGNORE=$(expand_filter_string "${TEST_IGNORE}" all_image_ids)
+else
+  EXPANDED_TEST_IGNORE=""
+fi
 
 ##### 3. DISPLAY FILTER EXPANSION
 
@@ -160,18 +172,18 @@ print_filter_expansion \
   "Muxer ignore" \
   "No muxer-ignore specified (will ignore none)"
 
-# Test name filters (note: NOT expanded)
-if [ -n "${ORIGINAL_TEST_SELECT}" ]; then
-  print_message "Test name select: ${ORIGINAL_TEST_SELECT}"
-else
-  print_message "No test-select specified (will select all test names)"
-fi
+# Test name filters
+print_filter_expansion \
+  "ORIGINAL_TEST_SELECT" \
+  "EXPANDED_TEST_SELECT" \
+  "Test select" \
+  "No test-select specified (will select all tests)"
 
-if [ -n "${ORIGINAL_TEST_IGNORE}" ]; then
-  print_message "Test name ignore: ${ORIGINAL_TEST_IGNORE}"
-else
-  print_message "No test-ignore specified (will ignore no test names)"
-fi
+print_filter_expansion \
+  "ORIGINAL_TEST_IGNORE" \
+  "EXPANDED_TEST_IGNORE" \
+  "Test ignore" \
+  "No test-ignore specified (will ignore none)"
 
 echo ""
 
@@ -388,16 +400,16 @@ generate_tests_worker() {
           test_name_selected=true
 
           # Stage 3.1: Apply TEST_SELECT filter
-          if [ -n "${TEST_SELECT}" ]; then
+          if [ -n "${EXPANDED_TEST_SELECT}" ]; then
             test_name_selected=false
-            if filter_matches "${test_id}" "${TEST_SELECT}"; then
+            if filter_matches "${test_id}" "${EXPANDED_TEST_SELECT}"; then
               test_name_selected=true
             fi
           fi
 
           # Stage 3.2: Apply TEST_IGNORE filter
-          if [ "${test_name_selected}" == "true" ] && [ -n "${TEST_IGNORE}" ]; then
-            if filter_matches "${test_id}" "${TEST_IGNORE}"; then
+          if [ "${test_name_selected}" == "true" ] && [ -n "${EXPANDED_TEST_IGNORE}" ]; then
+            if filter_matches "${test_id}" "${EXPANDED_TEST_IGNORE}"; then
               test_name_selected=false
             fi
           fi
@@ -503,16 +515,16 @@ EOF
               test_name_selected=true
 
               # Stage 3.1: Apply TEST_SELECT filter
-              if [ -n "${TEST_SELECT}" ]; then
+              if [ -n "${EXPANDED_TEST_SELECT}" ]; then
                 test_name_selected=false
-                if filter_matches "${test_id}" "${TEST_SELECT}"; then
+                if filter_matches "${test_id}" "${EXPANDED_TEST_SELECT}"; then
                   test_name_selected=true
                 fi
               fi
 
               # Stage 3.2: Apply TEST_IGNORE filter
-              if [ "${test_name_selected}" == "true" ] && [ -n "${TEST_IGNORE}" ]; then
-                if filter_matches "${test_id}" "${TEST_IGNORE}"; then
+              if [ "${test_name_selected}" == "true" ] && [ -n "${EXPANDED_TEST_IGNORE}" ]; then
+                if filter_matches "${test_id}" "${EXPANDED_TEST_IGNORE}"; then
                   test_name_selected=false
                 fi
               fi
@@ -620,6 +632,8 @@ export all_image_ids
 export filtered_transport_names
 export filtered_secure_names
 export filtered_muxer_names
+export EXPANDED_TEST_SELECT
+export EXPANDED_TEST_IGNORE
 
 print_message "Generating main test combinations (using ${WORKER_COUNT} workers)..."
 

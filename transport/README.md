@@ -67,7 +67,7 @@ Required: bash 4.0+, docker 20.10+, yq 4.0+, wget, unzip
 ./run.sh
 
 # Run specific implementation only
-./run.sh --test-ignore "!rust-v0.56"
+./run.sh --test-select "rust-v0.56"
 
 # Run subset of implementations
 ./run.sh --test-ignore "!~rust|!~go"
@@ -92,25 +92,125 @@ Transport tests run in **parallel** (unlike perf tests which run sequentially):
 
 ## Test Filtering
 
-### Basic Filtering
+Transport tests support a powerful **two-stage filtering model** with both `--*-select` and `--*-ignore` options:
 
-Use pipe-separated patterns to filter tests:
+1. **SELECT** filters narrow from the complete list (empty = select all)
+2. **IGNORE** filters remove from the selected set (empty = ignore none)
+
+### Available Filter Dimensions
+
+| Filter Type | SELECT Option | IGNORE Option | Description |
+|------------|---------------|---------------|-------------|
+| Implementation | `--impl-select` | `--impl-ignore` | Filter libp2p implementations |
+| Transport | `--transport-select` | `--transport-ignore` | Filter transport protocols |
+| Secure Channel | `--secure-select` | `--secure-ignore` | Filter secure channel protocols |
+| Muxer | `--muxer-select` | `--muxer-ignore` | Filter multiplexer protocols |
+| Test Name | `--test-select` | `--test-ignore` | Filter by complete test name/ID |
+
+### Implementation Filtering
 
 ```bash
-# Test specific implementations
-./run.sh --test-ignore "!rust-v0.56|!go-v0.45"
+# SELECT: Run only rust implementations
+./run.sh --impl-select "rust-v0.56"
 
-# Ignore specific transport protocols
-./run.sh --transport-ignore "quic-v1|webrtc"
+# SELECT: Run multiple implementations (pipe-separated)
+./run.sh --impl-select "rust-v0.56|go-v0.45"
 
-# Ignore specific secure channels
+# SELECT with alias: Run all rust versions
+./run.sh --impl-select "~rust"
+
+# SELECT: Run only browser implementations
+./run.sh --impl-select "~browsers"
+
+# IGNORE: Run all except rust
+./run.sh --impl-ignore "~rust"
+
+# IGNORE: Exclude browser implementations
+./run.sh --impl-ignore "~browsers"
+
+# COMBINED: Run rust and go, but exclude experimental
+./run.sh --impl-select "~rust|~go" --impl-ignore "experimental"
+
+# COMBINED: Run js implementations but exclude browsers
+./run.sh --impl-select "~js" --impl-ignore "chromium|firefox|webkit"
+
+# Preview selection before running
+./run.sh --impl-select "~rust" --list-tests
+```
+
+### Transport Filtering
+
+```bash
+# SELECT: Test only TCP transport
+./run.sh --transport-select "tcp"
+
+# SELECT: Test TCP and QUIC
+./run.sh --transport-select "tcp|quic-v1"
+
+# SELECT: Test all WebSocket variants
+./run.sh --transport-select "ws|wss"
+
+# IGNORE: Skip QUIC and WebTransport
+./run.sh --transport-ignore "quic-v1|webtransport"
+
+# IGNORE: Skip all standalone transports
+./run.sh --transport-ignore "quic-v1|webtransport|webrtc-direct|webrtc"
+
+# IGNORE: Skip WebRTC (both variants)
+./run.sh --transport-ignore "webrtc|webrtc-direct"
+```
+
+### Secure Channel Filtering
+
+```bash
+# SELECT: Test only noise
+./run.sh --secure-select "noise"
+
+# SELECT: Test only TLS
+./run.sh --secure-select "tls"
+
+# IGNORE: Skip TLS (noise only)
 ./run.sh --secure-ignore "tls"
 
-# Ignore specific muxers
+# Note: Standalone transports (quic-v1, webtransport, etc.) include their own security
+# These filters only apply to TCP/WS transports with separate secure channels
+```
+
+### Muxer Filtering
+
+```bash
+# SELECT: Test only yamux
+./run.sh --muxer-select "yamux"
+
+# IGNORE: Skip mplex
 ./run.sh --muxer-ignore "mplex"
 
-# Combine filters
-./run.sh --test-ignore "!~rust" --transport-ignore "quic-v1" --secure-ignore "tls"
+# Note: Standalone transports include their own muxing
+# These filters only apply to TCP/WS transports with separate muxers
+```
+
+### Test Name Filtering
+
+Filter by complete test name or pattern:
+
+```bash
+# SELECT: Tests with rust as dialer
+./run.sh --test-select "rust-v0.56 x"
+
+# SELECT: Tests between rust implementations
+./run.sh --test-select "rust-v0.56 x rust-v0.56"
+
+# SELECT: Tests with specific transport config
+./run.sh --test-select "(tcp, noise, yamux)"
+
+# IGNORE: Exclude specific test combinations
+./run.sh --test-ignore "go-v0.45 x js-v3.x"
+
+# IGNORE: Exclude tests with experimental
+./run.sh --test-ignore "experimental"
+
+# IGNORE: Exclude browser-to-browser tests (can't work - browsers are dial-only)
+./run.sh --test-ignore "chromium.*x chromium|firefox.*x firefox"
 ```
 
 ### Alias Expansion
@@ -118,55 +218,118 @@ Use pipe-separated patterns to filter tests:
 Use `~alias` syntax for convenient test selection:
 
 ```bash
-# Test ONLY rust implementations (all versions)
-./run.sh --test-ignore "!~rust"
+# Expand to all rust versions (v0.53-v0.56)
+./run.sh --impl-select "~rust"
 
-# Test ONLY go implementations (all versions)
-./run.sh --test-ignore "!~go"
+# Expand to all go versions (v0.38-v0.45)
+./run.sh --impl-select "~go"
 
-# Test ONLY browser implementations
-./run.sh --test-ignore "!~browsers"
+# Expand to all browser implementations
+./run.sh --impl-select "~browsers"
 
-# Exclude all rust versions
-./run.sh --test-ignore "~rust"
+# Expand to rust-based browsers only
+./run.sh --impl-select "~rust-browsers"
 
-# Test rust and go together
-./run.sh --test-ignore "!~rust|!~go"
+# Expand to js-based browsers only
+./run.sh --impl-select "~js-browsers"
+
+# Negation: everything NOT matching rust
+./run.sh --impl-ignore "~rust"
 ```
 
 **Available aliases** are defined in `images.yaml` under `test-aliases`:
-- `~all`: All implementations (equivalent to all language aliases combined)
+- `~all`: All implementations
 - `~browsers`: All browser implementations (chromium/firefox/webkit with rust/js)
 - `~rust-browsers`: Rust-based browser implementations
 - `~js-browsers`: JavaScript-based browser implementations
 - `~rust`: All rust-libp2p versions (v0.53-v0.56)
 - `~go`: All go-libp2p versions (v0.38-v0.45)
-- `~python`: Python implementation (v0.4)
 - `~js`: All js-libp2p versions (v1.x, v2.x, v3.x)
+- `~python`: Python implementation (v0.4)
 - `~nim`: Nim implementation (v1.14)
 - `~jvm`: JVM implementation (v1.2)
 - `~c`: C implementation (v0.0.1)
 - `~dotnet`: .NET implementation (v1.0)
 - `~zig`: Zig implementation (v0.0.1)
 - `~eth-p2p`: Ethereum P2P implementation (v0.0.1)
-- `~failing`: Known failing implementations (currently empty)
+- `~failing`: Known failing implementations
 
-### Best Practice: Test Specific Languages
-
-For focused testing, use alias negation to test only specific implementations:
+### Combined Filtering Examples
 
 ```bash
-# Test ONLY rust implementations
-./run.sh --test-ignore '!~rust'
+# Rust implementations, TCP only, noise only
+./run.sh --impl-select "~rust" \
+         --transport-select "tcp" \
+         --secure-select "noise"
 
-# Test ONLY go implementations
-./run.sh --test-ignore '!~go'
+# All implementations except failing, skip WebRTC
+./run.sh --impl-ignore "~failing" \
+         --transport-ignore "webrtc|webrtc-direct"
 
-# Test ONLY browsers
-./run.sh --test-ignore '!~browsers'
+# Rust vs Go interoperability tests only
+./run.sh --impl-select "~rust|~go" \
+         --test-select "rust.*x go|go.*x rust"
 
-# Test rust + go interoperability
-./run.sh --test-ignore '!~rust|!~go'
+# Quick smoke test: one impl, one transport, one config
+./run.sh --impl-select "rust-v0.56" \
+         --transport-select "tcp" \
+         --secure-select "noise" \
+         --muxer-select "yamux"
+
+# Browser tests only, webtransport transport
+./run.sh --impl-select "~browsers" \
+         --transport-select "webtransport"
+
+# Full matrix for one language (WARNING: generates many tests)
+./run.sh --impl-select "~rust"
+
+# Cross-language interoperability focus
+./run.sh --impl-select "~rust|~go|~js" \
+         --transport-select "tcp|quic-v1"
+
+# Node.js js-libp2p only (exclude browsers)
+./run.sh --impl-select "~js" \
+         --impl-ignore "~browsers"
+```
+
+### Verifying Test Selection
+
+Always preview what tests will run before executing:
+
+```bash
+# List selected tests
+./run.sh --impl-select "~rust" --list-tests
+
+# Show both selected and ignored tests
+./run.sh --impl-select "~rust" --list-tests --show-ignored
+
+# Dry run with specific filters
+./run.sh --impl-select "~rust" \
+         --transport-ignore "quic-v1" \
+         --list-tests
+
+# Count tests for large selections
+./run.sh --impl-select "~rust|~go" --list-tests 2>&1 | grep "Total selected"
+```
+
+### Special Considerations for Browser Tests
+
+Browser implementations (chromium-*, firefox-*, webkit-*) are **dial-only**:
+
+```bash
+# Browser tests work as dialers against non-browser listeners
+./run.sh --impl-select "~browsers" --list-tests
+# Results show: chromium-rust-v0.56 x rust-v0.56 (browser dials rust)
+
+# Cannot have browser as listener
+# Tests like "rust-v0.56 x chromium-rust-v0.56" won't be generated
+
+# Test specific browser
+./run.sh --impl-select "chromium-rust-v0.56|rust-v0.56"
+
+# Test all browsers against rust listeners
+./run.sh --impl-select "~browsers|~rust" \
+         --test-select "chromium|firefox|webkit"
 ```
 
 ## How Tests Work

@@ -1,5 +1,5 @@
 name: "Detect Changed Implementations"
-description: "Detect which implementations/relays/routers have changed in images.yaml or impls/ folder during a PR"
+description: "Detect which implementations/relays/routers have changed in images.yaml or images/ folder during a PR"
 
 inputs:
   test-type:
@@ -29,9 +29,9 @@ outputs:
   impls-yaml-changed:
     description: "Boolean indicating if images.yaml file changed"
     value: ${{ steps.detect.outputs.impls-yaml-changed }}
-  impls-folder-changed:
-    description: "Boolean indicating if impls/ folder changed"
-    value: ${{ steps.detect.outputs.impls-folder-changed }}
+  images-folder-changed:
+    description: "Boolean indicating if images/ folder changed"
+    value: ${{ steps.detect.outputs.images-folder-changed }}
 
 runs:
   using: "composite"
@@ -48,13 +48,13 @@ runs:
         # Set paths based on test type
         if [ "$TEST_TYPE" = "transport" ]; then
           IMPLS_FILE="transport/images.yaml"
-          IMPLS_DIR="transport/impls"
+          IMAGES_DIR="transport/images"
         elif [ "$TEST_TYPE" = "hole-punch" ]; then
           IMPLS_FILE="hole-punch/images.yaml"
-          IMPLS_DIR="hole-punch/impls"
+          IMAGES_DIR="hole-punch/images"
         elif [ "$TEST_TYPE" = "perf" ]; then
           IMPLS_FILE="perf/images.yaml"
-          IMPLS_DIR="perf/impls"
+          IMAGES_DIR="perf/images"
         else
           echo "Error: Invalid test-type. Must be 'transport', 'hole-punch', or 'perf'"
           exit 1
@@ -71,7 +71,7 @@ runs:
         CHANGED_ROUTERS=""
         CHANGED_BASELINES=""
         IMPLS_YAML_CHANGED="false"
-        IMPLS_FOLDER_CHANGED="false"
+        IMAGES_FOLDER_CHANGED="false"
 
         # =================================================================
         # PART 1: Check if images.yaml itself changed
@@ -171,13 +171,13 @@ runs:
         fi
 
         # =================================================================
-        # PART 2: Check if files in impls/ subfolder changed
+        # PART 2: Check if files in images/ subfolder changed
         # =================================================================
-        IMPLS_FOLDER_FILES=$(echo "$CHANGED_FILES" | grep "^$IMPLS_DIR/" || echo "")
+        IMAGES_FOLDER_FILES=$(echo "$CHANGED_FILES" | grep "^$IMAGES_DIR/" || echo "")
 
-        if [ -n "$IMPLS_FOLDER_FILES" ]; then
-          echo "→ Files in $IMPLS_DIR/ changed - matching to local components"
-          IMPLS_FOLDER_CHANGED="true"
+        if [ -n "$IMAGES_FOLDER_FILES" ]; then
+          echo "→ Files in $IMAGES_DIR/ changed - matching to local components"
+          IMAGES_FOLDER_CHANGED="true"
 
           # Process each changed file
           while IFS= read -r changed_file; do
@@ -274,7 +274,7 @@ runs:
                 fi
               done
             fi
-          done <<< "$IMPLS_FOLDER_FILES"
+          done <<< "$IMAGES_FOLDER_FILES"
         fi
 
         # Output all results
@@ -283,7 +283,7 @@ runs:
         echo "changed-routers=$CHANGED_ROUTERS" >> $GITHUB_OUTPUT
         echo "changed-baselines=$CHANGED_BASELINES" >> $GITHUB_OUTPUT
         echo "impls-yaml-changed=$IMPLS_YAML_CHANGED" >> $GITHUB_OUTPUT
-        echo "impls-folder-changed=$IMPLS_FOLDER_CHANGED" >> $GITHUB_OUTPUT
+        echo "images-folder-changed=$IMAGES_FOLDER_CHANGED" >> $GITHUB_OUTPUT
 
         # Set has-changes
         if [ -n "$CHANGED_IMPLS" ] || [ -n "$CHANGED_RELAYS" ] || [ -n "$CHANGED_ROUTERS" ] || [ -n "$CHANGED_BASELINES" ]; then

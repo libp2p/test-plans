@@ -87,31 +87,121 @@ Control test behavior with these options:
 
 ## Test Filtering
 
-### Basic Filtering
+Performance tests support a powerful **two-stage filtering model** with both `--*-select` and `--*-ignore` options:
 
-Use pipe-separated patterns to filter tests:
+1. **SELECT** filters narrow from the complete list (empty = select all)
+2. **IGNORE** filters remove from the selected set (empty = ignore none)
+
+### Available Filter Dimensions
+
+| Filter Type | SELECT Option | IGNORE Option | Description |
+|------------|---------------|---------------|-------------|
+| Implementation | `--impl-select` | `--impl-ignore` | Filter libp2p implementations |
+| Baseline | `--baseline-select` | `--baseline-ignore` | Filter baseline tests (iperf, https, quic-go) |
+| Transport | `--transport-select` | `--transport-ignore` | Filter transport protocols |
+| Secure Channel | `--secure-select` | `--secure-ignore` | Filter secure channel protocols |
+| Muxer | `--muxer-select` | `--muxer-ignore` | Filter multiplexer protocols |
+| Test Name | `--test-select` | `--test-ignore` | Filter by complete test name/ID |
+
+### Implementation Filtering
 
 ```bash
-# Test only rust and go implementations
-./run.sh --test-ignore "!rust-v0.56|!go-v0.45"
+# SELECT: Run only rust implementations
+./run.sh --impl-select "rust-v0.56"
 
-# Ignore specific implementation
-./run.sh --test-ignore "js-v3.x"
+# SELECT: Run multiple implementations (pipe-separated)
+./run.sh --impl-select "rust-v0.56|go-v0.45"
 
-# Ignore specific transport protocols
+# SELECT with alias: Run all rust versions
+./run.sh --impl-select "~rust"
+
+# IGNORE: Run all except rust
+./run.sh --impl-ignore "~rust"
+
+# COMBINED: Run rust and go, but exclude experimental versions
+./run.sh --impl-select "~rust|~go" --impl-ignore "experimental"
+
+# Preview selection before running
+./run.sh --impl-select "~rust" --list-tests
+```
+
+### Baseline Filtering (Perf-Specific)
+
+Perf tests include baseline comparisons (iperf, https, quic-go):
+
+```bash
+# SELECT: Run only iperf baseline
+./run.sh --baseline-select "iperf"
+
+# SELECT: Run specific baselines
+./run.sh --baseline-select "iperf|https"
+
+# IGNORE: Skip all baselines (main tests only)
+./run.sh --baseline-ignore "~baselines"
+
+# IGNORE: Skip specific baseline
+./run.sh --baseline-ignore "quic-go"
+
+# COMBINED: Run only baselines (no main tests)
+./run.sh --baseline-select "~baselines" --impl-ignore "~images"
+```
+
+### Transport Filtering
+
+```bash
+# SELECT: Test only TCP transport
+./run.sh --transport-select "tcp"
+
+# SELECT: Test TCP and QUIC
+./run.sh --transport-select "tcp|quic-v1"
+
+# IGNORE: Skip QUIC and WebTransport
 ./run.sh --transport-ignore "quic-v1|webtransport"
 
-# Ignore specific secure channels
+# IGNORE: Skip all standalone transports
+./run.sh --transport-ignore "quic-v1|webtransport|webrtc-direct"
+```
+
+### Secure Channel Filtering
+
+```bash
+# SELECT: Test only noise
+./run.sh --secure-select "noise"
+
+# IGNORE: Skip TLS
 ./run.sh --secure-ignore "tls"
 
-# Ignore specific muxers
+# Note: Standalone transports (quic-v1, etc.) include their own security
+```
+
+### Muxer Filtering
+
+```bash
+# SELECT: Test only yamux
+./run.sh --muxer-select "yamux"
+
+# IGNORE: Skip mplex
 ./run.sh --muxer-ignore "mplex"
 
-# Ignore baseline tests
-./run.sh --baseline-ignore "iperf"
+# Note: Standalone transports include their own muxing
+```
 
-# Combine filters
-./run.sh --test-ignore "!~rust" --transport-ignore "quic-v1" --secure-ignore "tls"
+### Test Name Filtering
+
+Filter by complete test name or pattern:
+
+```bash
+# SELECT: Tests with rust as dialer
+./run.sh --test-select "rust-v0.56 x"
+
+# SELECT: Tests between rust implementations
+./run.sh --test-select "rust-v0.56 x rust-v0.56"
+
+# IGNORE: Exclude specific test combinations
+./run.sh --test-ignore "go-v0.45 x js-v3.x"
+
+# IGNORE: Exclude tests with experimental
+./run.sh --test-ignore "experimental"
 ```
 
 ### Alias Expansion
@@ -119,40 +209,72 @@ Use pipe-separated patterns to filter tests:
 Use `~alias` syntax for convenient test selection:
 
 ```bash
-# Test ONLY rust implementations (expands to all rust versions)
-./run.sh --test-ignore "!~rust"
+# Expand to all rust versions
+./run.sh --impl-select "~rust"
 
-# Exclude all rust versions
-./run.sh --test-ignore "~rust"
+# Expand to all go versions
+./run.sh --impl-select "~go"
 
-# Test ONLY go implementations
-./run.sh --test-ignore "!~go"
+# Expand to all baselines
+./run.sh --baseline-select "~baselines"
+
+# Negation: everything NOT matching rust
+./run.sh --impl-ignore "~rust"
 ```
 
 **Available aliases** are defined in `images.yaml` under `test-aliases`:
-- `~all`: All implementations and baselines (equivalent to `~baselines|~images`)
+- `~all`: All implementations and baselines
 - `~images`: All libp2p implementations (dotnet-v1.0, go-v0.45, js-v3.x, rust-v0.56)
 - `~baselines`: All baseline tests (https, quic-go, iperf)
-- `~rust`: rust-libp2p v0.56
-- `~go`: go-libp2p v0.45
-- `~js`: js-libp2p v3.x
-- `~dotnet`: dotnet-libp2p v1.0
-- `~failing`: Known failing implementations (go-v0.45, js-v3.x)
+- `~rust`: rust-libp2p versions
+- `~go`: go-libp2p versions
+- `~js`: js-libp2p versions
+- `~dotnet`: dotnet-libp2p versions
+- `~failing`: Known failing implementations
 - `~none`: Nothing (equivalent to `!~all`)
 
-### Best Practice: Limit to Specific Alias
-
-To test ONLY implementations in an alias (not just tests containing the alias pattern):
+### Combined Filtering Examples
 
 ```bash
-# Test ONLY rust implementations
-./run.sh --test-ignore '!~rust'
+# Rust implementations, TCP only, noise only
+./run.sh --impl-select "~rust" \
+         --transport-select "tcp" \
+         --secure-select "noise"
 
-# Test ONLY go implementations
-./run.sh --test-ignore '!~go'
+# All implementations except failing ones, skip WebRTC
+./run.sh --impl-ignore "~failing" \
+         --transport-ignore "webrtc-direct"
 
-# Test ONLY baselines
-./run.sh --baseline-ignore '!~baselines' --test-ignore '~images'
+# Rust vs Go interoperability tests only
+./run.sh --impl-select "~rust|~go" \
+         --test-select "rust.*x go|go.*x rust"
+
+# Quick smoke test: one impl, one transport, one config
+./run.sh --impl-select "rust-v0.56" \
+         --transport-select "tcp" \
+         --secure-select "noise" \
+         --muxer-select "yamux"
+
+# Full rust tests with all baselines
+./run.sh --impl-select "~rust" \
+         --baseline-select "~baselines"
+```
+
+### Verifying Test Selection
+
+Always preview what tests will run before executing:
+
+```bash
+# List selected tests
+./run.sh --impl-select "~rust" --list-tests
+
+# Show both selected and ignored tests
+./run.sh --impl-select "~rust" --list-tests --show-ignored
+
+# Dry run with specific filters
+./run.sh --impl-select "~rust" \
+         --transport-ignore "quic-v1" \
+         --list-tests
 ```
 
 ## How Tests Work
