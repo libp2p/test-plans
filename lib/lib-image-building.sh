@@ -10,15 +10,6 @@ docker_image_exists() {
   docker image inspect "${image_name}" >/dev/null 2>&1
 }
 
-# Calculate the name of a Docker image from the test type, section, and id
-get_image_name() {
-  local test_type=${TEST_TYPE:-}
-  local section="$1"
-  local id="$2"
-
-  echo "${test_type}-${section}-${id}"
-}
-
 # Helper function to build images from a YAML section (implementations or baselines)
 build_images_from_section() {
   local section="$1"  # "implementations", "baselines", "routers", etc
@@ -37,7 +28,7 @@ build_images_from_section() {
       IFS='|' read -ra FILTER_PATTERNS <<< "${filter}"
       for pattern in "${FILTER_PATTERNS[@]}"; do
         case "${impl_id}" in
-          *"${pattern}"*)
+          "${pattern}")
             match_found=true
             break
             ;;
@@ -48,7 +39,7 @@ build_images_from_section() {
       fi
     fi
 
-    local image_name=$(get_image_name "${section}" "${impl_id}")
+    local image_name=$(get_image_name "${TEST_TYPE}" "${section}" "${impl_id}")
 
     # Check if image already exists (for local builds only)
     if [ "${force_image_rebuild}" != "true" ] && docker_image_exists "${image_name}"; then
@@ -57,12 +48,10 @@ build_images_from_section() {
     fi
 
     # Create YAML file for this build
-    local yaml_file="${CACHE_DIR}/build-yamls/docker-build-perf-${impl_id}.yaml"
+    local yaml_file="${CACHE_DIR}/build-yamls/docker-build-${TEST_TYPE}-${impl_id}.yaml"
 
     cat > "${yaml_file}" <<EOF
 imageName: ${image_name}
-imageType: peer
-imagePrefix: "${TEST_TYPE}"
 sourceType: ${source_type}
 cacheDir: ${CACHE_DIR}
 forceRebuild: ${force_image_rebuild}
@@ -116,11 +105,12 @@ EOF
         local build_context=$(dirname "${dockerfile}")
         local patch_path=$(yq eval ".${section}[$i].source.patchPath // \"\"" "${IMAGES_YAML}")
         local patch_file=$(yq eval ".${section}[$i].source.patchFile // \"\"" "${IMAGES_YAML}")
+        local base_image_name=$(get_image_name "${TEST_TYPE}" "${section}" "${base_image}")
 
         cat >> "${yaml_file}" <<EOF
 
 browser:
-  baseImage: ${base_image}
+  baseImage: ${base_image_name}
   browser: ${browser}
   dockerfile: ${dockerfile}
   buildContext: ${build_context}
@@ -516,25 +506,22 @@ build_browser_image() {
   local browser=$(yq eval '.browser.browser' "${yaml_file}")
   local dockerfile=$(yq eval '.browser.dockerfile' "${yaml_file}")
   local build_context=$(yq eval '.browser.buildContext' "${yaml_file}")
-  local image_prefix=$(yq eval '.imagePrefix' "${yaml_file}")
   local patch_path=$(yq eval '.browser.patchPath // ""' "${yaml_file}")
   local patch_file=$(yq eval '.browser.patchFile // ""' "${yaml_file}")
 
-  local base_image_name="${image_prefix}-${base_image}"
-
-  print_message "Base: ${base_image} (${base_image_name})"
+  print_message "Base: ${base_image}"
   print_message "Browser: ${browser}"
 
   # Ensure base image exists
-  if ! docker image inspect "${base_image_name}" &>/dev/null; then
-    print_error "Base image not found: ${base_image_name}"
+  if ! docker image inspect "${base_image}" &>/dev/null; then
+    print_error "Base image not found: ${base_image}"
     print_message "Please build ${base_image} first"
     return 1
   fi
 
   # Tag base image for browser build
-  print_message "Tagging base image..."
-  docker tag "${base_image_name}" "node-${base_image}"
+  #print_message "Tagging base image..."
+  #docker tag "${base_image_name}" "node-${base_image}"
 
   # If patch specified, create temporary copy of build context
   local actual_build_context="${build_context}"
@@ -565,7 +552,7 @@ build_browser_image() {
   # Build browser image
   print_message "Building browser Docker image..."
   # Run docker directly (no eval/pipe) for clean output to preserve aesthetic
-  if ! docker build -f "${actual_dockerfile}" --build-arg BASE_IMAGE="node-${base_image}" --build-arg BROWSER="${browser}" -t "${image_name}" "${actual_build_context}"; then
+  if ! docker build -f "${actual_dockerfile}" --build-arg BASE_IMAGE="${base_image}" --build-arg BROWSER="${browser}" -t "${image_name}" "${actual_build_context}"; then
     print_error "Docker build failed"
     if [ "${cleanup_temp}" == "true" ]; then
       rm -rf "${actual_build_context}"

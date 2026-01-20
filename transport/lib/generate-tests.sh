@@ -13,6 +13,7 @@ trap 'echo "ERROR in generate-tests.sh at line $LINENO: Command exited with stat
 source "${SCRIPT_LIB_DIR}/lib-filter-engine.sh"
 source "${SCRIPT_LIB_DIR}/lib-generate-tests.sh"
 source "${SCRIPT_LIB_DIR}/lib-image-building.sh"
+source "${SCRIPT_LIB_DIR}/lib-image-naming.sh"
 source "${SCRIPT_LIB_DIR}/lib-output-formatting.sh"
 source "${SCRIPT_LIB_DIR}/lib-test-caching.sh"
 source "${SCRIPT_LIB_DIR}/lib-test-filtering.sh"
@@ -348,9 +349,9 @@ generate_tests_worker() {
       local dialer_commit="${image_commit[${dialer_id}]:-}"
       local listener_commit="${image_commit[${listener_id}]:-}"
 
-      # Get the image names 
-      local dialer_image_name=$(get_image_name "implementations" "${dialer_id}")
-      local listener_image_name=$(get_image_name "implementations" "${listener_id}")
+      # Get the image names
+      local dialer_image_name=$(get_image_name "${TEST_TYPE}" "implementations" "${dialer_id}")
+      local listener_image_name=$(get_image_name "${TEST_TYPE}" "implementations" "${listener_id}")
 
       # Process each common transport
       for transport in ${common_transports}; do

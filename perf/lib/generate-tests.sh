@@ -13,6 +13,7 @@ trap 'echo "ERROR in generate-tests.sh at line $LINENO: Command exited with stat
 source "${SCRIPT_LIB_DIR}/lib-filter-engine.sh"
 source "${SCRIPT_LIB_DIR}/lib-generate-tests.sh"
 source "${SCRIPT_LIB_DIR}/lib-image-building.sh"
+source "${SCRIPT_LIB_DIR}/lib-image-naming.sh"
 source "${SCRIPT_LIB_DIR}/lib-output-formatting.sh"
 source "${SCRIPT_LIB_DIR}/lib-test-caching.sh"
 source "${SCRIPT_LIB_DIR}/lib-test-filtering.sh"
@@ -559,9 +560,9 @@ EOF
 
     # Get commits, if they exist
     local dialer_commit=$(get_source_commit "${entity_type}" "${dialer}")
-    local dialer_image_name=$(get_image_name "${entity_type}" "${dialer}")
+    local dialer_image_name=$(get_image_name "${TEST_TYPE}" "${entity_type}" "${dialer}")
     local listener_commit=$(get_source_commit "${entity_type}" "${listener}")
-    local listener_image_name=$(get_image_name "${entity_type}" "${dialer}")
+    local listener_image_name=$(get_image_name "${TEST_TYPE}" "${entity_type}" "${listener}")
 
     cat >> "${TEST_PASS_DIR}/test-matrix.yaml" <<EOF
   - id: "${id}"
