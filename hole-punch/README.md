@@ -142,49 +142,137 @@ Hole-punch tests run in **parallel** (like transport tests):
 
 ## Test Filtering
 
-Hole-punch tests support multiple filtering dimensions due to the complex network topology:
+Hole-punch tests support a powerful **two-stage filtering model** with both `--*-select` and `--*-ignore` options. Due to the complex network topology, hole-punch tests have additional filtering dimensions for relays and routers.
 
-### Basic Filtering
+1. **SELECT** filters narrow from the complete list (empty = select all)
+2. **IGNORE** filters remove from the selected set (empty = ignore none)
 
-Use pipe-separated patterns to filter tests:
+### Available Filter Dimensions
+
+| Filter Type | SELECT Option | IGNORE Option | Description |
+|------------|---------------|---------------|-------------|
+| Implementation | `--impl-select` | `--impl-ignore` | Filter peer implementations |
+| Relay | `--relay-select` | `--relay-ignore` | Filter relay server implementations |
+| Router | `--router-select` | `--router-ignore` | Filter NAT router implementations |
+| Transport | `--transport-select` | `--transport-ignore` | Filter transport protocols |
+| Secure Channel | `--secure-select` | `--secure-ignore` | Filter secure channel protocols |
+| Muxer | `--muxer-select` | `--muxer-ignore` | Filter multiplexer protocols |
+| Test Name | `--test-select` | `--test-ignore` | Filter by complete test name/ID |
+
+### Implementation Filtering
 
 ```bash
-# Filter by implementation
-./run.sh --test-ignore "!rust-v0.56"
+# SELECT: Run only rust implementations
+./run.sh --impl-select "rust-v0.56"
 
-# Ignore specific transport protocols
-./run.sh --transport-ignore "quic-v1|webrtc-direct"
+# SELECT: Run multiple implementations (pipe-separated)
+./run.sh --impl-select "rust-v0.56|go-v0.45"
 
-# Ignore specific secure channels
-./run.sh --secure-ignore "tls"
+# SELECT with alias: Run all rust versions
+./run.sh --impl-select "~rust"
 
-# Ignore specific muxers
-./run.sh --muxer-ignore "mplex"
+# IGNORE: Run all except rust
+./run.sh --impl-ignore "~rust"
 
-# Filter relay servers
-./run.sh --relay-ignore "!rust-v0.56"
+# COMBINED: Run rust and go, but exclude experimental
+./run.sh --impl-select "~rust|~go" --impl-ignore "experimental"
 
-# Filter routers
-./run.sh --router-ignore "!linux"
-
-# Combine filters
-./run.sh --test-ignore "!rust-v0.56" --transport-ignore "quic-v1" --secure-ignore "tls"
+# Preview selection before running
+./run.sh --impl-select "~rust" --list-tests
 ```
 
-### Special Hole-Punch Filters
+### Relay Filtering (Hole-Punch Specific)
 
-Unlike transport/perf tests, hole-punch has additional filtering for network components:
+Hole-punch tests use relay servers for DCUtR coordination:
 
-- **`--relay-ignore`**: Filter which relay implementations to test
-- **`--router-ignore`**: Filter which NAT router implementations to test
-
-Example:
 ```bash
-# Test only with specific relay
-./run.sh --relay-ignore "!rust-v0.56"
+# SELECT: Test only with specific relay
+./run.sh --relay-select "rust-v0.56"
 
-# Test only with specific router
-./run.sh --router-ignore "!linux"
+# SELECT: Test with multiple relays
+./run.sh --relay-select "rust-v0.56|go-v0.45"
+
+# IGNORE: Skip specific relay implementation
+./run.sh --relay-ignore "go-v0.45"
+
+# IGNORE: Skip all except linux relay
+./run.sh --relay-ignore "!linux"
+```
+
+### Router Filtering (Hole-Punch Specific)
+
+Hole-punch tests use NAT routers to simulate real-world NAT traversal:
+
+```bash
+# SELECT: Test only with linux routers
+./run.sh --router-select "linux"
+
+# IGNORE: Skip specific router type
+./run.sh --router-ignore "iptables-strict"
+
+# COMBINED: Specific relay and router combination
+./run.sh --relay-select "rust-v0.56" --router-select "linux"
+```
+
+### Transport Filtering
+
+```bash
+# SELECT: Test only TCP transport
+./run.sh --transport-select "tcp"
+
+# SELECT: Test TCP and QUIC
+./run.sh --transport-select "tcp|quic-v1"
+
+# IGNORE: Skip QUIC and WebRTC
+./run.sh --transport-ignore "quic-v1|webrtc-direct"
+
+# IGNORE: Skip all standalone transports
+./run.sh --transport-ignore "quic-v1|webrtc-direct|webtransport"
+```
+
+### Secure Channel Filtering
+
+```bash
+# SELECT: Test only noise
+./run.sh --secure-select "noise"
+
+# IGNORE: Skip TLS
+./run.sh --secure-ignore "tls"
+
+# Note: Standalone transports (quic-v1, etc.) include their own security
+```
+
+### Muxer Filtering
+
+```bash
+# SELECT: Test only yamux
+./run.sh --muxer-select "yamux"
+
+# IGNORE: Skip mplex
+./run.sh --muxer-ignore "mplex"
+
+# Note: Standalone transports include their own muxing
+```
+
+### Test Name Filtering
+
+Filter by complete test name (includes router/relay info):
+
+```bash
+# SELECT: Tests with rust as dialer
+./run.sh --test-select "rust-v0.56 x"
+
+# SELECT: Tests with specific router configuration
+./run.sh --test-select "dr: linux"
+
+# SELECT: Tests with specific relay
+./run.sh --test-select "rly: rust-v0.56"
+
+# IGNORE: Exclude specific test combinations
+./run.sh --test-ignore "go-v0.45 x"
+
+# IGNORE: Exclude tests with specific router
+./run.sh --test-ignore "dr: iptables-strict"
 ```
 
 ### Alias Expansion
@@ -192,15 +280,69 @@ Example:
 Use `~alias` syntax for convenient test selection:
 
 ```bash
-# Test ONLY implementations in alias
-./run.sh --test-ignore "!~rust"
+# Expand to all rust versions
+./run.sh --impl-select "~rust"
 
-# Exclude implementations in alias
-./run.sh --test-ignore "~rust"
+# Expand to all go versions
+./run.sh --impl-select "~go"
+
+# Negation: everything NOT matching rust
+./run.sh --impl-ignore "~rust"
 ```
 
 **Available aliases** are defined in `images.yaml` under `test-aliases`:
-- Currently: `~failing` (empty - no known failing implementations)
+- `~rust`: rust-libp2p versions
+- `~go`: go-libp2p versions
+- `~failing`: Known failing implementations (may be empty)
+
+### Combined Filtering Examples
+
+```bash
+# Rust implementations, TCP only, linux router
+./run.sh --impl-select "~rust" \
+         --transport-select "tcp" \
+         --router-select "linux"
+
+# Test hole punching with specific network config
+./run.sh --impl-select "rust-v0.56" \
+         --relay-select "rust-v0.56" \
+         --router-select "linux" \
+         --transport-select "tcp" \
+         --secure-select "noise" \
+         --muxer-select "yamux"
+
+# All implementations, skip failing transports
+./run.sh --transport-ignore "webrtc-direct" \
+         --secure-ignore "tls"
+
+# Quick smoke test: minimal configuration
+./run.sh --impl-select "rust-v0.56" \
+         --relay-select "linux" \
+         --router-select "linux" \
+         --transport-select "quic-v1"
+
+# Cross-implementation hole punch tests
+./run.sh --impl-select "~rust|~go" \
+         --test-select "rust.*x go|go.*x rust"
+```
+
+### Verifying Test Selection
+
+Always preview what tests will run before executing:
+
+```bash
+# List selected tests
+./run.sh --impl-select "~rust" --list-tests
+
+# Show both selected and ignored tests
+./run.sh --impl-select "~rust" --list-tests --show-ignored
+
+# Dry run with specific filters
+./run.sh --impl-select "~rust" \
+         --relay-select "linux" \
+         --router-select "linux" \
+         --list-tests
+```
 
 ## How Tests Work
 

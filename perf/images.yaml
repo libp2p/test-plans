@@ -20,8 +20,8 @@ test-aliases:
     value: "js-v3.x"
   - alias: "dotnet"
     value: "dotnet-v1.0"
-  - alias: "failing"
-    value: "go-v0.45|js-v3.x"
+  - alias: "failing" # as of 20 Jan 2026
+    value: "go-v0.45|js-v3.x|dotnet-v1.0"
 
 # Baseline implementations - Separate from main tests
 # These measure raw network/protocol performance for comparison

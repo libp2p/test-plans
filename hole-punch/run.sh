@@ -187,8 +187,8 @@ Examples:
   # Select only rust implementations
   $0 --impl-select "~rust"
 
-  # Select rust, but ignore experimental versions
-  $0 --impl-select "~rust" --impl-ignore "experimental"
+  # Select rust, but not docker images that fail to build
+  $0 --impl-select "~rust" --test-ignore "~failing"
 
   # Test only TCP transport
   $0 --transport-select "tcp"
