@@ -55,7 +55,7 @@ _resolve_alias() {
   value_ref="${ALIASES[${alias_name}]:-}"
   if [ -z "${value_ref}" ]; then
     # Unknown alias - return empty (not an error, just undefined)
-    debug_print "Unknown alias"
+    print_debug "Unknown alias"
     unindent
     return 0
   fi
