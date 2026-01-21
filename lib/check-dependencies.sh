@@ -1,9 +1,8 @@
 #!/bin/bash
 # Check for required dependencies and their versions
+# Refactored to use data-driven approach with consolidated install instructions
 
 set -euo pipefail
-
-HAS_ERROR=false
 
 # Source formatting library if not already loaded
 if ! type indent &>/dev/null; then
@@ -11,9 +10,13 @@ if ! type indent &>/dev/null; then
   source "${_this_script_dir}/lib-output-formatting.sh"
 fi
 
+# ============================================================================
+# Helper Functions
+# ============================================================================
+
 # Function to compare semantic versions
+# Returns: 1 if $1 > $2, -1 if $1 < $2, 0 if equal
 version_compare() {
-  # $1 = version to check, $2 = minimum required version
   local IFS=.
   local i ver1=($1) ver2=($2)
   # Fill empty fields in ver1 with zeros
@@ -22,7 +25,7 @@ version_compare() {
   done
   # Compare each part
   for ((i=0; i<${#ver1[@]}; i++)); do
-    if [ -z "${ver2[i]}" ]; then
+    if [ -z "${ver2[i]:-}" ]; then
       ver2[i]=0
     fi
     if ((10#${ver1[i]} > 10#${ver2[i]})); then
@@ -35,262 +38,285 @@ version_compare() {
   echo 0
 }
 
-# Check bash
-if [ -n "${BASH_VERSION:-}" ]; then
-  bash_version="${BASH_VERSION%.*}"
-  if [ $(version_compare "${bash_version}" "4.0") -ge 0 ]; then
-    print_success "bash ${bash_version} (minimum: 4.0)"
-  else
-    print_error "bash ${bash_version} is too old (minimum: 4.0)"
-    HAS_ERROR=true
-  fi
-else
-  print_error "bash not detected"
-  HAS_ERROR=true
-fi
+# Universal version parser
+# Args: $1=tool, $2=version_type
+# Version types:
+#   "standard"  - tool --version, extracts X.Y.Z
+#   "bash"      - uses $BASH_VERSION variable
+#   "gnuplot"   - gnuplot --version, extracts X.Y
+#   "compose"   - docker compose version
+get_version() {
+  local tool="$1"
+  local version_type="$2"
 
-# Check docker
-if command -v docker &> /dev/null; then
-  docker_version=$(docker --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-  if [ $(version_compare "${docker_version}" "20.10.0") -ge 0 ]; then
-    print_success "docker ${docker_version} (minimum: 20.10.0)"
-  else
-    print_error "docker ${docker_version} is too old (minimum: 20.10.0)"
-    HAS_ERROR=true
-  fi
+  case "$version_type" in
+    "standard")
+      "$tool" --version 2>&1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1
+      ;;
+    "bash")
+      echo "${BASH_VERSION%.*}"
+      ;;
+    "gnuplot")
+      gnuplot --version 2>&1 | grep -oE '[0-9]+\.[0-9]+' | head -1
+      ;;
+    "compose")
+      docker compose version 2>&1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1
+      ;;
+  esac
+}
 
-  indent
-  # Check if Docker daemon is running
+# Check if Docker daemon is running
+check_docker_daemon() {
   if docker info &> /dev/null; then
-    print_success "Docker daemon is running"
+    return 0
   else
-    print_error "Docker daemon is not running"
-    HAS_ERROR=true
+    return 1
   fi
-  unindent
-else
-  print_error "docker is not installed"
-  HAS_ERROR=true
-fi
+}
 
-# Check docker compose (prefer new 'docker compose' over old 'docker-compose')
-DOCKER_COMPOSE_CMD=""
-if docker compose version &> /dev/null; then
-  # New docker compose plugin
-  compose_version=$(docker compose version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-  print_success "docker compose ${compose_version} (using 'docker compose')"
-  DOCKER_COMPOSE_CMD="docker compose"
-elif command -v docker-compose &> /dev/null; then
-  # Old standalone docker-compose
-  compose_version=$(docker-compose --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-  print_success "docker-compose ${compose_version} (using 'docker-compose')"
-  DOCKER_COMPOSE_CMD="docker-compose"
-else
-  print_error "docker compose is not installed"
-  indent
-  print_message "Install: docker compose plugin (recommended) or standalone docker-compose"
-  unindent
-  HAS_ERROR=true
-fi
+# Detect which docker compose command is available
+# Returns: echoes command string ("docker compose" or "docker-compose") or returns 1
+detect_docker_compose_cmd() {
+  if docker compose version &> /dev/null; then
+    echo "docker compose"
+    return 0
+  elif command -v docker-compose &> /dev/null; then
+    echo "docker-compose"
+    return 0
+  else
+    return 1
+  fi
+}
 
-# Export the docker compose command for use by other scripts
-if [ -n "${DOCKER_COMPOSE_CMD}" ]; then
-  echo "${DOCKER_COMPOSE_CMD}" > /tmp/docker-compose-cmd.txt
-fi
+# Print consolidated install instructions
+print_install_instructions() {
+  echo "" >&2
+  print_error "Missing or outdated dependencies. Run the following commands to install:"
+  echo "" >&2
+  echo "# Install required system packages" >&2
+  echo "sudo apt-get update" >&2
+  echo "sudo apt-get install -y docker-ce docker-ce-cli docker-ce-rootless-extras docker-buildx-plugin docker-compose-plugin git patch wget zip unzip bc coreutils util-linux tar gzip" >&2
+  echo "" >&2
+  echo "# Install yq" >&2
+  echo "sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64" >&2
+  echo "sudo chmod +x /usr/local/bin/yq" >&2
+  echo "" >&2
+  echo "# Optional: Install for additional features" >&2
+  echo "sudo apt-get install -y gnuplot pandoc" >&2
+  echo "" >&2
+}
 
-# Check yq
-if command -v yq &> /dev/null; then
-  yq_version=$(yq --version 2>&1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-  if [ -n "${yq_version}" ]; then
-    if [ $(version_compare "${yq_version}" "4.0.0") -ge 0 ]; then
-      print_success "yq ${yq_version} (minimum: 4.0.0)"
+# Column width for tool names (accommodates longest tool name + "...")
+TOOL_COL_WIDTH=20
+
+# Print tool check line with aligned columns
+# Usage: print_check "toolname" "[OK]" "optional extra info"
+print_check() {
+  local tool="$1"
+  local status="$2"
+  local extra="${3:-}"
+
+  # Format: "→ toolname...        [STATUS] extra"
+  local tool_col
+  tool_col=$(printf "%-${TOOL_COL_WIDTH}s" "${tool}...")
+
+  if [ -n "$extra" ]; then
+    print_iem "→" "${tool_col} ${status} ${extra}" >&2
+  else
+    print_iem "→" "${tool_col} ${status}" >&2
+  fi
+}
+
+# ============================================================================
+# Tool Definitions
+# ============================================================================
+
+# Versioned tools: "tool:min_version:version_type"
+declare -a VERSIONED_TOOLS=(
+  "bash:4.0:bash"
+  "docker:20.10.0:standard"
+  "yq:4.0.0:standard"
+  "git:2.0.0:standard"
+)
+
+# Presence-only tools (no version check needed)
+declare -a PRESENCE_ONLY_TOOLS=(
+  "patch"
+  "wget"
+  "zip"
+  "unzip"
+  "cut"
+  "bc"
+  "sha256sum"
+  "timeout"
+  "flock"
+  "tar"
+  "gzip"
+  "awk"
+  "sed"
+  "grep"
+  "sort"
+  "head"
+  "tail"
+  "wc"
+  "tr"
+  "paste"
+  "cat"
+  "mkdir"
+  "cp"
+  "mv"
+  "rm"
+  "chmod"
+  "find"
+  "xargs"
+  "basename"
+  "dirname"
+  "mktemp"
+  "date"
+  "sleep"
+  "nproc"
+  "uname"
+  "hostname"
+  "ps"
+)
+
+# Optional tools: "tool:min_version:version_type" (0 means presence-only)
+declare -a OPTIONAL_TOOLS=(
+  "gnuplot:5.0:gnuplot"
+  "pandoc:0:standard"
+)
+
+# ============================================================================
+# Main Check Logic
+# ============================================================================
+
+HAS_ERROR=false
+
+# Phase 1: Check versioned tools
+print_message "Checking versioned tools..."
+indent
+for entry in "${VERSIONED_TOOLS[@]}"; do
+  IFS=':' read -r tool min_version version_type <<< "$entry"
+
+  # Special handling for bash (always available, use $BASH_VERSION)
+  if [ "$tool" == "bash" ]; then
+    if [ -n "${BASH_VERSION:-}" ]; then
+      current_version=$(get_version "$tool" "$version_type")
+      if [ "$(version_compare "$current_version" "$min_version")" -ge 0 ]; then
+        print_check "$tool" "[OK]" "$current_version"
+      else
+        print_check "$tool" "[OUTDATED]" "(have $current_version, need $min_version)"
+        HAS_ERROR=true
+      fi
     else
-      print_error "yq ${yq_version} is too old (minimum: 4.0.0)"
+      print_check "$tool" "[MISSING]"
       HAS_ERROR=true
     fi
-  else
-    print_success "yq is installed"
+    continue
   fi
-else
-  print_error "yq is not installed"
-  indent
-  print_message "Install: sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64"
-  print_message "         sudo chmod +x /usr/local/bin/yq"
-  unindent
-  HAS_ERROR=true
-fi
 
-# Check wget
-if command -v wget &> /dev/null; then
-  print_success "wget is installed"
-else
-  print_error "wget is not installed"
-  HAS_ERROR=true
-fi
-
-# Check zip
-if command -v zip &> /dev/null; then
-  print_success "zip is installed"
-else
-  print_error "zip is not installed"
-  HAS_ERROR=true
-fi
-
-# Check unzip
-if command -v unzip &> /dev/null; then
-  print_success "unzip is installed"
-else
-  print_error "unzip is not installed"
-  HAS_ERROR=true
-fi
-
-# Check cut
-if command -v cut &> /dev/null; then
-  print_success "cut is installed"
-else
-  print_error "cut is not installed"
-  HAS_ERROR=true
-fi
-
-# Check bc
-if command -v bc &> /dev/null; then
-  print_success "bc is installed"
-else
-  print_error "bc is not installed"
-  HAS_ERROR=true
-fi
-
-# Check sha256sum
-if command -v sha256sum &> /dev/null; then
-  print_success "sha256sum is installed"
-else
-  print_error "sha256sum is not installed"
-  HAS_ERROR=true
-fi
-
-# Check timeout (part of coreutils)
-if command -v timeout &> /dev/null; then
-  print_success "timeout is installed (coreutils)"
-else
-  print_error "timeout is not installed (required for test timeouts)"
-  indent
-  print_message "Install: apt-get install coreutils"
-  unindent
-  HAS_ERROR=true
-fi
-
-# Check flock (part of util-linux)
-if command -v flock &> /dev/null; then
-  print_success "flock is installed (util-linux)"
-else
-  print_error "flock is not installed (required for file locking)"
-  indent
-  print_message "Install: apt-get install util-linux"
-  unindent
-  HAS_ERROR=true
-fi
-
-# Check tar (for snapshot exports)
-if command -v tar &> /dev/null; then
-  print_success "tar is installed"
-else
-  print_error "tar is not installed"
-  indent
-  print_message "Install: apt-get install tar"
-  unindent
-  HAS_ERROR=true
-fi
-
-# Check gzip (for snapshot exports)
-if command -v gzip &> /dev/null; then
-  print_success "gzip is installed"
-else
-  print_error "gzip is not installed"
-  indent
-  print_message "Install: apt-get install gzip"
-  unindent
-  HAS_ERROR=true
-fi
-
-# Check core text processing utilities
-echo ""
-print_message "Checking text processing utilities..."
-indent
-
-for util in awk sed grep sort head tail wc tr paste cat; do
-  if command -v $util &> /dev/null; then
-    print_success "$util is installed"
+  # Standard tool check
+  if ! command -v "$tool" &> /dev/null; then
+    print_check "$tool" "[MISSING]"
+    HAS_ERROR=true
   else
-    print_error "$util is not installed"
+    current_version=$(get_version "$tool" "$version_type")
+    if [ -n "$current_version" ]; then
+      if [ "$(version_compare "$current_version" "$min_version")" -ge 0 ]; then
+        print_check "$tool" "[OK]" "$current_version"
+      else
+        print_check "$tool" "[OUTDATED]" "(have $current_version, need $min_version)"
+        HAS_ERROR=true
+      fi
+    else
+      # Could not extract version, assume OK if command exists
+      print_check "$tool" "[OK]" "(version unknown)"
+    fi
+  fi
+done
+
+unindent
+println
+
+# Phase 2: Check presence-only tools
+print_message "Checking required utilities..."
+indent
+for tool in "${PRESENCE_ONLY_TOOLS[@]}"; do
+  if command -v "$tool" &> /dev/null; then
+    print_check "$tool" "[OK]"
+  else
+    print_check "$tool" "[MISSING]"
     HAS_ERROR=true
   fi
 done
-unindent
 
-# Check core file utilities
-echo ""
-print_message "Checking file utilities..."
+# Phase 3: If any missing/outdated, print install block and exit
+if [ "$HAS_ERROR" = true ]; then
+  print_install_instructions
+  exit 1
+fi
+
+unindent
+println
+
+# Phase 4: Check docker daemon
+print_message "Checking Docker services..."
 indent
+if check_docker_daemon; then
+  print_check "docker daemon" "[OK]"
+else
+  print_check "docker daemon" "[NOT RUNNING]"
+  echo "" >&2
+  print_error "Start docker daemon before running tests"
+  exit 1
+fi
 
-for util in mkdir cp mv rm chmod find xargs basename dirname mktemp; do
-  if command -v $util &> /dev/null; then
-    print_success "$util is installed"
-  else
-    print_error "$util is not installed"
-    HAS_ERROR=true
-  fi
-done
+# Phase 5: Detect docker compose command
+DOCKER_COMPOSE_CMD=""
+if DOCKER_COMPOSE_CMD=$(detect_docker_compose_cmd); then
+  print_check "docker compose" "[OK]" "using '$DOCKER_COMPOSE_CMD'"
+  # Export the docker compose command for use by other scripts
+  echo "$DOCKER_COMPOSE_CMD" > /tmp/docker-compose-cmd.txt
+else
+  print_check "docker compose" "[MISSING]"
+  print_install_instructions
+  exit 1
+fi
+
 unindent
+println
 
-# Check other required utilities
-echo ""
-print_message "Checking system utilities..."
-indent
-
-for util in date sleep nproc uname hostname ps; do
-  if command -v $util &> /dev/null; then
-    print_success "$util is installed"
-  else
-    print_error "$util is not installed"
-    HAS_ERROR=true
-  fi
-done
-unindent
-
-# Check optional dependencies
-echo ""
+# Phase 6: Check optional tools (warn but don't fail)
 print_message "Checking optional dependencies..."
 indent
+for entry in "${OPTIONAL_TOOLS[@]}"; do
+  IFS=':' read -r tool min_version version_type <<< "$entry"
 
-# Check gnuplot (optional - for box plot generation)
-if command -v gnuplot &> /dev/null; then
-  gnuplot_version=$(gnuplot --version 2>&1 | grep -oE '[0-9]+\.[0-9]+' | head -1)
-  print_success "gnuplot ${gnuplot_version} (for box plot generation)"
-else
-  print_error "gnuplot not found (box plots will be skipped)"
-  indent
-  print_message "Install: apt-get install gnuplot"
-  unindent
-fi
+  if ! command -v "$tool" &> /dev/null; then
+    print_check "$tool" "[NOT INSTALLED]"
+    continue
+  fi
 
-# Check git (optional - for submodule-based builds)
-if command -v git &> /dev/null; then
-  git_version=$(git --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
-  print_success "git ${git_version} (for submodule-based builds)"
-else
-  print_error "git not found (submodule-based builds will fail)"
-  indent
-  print_message "Install: apt-get install git"
-  unindent
-fi
+  # If version_type is "presence", just check existence
+  if [ "$version_type" == "presence" ] || [ "$min_version" == "0" ]; then
+    print_check "$tool" "[OK]"
+  else
+    current_version=$(get_version "$tool" "$version_type")
+    if [ -n "$current_version" ]; then
+      if [ "$(version_compare "$current_version" "$min_version")" -ge 0 ]; then
+        print_check "$tool" "[OK]" "$current_version"
+      else
+        print_check "$tool" "[OUTDATED]" "(have $current_version, need $min_version)"
+      fi
+    else
+      print_check "$tool" "[OK]" "(version unknown)"
+    fi
+  fi
+done
 
 unindent
+println
 
-echo ""
-
-if [ "${HAS_ERROR}" == "true" ]; then
-  print_error "Some required dependencies are missing or outdated"
-  exit 1
-else
-  print_success "All required dependencies are satisfied"
-fi
+# Phase 7: Success
+print_success "All required dependencies are satisfied"
+exit 0

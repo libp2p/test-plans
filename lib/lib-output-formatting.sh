@@ -48,6 +48,11 @@ print_header() {
   return 0
 }
 
+# Print a blank line
+println() {
+  echo "" >&2
+}
+
 # Print a named list with indentation
 # Args:
 #   $1: list_name - Name of the list (e.g., "implementations", "baselines")

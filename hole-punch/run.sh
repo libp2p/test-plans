@@ -257,7 +257,12 @@ while [ $# -gt 0 ]; do
     --show-ignored) SHOW_IGNORED=true; shift ;;
     --help|-h) show_help; exit 0 ;;
 
-    *) echo "Unknown option: ${1}"; echo ""; show_help; exit 1 ;;
+    *)
+      echo "Unknown option: ${1}"
+      echo ""
+      show_help
+      exit 1
+      ;;
   esac
 done
 
@@ -306,19 +311,19 @@ if [ "${LIST_IMAGES}" == "true" ]; then
   readarray -t all_relays_ids < <(get_entity_ids "relays")
   print_list "Relays" all_relays_ids
 
-  echo ""
+  println
 
   # Get and print routers
   readarray -t all_routers_ids < <(get_entity_ids "routers")
   print_list "Routers" all_routers_ids
 
-  echo ""
+  println
 
   # Get and print implementations
   readarray -t all_image_ids < <(get_entity_ids "implementations")
   print_list "Implementations" all_image_ids
 
-  echo ""
+  println
   unindent
   exit 0
 fi
@@ -359,7 +364,7 @@ if [ "${LIST_TESTS}" == "true" ]; then
     exit 1
   fi
   unindent
-  echo ""
+  println
 
   print_header "Test Selection..."
   indent
@@ -368,18 +373,18 @@ if [ "${LIST_TESTS}" == "true" ]; then
   readarray -t selected_tests < <(get_entity_ids "tests" "${TEMP_DIR}/test-matrix.yaml")
   print_list "Selected tests" selected_tests
 
-  echo ""
+  println
 
   # Get and maybe print the ignored main tests
   readarray -t ignored_tests < <(get_entity_ids "ignoredTests" "${TEMP_DIR}/test-matrix.yaml")
   if [ "${SHOW_IGNORED}" == "true" ]; then
     print_list "Ignored tests" ignored_tests
-    echo ""
+    println
   fi
 
   print_message "Total selected: ${#selected_tests[@]} tests"
   print_message "Total ignored: ${#ignored_tests[@]} tests"
-  echo ""
+  println
 
   unindent
   exit 0
@@ -397,7 +402,7 @@ if [ "${CHECK_DEPS}" == "true" ]; then
   print_header "Checking dependencies..."
   indent
   bash "${SCRIPT_LIB_DIR}/check-dependencies.sh" docker yq || {
-    echo ""
+    println
     print_error "Error: Missing required dependencies."
     print_message "Run '${0}' --check-deps to see details."
     unindent
@@ -443,7 +448,7 @@ print_message "Create Snapshot: ${CREATE_SNAPSHOT}"
 print_message "Debug: ${DEBUG}"
 print_message "Force Matrix Rebuild: ${FORCE_MATRIX_REBUILD}"
 print_message "Force Image Rebuild: ${FORCE_IMAGE_REBUILD}"
-echo ""
+println
 
 # Set up the folder structure for the output
 mkdir -p "${TEST_PASS_DIR}"/{logs,results,docker-compose}
@@ -451,14 +456,14 @@ mkdir -p "${TEST_PASS_DIR}"/{logs,results,docker-compose}
 # Generate inputs.yaml to capture the current environment and command line arguments
 generate_inputs_yaml "${TEST_PASS_DIR}/inputs.yaml" "$TEST_TYPE" "${ORIGINAL_ARGS[@]}"
 
-echo ""
+println
 unindent
 
 # Check dependencies for normal execution
 print_header "Checking dependencies..."
 indent
 bash "${SCRIPT_LIB_DIR}/check-dependencies.sh" docker yq || {
-  echo ""
+  println
   print_error "Error: Missing required dependencies."
   print_message "Run '${0}' --check-deps to see details."
   unindent
@@ -474,7 +479,7 @@ else
   exit 1
 fi
 unindent
-echo ""
+println
 
 # Start timing (moved before server setup)
 TEST_START_TIME=$(date +%s)
@@ -497,7 +502,7 @@ bash "${SCRIPT_DIR}/generate-tests.sh" || {
   exit 1
 }
 unindent
-echo ""
+println
 
 # =============================================================================
 # STEP 6: PRINT TEST SELECTION
@@ -514,13 +519,13 @@ indent
 readarray -t selected_main_tests < <(get_entity_ids "tests" "${TEST_PASS_DIR}/test-matrix.yaml")
 print_list "Selected main tests" selected_main_tests
 
-echo ""
+println
 
 # Get and maybe print the ignored main tests
 readarray -t ignored_main_tests < <(get_entity_ids "ignoredTests" "${TEST_PASS_DIR}/test-matrix.yaml")
 if [ "${SHOW_IGNORED}" == "true" ]; then
   print_list "Ignored main tests" ignored_main_tests
-  echo ""
+  println
 fi
 
 TEST_COUNT=${#selected_main_tests[@]}
@@ -528,7 +533,7 @@ TOTAL_TESTS=${TEST_COUNT}
 
 print_message "Total selected: ${TOTAL_TESTS} tests"
 print_message "Total ignored: ${#ignored_main_tests[@]} tests"
-echo ""
+println
 unindent
 
 # Get unique implementations from main tests
@@ -548,7 +553,7 @@ if [ "${AUTO_YES}" != true ]; then
   response=${response:-Y}
 
   if [[ ! "${response}" =~ ^[Yy]$ ]]; then
-    echo ""
+    println
     print_error "Test execution cancelled."
     unindent
     exit 0
@@ -566,7 +571,7 @@ unindent
 # =============================================================================
 
 # Build Docker images
-echo ""
+println
 print_header "Building Docker images..."
 indent
 
@@ -584,7 +589,7 @@ print_success "All images built successfully"
 
 rm -f "${REQUIRED_IMAGES}"
 unindent
-echo ""
+println
 
 # =============================================================================
 # STEP 8: RUN TESTS
@@ -602,7 +607,7 @@ start_redis_service "${TEST_TYPE}-network" "${TEST_TYPE}-redis" || {
   return 1
 }
 unindent
-echo ""
+println
 
 # Run main transport interop tests
 print_header "Running tests... (${WORKER_COUNT} workers)"
@@ -648,7 +653,7 @@ export -f run_test
 seq 0 $((TEST_COUNT - 1)) | xargs -P "${WORKER_COUNT}" -I {} bash -c 'run_test {}' || true
 
 unindent
-echo ""
+println
 
 # Stop global services
 print_header "Stopping global services..."
@@ -659,7 +664,7 @@ stop_redis_service "${TEST_TYPE}-network" "${TEST_TYPE}-redis" || {
   return 1
 }
 unindent
-echo ""
+println
 
 TEST_END_TIME=$(date +%s)
 TEST_DURATION=$((TEST_END_TIME - TEST_START_TIME))
@@ -730,14 +735,14 @@ fi
 
 
 unindent
-echo ""
+println
 
 # Display execution time
 HOURS=$((TEST_DURATION / 3600))
 MINUTES=$(((TEST_DURATION % 3600) / 60))
 SECONDS=$((TEST_DURATION % 60))
 print_message "$(printf "Total time: %02d:%02d:%02d\n" "${HOURS}" "${MINUTES}" "${SECONDS}")"
-echo ""
+println
 
 # Display status message
 if [ "${FAILED}" -eq 0 ]; then
@@ -749,7 +754,7 @@ else
 fi
 
 unindent
-echo ""
+println
 
 # =============================================================================
 # STEP 10: GENERATE RESULTS DASHBOARD
@@ -766,10 +771,10 @@ print_success "Generated ${TEST_PASS_DIR}/results.yaml"
 bash "${SCRIPT_DIR}/generate-dashboard.sh" || {
   print_error "Dashboard generation failed"
 }
-echo ""
+println
 print_success "Dashboard generation complete"
 unindent
-echo ""
+println
 
 # =============================================================================
 # STEP 11: CREATE SNAPSHOT
