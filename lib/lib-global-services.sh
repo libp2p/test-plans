@@ -48,19 +48,26 @@ start_redis_service() {
       redis-server --save "" --appendonly no > /dev/null
 
     # Wait for Redis to be ready
-    for i in {1..10}; do
-      if docker exec "${redis_name}" redis-cli ping &>/dev/null 2>&1; then
-        echo "started"
+    for i in {1..30}; do
+      if docker exec "${redis_name}" redis-cli ping >/dev/null 2>&1; then
+        echo_message "started\n"
         break
       fi
-      echo -n "."
+      echo_message "."
       sleep 1
     done
+
+    if (( i == 30)); then
+      unindent
+      println
+      print_error "ERROR: Redis failed to start after 30 seconds"
+      exit 1
+    fi
   else
     print_message "Redis already running"
   fi
   unindent
-  echo ""
+  println
 
   print_success "Global services ready"
 }
@@ -80,21 +87,21 @@ stop_redis_service() {
   indent
   if docker ps -q -f name="^${redis_name}$" | grep -q .; then
     echo_message "Stopping Redis..."
-    docker stop "${redis_name}" &>/dev/null || true
-    echo "stopped"
+    docker stop "${redis_name}" >/dev/null || true
+    print_message "stopped"
   else
     print_message "Redis not running"
   fi
   unindent
 
   # Remove network
-  if docker network inspect "${network_name}" &>/dev/null; then
-    docker network rm "${network_name}" &>/dev/null || true
+  if docker network inspect "${network_name}" >/dev/null; then
+    docker network rm "${network_name}" >/dev/null || true
     print_success "Network removed: ${network_name}"
   else
     print_message "Network not found"
   fi
-  echo ""
+  println
 
   print_success "Global services stopped"
 }
