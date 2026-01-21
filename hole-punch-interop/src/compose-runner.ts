@@ -68,10 +68,15 @@ interface Report {
 }
 
 export function lastStdoutLine(stdout: string, component: string, composeName: string): string {
-    const allComponentStdout = stdout.split("\n").filter(line => line.startsWith(`${composeName}-${component}-1`));
+    const allComponentStdout = stdout.split("\n").filter(line =>
+        line.startsWith(`${component}-1`) && line.includes("|")
+    );
 
-    const exitMessage = allComponentStdout.pop();
     const lastLine = allComponentStdout.pop();
+
+    if (!lastLine) {
+        throw new Error(`No output found for ${component}`);
+    }
 
     const [front, componentStdout] = lastLine.split("|");
 

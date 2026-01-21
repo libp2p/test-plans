@@ -17,7 +17,6 @@ import (
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
-	"github.com/libp2p/go-libp2p/p2p/protocol/identify"
 	"github.com/libp2p/go-libp2p/p2p/protocol/ping"
 	libp2pquic "github.com/libp2p/go-libp2p/p2p/transport/quic"
 	"github.com/libp2p/go-libp2p/p2p/transport/tcp"
@@ -87,7 +86,6 @@ func main() {
 		opts = append(opts, libp2p.EnableAutoRelayWithStaticRelays([]peer.AddrInfo{*ai}))
 	}
 
-	identify.ActivationThresh = 1 // We only have one relay, so we should activate immediately
 	h, err := libp2p.New(opts...)
 	if err != nil {
 		log.Fatal(err)

@@ -1,6 +1,18 @@
 [
   {
-    "id": "rust-v0.53",
+    "id": "rust-v0.54",
+    "transports": ["tcp", "quic"],
+    "secureChannels": [],
+    "muxers": []
+  },
+  {
+    "id": "go-v0.37",
+    "transports": ["tcp", "quic"],
+    "secureChannels": [],
+    "muxers": []
+  },
+  {
+    "id": "go-v0.46",
     "transports": ["tcp", "quic"],
     "secureChannels": [],
     "muxers": []
