@@ -90,7 +90,7 @@ runs:
       shell: bash
       run: |
         # Find the most recent test pass directory
-        TEST_PASS_DIR=$(ls -td ${{ inputs.cache-dir }}/test-runs/transport-interop-* 2>/dev/null | grep -v '\.zip$' | head -1 || echo "")
+        TEST_PASS_DIR=$(ls -td ${{ inputs.cache-dir }}/test-run/transport-* 2>/dev/null | grep -v '\.zip$' | head -1 || echo "")
 
         if [ -z "$TEST_PASS_DIR" ]; then
           echo "Error: Could not find test pass directory"
