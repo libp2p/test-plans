@@ -652,34 +652,43 @@ println
 print_header "Running baseline tests... (1 worker)"
 indent
 
+# Run a single baseline test with serialized output
+run_baseline_test() {
+  local index="${1}"
+  local name=$(yq eval ".baselines[${index}].id" "${TEST_PASS_DIR}/test-matrix.yaml")
+
+  source "${SCRIPT_LIB_DIR}/lib-output-formatting.sh"
+
+  # Run baseline test
+  if bash "${SCRIPT_DIR}/run-single-test.sh" "${index}" "baselines" "${TEST_PASS_DIR}/baseline-results.yaml.tmp"; then
+    result="[SUCCESS]"
+    exit_code=0
+  else
+    result="[FAILED]"
+    exit_code=1
+  fi
+
+  # Serialize the message printing using flock (prevents interleaved output)
+  (
+    flock -x 200
+    print_message "[$((index + 1))/${BASELINE_COUNT}] ${name}...${result}"
+  ) 200>/tmp/perf-test-output.lock
+
+  return ${exit_code}
+}
+
 if [ "${BASELINE_COUNT}" -eq 0 ]; then
     print_message "No baseline tests selected"
 else
-  BASELINE_RESULTS_FILE="${TEST_PASS_DIR}/baseline-results.yaml.tmp"
-  > "${BASELINE_RESULTS_FILE}"
-  for ((i=0; i<BASELINE_COUNT; i++)); do
-    # Check for shutdown
-    if [ "${SHUTDOWN}" == "true" ]; then
-      break
-    fi
+  # Initialize baseline results file
+  > "${TEST_PASS_DIR}/baseline-results.yaml.tmp"
 
-    # Get test name from matrix
-    baseline_name=$(yq eval ".baselines[${i}].id" "${TEST_PASS_DIR}/test-matrix.yaml")
+  # Export variables needed by run_baseline_test
+  export BASELINE_COUNT
+  export -f run_baseline_test
 
-    # Show progress (same format as main tests)
-    if [ "${DEBUG:-false}" == "true" ]; then
-      print_message "[$((i + 1))/${BASELINE_COUNT}] ${baseline_name}..."
-    else
-      echo_message "[$((i + 1))/${BASELINE_COUNT}] ${baseline_name}..."
-    fi
-
-    # Run baseline test using same script, passing "baseline" as test type >/dev/null 2>&1
-    if bash "${SCRIPT_DIR}/run-single-test.sh" "${i}" "baselines" "${BASELINE_RESULTS_FILE}"; then
-      echo "[SUCCESS]"
-    else
-      echo "[FAILED]"
-    fi
-  done
+  # Run baseline tests (sequential for accurate performance measurements)
+  seq 0 $((BASELINE_COUNT - 1)) | xargs -P "${WORKER_COUNT}" -I {} bash -c 'run_baseline_test {}' || true
 fi
 
 unindent
@@ -689,39 +698,43 @@ println
 print_header "Running tests... (1 worker)"
 indent
 
+# Run a single test with serialized output
+run_test() {
+  local index="${1}"
+  local name=$(yq eval ".tests[${index}].id" "${TEST_PASS_DIR}/test-matrix.yaml")
+
+  source "${SCRIPT_LIB_DIR}/lib-output-formatting.sh"
+
+  # Run test
+  if bash "${SCRIPT_DIR}/run-single-test.sh" "${index}" "tests" "${TEST_PASS_DIR}/results.yaml.tmp"; then
+    result="[SUCCESS]"
+    exit_code=0
+  else
+    result="[FAILED]"
+    exit_code=1
+  fi
+
+  # Serialize the message printing using flock (prevents interleaved output)
+  (
+    flock -x 200
+    print_message "[$((index + 1))/${TEST_COUNT}] ${name}...${result}"
+  ) 200>/tmp/perf-test-output.lock
+
+  return ${exit_code}
+}
+
 if [ "${TEST_COUNT}" -eq 0 ]; then
     print_message "No tests selected"
 else
-  TEST_RESULTS_FILE="${TEST_PASS_DIR}/results.yaml.tmp"
-  > "${TEST_RESULTS_FILE}"
-  for ((i=0; i<TEST_COUNT; i++)); do
-    # Check for shutdown
-    if [ "${SHUTDOWN}" == "true" ]; then
-      break
-    fi
+  # Initialize results file
+  > "${TEST_PASS_DIR}/results.yaml.tmp"
 
-    # Get test name from matrix
-    test_name=$(yq eval ".tests[${i}].id" "${TEST_PASS_DIR}/test-matrix.yaml")
+  # Export variables needed by run_test
+  export TEST_COUNT
+  export -f run_test
 
-    # Show test progress (matching transport format)
-    if [ "${DEBUG:-false}" == "true" ]; then
-      print_message "[$((i + 1))/${TEST_COUNT}] ${test_name}..."
-      indent
-    else
-      echo_message "[$((i + 1))/${TEST_COUNT}] ${test_name}..."
-    fi
-
-    # Run test, suppress terminal output (still writes to log file)
-    if bash "${SCRIPT_DIR}/run-single-test.sh" "${i}" "tests" "${TEST_RESULTS_FILE}"; then
-      echo "[SUCCESS]"
-    else
-      echo "[FAILED]"
-    fi
-
-    if [ "${DEBUG:-false}" == "true" ]; then
-      unindent
-    fi
-  done
+  # Run tests (sequential for accurate performance measurements)
+  seq 0 $((TEST_COUNT - 1)) | xargs -P "${WORKER_COUNT}" -I {} bash -c 'run_test {}' || true
 fi
 
 unindent

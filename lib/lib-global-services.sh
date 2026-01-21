@@ -50,10 +50,10 @@ start_redis_service() {
     # Wait for Redis to be ready
     for i in {1..30}; do
       if docker exec "${redis_name}" redis-cli ping >/dev/null 2>&1; then
-        echo_message "started\n"
+        echo "started" >&2
         break
       fi
-      echo_message "."
+      echo -n "." >&2
       sleep 1
     done
 
@@ -88,7 +88,7 @@ stop_redis_service() {
   if docker ps -q -f name="^${redis_name}$" | grep -q .; then
     echo_message "Stopping Redis..."
     docker stop "${redis_name}" >/dev/null || true
-    print_message "stopped"
+    echo "stopped" >&2
   else
     print_message "Redis not running"
   fi
