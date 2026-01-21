@@ -617,7 +617,7 @@ generate_tests_worker() {
               if is_standalone_transport "$transport"; then
 
                 # Integrated transport with built-in secure channel and muxer
-                test_id="${dialer_id} x ${listener_id} (${transport}) [dr: ${dialer_router_id}, rly: ${relay_id}, lr: ${listener_router_id}]"
+                test_id="${dialer_id} x ${listener_id} (${transport}) [dr - ${dialer_router_id}, rly - ${relay_id}, lr - ${listener_router_id}]"
 
                 # Determine dimension-based selection
                 test_is_selected=false
@@ -785,7 +785,7 @@ EOF
 
                     print_debug "selecting muxer: ${muxer}"
 
-                    test_id="$dialer_id x $listener_id ($transport, $secure, $muxer) [dr: $dialer_router_id, rly: $relay_id, lr: $listener_router_id]"
+                    test_id="$dialer_id x $listener_id ($transport, $secure, $muxer) [dr - $dialer_router_id, rly - $relay_id, lr - $listener_router_id]"
 
                     # Determine dimension-based selection
                     test_is_selected=false
