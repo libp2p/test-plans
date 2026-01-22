@@ -12,12 +12,6 @@ import type { Multiaddr } from '@multiformats/multiaddr'
 // but also check lowercase for compatibility
 const isDialer: boolean = process.env.IS_DIALER === 'true' || process.env.is_dialer === 'true'
 const timeoutMs: number = parseInt(process.env.test_timeout_secs ?? '180') * 1000
-// Use TEST_KEY for Redis key namespacing (required by transport test framework)
-const testKey: string = process.env.TEST_KEY ?? process.env.test_key ?? ''
-if (!testKey) {
-  throw new Error('TEST_KEY environment variable is required')
-}
-const redisKey: string = `${testKey}_listener_multiaddr`
 
 describe('ping test (listener)', function () {
   if (isDialer) {
@@ -81,6 +75,12 @@ describe('ping test (listener)', function () {
 
     console.error('inform redis of dial address')
     console.error(multiaddrs)
+    // Use TEST_KEY for Redis key namespacing (required by transport test framework)
+    const testKey: string = process.env.TEST_KEY ?? process.env.test_key ?? ''
+    if (!testKey) {
+      throw new Error('TEST_KEY environment variable is required')
+    }
+    const redisKey: string = `${testKey}_listener_multiaddr`
     // Send the listener addr over the proxy server so this works on both the Browser and Node
     // Redis Coordination Protocol:
     // - Key format: {TEST_KEY}_listener_multiaddr (per transport test framework spec)

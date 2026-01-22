@@ -12,4 +12,4 @@ ENV BROWSER=${BROWSER}
 # container and not during the test run which slows everything down
 RUN npx playwright-test --runner mocha --browser $BROWSER --grep do-not-match-anything
 
-ENTRYPOINT npm test -- -t browser -- --browser $BROWSER
+ENTRYPOINT ["sh", "-c", "npm test -- -t browser -- --browser \"$BROWSER\""]
