@@ -18,15 +18,20 @@ import type { Libp2p } from '@libp2p/interface'
 import type { Ping } from '@libp2p/ping'
 import type { Libp2pOptions } from 'libp2p'
 
-// Test framework sets uppercase env vars (IS_DIALER, TRANSPORT, SECURE_CHANNEL, MUXER)
-// but also check lowercase for compatibility
-const isDialer: boolean = process.env.IS_DIALER === 'true' || process.env.is_dialer === 'true'
+// Test framework sets uppercase env vars (IS_DIALER, TRANSPORT, SECURE_CHANNEL, MUXER, LISTENER_IP)
+const isDialer: boolean = process.env.IS_DIALER === 'true'
 
 // Setup libp2p node
-const TRANSPORT = process.env.TRANSPORT || process.env.transport
-const SECURE_CHANNEL = process.env.SECURE_CHANNEL || process.env.security
-const MUXER = process.env.MUXER || process.env.muxer
-const IP = process.env.LISTENER_IP || process.env.ip || '0.0.0.0'
+const TRANSPORT = process.env.TRANSPORT
+if (!TRANSPORT) {
+  throw new Error('TRANSPORT environment variable is required')
+}
+const SECURE_CHANNEL = process.env.SECURE_CHANNEL
+const MUXER = process.env.MUXER
+const IP = process.env.LISTENER_IP
+if (!IP) {
+  throw new Error('LISTENER_IP environment variable is required')
+}
 
 export async function getLibp2p (): Promise<Libp2p<{ ping: Ping }>> {
   const options: Libp2pOptions<{ ping: Ping, identify: Identify }> = {

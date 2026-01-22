@@ -9,9 +9,9 @@ import type { Ping } from '@libp2p/ping'
 import type { Multiaddr } from '@multiformats/multiaddr'
 
 // Test framework sets uppercase env vars (IS_DIALER, TEST_KEY, TRANSPORT)
-// but also check lowercase for compatibility
-const isDialer: boolean = process.env.IS_DIALER === 'true' || process.env.is_dialer === 'true'
-const timeoutMs: number = parseInt(process.env.test_timeout_secs ?? '180') * 1000
+const isDialer: boolean = process.env.IS_DIALER === 'true'
+// Framework timeout: use TEST_TIMEOUT_SECS if set, otherwise default to 180 seconds
+const timeoutMs: number = parseInt(process.env.TEST_TIMEOUT_SECS ?? '180') * 1000
 
 describe('ping test (listener)', function () {
   if (isDialer) {
@@ -47,7 +47,10 @@ describe('ping test (listener)', function () {
 
     let multiaddrs = node.getMultiaddrs().sort(sortByNonLocalIp).map(ma => ma.toString())
 
-    const transport = process.env.TRANSPORT || process.env.transport
+    const transport = process.env.TRANSPORT
+    if (!transport) {
+      throw new Error('TRANSPORT environment variable is required')
+    }
     if (transport === 'webrtc') {
       const relayAddr = process.env.RELAY_ADDR
       const hasWebrtcMultiaddr = new Promise<string[]>((resolve) => {
@@ -76,7 +79,7 @@ describe('ping test (listener)', function () {
     console.error('inform redis of dial address')
     console.error(multiaddrs)
     // Use TEST_KEY for Redis key namespacing (required by transport test framework)
-    const testKey: string = process.env.TEST_KEY ?? process.env.test_key ?? ''
+    const testKey = process.env.TEST_KEY
     if (!testKey) {
       throw new Error('TEST_KEY environment variable is required')
     }

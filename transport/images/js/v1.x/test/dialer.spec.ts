@@ -8,9 +8,9 @@ import type { Libp2p } from '@libp2p/interface'
 import type { PingService } from '@libp2p/ping'
 
 // Test framework sets uppercase env vars (IS_DIALER, TEST_KEY)
-// but also check lowercase for compatibility
-const isDialer: boolean = process.env.IS_DIALER === 'true' || process.env.is_dialer === 'true'
-const timeoutMs: number = parseInt(process.env.test_timeout_secs ?? '180') * 1000
+const isDialer: boolean = process.env.IS_DIALER === 'true'
+// Framework timeout: use TEST_TIMEOUT_SECS if set, otherwise default to 180 seconds
+const timeoutMs: number = parseInt(process.env.TEST_TIMEOUT_SECS ?? '180') * 1000
 
 describe('ping test (dialer)', function () {
   if (!isDialer) {
@@ -37,7 +37,7 @@ describe('ping test (dialer)', function () {
     this.timeout(timeoutMs + 30_000)
 
     // Use TEST_KEY for Redis key namespacing (required by transport test framework)
-    const testKey: string = process.env.TEST_KEY ?? process.env.test_key ?? ''
+    const testKey = process.env.TEST_KEY
     if (!testKey) {
       throw new Error('TEST_KEY environment variable is required')
     }

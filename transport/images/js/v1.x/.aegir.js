@@ -4,10 +4,8 @@ import { pEvent } from 'p-event'
 import { createClient } from 'redis'
 
 // Test framework sets uppercase env vars (REDIS_ADDR, TRANSPORT, IS_DIALER)
-// but also check lowercase for compatibility
-const redisAddr = process.env.REDIS_ADDR || process.env.redis_addr || 'redis:6379'
-const transport = process.env.TRANSPORT || process.env.transport
-const isDialer = process.env.IS_DIALER === 'true' || process.env.is_dialer === 'true'
+// Note: These are validated in the before() hook, not at module load time,
+// because .aegir.js is loaded during Docker build when env vars aren't set yet
 
 /** @type {import('aegir/types').PartialOptions} */
 export default {
@@ -19,6 +17,17 @@ export default {
       }
     },
     async before () {
+      // Validate required environment variables
+      const redisAddr = process.env.REDIS_ADDR
+      if (!redisAddr) {
+        throw new Error('REDIS_ADDR environment variable is required')
+      }
+      const transport = process.env.TRANSPORT
+      if (!transport) {
+        throw new Error('TRANSPORT environment variable is required')
+      }
+      const isDialer = process.env.IS_DIALER === 'true'
+
       // import after build is complete
       const { createRelay } = await import('./dist/test/fixtures/relay.js')
 
