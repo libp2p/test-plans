@@ -14,4 +14,4 @@ ENV CI=true
 RUN npm ci
 RUN npm run build
 
-ENTRYPOINT npm test -- -t node -- --exit
+ENTRYPOINT ["npm", "test", "--", "-t", "node", "--", "--exit"]
