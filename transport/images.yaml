@@ -32,8 +32,8 @@ test-aliases:
     value: "zig-v0.0.1"
   - alias: "eth-p2p"
     value: "eth-p2p-z-v0.0.1"
-  - alias: "failing" # everything except rust-v0.56 as of 20 Jan 2026
-    value: "~browsers|~go|~js|~nim|~jvm|~c|~dotnet|~zig|~eth-p2p|rust-v0.53|rust-v0.54|rust-v0.55"
+  - alias: "failing" # everything except rust-v0.56 and js implementations as of 22 Jan 2026
+    value: "~browsers|~go|~python|~nim|~jvm|~c|~dotnet|~zig|~eth-p2p|rust-v0.53|rust-v0.54|rust-v0.55"
 
 implementations:
   # Rust implementations
