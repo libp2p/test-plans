@@ -17,7 +17,7 @@ save_docker_images_for_tests() {
   indent
 
   # Collect all unique image names needed
-  declare -A unique_images
+  declare -A unique_images=()
 
   # Get unique implementations (all test types use .dialer and .listener)
   while read -r impl_id; do
@@ -45,7 +45,7 @@ save_docker_images_for_tests() {
         local img_name=$(get_image_name "$test_type" "relays" "$relay_id")
         unique_images["$img_name"]=1
       fi
-    done < <(yq eval '.tests[].relay' "$snapshot_dir/test-matrix.yaml" | sort -u)
+    done < <(yq eval '.tests[].relay.id' "$snapshot_dir/test-matrix.yaml" | sort -u)
 
     # Get unique routers
     while read -r router_id; do
@@ -53,7 +53,7 @@ save_docker_images_for_tests() {
         local img_name=$(get_image_name "$test_type" "routers" "$router_id")
         unique_images["$img_name"]=1
       fi
-    done < <(yq eval '.tests[] | [.dialerRouter, .listenerRouter][]' "$snapshot_dir/test-matrix.yaml" | sort -u)
+    done < <(yq eval '.tests[] | [.dialerRouter.id, .listenerRouter.id][]' "$snapshot_dir/test-matrix.yaml" | sort -u)
   fi
 
   # Also add base images for browser-type implementations (transport only)
