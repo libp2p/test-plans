@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Generate results.md dashboard from results.yaml for transport interop tests
 
 set -euo pipefail

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Test script to debug relay/router filtering
 
 set -euo pipefail

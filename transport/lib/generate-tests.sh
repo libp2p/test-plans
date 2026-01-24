@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Generate test matrix from ${IMAGES_YAML} with filtering
 # Outputs test-matrix.yaml with content-addressed caching
 # Permutations: dialer × listener × transport × secureChannel × muxer

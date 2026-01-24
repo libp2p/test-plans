@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Linux NAT Router Configuration Script
 # Configures iptables-based NAT between LAN and WAN networks
 

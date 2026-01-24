@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Shared image building functions for all test suites
 # Used by build-single-image.sh
 
@@ -386,7 +386,7 @@ build_from_github() {
 
   # Build
   print_message "Building Docker image..."
-  if ! (cd "${context_dir}" && docker build -f "${extracted_dir}/${dockerfile}" -t "${image_name}" .); then
+  if ! (cd "${context_dir}" && docker build -f "${extracted_dir}/${dockerfile}" --build-arg HOST_OS="${HOST_OS}" -t "${image_name}" .); then
     print_error "Docker build failed"
     rm -rf "${work_dir}"
     return 1
@@ -434,7 +434,7 @@ build_from_github_with_submodules() {
 
   # Build
   print_message "Building Docker image..."
-  if ! docker build -f "${cloned_dir}/${dockerfile}" -t "${image_name}" "${context_dir}"; then
+  if ! docker build -f "${cloned_dir}/${dockerfile}" --build-arg HOST_OS="${HOST_OS}" -t "${image_name}" "${context_dir}"; then
     print_error "Docker build failed"
     rm -rf "${work_dir}"
     return 1
@@ -481,7 +481,7 @@ build_from_local() {
   fi
 
   print_message "Building Docker image..."
-  if ! docker build -f "${build_path}/${dockerfile}" -t "${image_name}" "${build_path}"; then
+  if ! docker build -f "${build_path}/${dockerfile}" --build-arg HOST_OS="${HOST_OS}" -t "${image_name}" "${build_path}"; then
     print_error "Docker build failed"
     if [ "${cleanup_temp}" == "true" ]; then
       rm -rf "${build_path}"
@@ -552,7 +552,7 @@ build_browser_image() {
   # Build browser image
   print_message "Building browser Docker image..."
   # Run docker directly (no eval/pipe) for clean output to preserve aesthetic
-  if ! docker build -f "${actual_dockerfile}" --build-arg BASE_IMAGE="${base_image}" --build-arg BROWSER="${browser}" -t "${image_name}" "${actual_build_context}"; then
+  if ! docker build -f "${actual_dockerfile}" --build-arg BASE_IMAGE="${base_image}" --build-arg BROWSER="${browser}" --build-arg HOST_OS="${HOST_OS}" -t "${image_name}" "${actual_build_context}"; then
     print_error "Docker build failed"
     if [ "${cleanup_temp}" == "true" ]; then
       rm -rf "${actual_build_context}"

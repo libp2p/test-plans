@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Unit tests for lib-filter-engine.sh
 # Tests recursive alias expansion, loop detection, inversion, and filtering
 

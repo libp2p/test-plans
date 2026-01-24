@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # run in strict failure mode
 set -euo pipefail
@@ -65,7 +65,7 @@ else
 fi
 
 # Append actual command-line args (these override inputs.yaml)
-CMD_LINE_ARGS=("${YAML_ARGS[@]}" "$@")
+CMD_LINE_ARGS=(${YAML_ARGS[@]+"${YAML_ARGS[@]}"} "$@")
 
 # Set positional parameters to merged args
 set -- "${CMD_LINE_ARGS[@]}"
@@ -656,7 +656,7 @@ FAILED=${FAILED:-0}
 cat > "${TEST_PASS_DIR}/results.yaml" <<EOF
 metadata:
   testPass: ${TEST_PASS_NAME}
-  startedAt: $(date -d @"${TEST_START_TIME}" -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -r "${TEST_START_TIME}" -u +%Y-%m-%dT%H:%M:%SZ)
+  startedAt: $(format_timestamp "${TEST_START_TIME}")
   completedAt: $(date -u +%Y-%m-%dT%H:%M:%SZ)
   duration: ${TEST_DURATION}s
   platform: $(uname -m)

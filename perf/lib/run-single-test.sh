@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Run a single performance test using docker-compose
 # Uses Redis for listener/dialer coordination (like transport)
 

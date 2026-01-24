@@ -1,9 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Common filter engine for test/baseline/relay/router filtering
 # Provides recursive alias expansion with loop detection, proper inversion, and deduplication
 
 # Source formatting library if not already loaded
-if ! type indent &>/dev/null; then
+if ! type print_message &>/dev/null; then
   _this_script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   source "${_this_script_dir}/lib-output-formatting.sh"
 fi
@@ -77,7 +77,7 @@ _expand_recursive() {
   print_debug "_expand_recursive()"
   indent
   print_debug "filter_string = ${filter_string}"
-  local rp=$(printf '%s\n' "${result_parts_ref[@]}" | paste -sd'|')
+  local rp=$(printf '%s\n' "${result_parts_ref[@]}" | paste -sd'|' -)
   print_debug "result_parts_ref = ${rp}"
 
   IFS='|' read -ra parts <<< "${filter_string}"
@@ -127,7 +127,7 @@ _expand_recursive() {
       # Why? Because "one" doesn't match "two" or "three", "two" matches "two",
       # and "three" matches "three"
       #
-      local ep=$(printf '%s\n' "${expanded_parts[@]}" | paste -sd'|')
+      local ep=$(printf '%s\n' "${expanded_parts[@]}" | paste -sd'|' -)
       print_debug "Inverting: ${ep}"
       indent
       for name in "${all_names_ref[@]}"; do
@@ -145,15 +145,15 @@ _expand_recursive() {
         # If name does NOT match any pattern, include it
         if [ "${matches_any}" == "false" ]; then
           #print_debug "${name} no match...including"
-          local rp=$(printf '%s\n' "${result_parts_ref[@]}" | paste -sd'|')
+          local rp=$(printf '%s\n' "${result_parts_ref[@]}" | paste -sd'|' -)
           print_debug "${rp} += ${name}"
           result_parts_ref+=("${name}")
         fi
       done
       unindent
 
-      local rp=$(printf '%s\n' "${result_parts_ref[@]}" | paste -sd'|')
-      local ep=$(printf '%s\n' "${expanded_parts[@]}" | paste -sd'|')
+      local rp=$(printf '%s\n' "${result_parts_ref[@]}" | paste -sd'|' -)
+      local ep=$(printf '%s\n' "${expanded_parts[@]}" | paste -sd'|' -)
       print_debug "result_parts_ref = ${rp}"
       print_debug "expanded_parts = ${ep}"
 
@@ -187,7 +187,7 @@ _expand_recursive() {
           *)
             # No match, include this name
             #print_debug "${name} no match...including"
-            local rp=$(printf '%s\n' "${result_parts_ref[@]}" | paste -sd'|')
+            local rp=$(printf '%s\n' "${result_parts_ref[@]}" | paste -sd'|' -)
             print_debug "${rp} += ${name}"
             result_parts_ref+=("${name}")
             ;;
@@ -197,13 +197,13 @@ _expand_recursive() {
     else
       # Regular value: pattern
       #print_debug "${part}...including"
-      local rp=$(printf '%s\n' "${result_parts_ref[@]}" | paste -sd'|')
+      local rp=$(printf '%s\n' "${result_parts_ref[@]}" | paste -sd'|' -)
       print_debug "${rp} += ${part}"
       result_parts_ref+=("${part}")
     fi
     unindent
   done
-  local result=$(printf '%s\n' "${result_parts_ref[@]}" | sort -u | paste -sd'|')
+  local result=$(printf '%s\n' "${result_parts_ref[@]}" | sort -u | paste -sd'|' -)
   print_debug "${filter_string} => ${result}"
   unindent
   return 0
@@ -225,7 +225,7 @@ expand_filter_string() {
   print_debug "expand_filter_string()"
   indent
   print_debug "filter_string = ${filter_string}"
-  all_names=$(printf '%s\n' "${all_names_ref[@]}" | sort -u | paste -sd'|')
+  all_names=$(printf '%s\n' "${all_names_ref[@]}" | sort -u | paste -sd'|' -)
   print_debug "all_names_ref = ${all_names}"
 
   # Empty filter returns empty
@@ -245,7 +245,7 @@ expand_filter_string() {
   if [ "${#result_parts[@]}" -eq 0 ]; then
     result=""
   else
-    result=$(printf '%s\n' "${result_parts[@]}" | sort -u | paste -sd'|')
+    result=$(printf '%s\n' "${result_parts[@]}" | sort -u | paste -sd'|' -)
   fi
 
   print_debug "result = ${result}"
