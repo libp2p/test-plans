@@ -5,7 +5,7 @@
 # Usage: --test-select "~linux" or --test-ignore "!~linux"
 test-aliases:
   - alias: "failing"
-    value: ""
+    value: "rust-v0.56 x rust-v0.56"
 
 # Router configurations - Multiple router types for testing different NAT implementations
 routers:

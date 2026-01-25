@@ -146,13 +146,12 @@ for ((i=0; i<TEST_COUNT; i++)); do
   echo "| $name | $min | $q1 | $median | $q3 | $max |" >> "$LATEST_RESULTS_FILE"
 done
 
-cat >> "$LATEST_RESULTS_FILE" <<'EOF'
+cat >> "$LATEST_RESULTS_FILE" <<EOF
 
 ---
 
-*Generated: EOF
-date -u +%Y-%m-%dT%H:%M:%SZ >> "$LATEST_RESULTS_FILE"
-echo "*" >> "$LATEST_RESULTS_FILE"
+*Generated: $(date -u +%Y-%m-%dT%H:%M:%SZ)*
+EOF
 
 echo "  ✓ Generated $LATEST_RESULTS_FILE"
 
@@ -219,9 +218,8 @@ See [Latest Test Results](LATEST_TEST_RESULTS.md) for detailed statistics.
 
 ---
 
-*Generated: EOF
-date -u +%Y-%m-%dT%H:%M:%SZ >> "$OUTPUT_MD"
-echo "*" >> "$OUTPUT_MD"
+*Generated: $(date -u +%Y-%m-%dT%H:%M:%SZ)*
+EOF
 
 echo "  ✓ Generated $OUTPUT_MD"
 

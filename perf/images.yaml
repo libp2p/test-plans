@@ -21,7 +21,7 @@ test-aliases:
   - alias: "dotnet"
     value: "dotnet-v1.0"
   - alias: "failing" # as of 20 Jan 2026
-    value: "go-v0.45|js-v3.x|dotnet-v1.0"
+    value: "go-v0.45|js-v3.x|dotnet-v1.0|rust-v0.56 x rust-v0.56 (webrtc-direct)"
 
 # Baseline implementations - Separate from main tests
 # These measure raw network/protocol performance for comparison
