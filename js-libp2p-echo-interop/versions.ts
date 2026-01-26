@@ -15,6 +15,10 @@ export interface MuxerType {
   readonly name: 'yamux' | 'mplex';
 }
 
+// Note: mplex is deprecated in the libp2p ecosystem but still included
+// for interoperability testing with implementations that haven't migrated yet.
+// Yamux is the preferred stream multiplexer for new deployments.
+
 export interface ConnectionRole {
   readonly role: 'dialer' | 'listener';
 }
