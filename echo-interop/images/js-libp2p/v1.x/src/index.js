@@ -1,18 +1,10 @@
 #!/usr/bin/env node
 
 /**
- * JS-libp2p Echo Server for interoperability tests
- * Implements the Echo protocol (/echo/1.0.0) and publishes multiaddr to Redis
+ * Simple JS-libp2p Echo Server for interoperability tests
  */
 
 import { createLibp2p } from 'libp2p'
-import { tcp } from '@libp2p/tcp'
-import { noise } from '@libp2p/noise'
-import { yamux } from '@libp2p/yamux'
-import { mplex } from '@libp2p/mplex'
-import { identify } from '@libp2p/identify'
-import { ping } from '@libp2p/ping'
-import { pipe } from 'it-pipe'
 import { createClient } from 'redis'
 
 // Echo protocol ID
@@ -20,9 +12,6 @@ const ECHO_PROTOCOL = '/echo/1.0.0'
 
 // Environment configuration
 const config = {
-  transport: process.env.TRANSPORT || 'tcp',
-  security: process.env.SECURITY || 'noise', 
-  muxer: process.env.MUXER || 'yamux',
   redisAddr: process.env.REDIS_ADDR || 'redis://localhost:6379',
   port: parseInt(process.env.PORT || '0', 10),
   host: process.env.HOST || '0.0.0.0'
@@ -33,49 +22,29 @@ const config = {
  */
 async function handleEchoProtocol({ stream }) {
   try {
-    await pipe(stream.source, stream.sink)
+    console.error('Handling echo protocol request')
+    
+    // Read data from stream
+    const chunks = []
+    for await (const chunk of stream.source) {
+      chunks.push(chunk)
+    }
+    
+    // Echo back the data
+    const data = new Uint8Array(chunks.reduce((acc, chunk) => acc + chunk.length, 0))
+    let offset = 0
+    for (const chunk of chunks) {
+      data.set(chunk, offset)
+      offset += chunk.length
+    }
+    
+    // Write back to stream
+    await stream.sink([data])
+    
+    console.error(`Echoed ${data.length} bytes`)
   } catch (error) {
     console.error(`Echo protocol error: ${error.message}`)
-    throw error
   }
-}
-
-/**
- * Create libp2p node with configured protocols
- */
-async function createNode() {
-  const transports = []
-  if (config.transport === 'tcp') {
-    transports.push(tcp())
-  }
-  
-  const connectionEncryption = []
-  if (config.security === 'noise') {
-    connectionEncryption.push(noise())
-  }
-  
-  const streamMuxers = []
-  if (config.muxer === 'yamux') {
-    streamMuxers.push(yamux())
-  } else if (config.muxer === 'mplex') {
-    streamMuxers.push(mplex())
-  }
-  
-  const node = await createLibp2p({
-    addresses: {
-      listen: [`/ip4/${config.host}/tcp/${config.port}`]
-    },
-    transports,
-    connectionEncryption,
-    streamMuxers,
-    services: {
-      identify: identify(),
-      ping: ping()
-    }
-  })
-  
-  await node.handle(ECHO_PROTOCOL, handleEchoProtocol)
-  return node
 }
 
 /**
@@ -91,6 +60,8 @@ async function publishMultiaddr(multiaddr) {
     const key = 'js-echo-server-multiaddr'
     await redisClient.rPush(key, multiaddr)
     await redisClient.expire(key, 300)
+    
+    console.error(`Published multiaddr to Redis: ${multiaddr}`)
     
   } catch (error) {
     console.error(`Redis error: ${error.message}`)
@@ -110,7 +81,17 @@ async function publishMultiaddr(multiaddr) {
  */
 async function main() {
   try {
-    const node = await createNode()
+    // Create libp2p node with default configuration
+    const node = await createLibp2p({
+      addresses: {
+        listen: [`/ip4/${config.host}/tcp/${config.port}`]
+      }
+    })
+    
+    // Handle echo protocol
+    await node.handle(ECHO_PROTOCOL, handleEchoProtocol)
+    
+    // Start the node
     await node.start()
     
     const multiaddrs = node.getMultiaddrs()
@@ -122,6 +103,8 @@ async function main() {
     console.log(multiaddr) // Output to stdout for test coordination
     
     await publishMultiaddr(multiaddr)
+    
+    console.error('Echo server started successfully')
     
     // Graceful shutdown
     const handleShutdown = async (signal) => {
@@ -138,11 +121,13 @@ async function main() {
     
   } catch (error) {
     console.error(`Server error: ${error.message}`)
+    console.error(error.stack)
     process.exit(1)
   }
 }
 
 main().catch((error) => {
   console.error(`Fatal error: ${error.message}`)
+  console.error(error.stack)
   process.exit(1)
 })
