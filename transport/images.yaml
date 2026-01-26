@@ -32,8 +32,8 @@ test-aliases:
     value: "zig-v0.0.1"
   - alias: "eth-p2p"
     value: "eth-p2p-z-v0.0.1"
-  - alias: "failing" # everything except rust-v0.56 and js implementations as of 22 Jan 2026
-    value: "~browsers|~go|~python|~nim|~jvm|~c|~dotnet|~zig|~eth-p2p|rust-v0.53|rust-v0.54|rust-v0.55"
+  - alias: "failing" # everything except rust-v0.56 and js and python-v0.x implementations as of 25 Jan 2026
+    value: "~browsers|~go|~nim|~jvm|~c|~dotnet|~zig|~eth-p2p|rust-v0.53|rust-v0.54|rust-v0.55"
 
 implementations:
   # Rust implementations
@@ -165,10 +165,10 @@ implementations:
     source:
       type: github
       repo: libp2p/py-libp2p
-      commit: cd3ae48b35ef140622b275ea8ac2ad00a64db68c
+      commit: 22ea173ac0359a386275bdf6b846bc52a0082e91 
       dockerfile: interop/transport/Dockerfile
     transports: [tcp, ws, wss, quic-v1]
-    secureChannels: [noise]
+    secureChannels: [tls, noise]
     muxers: [mplex, yamux]
 
   # JavaScript implementations (Node.js)
