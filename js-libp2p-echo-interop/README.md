@@ -17,6 +17,8 @@ The test suite validates:
 - **Transport Protocols**: TCP (initial), with QUIC and WebSocket support planned
 - **Security Protocols**: Noise (primary), with TLS support planned  
 - **Stream Multiplexers**: Yamux and Mplex
+
+> **Note**: Mplex is deprecated in the libp2p ecosystem, but is still included in these tests for interoperability validation with legacy implementations. Yamux is the preferred multiplexer for new deployments.
 - **Payload Integrity**: Text, binary, and large payloads (up to 1MB)
 - **Concurrent Streams**: Multiple simultaneous Echo protocol streams
 - **Error Handling**: Connection failures, protocol errors, and recovery mechanisms
