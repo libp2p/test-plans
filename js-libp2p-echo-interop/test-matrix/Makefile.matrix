@@ -1,0 +1,78 @@
+# Makefile for JS-libp2p Echo Interop Test Matrix
+# Generated automatically by test matrix generator
+
+.PHONY: help test-all test-clean test-list
+
+help:
+	@echo "JS-libp2p Echo Interop Test Matrix"
+	@echo ""
+	@echo "Available targets:"
+	@echo "  test-all     - Run all test combinations"
+	@echo "  test-clean   - Clean up test artifacts"
+	@echo "  test-list    - List all test combinations"
+	@echo "  test-<id>    - Run specific test combination"
+	@echo ""
+
+test-all: $(TEST_TARGETS)
+
+test-clean:
+	@echo "Cleaning up test artifacts..."
+	@docker-compose -f ../docker-compose.yml down --remove-orphans --volumes 2>/dev/null || true
+	@find compose -name "docker-compose.*.yml" -exec docker-compose -f {} down --remove-orphans --volumes \; 2>/dev/null || true
+	@docker system prune -f --volumes
+
+test-list:
+	@echo "Available test combinations:"
+	@jq -r '.test_combinations[] | "  \(.id) - \(.name)"' test-matrix.json
+
+# Individual test targets
+TEST_TARGETS := \
+	test-tcp-noise-yamux-basic \
+	test-tcp-noise-yamux-binary \
+	test-tcp-noise-yamux-large \
+	test-tcp-noise-yamux-concurrent \
+	test-tcp-noise-mplex-basic \
+	test-tcp-noise-mplex-binary \
+	test-tcp-noise-mplex-large \
+	test-tcp-noise-mplex-concurrent \
+
+test-tcp-noise-yamux-basic:
+	@echo "Running test: Echo Interop: tcp/noise/yamux - basic"
+	@docker-compose -f compose/docker-compose.tcp-noise-yamux-basic.yml up --build --abort-on-container-exit
+	@docker-compose -f compose/docker-compose.tcp-noise-yamux-basic.yml down --remove-orphans --volumes
+
+test-tcp-noise-yamux-binary:
+	@echo "Running test: Echo Interop: tcp/noise/yamux - binary"
+	@docker-compose -f compose/docker-compose.tcp-noise-yamux-binary.yml up --build --abort-on-container-exit
+	@docker-compose -f compose/docker-compose.tcp-noise-yamux-binary.yml down --remove-orphans --volumes
+
+test-tcp-noise-yamux-large:
+	@echo "Running test: Echo Interop: tcp/noise/yamux - large"
+	@docker-compose -f compose/docker-compose.tcp-noise-yamux-large.yml up --build --abort-on-container-exit
+	@docker-compose -f compose/docker-compose.tcp-noise-yamux-large.yml down --remove-orphans --volumes
+
+test-tcp-noise-yamux-concurrent:
+	@echo "Running test: Echo Interop: tcp/noise/yamux - concurrent"
+	@docker-compose -f compose/docker-compose.tcp-noise-yamux-concurrent.yml up --build --abort-on-container-exit
+	@docker-compose -f compose/docker-compose.tcp-noise-yamux-concurrent.yml down --remove-orphans --volumes
+
+test-tcp-noise-mplex-basic:
+	@echo "Running test: Echo Interop: tcp/noise/mplex - basic"
+	@docker-compose -f compose/docker-compose.tcp-noise-mplex-basic.yml up --build --abort-on-container-exit
+	@docker-compose -f compose/docker-compose.tcp-noise-mplex-basic.yml down --remove-orphans --volumes
+
+test-tcp-noise-mplex-binary:
+	@echo "Running test: Echo Interop: tcp/noise/mplex - binary"
+	@docker-compose -f compose/docker-compose.tcp-noise-mplex-binary.yml up --build --abort-on-container-exit
+	@docker-compose -f compose/docker-compose.tcp-noise-mplex-binary.yml down --remove-orphans --volumes
+
+test-tcp-noise-mplex-large:
+	@echo "Running test: Echo Interop: tcp/noise/mplex - large"
+	@docker-compose -f compose/docker-compose.tcp-noise-mplex-large.yml up --build --abort-on-container-exit
+	@docker-compose -f compose/docker-compose.tcp-noise-mplex-large.yml down --remove-orphans --volumes
+
+test-tcp-noise-mplex-concurrent:
+	@echo "Running test: Echo Interop: tcp/noise/mplex - concurrent"
+	@docker-compose -f compose/docker-compose.tcp-noise-mplex-concurrent.yml up --build --abort-on-container-exit
+	@docker-compose -f compose/docker-compose.tcp-noise-mplex-concurrent.yml down --remove-orphans --volumes
+

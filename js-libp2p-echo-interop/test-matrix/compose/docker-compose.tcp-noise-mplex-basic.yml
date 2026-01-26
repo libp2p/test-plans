@@ -1,0 +1,71 @@
+# Docker Compose configuration for test: tcp-noise-mplex-basic
+# Generated automatically by test matrix generator
+
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: echo-redis-tcp-noise-mplex-basic
+    networks:
+      - echo-network-tcp-noise-mplex-basic
+    command: redis-server --appendonly no --save ""
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  js-echo-server:
+    build:
+      context: ../images/js-echo-server
+      dockerfile: Dockerfile
+    container_name: echo-server-tcp-noise-mplex-basic
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - echo-network-tcp-noise-mplex-basic
+    environment:
+      TRANSPORT: "tcp"
+      SECURITY: "noise"
+      MUXER: "mplex"
+      TEST_SCENARIO: "basic"
+      TEST_NAME: "tcp-noise-mplex-basic"
+      JS_VERSION: "latest"
+      PY_VERSION: "v0.5.0"
+      REDIS_ADDR: "redis:6379"
+      IS_DIALER: "false"
+
+  py-test-harness:
+    build:
+      context: ../images/py-test-harness
+      dockerfile: Dockerfile
+    container_name: echo-client-tcp-noise-mplex-basic
+    depends_on:
+      redis:
+        condition: service_healthy
+      js-echo-server:
+        condition: service_started
+    networks:
+      - echo-network-tcp-noise-mplex-basic
+    environment:
+      TRANSPORT: "tcp"
+      SECURITY: "noise"
+      MUXER: "mplex"
+      TEST_SCENARIO: "basic"
+      TEST_NAME: "tcp-noise-mplex-basic"
+      JS_VERSION: "latest"
+      PY_VERSION: "v0.5.0"
+      REDIS_ADDR: "redis:6379"
+      IS_DIALER: "true"
+    volumes:
+      - test-results-tcp-noise-mplex-basic:/app/results
+
+networks:
+  echo-network-tcp-noise-mplex-basic:
+    driver: bridge
+
+volumes:
+  test-results-tcp-noise-mplex-basic:
+    driver: local

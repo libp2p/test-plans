@@ -1,0 +1,273 @@
+{
+  "metadata": {
+    "generated_at": "2026-01-26T10:53:00Z",
+    "generator": "js-libp2p-echo-interop/lib/test-matrix.sh",
+    "version": "1.0.0"
+  },
+  "implementations": {
+    "js-libp2p": {
+      "role": "server"
+    },
+    "py-libp2p": {
+      "role": "client"
+    }
+  },
+  "test_combinations": [
+    {
+      "id": "tcp-noise-yamux-basic",
+      "name": "Echo Interop: tcp/noise/yamux - basic",
+      "description": "Basic text echo test",
+      "transport": "tcp",
+      "security": "noise",
+      "muxer": "yamux",
+      "scenario": "basic",
+      "environment": {
+        "TRANSPORT": "tcp",
+        "SECURITY": "noise",
+        "MUXER": "yamux",
+        "TEST_SCENARIO": "basic",
+        "TEST_NAME": "tcp-noise-yamux-basic",
+        "JS_VERSION": "latest",
+        "PY_VERSION": "v0.5.0"
+      },
+      "implementations": {
+        "server": "js-libp2p",
+        "client": "py-libp2p"
+      },
+      "timeout": 60,
+      "retries": 3,
+      "tags": [
+        "interop",
+        "echo",
+        "tcp",
+        "noise",
+        "yamux",
+        "basic"
+      ]
+    },
+    {
+      "id": "tcp-noise-yamux-binary",
+      "name": "Echo Interop: tcp/noise/yamux - binary",
+      "description": "Binary payload echo test",
+      "transport": "tcp",
+      "security": "noise",
+      "muxer": "yamux",
+      "scenario": "binary",
+      "environment": {
+        "TRANSPORT": "tcp",
+        "SECURITY": "noise",
+        "MUXER": "yamux",
+        "TEST_SCENARIO": "binary",
+        "TEST_NAME": "tcp-noise-yamux-binary",
+        "JS_VERSION": "latest",
+        "PY_VERSION": "v0.5.0"
+      },
+      "implementations": {
+        "server": "js-libp2p",
+        "client": "py-libp2p"
+      },
+      "timeout": 60,
+      "retries": 3,
+      "tags": [
+        "interop",
+        "echo",
+        "tcp",
+        "noise",
+        "yamux",
+        "binary"
+      ]
+    },
+    {
+      "id": "tcp-noise-yamux-large",
+      "name": "Echo Interop: tcp/noise/yamux - large",
+      "description": "Large payload (1MB) echo test",
+      "transport": "tcp",
+      "security": "noise",
+      "muxer": "yamux",
+      "scenario": "large",
+      "environment": {
+        "TRANSPORT": "tcp",
+        "SECURITY": "noise",
+        "MUXER": "yamux",
+        "TEST_SCENARIO": "large",
+        "TEST_NAME": "tcp-noise-yamux-large",
+        "JS_VERSION": "latest",
+        "PY_VERSION": "v0.5.0"
+      },
+      "implementations": {
+        "server": "js-libp2p",
+        "client": "py-libp2p"
+      },
+      "timeout": 60,
+      "retries": 3,
+      "tags": [
+        "interop",
+        "echo",
+        "tcp",
+        "noise",
+        "yamux",
+        "large"
+      ]
+    },
+    {
+      "id": "tcp-noise-yamux-concurrent",
+      "name": "Echo Interop: tcp/noise/yamux - concurrent",
+      "description": "Concurrent streams echo test",
+      "transport": "tcp",
+      "security": "noise",
+      "muxer": "yamux",
+      "scenario": "concurrent",
+      "environment": {
+        "TRANSPORT": "tcp",
+        "SECURITY": "noise",
+        "MUXER": "yamux",
+        "TEST_SCENARIO": "concurrent",
+        "TEST_NAME": "tcp-noise-yamux-concurrent",
+        "JS_VERSION": "latest",
+        "PY_VERSION": "v0.5.0"
+      },
+      "implementations": {
+        "server": "js-libp2p",
+        "client": "py-libp2p"
+      },
+      "timeout": 60,
+      "retries": 3,
+      "tags": [
+        "interop",
+        "echo",
+        "tcp",
+        "noise",
+        "yamux",
+        "concurrent"
+      ]
+    },
+    {
+      "id": "tcp-noise-mplex-basic",
+      "name": "Echo Interop: tcp/noise/mplex - basic",
+      "description": "Basic text echo test",
+      "transport": "tcp",
+      "security": "noise",
+      "muxer": "mplex",
+      "scenario": "basic",
+      "environment": {
+        "TRANSPORT": "tcp",
+        "SECURITY": "noise",
+        "MUXER": "mplex",
+        "TEST_SCENARIO": "basic",
+        "TEST_NAME": "tcp-noise-mplex-basic",
+        "JS_VERSION": "latest",
+        "PY_VERSION": "v0.5.0"
+      },
+      "implementations": {
+        "server": "js-libp2p",
+        "client": "py-libp2p"
+      },
+      "timeout": 60,
+      "retries": 3,
+      "tags": [
+        "interop",
+        "echo",
+        "tcp",
+        "noise",
+        "mplex",
+        "basic"
+      ]
+    },
+    {
+      "id": "tcp-noise-mplex-binary",
+      "name": "Echo Interop: tcp/noise/mplex - binary",
+      "description": "Binary payload echo test",
+      "transport": "tcp",
+      "security": "noise",
+      "muxer": "mplex",
+      "scenario": "binary",
+      "environment": {
+        "TRANSPORT": "tcp",
+        "SECURITY": "noise",
+        "MUXER": "mplex",
+        "TEST_SCENARIO": "binary",
+        "TEST_NAME": "tcp-noise-mplex-binary",
+        "JS_VERSION": "latest",
+        "PY_VERSION": "v0.5.0"
+      },
+      "implementations": {
+        "server": "js-libp2p",
+        "client": "py-libp2p"
+      },
+      "timeout": 60,
+      "retries": 3,
+      "tags": [
+        "interop",
+        "echo",
+        "tcp",
+        "noise",
+        "mplex",
+        "binary"
+      ]
+    },
+    {
+      "id": "tcp-noise-mplex-large",
+      "name": "Echo Interop: tcp/noise/mplex - large",
+      "description": "Large payload (1MB) echo test",
+      "transport": "tcp",
+      "security": "noise",
+      "muxer": "mplex",
+      "scenario": "large",
+      "environment": {
+        "TRANSPORT": "tcp",
+        "SECURITY": "noise",
+        "MUXER": "mplex",
+        "TEST_SCENARIO": "large",
+        "TEST_NAME": "tcp-noise-mplex-large",
+        "JS_VERSION": "latest",
+        "PY_VERSION": "v0.5.0"
+      },
+      "implementations": {
+        "server": "js-libp2p",
+        "client": "py-libp2p"
+      },
+      "timeout": 60,
+      "retries": 3,
+      "tags": [
+        "interop",
+        "echo",
+        "tcp",
+        "noise",
+        "mplex",
+        "large"
+      ]
+    },
+    {
+      "id": "tcp-noise-mplex-concurrent",
+      "name": "Echo Interop: tcp/noise/mplex - concurrent",
+      "description": "Concurrent streams echo test",
+      "transport": "tcp",
+      "security": "noise",
+      "muxer": "mplex",
+      "scenario": "concurrent",
+      "environment": {
+        "TRANSPORT": "tcp",
+        "SECURITY": "noise",
+        "MUXER": "mplex",
+        "TEST_SCENARIO": "concurrent",
+        "TEST_NAME": "tcp-noise-mplex-concurrent",
+        "JS_VERSION": "latest",
+        "PY_VERSION": "v0.5.0"
+      },
+      "implementations": {
+        "server": "js-libp2p",
+        "client": "py-libp2p"
+      },
+      "timeout": 60,
+      "retries": 3,
+      "tags": [
+        "interop",
+        "echo",
+        "tcp",
+        "noise",
+        "mplex",
+        "concurrent"
+      ]
+    }
+  ]
+}
