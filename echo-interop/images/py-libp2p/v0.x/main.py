@@ -11,7 +11,6 @@ import time
 import trio
 import redis
 from libp2p import new_host
-from libp2p.network.stream.net_stream_interface import INetStream
 
 # Configuration from environment
 TRANSPORT = os.getenv('TRANSPORT', 'tcp')
@@ -50,7 +49,7 @@ async def echo_test(multiaddr: str, test_data: bytes):
         await host.connect(info)
         
         # Open echo protocol stream
-        stream: INetStream = await host.new_stream(info.peer_id, [ECHO_PROTOCOL])
+        stream = await host.new_stream(info.peer_id, [ECHO_PROTOCOL])
         
         # Send test data
         await stream.write(test_data)
