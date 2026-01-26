@@ -1,0 +1,36 @@
+# JS-libp2p Echo Interop - Implementation Definitions
+# This file defines libp2p implementations for Echo protocol interoperability testing
+
+# Test Aliases - Define reusable patterns for test selection
+test-aliases:
+  - alias: "all"
+    value: "py-test-harness|js-libp2p-echo-server"
+  - alias: "python"
+    value: "py-test-harness"
+  - alias: "js"
+    value: "js-libp2p-echo-server"
+
+implementations:
+  # Python libp2p test harness (client/dialer)
+  - id: py-test-harness
+    source:
+      type: local
+      path: images/py-test-harness
+      dockerfile: Dockerfile
+    transports: [tcp]
+    secureChannels: [noise]
+    muxers: [yamux, mplex]
+    # Python test harness acts as the client/dialer in Echo tests
+    role: dialer
+
+  # JavaScript libp2p Echo server implementation (server/listener)
+  - id: js-libp2p-echo-server
+    source:
+      type: local
+      path: images/js-echo-server
+      dockerfile: Dockerfile
+    transports: [tcp]
+    secureChannels: [noise]
+    muxers: [yamux, mplex]
+    # js-libp2p acts as the server/listener in Echo tests
+    role: listener
