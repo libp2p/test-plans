@@ -23,6 +23,8 @@ import { createLibp2p } from 'libp2p'
 import { tcp } from '@libp2p/tcp'
 import { noise } from '@libp2p/noise'
 import { yamux } from '@libp2p/yamux'
+// Note: mplex is deprecated but still included for interoperability testing
+// with py-libp2p implementations that may still use mplex
 import { mplex } from '@libp2p/mplex'
 import { identify } from '@libp2p/identify'
 import { ping } from '@libp2p/ping'
@@ -90,6 +92,8 @@ async function createNode() {
   if (config.muxer === 'yamux') {
     streamMuxers.push(yamux())
   } else if (config.muxer === 'mplex') {
+    // Note: mplex is deprecated but still supported for interoperability testing
+    // with legacy py-libp2p implementations. Yamux is preferred for new deployments.
     streamMuxers.push(mplex())
   }
   
