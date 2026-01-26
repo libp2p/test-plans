@@ -39,7 +39,7 @@ init_common_variables() {
   IMAGES_YAML="${IMAGES_YAML:-${TEST_ROOT}/images.yaml}"
 
   # Paths
-  CACHE_DIR="${CACHE_DIR:-/srv/cache}"
+  CACHE_DIR="${CACHE_DIR:-${TEST_ROOT}/.cache}"
   TEST_RUN_DIR="${TEST_RUN_DIR:-${CACHE_DIR}/test-run}"
 
   # Common filtering variables (dimension-based)
@@ -55,7 +55,7 @@ init_common_variables() {
   TEST_IGNORE="${TEST_IGNORE:-}"           # Test name ignore filter (NEW)
 
   # Execution settings
-  WORKER_COUNT="${WORKER_COUNT:-$(nproc 2>/dev/null || echo 4)}"
+  WORKER_COUNT="${WORKER_COUNT:-$(get_cpu_count)}"
   DEBUG="${DEBUG:-false}"
 
   # Common command-line flags

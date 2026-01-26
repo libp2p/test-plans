@@ -12,6 +12,7 @@ trap 'echo "ERROR in generate-tests.sh at line $LINENO: Command exited with stat
 # Source common libraries
 source "${SCRIPT_LIB_DIR}/lib-filter-engine.sh"
 source "${SCRIPT_LIB_DIR}/lib-generate-tests.sh"
+source "${SCRIPT_LIB_DIR}/lib-host-os.sh"
 source "${SCRIPT_LIB_DIR}/lib-image-building.sh"
 source "${SCRIPT_LIB_DIR}/lib-image-naming.sh"
 source "${SCRIPT_LIB_DIR}/lib-output-formatting.sh"

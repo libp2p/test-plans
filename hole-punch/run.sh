@@ -204,10 +204,10 @@ Examples:
 
 Dependencies:
   Required: bash 4.0+, docker 20.10+ (or podman), docker-compose, yq 4.0+
-            wget, zip, unzip, tar, gzip, bc, sha256sum, cut, timeout, flock
+            wget, zip, unzip, bc, sha256sum, cut, timeout, flock
             Text utilities: awk, sed, grep, sort, head, tail, wc, tr, paste, cat
             File utilities: mkdir, cp, mv, rm, chmod, find, xargs, basename, dirname, mktemp
-            System utilities: date, sleep, nproc, uname, hostname, ps
+            System utilities: date, sleep, uname, hostname, ps
   Optional: gnuplot (box plots), git (submodule-based builds)
   Run with --check-deps to verify installation.
 

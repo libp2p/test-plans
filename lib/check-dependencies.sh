@@ -204,7 +204,6 @@ declare -a PRESENCE_ONLY_TOOLS=(
   "mktemp"
   "date"
   "sleep"
-  "nproc"
   "uname"
   "hostname"
   "ps"
