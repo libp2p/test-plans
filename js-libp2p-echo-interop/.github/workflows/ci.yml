@@ -1,0 +1,551 @@
+name: JS-libp2p Echo Interop CI
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'js-libp2p-echo-interop/**'
+      - '.github/workflows/ci.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'js-libp2p-echo-interop/**'
+      - '.github/workflows/ci.yml'
+  workflow_dispatch:
+    inputs:
+      test_timeout:
+        description: 'Test timeout in seconds'
+        required: false
+        default: '600'
+        type: string
+      verbose:
+        description: 'Enable verbose output'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  # CI Configuration
+  CI: true
+  GITHUB_ACTIONS: true
+  BUILD_CACHE: false
+  VERBOSE: ${{ inputs.verbose || 'false' }}
+  TEST_TIMEOUT: ${{ inputs.test_timeout || '600' }}
+  
+  # Protocol Configuration
+  TRANSPORT: tcp
+  SECURITY: noise
+  MUXER: yamux
+  
+  # Docker Configuration
+  DOCKER_BUILDKIT: 1
+  COMPOSE_DOCKER_CLI_BUILD: 1
+
+jobs:
+  # Job 1: Validate configuration and setup
+  validate:
+    name: Validate Configuration
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    outputs:
+      config-valid: ${{ steps.validate.outputs.valid }}
+      
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: network=host
+          
+      - name: Validate configuration
+        id: validate
+        working-directory: js-libp2p-echo-interop
+        run: |
+          echo "Validating CI configuration..."
+          ./lib/validate-config.sh
+          echo "valid=true" >> $GITHUB_OUTPUT
+          
+      - name: Validate Docker Compose
+        working-directory: js-libp2p-echo-interop
+        run: |
+          echo "Validating Docker Compose configuration..."
+          docker-compose config --quiet
+          
+      - name: Check required files
+        working-directory: js-libp2p-echo-interop
+        run: |
+          echo "Checking required files..."
+          required_files=(
+            "Makefile"
+            "docker-compose.yml"
+            "images.yaml"
+            "versions.ts"
+            "scripts/build-local.sh"
+            "scripts/test-local.sh"
+            "test-ci-integration.sh"
+          )
+          
+          for file in "${required_files[@]}"; do
+            if [[ ! -f "$file" ]]; then
+              echo "❌ Missing required file: $file"
+              exit 1
+            else
+              echo "✅ Found: $file"
+            fi
+          done
+
+  # Job 2: Build Docker images
+  build:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    needs: validate
+    timeout-minutes: 20
+    
+    strategy:
+      matrix:
+        component: [js-echo-server, py-test-harness]
+        
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: network=host
+          
+      - name: Build ${{ matrix.component }}
+        working-directory: js-libp2p-echo-interop
+        run: |
+          echo "Building ${{ matrix.component }}..."
+          if [[ "${{ matrix.component }}" == "js-echo-server" ]]; then
+            make build-js
+          else
+            make build-py
+          fi
+          
+      - name: Test ${{ matrix.component }} image
+        working-directory: js-libp2p-echo-interop
+        run: |
+          echo "Testing ${{ matrix.component }} image functionality..."
+          if [[ "${{ matrix.component }}" == "js-echo-server" ]]; then
+            docker run --rm js-libp2p-echo-server:latest node --version
+            docker run --rm js-libp2p-echo-server:latest npm --version
+          else
+            docker run --rm py-test-harness:latest python3 --version
+            docker run --rm py-test-harness:latest pip3 --version
+          fi
+          
+      - name: Save ${{ matrix.component }} image
+        run: |
+          echo "Saving ${{ matrix.component }} image..."
+          if [[ "${{ matrix.component }}" == "js-echo-server" ]]; then
+            docker save js-libp2p-echo-server:latest | gzip > js-echo-server.tar.gz
+          else
+            docker save py-test-harness:latest | gzip > py-test-harness.tar.gz
+          fi
+          
+      - name: Upload ${{ matrix.component }} image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.component }}-image
+          path: ${{ matrix.component }}.tar.gz
+          retention-days: 1
+
+  # Job 3: Run unit tests
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: build
+    timeout-minutes: 15
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Download Docker images
+        uses: actions/download-artifact@v4
+        with:
+          pattern: "*-image"
+          merge-multiple: true
+          
+      - name: Load Docker images
+        run: |
+          echo "Loading Docker images..."
+          docker load < js-echo-server.tar.gz
+          docker load < py-test-harness.tar.gz
+          
+      - name: Run unit tests
+        working-directory: js-libp2p-echo-interop
+        run: |
+          echo "Running unit tests..."
+          ./scripts/test-local.sh unit
+          
+      - name: Upload unit test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-results
+          path: js-libp2p-echo-interop/test-report.json
+          retention-days: 7
+
+  # Job 4: Run property-based tests
+  property-tests:
+    name: Property-Based Tests
+    runs-on: ubuntu-latest
+    needs: build
+    timeout-minutes: 20
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Download Docker images
+        uses: actions/download-artifact@v4
+        with:
+          pattern: "*-image"
+          merge-multiple: true
+          
+      - name: Load Docker images
+        run: |
+          echo "Loading Docker images..."
+          docker load < js-echo-server.tar.gz
+          docker load < py-test-harness.tar.gz
+          
+      - name: Run property-based tests
+        working-directory: js-libp2p-echo-interop
+        run: |
+          echo "Running property-based tests..."
+          ./scripts/test-local.sh property
+        env:
+          # Increase timeout for property tests in CI
+          TEST_TIMEOUT: 900
+          
+      - name: Upload property test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: property-test-results
+          path: js-libp2p-echo-interop/test-report.json
+          retention-days: 7
+
+  # Job 5: Run integration tests
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: build
+    timeout-minutes: 25
+    
+    strategy:
+      matrix:
+        protocol:
+          - transport: tcp
+            security: noise
+            muxer: yamux
+          - transport: tcp
+            security: noise
+            muxer: mplex
+            
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Download Docker images
+        uses: actions/download-artifact@v4
+        with:
+          pattern: "*-image"
+          merge-multiple: true
+          
+      - name: Load Docker images
+        run: |
+          echo "Loading Docker images..."
+          docker load < js-echo-server.tar.gz
+          docker load < py-test-harness.tar.gz
+          
+      - name: Run integration tests (${{ matrix.protocol.transport }}/${{ matrix.protocol.security }}/${{ matrix.protocol.muxer }})
+        working-directory: js-libp2p-echo-interop
+        env:
+          TRANSPORT: ${{ matrix.protocol.transport }}
+          SECURITY: ${{ matrix.protocol.security }}
+          MUXER: ${{ matrix.protocol.muxer }}
+          TEST_SCENARIOS: "basic,binary,large"
+          CONCURRENT_STREAMS: "1,3,5"
+        run: |
+          echo "Running integration tests with ${{ matrix.protocol.transport }}/${{ matrix.protocol.security }}/${{ matrix.protocol.muxer }}..."
+          ./scripts/test-local.sh integration
+          
+      - name: Upload integration test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results-${{ matrix.protocol.transport }}-${{ matrix.protocol.security }}-${{ matrix.protocol.muxer }}
+          path: js-libp2p-echo-interop/test-report.json
+          retention-days: 7
+
+  # Job 6: Run CI integration tests
+  ci-integration-tests:
+    name: CI Integration Tests
+    runs-on: ubuntu-latest
+    needs: build
+    timeout-minutes: 30
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: network=host
+          
+      - name: Download Docker images
+        uses: actions/download-artifact@v4
+        with:
+          pattern: "*-image"
+          merge-multiple: true
+          
+      - name: Load Docker images
+        run: |
+          echo "Loading Docker images..."
+          docker load < js-echo-server.tar.gz
+          docker load < py-test-harness.tar.gz
+          
+      - name: Run CI integration tests
+        working-directory: js-libp2p-echo-interop
+        run: |
+          echo "Running CI integration tests..."
+          ./test-ci-integration.sh
+          
+      - name: Upload CI test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-integration-test-results
+          path: js-libp2p-echo-interop/ci-test-report.json
+          retention-days: 7
+
+  # Job 7: Generate test report and publish results
+  report:
+    name: Generate Test Report
+    runs-on: ubuntu-latest
+    needs: [unit-tests, property-tests, integration-tests, ci-integration-tests]
+    if: always()
+    timeout-minutes: 10
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Download all test results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: "*-test-results*"
+          path: test-results
+          merge-multiple: true
+          
+      - name: Aggregate test results
+        run: |
+          echo "Aggregating test results..."
+          
+          # Create aggregation script
+          cat > aggregate-results.py << 'EOF'
+          import json
+          import glob
+          import os
+          from pathlib import Path
+          
+          def aggregate_results():
+              results_dir = Path("test-results")
+              result_files = list(results_dir.glob("**/*.json"))
+              
+              aggregated = {
+                  "ci_run": {
+                      "github_run_id": os.environ.get("GITHUB_RUN_ID", "unknown"),
+                      "github_run_number": os.environ.get("GITHUB_RUN_NUMBER", "unknown"),
+                      "github_sha": os.environ.get("GITHUB_SHA", "unknown"),
+                      "github_ref": os.environ.get("GITHUB_REF", "unknown"),
+                      "github_actor": os.environ.get("GITHUB_ACTOR", "unknown")
+                  },
+                  "summary": {
+                      "total_test_files": len(result_files),
+                      "total_tests": 0,
+                      "passed_tests": 0,
+                      "failed_tests": 0,
+                      "total_duration": 0.0
+                  },
+                  "test_suites": []
+              }
+              
+              for result_file in result_files:
+                  try:
+                      with open(result_file) as f:
+                          data = json.load(f)
+                      
+                      # Handle different result formats
+                      if "summary" in data:
+                          # Aggregated format
+                          suite_summary = data["summary"]
+                          aggregated["summary"]["total_tests"] += suite_summary.get("total_tests", 0)
+                          aggregated["summary"]["passed_tests"] += suite_summary.get("passed_tests", 0)
+                          aggregated["summary"]["failed_tests"] += suite_summary.get("failed_tests", 0)
+                          aggregated["summary"]["total_duration"] += suite_summary.get("total_duration", 0)
+                      else:
+                          # Individual test result format
+                          aggregated["summary"]["total_tests"] += 1
+                          if data.get("status") == "passed":
+                              aggregated["summary"]["passed_tests"] += 1
+                          else:
+                              aggregated["summary"]["failed_tests"] += 1
+                          aggregated["summary"]["total_duration"] += data.get("duration", 0)
+                      
+                      aggregated["test_suites"].append({
+                          "file": str(result_file),
+                          "data": data
+                      })
+                      
+                  except Exception as e:
+                      print(f"Error processing {result_file}: {e}")
+              
+              # Calculate success rate
+              total = aggregated["summary"]["total_tests"]
+              passed = aggregated["summary"]["passed_tests"]
+              success_rate = (passed / total * 100) if total > 0 else 0
+              aggregated["summary"]["success_rate"] = f"{success_rate:.1f}%"
+              
+              # Write final report
+              with open("final-test-report.json", "w") as f:
+                  json.dump(aggregated, f, indent=2)
+              
+              print(f"Aggregated {len(result_files)} test result files")
+              print(f"Total tests: {total}")
+              print(f"Passed: {passed}")
+              print(f"Failed: {aggregated['summary']['failed_tests']}")
+              print(f"Success rate: {success_rate:.1f}%")
+              
+              return aggregated["summary"]["failed_tests"] == 0
+          
+          if __name__ == "__main__":
+              success = aggregate_results()
+              exit(0 if success else 1)
+          EOF
+          
+          python3 aggregate-results.py
+          
+      - name: Set GitHub outputs
+        run: |
+          if [[ -f "final-test-report.json" ]]; then
+            total_tests=$(python3 -c "import json; data=json.load(open('final-test-report.json')); print(data['summary']['total_tests'])")
+            passed_tests=$(python3 -c "import json; data=json.load(open('final-test-report.json')); print(data['summary']['passed_tests'])")
+            failed_tests=$(python3 -c "import json; data=json.load(open('final-test-report.json')); print(data['summary']['failed_tests'])")
+            success_rate=$(python3 -c "import json; data=json.load(open('final-test-report.json')); print(data['summary']['success_rate'])")
+            
+            echo "total_tests=$total_tests" >> $GITHUB_OUTPUT
+            echo "passed_tests=$passed_tests" >> $GITHUB_OUTPUT
+            echo "failed_tests=$failed_tests" >> $GITHUB_OUTPUT
+            echo "success_rate=$success_rate" >> $GITHUB_OUTPUT
+            
+            # Create GitHub summary
+            cat >> $GITHUB_STEP_SUMMARY << EOF
+          # 🧪 JS-libp2p Echo Interop Test Results
+          
+          ## Summary
+          - **Total Tests**: $total_tests
+          - **Passed**: $passed_tests ✅
+          - **Failed**: $failed_tests ❌
+          - **Success Rate**: $success_rate
+          
+          ## Test Suites
+          - Unit Tests
+          - Property-Based Tests  
+          - Integration Tests
+          - CI Integration Tests
+          
+          ## Protocol Combinations Tested
+          - TCP/Noise/Yamux
+          - TCP/Noise/Mplex
+          
+          EOF
+          fi
+          
+      - name: Upload final test report
+        uses: actions/upload-artifact@v4
+        with:
+          name: final-test-report
+          path: final-test-report.json
+          retention-days: 30
+          
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            if (fs.existsSync('final-test-report.json')) {
+              const report = JSON.parse(fs.readFileSync('final-test-report.json', 'utf8'));
+              const summary = report.summary;
+              
+              const comment = `## 🧪 JS-libp2p Echo Interop Test Results
+              
+              **Summary:**
+              - Total Tests: ${summary.total_tests}
+              - Passed: ${summary.passed_tests} ✅
+              - Failed: ${summary.failed_tests} ❌
+              - Success Rate: ${summary.success_rate}
+              
+              **Test Suites:**
+              - Unit Tests
+              - Property-Based Tests
+              - Integration Tests (TCP/Noise/Yamux, TCP/Noise/Mplex)
+              - CI Integration Tests
+              
+              ${summary.failed_tests > 0 ? '⚠️ Some tests failed. Please check the workflow logs for details.' : '🎉 All tests passed!'}
+              `;
+              
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment
+              });
+            }
+
+  # Job 8: Multi-architecture build (optional, runs on main branch)
+  multiarch-build:
+    name: Multi-Architecture Build
+    runs-on: ubuntu-latest
+    needs: [unit-tests, property-tests]
+    if: github.ref == 'refs/heads/main'
+    timeout-minutes: 45
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        
+      - name: Build multi-architecture images
+        working-directory: js-libp2p-echo-interop
+        run: |
+          echo "Building multi-architecture images..."
+          make buildx
+          
+      - name: Generate image manifest
+        working-directory: js-libp2p-echo-interop
+        run: |
+          echo "Generating image manifest..."
+          make image-json
+          
+      - name: Upload image manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-manifest
+          path: js-libp2p-echo-interop/image.json
+          retention-days: 30
