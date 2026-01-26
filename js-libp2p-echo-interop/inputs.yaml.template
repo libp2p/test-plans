@@ -1,0 +1,49 @@
+# Input configuration template for JS-libp2p Echo Interoperability Tests
+# This file is generated automatically during test runs for reproducibility
+
+metadata:
+  testType: "js-libp2p-echo-interop"
+  generatedAt: ""
+  platform: ""
+  os: ""
+
+# Test execution configuration
+execution:
+  workers: 4
+  debug: false
+  forceImageRebuild: false
+  forceMatrixRebuild: false
+  snapshot: false
+  yes: false
+
+# Test filtering configuration
+filters:
+  testSelect: ""
+  testIgnore: ""
+  implSelect: ""
+  implIgnore: ""
+  transportSelect: ""
+  transportIgnore: ""
+  secureSelect: ""
+  secureIgnore: ""
+  muxerSelect: ""
+  muxerIgnore: ""
+
+# Implementation definitions (from images.yaml)
+implementations:
+  - id: "py-libp2p-v0.5.0"
+    role: "dialer"
+    transports: ["tcp"]
+    secureChannels: ["noise"]
+    muxers: ["yamux", "mplex"]
+  
+  - id: "js-libp2p-echo-server"
+    role: "listener"
+    transports: ["tcp"]
+    secureChannels: ["noise"]
+    muxers: ["yamux", "mplex"]
+
+# Environment variables
+environment:
+  REDIS_ADDR: "redis:6379"
+  DOCKER_NETWORK: "js-libp2p-echo-interop"
