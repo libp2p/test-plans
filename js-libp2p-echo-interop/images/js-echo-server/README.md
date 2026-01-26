@@ -20,6 +20,8 @@ The server is configured via environment variables:
 | `TRANSPORT` | `tcp` | Transport protocol (`tcp`, `quic`, `ws`) |
 | `SECURITY` | `noise` | Security protocol (`noise`, `tls`) |
 | `MUXER` | `yamux` | Stream multiplexer (`yamux`, `mplex`) |
+
+> **Note**: The `mplex` multiplexer is deprecated in the libp2p ecosystem but still supported for interoperability testing with legacy implementations. You may see deprecation warnings when using mplex - these are expected and don't affect functionality.
 | `IS_DIALER` | `false` | Connection role (always `false` for server) |
 | `REDIS_ADDR` | `redis://localhost:6379` | Redis connection string |
 | `HOST` | `0.0.0.0` | Listen host address |
