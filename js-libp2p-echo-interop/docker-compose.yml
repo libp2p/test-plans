@@ -1,0 +1,168 @@
+# Docker Compose configuration for JS-libp2p Echo Interoperability Tests
+# Defines multi-container test environment with Redis coordination
+# Supports configurable transport, security, and muxer combinations
+
+services:
+  # Redis coordination service for multiaddr sharing and test synchronization
+  redis:
+    image: redis:7-alpine
+    container_name: js-libp2p-echo-interop-redis
+    networks:
+      - js-libp2p-echo-interop
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly no --save ""
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    labels:
+      - "js-libp2p-echo-interop.service=coordination"
+      - "js-libp2p-echo-interop.role=redis"
+
+  # JS-libp2p Echo Server (listener/server role)
+  js-echo-server:
+    build:
+      context: ./images/js-echo-server
+      dockerfile: Dockerfile
+    image: js-libp2p-echo-server:latest
+    container_name: js-libp2p-echo-interop-server
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - js-libp2p-echo-interop
+    environment:
+      # Protocol stack configuration
+      TRANSPORT: ${TRANSPORT:-tcp}
+      SECURITY: ${SECURITY:-noise}
+      MUXER: ${MUXER:-yamux}
+      IS_DIALER: "false"
+      
+      # Network configuration
+      HOST: "0.0.0.0"
+      PORT: "0"
+      
+      # Redis coordination
+      REDIS_ADDR: "redis:6379"
+      
+      # Debug and logging
+      DEBUG: ${DEBUG:-false}
+      NODE_ENV: ${NODE_ENV:-production}
+      
+      # Test metadata
+      TEST_NAME: ${TEST_NAME:-echo-interop}
+      IMPLEMENTATION: "js-libp2p"
+      VERSION: ${JS_VERSION:-latest}
+    healthcheck:
+      test: ["CMD", "bash", "/app/lib/health-check.sh", "js-server"]
+      interval: 30s
+      timeout: 10s
+      start_period: 15s
+      retries: 3
+    restart: "no"
+    labels:
+      - "js-libp2p-echo-interop.service=echo-server"
+      - "js-libp2p-echo-interop.role=listener"
+      - "js-libp2p-echo-interop.implementation=js-libp2p"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+
+  # Python Test Harness (dialer/client role)
+  py-test-harness:
+    build:
+      context: ./images/py-test-harness
+      dockerfile: Dockerfile
+    image: py-test-harness:latest
+    container_name: js-libp2p-echo-interop-client
+    depends_on:
+      redis:
+        condition: service_healthy
+      js-echo-server:
+        condition: service_healthy
+    networks:
+      - js-libp2p-echo-interop
+    environment:
+      # Protocol stack configuration (must match server)
+      TRANSPORT: ${TRANSPORT:-tcp}
+      SECURITY: ${SECURITY:-noise}
+      MUXER: ${MUXER:-yamux}
+      IS_DIALER: "true"
+      
+      # Redis coordination
+      REDIS_ADDR: "redis:6379"
+      
+      # Test configuration
+      TEST_TIMEOUT: ${TEST_TIMEOUT:-30}
+      MAX_RETRIES: ${MAX_RETRIES:-3}
+      RETRY_DELAY: ${RETRY_DELAY:-1}
+      
+      # Debug and logging
+      DEBUG: ${DEBUG:-false}
+      PYTHONUNBUFFERED: "1"
+      PYTHONPATH: "/app/src"
+      
+      # Test metadata
+      TEST_NAME: ${TEST_NAME:-echo-interop}
+      IMPLEMENTATION: "py-libp2p"
+      VERSION: ${PY_VERSION:-v0.5.0}
+      
+      # Test scenario configuration
+      PAYLOAD_SIZES: ${PAYLOAD_SIZES:-small,medium,large}
+      CONCURRENT_STREAMS: ${CONCURRENT_STREAMS:-1,5,10}
+      TEST_SCENARIOS: ${TEST_SCENARIOS:-basic,binary,large,concurrent}
+    volumes:
+      # Mount test results output
+      - test-results:/app/results
+    restart: "no"
+    labels:
+      - "js-libp2p-echo-interop.service=test-harness"
+      - "js-libp2p-echo-interop.role=dialer"
+      - "js-libp2p-echo-interop.implementation=py-libp2p"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '2.0'
+        reservations:
+          memory: 256M
+          cpus: '0.5'
+
+# Network configuration for container isolation and communication
+networks:
+  js-libp2p-echo-interop:
+    driver: bridge
+    name: js-libp2p-echo-interop
+    attachable: true
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.20.0.0/16
+          gateway: 172.20.0.1
+    labels:
+      - "js-libp2p-echo-interop.network=main"
+
+# Volume configuration for data persistence and sharing
+volumes:
+  # Redis data persistence (optional for tests)
+  redis-data:
+    driver: local
+    labels:
+      - "js-libp2p-echo-interop.volume=redis-data"
+  
+  # Test results sharing between containers
+  test-results:
+    driver: local
+    labels:
+      - "js-libp2p-echo-interop.volume=test-results"

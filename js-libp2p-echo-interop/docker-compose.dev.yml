@@ -1,0 +1,75 @@
+# Docker Compose override for development environment
+# Extends the main docker-compose.yml with development-specific configurations
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  # Development overrides for JS Echo Server
+  js-echo-server:
+    build:
+      context: ./images/js-echo-server
+      dockerfile: Dockerfile
+      target: builder  # Use builder stage for development
+    environment:
+      NODE_ENV: development
+      DEBUG: "true"
+    volumes:
+      # Live reload for development
+      - ./images/js-echo-server/src:/app/src:rw
+      - ./images/js-echo-server/package.json:/app/package.json:ro
+      - js-node-modules:/app/node_modules
+    ports:
+      # Expose debug port for Node.js debugging
+      - "9229:9229"
+    command: ["node", "--inspect=0.0.0.0:9229", "src/index.js"]
+    restart: "no"
+
+  # Development overrides for Python Test Harness
+  py-test-harness:
+    build:
+      context: ./images/py-test-harness
+      dockerfile: Dockerfile
+    environment:
+      DEBUG: "true"
+      PYTHONPATH: "/app/src"
+      # Enable pytest verbose output
+      PYTEST_ARGS: "-v -s --tb=long"
+    volumes:
+      # Live reload for development
+      - ./images/py-test-harness/src:/app/src:rw
+      - ./images/py-test-harness/pytest.ini:/app/pytest.ini:ro
+      - py-cache:/app/.pytest_cache
+    # Override command for interactive development
+    command: ["python", "/app/run_tests.py"]
+    restart: "no"
+
+  # Redis with development configuration
+  redis:
+    ports:
+      # Expose Redis port for external access during development
+      - "6379:6379"
+    command: redis-server --appendonly no --save "" --loglevel verbose
+    volumes:
+      # Persistent data for development sessions
+      - redis-dev-data:/data
+
+  # Development tools container
+  dev-tools:
+    image: alpine:latest
+    container_name: js-libp2p-echo-interop-dev-tools
+    networks:
+      - js-libp2p-echo-interop
+    environment:
+      REDIS_ADDR: "redis:6379"
+    command: ["sh", "-c", "apk add --no-cache redis curl jq netcat-openbsd && echo 'Development tools ready!' >&2 && tail -f /dev/null"]
+    restart: "no"
+    profiles:
+      - dev-tools
+
+# Development-specific volumes
+volumes:
+  js-node-modules:
+    driver: local
+  py-cache:
+    driver: local
+  redis-dev-data:
+    driver: local

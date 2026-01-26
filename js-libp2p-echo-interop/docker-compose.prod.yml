@@ -1,0 +1,245 @@
+# Docker Compose configuration for production/CI environments
+# Optimized for automated testing with proper resource limits and monitoring
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up
+
+services:
+  # Production Redis configuration
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly no --save "" --maxmemory 128mb --maxmemory-policy allkeys-lru
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 64M
+          cpus: '0.1'
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    restart: "no"  # Don't restart in CI
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "1"
+
+  # Production JS Echo Server configuration
+  js-echo-server:
+    environment:
+      NODE_ENV: production
+      DEBUG: "false"
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 64M
+          cpus: '0.1'
+    healthcheck:
+      test: ["CMD", "node", "-e", "process.exit(0)"]
+      interval: 15s
+      timeout: 5s
+      retries: 2
+      start_period: 10s
+    restart: "no"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "1"
+
+  # Production Python Test Harness configuration
+  py-test-harness:
+    environment:
+      DEBUG: "false"
+      PYTHONUNBUFFERED: "1"
+      # Optimize for CI execution
+      TEST_TIMEOUT: "60"
+      MAX_RETRIES: "2"
+      RETRY_DELAY: "1"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+    restart: "no"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "1"
+
+  # Health monitoring service for production
+  health-monitor:
+    image: alpine:latest
+    container_name: js-libp2p-echo-interop-health-monitor
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - js-libp2p-echo-interop
+    environment:
+      REDIS_ADDR: "redis:6379"
+      MONITOR_INTERVAL: "10"
+      HEALTH_TIMEOUT: "300"
+    command: |
+      sh -c '
+        echo "Health Monitor starting..." >&2
+        apk add --no-cache redis curl netcat-openbsd
+        
+        start_time=$(date +%s)
+        timeout=${HEALTH_TIMEOUT:-300}
+        
+        while [ $(($(date +%s) - start_time)) -lt $timeout ]; do
+          # Check Redis health
+          if ! redis-cli -h redis ping >/dev/null 2>&1; then
+            echo "HEALTH: Redis unhealthy" >&2
+            exit 1
+          fi
+          
+          # Check if tests are progressing
+          test_status=$(redis-cli -h redis get "test:status" 2>/dev/null || echo "unknown")
+          echo "HEALTH: Test status: $test_status" >&2
+          
+          if [ "$test_status" = "completed" ] || [ "$test_status" = "failed" ]; then
+            echo "HEALTH: Tests completed" >&2
+            exit 0
+          fi
+          
+          sleep ${MONITOR_INTERVAL:-10}
+        done
+        
+        echo "HEALTH: Monitor timeout after ${timeout}s" >&2
+        exit 1
+      '
+    restart: "no"
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+          cpus: '0.1'
+    profiles:
+      - monitoring
+      - production
+
+  # Test timeout enforcer for CI environments
+  timeout-enforcer:
+    image: alpine:latest
+    container_name: js-libp2p-echo-interop-timeout
+    networks:
+      - js-libp2p-echo-interop
+    environment:
+      GLOBAL_TIMEOUT: ${GLOBAL_TIMEOUT:-600}  # 10 minutes default
+      REDIS_ADDR: "redis:6379"
+    command: |
+      sh -c '
+        echo "Timeout Enforcer: ${GLOBAL_TIMEOUT}s limit" >&2
+        apk add --no-cache redis
+        
+        sleep ${GLOBAL_TIMEOUT:-600}
+        
+        echo "TIMEOUT: Global timeout reached, terminating tests" >&2
+        redis-cli -h redis set "test:status" "timeout"
+        redis-cli -h redis set "test:error" "Global timeout of ${GLOBAL_TIMEOUT}s exceeded"
+        
+        exit 124  # Timeout exit code
+      '
+    restart: "no"
+    deploy:
+      resources:
+        limits:
+          memory: 32M
+          cpus: '0.05'
+    profiles:
+      - timeout
+      - production
+
+  # Results validator for CI/CD pipelines
+  results-validator:
+    image: alpine:latest
+    container_name: js-libp2p-echo-interop-validator
+    depends_on:
+      py-test-harness:
+        condition: service_completed_successfully
+    networks:
+      - js-libp2p-echo-interop
+    environment:
+      REDIS_ADDR: "redis:6379"
+      VALIDATION_TIMEOUT: "30"
+    volumes:
+      - test-results:/results:ro
+    command: |
+      sh -c '
+        echo "Results Validator starting..." >&2
+        apk add --no-cache redis jq
+        
+        # Wait for test completion
+        timeout=${VALIDATION_TIMEOUT:-30}
+        while [ $timeout -gt 0 ]; do
+          status=$(redis-cli -h redis get "test:status" 2>/dev/null || echo "")
+          if [ "$status" = "completed" ] || [ "$status" = "failed" ] || [ "$status" = "timeout" ]; then
+            break
+          fi
+          sleep 1
+          timeout=$((timeout - 1))
+        done
+        
+        echo "Validating test results..." >&2
+        
+        # Check if results directory exists and has content
+        if [ ! -d "/results" ] || [ -z "$(ls -A /results 2>/dev/null)" ]; then
+          echo "VALIDATION: No results found" >&2
+          exit 1
+        fi
+        
+        # Validate JSON format if results exist
+        for file in /results/*.json; do
+          if [ -f "$file" ]; then
+            if ! jq empty "$file" 2>/dev/null; then
+              echo "VALIDATION: Invalid JSON in $file" >&2
+              exit 1
+            fi
+            echo "VALIDATION: $file is valid JSON" >&2
+          fi
+        done
+        
+        echo "VALIDATION: Results validation completed successfully" >&2
+        exit 0
+      '
+    restart: "no"
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+          cpus: '0.1'
+    profiles:
+      - validation
+      - production
+
+# Production logging configuration
+x-logging: &production-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "2"
+    labels: "js-libp2p-echo-interop.service,js-libp2p-echo-interop.role"
+
+# Production resource limits
+x-resource-limits: &small-resources
+  deploy:
+    resources:
+      limits:
+        memory: 256M
+        cpus: '0.5'
+      reservations:
+        memory: 64M
+        cpus: '0.1'

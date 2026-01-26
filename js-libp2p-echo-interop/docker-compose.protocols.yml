@@ -1,0 +1,28 @@
+# Docker Compose configuration for different protocol combinations
+# Defines services for testing various transport/security/muxer combinations
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.protocols.yml --profile <protocol> up
+
+services:
+  # Protocol Matrix Runner for all supported protocol combinations
+  protocol-matrix-runner:
+    image: alpine:latest
+    container_name: js-libp2p-echo-interop-protocol-matrix
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - js-libp2p-echo-interop
+    environment:
+      REDIS_ADDR: "redis:6379"
+      SUPPORTED_PROTOCOLS: "tcp-noise-yamux,tcp-noise-mplex"
+    command: ["sh", "-c", "apk add --no-cache redis jq && echo 'Protocol Matrix Runner ready' >&2 && tail -f /dev/null"]
+    profiles:
+      - protocol-matrix
+      - all-protocols
+
+# Protocol-specific networks (optional)
+networks:
+  tcp-network:
+    driver: bridge
+    name: js-libp2p-echo-interop-tcp
+    attachable: true

@@ -1,0 +1,51 @@
+# Docker Compose configuration for test execution scenarios
+# Defines different test profiles and configurations
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.test.yml --profile <profile> up
+
+services:
+  # Basic Echo Test - Simple text payload testing
+  test-basic:
+    build:
+      context: ./images/py-test-harness
+      dockerfile: Dockerfile
+    image: py-test-harness:latest
+    container_name: js-libp2p-echo-interop-test-basic
+    depends_on:
+      redis:
+        condition: service_healthy
+      js-echo-server:
+        condition: service_healthy
+    networks:
+      - js-libp2p-echo-interop
+    environment:
+      TRANSPORT: ${TRANSPORT:-tcp}
+      SECURITY: ${SECURITY:-noise}
+      MUXER: ${MUXER:-yamux}
+      IS_DIALER: "true"
+      REDIS_ADDR: "redis:6379"
+      TEST_SCENARIOS: "basic"
+      TEST_NAME: "echo-basic"
+      PAYLOAD_SIZES: "small"
+      CONCURRENT_STREAMS: "1"
+    profiles:
+      - basic
+      - all-tests
+
+  # Test Results Collector - Aggregates results from all test containers
+  test-collector:
+    image: alpine:latest
+    container_name: js-libp2p-echo-interop-collector
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - js-libp2p-echo-interop
+    environment:
+      REDIS_ADDR: "redis:6379"
+      RESULTS_FORMAT: "json"
+    volumes:
+      - test-results:/results
+    command: ["sh", "-c", "apk add --no-cache redis jq && echo 'Test Results Collector ready' >&2 && tail -f /dev/null"]
+    profiles:
+      - collector
+      - full-test

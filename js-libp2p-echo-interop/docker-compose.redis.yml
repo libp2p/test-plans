@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: js-libp2p-echo-interop-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - js-libp2p-echo-interop
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+networks:
+  js-libp2p-echo-interop:
+    driver: bridge
+    name: js-libp2p-echo-interop
+
+volumes:
+  redis-data:
+    driver: local
