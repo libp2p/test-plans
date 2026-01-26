@@ -10,7 +10,6 @@ implementations:
     transports: [tcp]
     secureChannels: [noise]
     muxers: [mplex, yamux]
-    role: listener
 
   # Python Echo Client  
   - id: py-libp2p-echo-v0.x
@@ -21,4 +20,3 @@ implementations:
     transports: [tcp]
     secureChannels: [noise]
     muxers: [mplex, yamux]
-    role: dialer

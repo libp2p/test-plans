@@ -10,11 +10,8 @@ import json
 import time
 import trio
 import redis
-import structlog
 from libp2p import new_host
 from libp2p.network.stream.net_stream_interface import INetStream
-
-logger = structlog.get_logger(__name__)
 
 # Configuration from environment
 TRANSPORT = os.getenv('TRANSPORT', 'tcp')
@@ -38,7 +35,7 @@ async def get_server_multiaddr():
         raise Exception("Timeout waiting for server multiaddr")
         
     except Exception as e:
-        logger.error("Failed to get server multiaddr", error=str(e))
+        print(f"Failed to get server multiaddr: {e}", file=sys.stderr)
         raise
 
 async def echo_test(multiaddr: str, test_data: bytes):
@@ -46,17 +43,14 @@ async def echo_test(multiaddr: str, test_data: bytes):
     try:
         # Create libp2p host
         host = new_host()
-        await host.get_network().listen(multiaddr_list=[])
+        await host.get_network().listen([])
         
-        # Connect to server
-        server_info = host.get_network().multiaddr_to_peer_info(multiaddr)
-        await host.connect(server_info)
+        # Parse multiaddr and connect to server
+        info = host.get_network().multiaddr_to_peer_info(multiaddr)
+        await host.connect(info)
         
         # Open echo protocol stream
-        stream: INetStream = await host.new_stream(
-            server_info.peer_id, 
-            [ECHO_PROTOCOL]
-        )
+        stream: INetStream = await host.new_stream(info.peer_id, [ECHO_PROTOCOL])
         
         # Send test data
         await stream.write(test_data)
@@ -72,7 +66,7 @@ async def echo_test(multiaddr: str, test_data: bytes):
             return {"status": "failed", "error": "Echo mismatch"}
             
     except Exception as e:
-        logger.error("Echo test failed", error=str(e))
+        print(f"Echo test failed: {e}", file=sys.stderr)
         return {"status": "failed", "error": str(e)}
 
 async def main():
@@ -82,7 +76,7 @@ async def main():
     try:
         # Get server multiaddr
         multiaddr = await get_server_multiaddr()
-        logger.info("Got server multiaddr", multiaddr=multiaddr)
+        print(f"Got server multiaddr: {multiaddr}", file=sys.stderr)
         
         # Test cases
         test_cases = [
@@ -93,11 +87,11 @@ async def main():
         
         results = []
         for i, test_data in enumerate(test_cases):
-            logger.info(f"Running test case {i+1}")
+            print(f"Running test case {i+1}", file=sys.stderr)
             result = await echo_test(multiaddr, test_data)
             results.append(result)
         
-        # Output results as JSON
+        # Output results as JSON to stdout
         output = {
             "test": "echo-protocol",
             "transport": TRANSPORT,
@@ -114,7 +108,7 @@ async def main():
         sys.exit(0 if output["passed"] else 1)
         
     except Exception as e:
-        logger.error("Test failed", error=str(e))
+        print(f"Test failed: {e}", file=sys.stderr)
         output = {
             "test": "echo-protocol",
             "transport": TRANSPORT,

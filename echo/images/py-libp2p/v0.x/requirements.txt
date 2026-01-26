@@ -1,4 +1,0 @@
-libp2p==0.5.0
-trio==0.22.0
-redis==4.5.4
-structlog==23.1.0
