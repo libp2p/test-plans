@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Generate results dashboard (MD, HTML) from results.yaml
 # Matches transport/hole-punch dashboard generation
 

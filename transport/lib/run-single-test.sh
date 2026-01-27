@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Run a single transport interop test using docker-compose
 
 set -euo pipefail

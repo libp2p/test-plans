@@ -97,6 +97,8 @@ WORKER_COUNT="${WORKER_COUNT:-1}"
 DEBUG="${DEBUG:-false}"
 ```
 
+Note: The test framework uses `get_cpu_count()` from `lib/lib-host-os.sh` for cross-platform CPU detection (macOS uses `sysctl`, Linux/WSL uses `nproc`).
+
 **snake_case** for:
 - Local variables
 - Function parameters
@@ -132,7 +134,7 @@ Use parameter expansion for defaults:
 IMAGES_YAML="${IMAGES_YAML:-./images.yaml}"
 
 # Command substitution default
-WORKER_COUNT="${WORKER_COUNT:-$(nproc 2>/dev/null || echo 4)}"
+WORKER_COUNT="${WORKER_COUNT:-$(get_cpu_count)}"
 
 # Empty string default (variable may not be set)
 TEST_IGNORE="${TEST_IGNORE:-}"
@@ -918,7 +920,7 @@ done
 
 **Pattern**:
 ```bash
-WORKER_COUNT=$(nproc)
+WORKER_COUNT=$(get_cpu_count)
 
 run_test() {
   local index="${1}"
@@ -976,7 +978,7 @@ seq 0 $((TEST_COUNT - 1)) | xargs -P "${WORKER_COUNT}" -I {} bash -c 'run_test {
 **Alternative pattern** using bash job control:
 
 ```bash
-WORKER_COUNT=$(nproc)
+WORKER_COUNT=$(get_cpu_count)
 
 for ((i=0; i<TEST_COUNT; i++)); do
   # Run in background
@@ -1034,7 +1036,7 @@ wait  # Wait for all background jobs
 **2. Resource Limits**:
 ```bash
 # Respect system resources
-WORKER_COUNT=$(nproc)
+WORKER_COUNT=$(get_cpu_count)
 
 # Or limit explicitly
 WORKER_COUNT=4

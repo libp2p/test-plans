@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Generate results.md dashboard from results.yaml
 
 set -euo pipefail

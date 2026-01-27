@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Common library for Docker image naming conventions
 # Used by both image building and snapshot creation
 

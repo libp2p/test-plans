@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Common library for test matrix generation functions
 # Shared across transport, hole-punch, and perf generate-tests.sh scripts
 

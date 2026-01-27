@@ -110,11 +110,28 @@ local:
 ```
 
 **Checks**:
-- bash 4.0+
-- docker 20.10+
-- yq 4.0+
-- wget, unzip, zip
-- docker compose (detects `docker compose` or `docker-compose`)
+
+The test framework requires the following dependencies, verified by `check-dependencies.sh`:
+
+#### Versioned Tools (minimum versions required)
+- **bash** 4.0+
+- **docker** 20.10+
+- **yq** 4.0+
+- **git** 2.0+
+
+#### Required UNIX Utilities
+Standard utilities checked by the framework:
+- **File operations**: patch, wget, zip, unzip, tar, gzip, cat, mkdir, cp, mv, rm, chmod, find, basename, dirname, mktemp
+- **Text processing**: cut, awk, sed, grep, sort, head, tail, wc, tr, paste
+- **System utilities**: bc, sha256sum, timeout, flock, xargs, date, sleep, uname, hostname, ps
+
+#### Docker Services
+- Docker daemon (must be running)
+- docker compose (either `docker compose` v2 plugin or legacy `docker-compose` command)
+
+#### Optional Tools
+- **gnuplot** 5.0+ (for performance visualization in perf tests)
+- **pandoc** (for HTML report generation)
 
 **Output**:
 - Exports `DOCKER_COMPOSE_CMD` to environment and `/tmp/docker-compose-cmd.txt`
@@ -192,7 +209,7 @@ Initializes standard variables with consistent defaults:
 - `TEST_RUN_DIR=$CACHE_DIR/test-run` - Test run artifacts
 - `TEST_IGNORE=""` - Test ignore filter
 - `TRANSPORT_IGNORE=""`, `SECURE_IGNORE=""`, `MUXER_IGNORE=""` - Dimension filters
-- `WORKER_COUNT=$(nproc)` - Parallel workers
+- `WORKER_COUNT=$(get_cpu_count)` - Parallel workers (from lib-host-os.sh)
 - `DEBUG=false` - Debug mode
 - `CHECK_DEPS=false`, `LIST_IMAGES=false`, `LIST_TESTS=false` - Flags
 - `CREATE_SNAPSHOT=false`, `AUTO_YES=false` - Flags
@@ -855,7 +872,7 @@ The library supports three distinct test suites with different execution models:
   - Baseline comparisons (iperf, HTTPS, QUIC-Go)
 
 ### Transport Tests (Parallel)
-- **Worker Count**: `$(nproc)` (parallel execution for speed)
+- **Worker Count**: `$(get_cpu_count)` (parallel execution for speed, from lib-host-os.sh)
 - **Network**: Single `transport-network` with dynamic IPs
 - **Sections**: `implementations` only
 - **Special Features**:
@@ -864,7 +881,7 @@ The library supports three distinct test suites with different execution models:
   - 40+ implementation variations including browsers
 
 ### Hole-Punch Tests (Parallel)
-- **Worker Count**: `$(nproc)` (parallel execution for speed)
+- **Worker Count**: `$(get_cpu_count)` (parallel execution for speed, from lib-host-os.sh)
 - **Network**: Isolated networks per test (WAN + 2 LANs)
   - WAN: 10.x.x.64/27
   - Dialer LAN: 10.x.x.96/27
@@ -913,7 +930,7 @@ trap handle_shutdown INT
 WORKER_COUNT=1  # Perf must run 1 test at a time
 
 # transport/run.sh, hole-punch/run.sh - Parallel execution
-WORKER_COUNT=$(nproc)  # Use all CPU cores
+WORKER_COUNT=$(get_cpu_count)  # Use all CPU cores (from lib-host-os.sh)
 ```
 
 ### Pattern 2: Build Docker Images
@@ -1040,18 +1057,35 @@ fi
 
 ## Dependencies
 
-### Required System Tools
-- bash 4.0+
-- docker 20.10+
-- yq 4.0+
-- wget
-- unzip, zip
-- git (for GitHub submodules)
+The test framework requires the following dependencies, verified by `check-dependencies.sh`:
 
-### Required Docker
-- Docker daemon running
-- docker compose (v2 plugin or legacy command)
+### Versioned Tools (minimum versions required)
+- **bash** 4.0+
+- **docker** 20.10+
+- **yq** 4.0+
+- **git** 2.0+
+
+### Required UNIX Utilities
+Standard utilities checked by the framework:
+- **File operations**: patch, wget, zip, unzip, tar, gzip, cat, mkdir, cp, mv, rm, chmod, find, basename, dirname, mktemp
+- **Text processing**: cut, awk, sed, grep, sort, head, tail, wc, tr, paste
+- **System utilities**: bc, sha256sum, timeout, flock, xargs, date, sleep, uname, hostname, ps
+
+### Docker Services
+- Docker daemon (must be running)
+- docker compose (either `docker compose` v2 plugin or legacy `docker-compose` command)
 - Sufficient disk space for images and caches
+
+### Optional Tools
+- **gnuplot** 5.0+ (for performance visualization in perf tests)
+- **pandoc** (for HTML report generation)
+
+**Verify all dependencies**:
+```bash
+./lib/check-dependencies.sh
+```
+
+The script provides helpful error messages and platform-specific installation instructions for macOS (Homebrew), Linux, and WSL.
 
 ### Environment Variables
 - `CACHE_DIR` - Cache root (default: `/srv/cache`)

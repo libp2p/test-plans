@@ -1,9 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # GitHub snapshot handling library with git submodule support
 # Handles both ZIP snapshots and git clones for implementations requiring submodules
 
 # Source formatting library if not already loaded
-if ! type indent &>/dev/null; then
+if ! type print_message &>/dev/null; then
   _this_script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   source "${_this_script_dir}/lib-output-formatting.sh"
 fi

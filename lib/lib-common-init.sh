@@ -1,6 +1,12 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Common variable initialization for all test suites
 # Provides consistent defaults and variable names across transport, perf, and hole-punch tests
+
+# Source lib-host-os.sh if not already loaded
+if ! type detect_host_os &>/dev/null; then
+  _common_init_script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  source "${_common_init_script_dir}/lib-host-os.sh"
+fi
 
 # Initialize common variables with standard defaults
 # This function should be called early in all run.sh scripts, after SCRIPT_LIB_DIR is set
@@ -25,11 +31,15 @@ init_common_variables() {
   # Shutdown
   SHUTDOWN=false
 
+  # Host operating system detection
+  # Detect or use existing HOST_OS value (may be loaded from inputs.yaml)
+  HOST_OS="${HOST_OS:-$(detect_host_os)}"
+
   # Files
   IMAGES_YAML="${IMAGES_YAML:-${TEST_ROOT}/images.yaml}"
 
   # Paths
-  CACHE_DIR="${CACHE_DIR:-/srv/cache}"
+  CACHE_DIR="${CACHE_DIR:-${TEST_ROOT}/.cache}"
   TEST_RUN_DIR="${TEST_RUN_DIR:-${CACHE_DIR}/test-run}"
 
   # Common filtering variables (dimension-based)
@@ -45,7 +55,7 @@ init_common_variables() {
   TEST_IGNORE="${TEST_IGNORE:-}"           # Test name ignore filter (NEW)
 
   # Execution settings
-  WORKER_COUNT="${WORKER_COUNT:-$(nproc 2>/dev/null || echo 4)}"
+  WORKER_COUNT="${WORKER_COUNT:-$(get_cpu_count)}"
   DEBUG="${DEBUG:-false}"
 
   # Common command-line flags
@@ -60,6 +70,7 @@ init_common_variables() {
 
   # Export variables that child scripts and global functions need
   export SHUTDOWN
+  export HOST_OS
   export IMAGES_YAML
   export CACHE_DIR
   export TEST_RUN_DIR

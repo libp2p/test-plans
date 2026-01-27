@@ -55,3 +55,6 @@ downloads/
 
 # Rust build artifacts
 target/
+
+# the local build cache folder
+**/.cache/

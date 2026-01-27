@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Common utility functions for test generation
 #
 # NOTE: Entity filtering functions are in lib-filter-engine.sh

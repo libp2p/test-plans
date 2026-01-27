@@ -1,9 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Global service management functions for all test suites
 # Provides Redis coordination service for tests
 
 # Source formatting library if not already loaded
-if ! type indent &>/dev/null; then
+if ! type print_message &>/dev/null; then
   _this_script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   source "$_this_script_dir/lib-output-formatting.sh"
 fi
