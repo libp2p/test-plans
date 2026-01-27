@@ -16,6 +16,12 @@ build_images_from_section() {
   local filter="${2:-}" # Optional: pipe-separated filter (e.g., "go-v0.45|rust-v0.56")
   local force_image_rebuild="${3:-false}"
 
+  # If filter is explicitly empty (when passed as parameter), no images are required
+  # This happens when REQUIRED_IMAGES is empty (no tests selected)
+  if [ -z "${filter}" ]; then
+    return 0
+  fi
+
   local count=$(yq eval ".${section} | length" "${IMAGES_YAML}")
 
   for ((i=0; i<count; i++)); do

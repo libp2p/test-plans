@@ -546,6 +546,18 @@ yq eval '.tests[].relay.id' "${TEST_PASS_DIR}/test-matrix.yaml" 2>/dev/null | so
 sort -u "${REQUIRED_IMAGES}" -o "${REQUIRED_IMAGES}"
 IMAGE_COUNT=$(wc -l < "${REQUIRED_IMAGES}")
 
+# Exit early if no tests were selected
+if [ "${TOTAL_TESTS}" -eq 0 ]; then
+  println
+  print_error "No tests selected with current filters"
+  indent
+  print_message "All tests were filtered out by your selection criteria."
+  print_message "Adjust your --test-select or --test-ignore settings to select tests."
+  unindent
+  println
+  exit 0
+fi
+
 # Prompt for confirmation unless auto-approved
 indent
 if [ "${AUTO_YES}" != true ]; then
