@@ -1,0 +1,62 @@
+name: Gossipsub Interoperability Tests (PR)
+
+on:
+  pull_request:
+    paths:
+      - 'gossipsub-interop/**'
+      - '.github/workflows/gossipsub-interop-pr.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: gossipsub-interop/go-libp2p/go.mod
+          cache: true
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Install Shadow simulator
+        run: |
+          # Install Shadow dependencies
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake \
+            findutils \
+            libclang-dev \
+            libc-dbg \
+            libglib2.0-0 \
+            libglib2.0-dev \
+            make \
+            netbase \
+            python3 \
+            python3-networkx \
+            xz-utils
+
+          # Build and install Shadow v3.3.0 from source
+          git clone --depth 1 --branch v3.3.0 https://github.com/shadow/shadow.git shadow-simulator
+          cd shadow-simulator
+          git checkout v3.3.0
+          ./setup build --clean
+          ./setup install
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Run gossipsub interop tests
+        working-directory: gossipsub-interop
+        run: make test

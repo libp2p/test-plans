@@ -16,7 +16,9 @@ import (
 
 	"github.com/libp2p/go-libp2p"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
+	"github.com/libp2p/go-libp2p-pubsub/partialmessages"
 	pubsubpb "github.com/libp2p/go-libp2p-pubsub/pb"
+	"github.com/libp2p/go-libp2p/core/connmgr"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
@@ -27,7 +29,7 @@ var (
 )
 
 // pubsubOptions creates a list of options to configure our router with.
-func pubsubOptions(slogger *slog.Logger, params pubsub.GossipSubParams) []pubsub.Option {
+func pubsubOptions(slogger *slog.Logger, params pubsub.GossipSubParams, pme *partialmessages.PartialMessageExtension) []pubsub.Option {
 	tr := gossipTracer{logger: slogger.With("service", "gossipsub")}
 	psOpts := []pubsub.Option{
 		pubsub.WithMessageSignaturePolicy(pubsub.StrictNoSign),
@@ -41,6 +43,11 @@ func pubsubOptions(slogger *slog.Logger, params pubsub.GossipSubParams) []pubsub
 		pubsub.WithMaxMessageSize(10 * 1 << 20),
 		pubsub.WithGossipSubParams(params),
 		pubsub.WithEventTracer(&tr),
+		pubsub.WithRPCLogger(slogger),
+	}
+
+	if pme != nil {
+		psOpts = append(psOpts, pubsub.WithPartialMessagesExtension(pme))
 	}
 
 	return psOpts
@@ -114,13 +121,16 @@ func main() {
 		libp2p.ListenAddrStrings("/ip4/0.0.0.0/tcp/9000"),
 		// libp2p.ListenAddrStrings("/ip4/0.0.0.0/udp/9000/quic-v1"),
 		libp2p.Identity(nodePrivKey(nodeId)),
+		libp2p.ConnectionManager(connmgr.NullConnMgr{}),
 	)
 	if err != nil {
 		panic(err)
 	}
 
 	logger := log.New(os.Stderr, "", log.LstdFlags|log.Lmicroseconds)
-	slogger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	slogger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelDebug,
+	}))
 
 	connector := &ShadowConnector{}
 	err = RunExperiment(ctx, startTime, logger, slogger, h, nodeId, connector, params)
