@@ -178,8 +178,8 @@ The `inputs.yaml` file must be loaded *before* libraries are sourced because it 
 
 4. Set test-specific defaults:
    - **Perf**: `ITERATIONS=10`, `UPLOAD_BYTES=1GB`, `DOWNLOAD_BYTES=1GB`
-   - **Transport**: `WORKER_COUNT=$(nproc)`
-   - **Hole-Punch**: `WORKER_COUNT=$(nproc)`
+   - **Transport**: `WORKER_COUNT=$(get_cpu_count)` (from lib-host-os.sh)
+   - **Hole-Punch**: `WORKER_COUNT=$(get_cpu_count)` (from lib-host-os.sh)
 
 **Code Location**:
 - `perf/run.sh:88-207`
@@ -674,6 +674,7 @@ The `inputs.yaml` file must be loaded *before* libraries are sourced because it 
 
    b. **Parallel** (transport, hole-punch with WORKER_COUNT>1):
    ```bash
+   WORKER_COUNT=$(get_cpu_count)  # From lib-host-os.sh
    for ((i=0; i<TEST_COUNT; i++)); do
      bash "${SCRIPT_DIR}/run-single-test.sh" "$i" "tests" "$RESULTS_FILE" &
 
@@ -1061,7 +1062,7 @@ The `inputs.yaml` file must be loaded *before* libraries are sourced because it 
 ### Transport Tests
 
 **Unique Characteristics**:
-- Parallel execution (WORKER_COUNT=$(nproc))
+- Parallel execution (WORKER_COUNT=$(get_cpu_count))
 - Browser implementations (dialOnly)
 - GitHub sources with patches
 - Simple pass/fail (no measurements)
@@ -1074,7 +1075,7 @@ The `inputs.yaml` file must be loaded *before* libraries are sourced because it 
 ### Hole-Punch Tests
 
 **Unique Characteristics**:
-- Parallel execution (WORKER_COUNT=$(nproc))
+- Parallel execution (WORKER_COUNT=$(get_cpu_count))
 - 5-container topology per test
 - Unique subnets per test (NAT simulation)
 - DCUtR protocol measurements
@@ -1131,7 +1132,7 @@ These stop the entire run:
 
 ### Parallel Execution
 
-- **Transport/Hole-Punch**: WORKER_COUNT=$(nproc) for fast execution
+- **Transport/Hole-Punch**: WORKER_COUNT=$(get_cpu_count) for fast execution (from lib-host-os.sh)
 - **Perf**: WORKER_COUNT=1 for accurate measurements
 
 ### Network Isolation

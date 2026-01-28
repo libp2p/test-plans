@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Utilities for loading values from the images.yaml file
 
 # Load aliases from images.yaml into an associative array

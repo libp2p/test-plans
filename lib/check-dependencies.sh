@@ -1,11 +1,11 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Check for required dependencies and their versions
 # Refactored to use data-driven approach with consolidated install instructions
 
 set -euo pipefail
 
 # Source formatting library if not already loaded
-if ! type indent &>/dev/null; then
+if ! type print_message &>/dev/null; then
   _this_script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   source "${_this_script_dir}/lib-output-formatting.sh"
 fi
@@ -88,22 +88,52 @@ detect_docker_compose_cmd() {
   fi
 }
 
-# Print consolidated install instructions
+# Print consolidated install instructions (platform-aware)
 print_install_instructions() {
-  echo "" >&2
+  println
   print_error "Missing or outdated dependencies. Run the following commands to install:"
-  echo "" >&2
-  echo "# Install required system packages" >&2
-  echo "sudo apt-get update" >&2
-  echo "sudo apt-get install -y docker-ce docker-ce-cli docker-ce-rootless-extras docker-buildx-plugin docker-compose-plugin git patch wget zip unzip bc coreutils util-linux tar gzip" >&2
-  echo "" >&2
-  echo "# Install yq" >&2
-  echo "sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64" >&2
-  echo "sudo chmod +x /usr/local/bin/yq" >&2
-  echo "" >&2
-  echo "# Optional: Install for additional features" >&2
-  echo "sudo apt-get install -y gnuplot pandoc" >&2
-  echo "" >&2
+  println
+
+  local host_os="${HOST_OS:-$(uname -s | tr '[:upper:]' '[:lower:]')}"
+
+  case "${host_os}" in
+    macos|darwin)
+      print_message "# Install required packages using Homebrew" >&2
+      print_message "brew install coreutils flock gnu-sed gnu-tar gzip wget zip unzip bc yq gnuplot pandoc" >&2
+      print_message "" >&2
+      print_message "# Install Docker Desktop for Mac from:" >&2
+      print_message "# https://www.docker.com/products/docker-desktop" >&2
+      print_message "" >&2
+      print_message "# Note: Some GNU utilities may need to be added to PATH:" >&2
+      print_message "# export PATH=\"/usr/local/opt/coreutils/libexec/gnubin:\$PATH\"" >&2
+      ;;
+    wsl)
+      print_message "# Install required system packages (WSL/Ubuntu)" >&2
+      print_message "sudo apt-get update" >&2
+      print_message "sudo apt-get install -y docker-ce docker-ce-cli docker-ce-rootless-extras docker-buildx-plugin docker-compose-plugin git patch wget zip unzip bc coreutils util-linux tar gzip" >&2
+      print_message "" >&2
+      print_message "# Install yq" >&2
+      print_message "sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64" >&2
+      print_message "sudo chmod +x /usr/local/bin/yq" >&2
+      print_message "" >&2
+      print_message "# Optional: Install for additional features" >&2
+      print_message "sudo apt-get install -y gnuplot pandoc" >&2
+      ;;
+    *)
+      # Default: Linux
+      print_message "# Install required system packages" >&2
+      print_message "sudo apt-get update" >&2
+      print_message "sudo apt-get install -y docker-ce docker-ce-cli docker-ce-rootless-extras docker-buildx-plugin docker-compose-plugin git patch wget zip unzip bc coreutils util-linux tar gzip" >&2
+      print_message "" >&2
+      print_message "# Install yq" >&2
+      print_message "sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64" >&2
+      print_message "sudo chmod +x /usr/local/bin/yq" >&2
+      print_message "" >&2
+      print_message "# Optional: Install for additional features" >&2
+      print_message "sudo apt-get install -y gnuplot pandoc" >&2
+      ;;
+  esac
+  println
 }
 
 # Column width for tool names (accommodates longest tool name + "...")
@@ -174,7 +204,6 @@ declare -a PRESENCE_ONLY_TOOLS=(
   "mktemp"
   "date"
   "sleep"
-  "nproc"
   "uname"
   "hostname"
   "ps"

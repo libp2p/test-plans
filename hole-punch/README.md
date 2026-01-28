@@ -110,7 +110,17 @@ Check dependencies:
 ./run.sh --check-deps
 ```
 
-Required: bash 4.0+, docker 20.10+, yq 4.0+, wget, unzip
+**Required dependencies**:
+- bash 4.0+
+- docker 20.10+ (with daemon running)
+- yq 4.0+
+- git 2.0+
+- docker compose (plugin or standalone)
+- Standard UNIX utilities (see [lib/check-dependencies.sh](../lib/check-dependencies.sh) for complete list)
+
+**Optional dependencies** (for advanced features):
+- gnuplot 5.0+ (for performance charts)
+- pandoc (for HTML report generation)
 
 ### Basic Usage
 
@@ -134,7 +144,7 @@ Required: bash 4.0+, docker 20.10+, yq 4.0+, wget, unzip
 ### Parallel Execution
 
 Hole-punch tests run in **parallel** (like transport tests):
-- Default workers: `$(nproc)` (number of CPU cores)
+- Default workers: `$(get_cpu_count)` from lib-host-os.sh (cross-platform CPU detection)
 - Override with `--workers N`
 - Tests execute concurrently for faster completion
 - Each test creates isolated Docker networks to avoid collisions

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # iperf3 baseline performance test implementation
 # Uses iperf3 for raw TCP throughput and latency measurements
 # Follows WRITE_A_PERF_TEST.md guidelines

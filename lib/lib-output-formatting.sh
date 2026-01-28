@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Output formatting functions for consistent UX across all test suites
 # Provides banner, header, and list printing utilities with indentation
 

@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # inputs.yaml generation and modification functions
 
 # Source formatting library if not already loaded
-if ! type indent &>/dev/null; then
+if ! type print_message &>/dev/null; then
   _this_script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   source "${_this_script_dir}/lib-output-formatting.sh"
 fi
@@ -45,6 +45,7 @@ environmentVariables:
   SCRIPT_LIB_DIR: "${SCRIPT_LIB_DIR}"
   DEBUG: "${DEBUG}"
   WORKER_COUNT: "${WORKER_COUNT}"
+  HOST_OS: "${HOST_OS}"
 
   # Implementation filtering
   IMPL_SELECT: "${IMPL_SELECT}"

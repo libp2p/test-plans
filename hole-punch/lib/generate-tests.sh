@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Generate test matrix from images.yaml with filtering
 # Outputs test-matrix.yaml with content-addressed caching
 # Permutations: dialer × listener × transport × secureChannel × muxer × relay × dialer_router × listener_router
@@ -12,6 +12,7 @@ trap 'echo "ERROR in generate-tests.sh at line $LINENO: Command exited with stat
 # Source common libraries
 source "${SCRIPT_LIB_DIR}/lib-filter-engine.sh"
 source "${SCRIPT_LIB_DIR}/lib-generate-tests.sh"
+source "${SCRIPT_LIB_DIR}/lib-host-os.sh"
 source "${SCRIPT_LIB_DIR}/lib-image-building.sh"
 source "${SCRIPT_LIB_DIR}/lib-image-naming.sh"
 source "${SCRIPT_LIB_DIR}/lib-output-formatting.sh"
@@ -422,8 +423,8 @@ echo ""
 main_tests=()
 ignored_main_tests=()
 
-# Determine worker count (from environment, defaults to nproc)
-WORKER_COUNT="${WORKER_COUNT:-$(nproc 2>/dev/null || echo 4)}"
+# Determine worker count (from environment, defaults to hardware cpu count)
+WORKER_COUNT="${WORKER_COUNT:-$(get_cpu_count)}"
 
 # Worker function to generate tests for a chunk of dialers
 # Args: worker_id dialer_id1 dialer_id2 ...

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Generate box plot visualizations from perf test results.yaml using yq and gnuplot
 # Based on the user's plot.sh script format
 

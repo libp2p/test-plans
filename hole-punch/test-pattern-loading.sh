@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Test how patterns are loaded from CLI arguments
 
 set -euo pipefail

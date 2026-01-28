@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Update README.md files with test results between markers.
 # Usage: update-readme-results.sh <readme_path> <results_path>
 

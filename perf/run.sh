@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # run in strict failure mode
 set -euo pipefail
@@ -65,7 +65,7 @@ else
 fi
 
 # Append actual command-line args (these override inputs.yaml)
-CMD_LINE_ARGS=("${YAML_ARGS[@]}" "$@")
+CMD_LINE_ARGS=(${YAML_ARGS[@]+"${YAML_ARGS[@]}"} "$@")
 
 # Set positional parameters to merged args
 set -- "${CMD_LINE_ARGS[@]}"
@@ -215,10 +215,10 @@ Examples:
 
 Dependencies:
   Required: bash 4.0+, docker 20.10+ (or podman), docker-compose, yq 4.0+
-            wget, zip, unzip, tar, gzip, bc, sha256sum, cut, timeout, flock
+            wget, zip, unzip, bc, sha256sum, cut, timeout, flock
             Text utilities: awk, sed, grep, sort, head, tail, wc, tr, paste, cat
             File utilities: mkdir, cp, mv, rm, chmod, find, xargs, basename, dirname, mktemp
-            System utilities: date, sleep, nproc, uname, hostname, ps
+            System utilities: date, sleep, uname, hostname, ps
   Optional: gnuplot (box plots), git (submodule-based builds)
   Run with --check-deps to verify installation.
 
@@ -585,6 +585,18 @@ yq eval '.tests[].listener.id' "${TEST_PASS_DIR}/test-matrix.yaml" 2>/dev/null |
 sort -u "${REQUIRED_IMAGES}" -o "${REQUIRED_IMAGES}"
 IMAGE_COUNT=$(wc -l < "${REQUIRED_IMAGES}")
 
+# Exit early if no tests were selected
+if [ "${TOTAL_TESTS}" -eq 0 ]; then
+  println
+  print_error "No tests selected with current filters"
+  indent
+  print_message "All tests were filtered out by your selection criteria."
+  print_message "Adjust your --test-select or --test-ignore settings to select tests."
+  unindent
+  println
+  exit 0
+fi
+
 # Prompt for confirmation unless auto-approved
 indent
 if [ "${AUTO_YES}" != true ]; then
@@ -792,7 +804,7 @@ TOTAL_FAILED=$((BASELINE_FAILED + FAILED))
 cat > "${TEST_PASS_DIR}/results.yaml" <<EOF
 metadata:
   testPass: ${TEST_PASS_NAME}
-  startedAt: $(date -d @"${TEST_START_TIME}" -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -r "${TEST_START_TIME}" -u +%Y-%m-%dT%H:%M:%SZ)
+  startedAt: $(format_timestamp "${TEST_START_TIME}")
   completedAt: $(date -u +%Y-%m-%dT%H:%M:%SZ)
   duration: ${TEST_DURATION}s
   platform: $(uname -m)
