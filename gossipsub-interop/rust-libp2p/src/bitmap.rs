@@ -1,7 +1,7 @@
 use libp2p_gossipsub::partial_messages::{Metadata, Partial, PartialAction, PartialError};
 
-/// A fixed-size bitmap composed of `TOTAL_FIELDS` fields,
-/// each field storing `FIELD_SIZE` bytes (i.e., `FIELD_SIZE * 8` bits).
+/// A fixed-size bitmap composed of 8 fields,
+/// each field storing 1024 bytes.
 #[derive(Debug, Clone)]
 pub(crate) struct Bitmap {
     fields: [[u8; 1024]; 8],
@@ -18,13 +18,11 @@ impl Bitmap {
         }
     }
     pub(crate) fn fill_parts(&mut self, metadata: u8) {
-        let mut parts = [[0u8; 1024]; 8];
-
         // Convert group_id to u64 using big-endian
         let start = u64::from_be_bytes(self.group_id);
         self.set |= metadata;
 
-        for (i, p) in parts.iter_mut().enumerate() {
+        for (i, p) in self.fields.iter_mut().enumerate() {
             if (metadata & (1 << i)) == 0 {
                 continue;
             }
@@ -71,7 +69,7 @@ impl Bitmap {
             }
 
             if (self.set >> i) & 1 == 1 {
-                continue; // we already ahve this
+                continue; // we already have this
             }
 
             if offset + 1024 > data.len() {
@@ -87,7 +85,6 @@ impl Bitmap {
     }
 }
 
-// type PeerBitmap = [u8; 1];
 #[derive(Debug)]
 struct PeerBitmap {
     bitmap: [u8; 1],
@@ -132,7 +129,6 @@ impl Partial for Bitmap {
         let bitmap = metadata[0];
         let mut response_bitmap: u8 = 0;
 
-        // Estimate output size: 1 byte header + FIELD_SIZE * num parts + group_id
         let part_count = bitmap.count_ones() as usize;
         let mut data = Vec::with_capacity(1 + 1024 * part_count + self.group_id.len());
 
