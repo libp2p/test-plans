@@ -160,6 +160,19 @@ implementations:
     secureChannels: [tls, noise]
     muxers: [yamux]
 
+  - id: go-v0.47-pre
+    source:
+      type: github
+      repo: libp2p/go-libp2p
+      # v0.47.0 
+      commit: dd26469c52a7ba555095df0f8088ae1fff8c7627
+      dockerfile: test-plans/PingDockerfile
+      patchPath: images/go/v0.47-pre
+      patchFile: transport-fix.patch
+    transports: [tcp, ws, wss, quic-v1, webtransport, webrtc-direct]
+    secureChannels: [tls, noise]
+    muxers: [yamux]
+
   # Python implementation
   - id: python-v0.x
     source:
