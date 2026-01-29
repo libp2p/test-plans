@@ -1,0 +1,77 @@
+name: Update GitHub Stars Count
+
+on:
+  schedule:
+    # Run daily at 6:00 AM UTC
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-stars:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Fetch GitHub stars
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # List of libp2p repositories to count stars from
+          REPOS=(
+            "libp2p/libp2p"
+            "libp2p/go-libp2p"
+            "libp2p/rust-libp2p"
+            "libp2p/js-libp2p"
+            "libp2p/py-libp2p"
+            "libp2p/jvm-libp2p"
+            "vacp2p/nim-libp2p"
+            "zen-eth/zig-libp2p"
+            "NethermindEth/dotnet-libp2p"
+            "Pier-Two/c-libp2p"
+            "paritytech/litep2p"
+            "libp2p/specs"
+            "libp2p/test-plans"
+            "libp2p/universal-connectivity"
+            "libp2p/workshop"
+            "swift-libp2p/swift-libp2p"
+          )
+
+          TOTAL_STARS=0
+
+          for repo in "${REPOS[@]}"; do
+            echo "Fetching stars for $repo..."
+            STARS=$(gh api "repos/$repo" --jq '.stargazers_count' 2>/dev/null || echo "0")
+            echo "  $repo: $STARS stars"
+            TOTAL_STARS=$((TOTAL_STARS + STARS))
+          done
+
+          echo "Total stars: $TOTAL_STARS"
+
+          # Create results directory if it doesn't exist
+          mkdir -p results
+
+          # Write YAML file
+          cat > results/github-stars.yaml << EOF
+          stars: $TOTAL_STARS
+          updated_on: $(date -u +%Y-%m-%dT%H:%M:%SZ)
+          EOF
+
+          # Display for verification
+          cat results/github-stars.yaml
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add results/github-stars.yaml
+
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: update GitHub stars count [skip ci]"
+            git push
+          fi
