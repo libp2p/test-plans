@@ -33,7 +33,7 @@ test-aliases:
   - alias: "eth-p2p"
     value: "eth-p2p-z-v0.0.1"
   - alias: "failing" # everything except rust-v0.56 and js and python-v0.x implementations as of 25 Jan 2026
-    value: "~browsers|~go|~nim|~jvm|~c|~dotnet|~zig|~eth-p2p|rust-v0.53|rust-v0.54|rust-v0.55"
+    value: "~browsers|go-v0.38|go-v0.39|go-v0.40|go-v0.41|go-v0.42|go-v0.43|go-v0.44|go-v0.45|~nim|~jvm|~c|~dotnet|~zig|~eth-p2p|rust-v0.53|rust-v0.54|rust-v0.55"
 
 implementations:
   # Rust implementations
@@ -156,6 +156,18 @@ implementations:
       repo: libp2p/go-libp2p
       commit: d0ecbf99a977f95428c72ec436b96ba17bbcfea0  # v0.45.0
       dockerfile: test-plans/PingDockerfile
+    transports: [tcp, ws, wss, quic-v1, webtransport, webrtc-direct]
+    secureChannels: [tls, noise]
+    muxers: [yamux]
+
+  - id: go-v0.47-pre
+    source:
+      type: github
+      repo: libp2p/go-libp2p
+      commit: dd26469c52a7ba555095df0f8088ae1fff8c7627
+      dockerfile: test-plans/PingDockerfile
+      patchPath: images/go
+      patchFile: transport-fix.patch
     transports: [tcp, ws, wss, quic-v1, webtransport, webrtc-direct]
     secureChannels: [tls, noise]
     muxers: [yamux]

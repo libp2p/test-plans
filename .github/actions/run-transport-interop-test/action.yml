@@ -10,7 +10,7 @@ inputs:
     required: false
     default: ""
   test-root:
-    description: "Path to the transport-interop folder"
+    description: "Path to the transport folder"
     required: true
   update-readme:
     description: "Whether to update the README.md file with the new dashboard"
@@ -69,11 +69,11 @@ runs:
         echo "PUSH_CACHE=true" >> $GITHUB_ENV
 
     # This depends on where this file is within this repository. This walks up
-    # from here to the transport-interop folder
+    # from here to the transport folder
     - name: Find working directory
       shell: bash
       run: |
-        WORK_DIR=$(realpath "$GITHUB_ACTION_PATH/../../../transport-interop")
+        WORK_DIR=$(realpath "$GITHUB_ACTION_PATH/../../../transport")
         echo "WORK_DIR=$WORK_DIR" >> $GITHUB_OUTPUT
       id: find-workdir
 
