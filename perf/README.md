@@ -714,8 +714,3 @@ cd /srv/cache/test-run/perf-<key>-<timestamp>/
 - **0**: All tests passed
 - **1**: One or more tests failed
 - **Other**: Script error (check terminal output)
-
-## Current Status
-
-<!-- TEST_RESULTS_START -->
-<!-- TEST_RESULTS_END -->
