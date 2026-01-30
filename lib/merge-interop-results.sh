@@ -115,13 +115,13 @@ EOF
     if [ "$TRANSPORT_TEST_COUNT" -gt 0 ]; then
         # Transform each test to the output format
         yq eval '.tests[] | {
-            "name": .id,
-            "dialer": .dialer.id,
-            "listener": .listener.id,
+            "name": .name,
+            "dialer": .dialer,
+            "listener": .listener,
             "transport": .transport,
             "secure-channel": (.secureChannel // null),
             "muxer": (.muxer // null),
-            "status": .outcome
+            "status": .status
         }' "$TRANSPORT_RESULTS" 2>/dev/null | \
         yq eval -o=yaml '.' - | sed 's/^/    /' >> "$OUTPUT_FILE"
     else
@@ -169,13 +169,14 @@ EOF
     if [ "$HP_TEST_COUNT" -gt 0 ]; then
         # Transform each test to the output format
         yq eval '.tests[] | {
-            "name": .id,
-            "dialer": .dialer.id,
-            "listener": .listener.id,
-            "relay": (.relay.id // "unknown"),
-            "router": (.router.id // "unknown"),
+            "name": .name,
+            "dialer": .dialer,
+            "listener": .listener,
+            "relay": (.relay // "unknown"),
+            "dialer-router": (.dialerRouter // "unknown"),
+            "listener-router": (.listenerRouter // "unknown"),
             "transport": .transport,
-            "status": .outcome
+            "status": .status
         }' "$HOLE_PUNCH_RESULTS" 2>/dev/null | \
         yq eval -o=yaml '.' - | sed 's/^/    /' >> "$OUTPUT_FILE"
     else
@@ -234,12 +235,12 @@ EOF
     # Extract baseline results (from .baselineResults in source) with is-baseline: true
     if [ "$BASELINE_COUNT" -gt 0 ]; then
         yq eval '.baselineResults[] | {
-            "name": .id,
+            "name": .name,
             "is-baseline": true,
-            "dialer": .dialer.id,
-            "listener": .listener.id,
+            "dialer": .dialer,
+            "listener": .listener,
             "transport": .transport,
-            "status": .outcome,
+            "status": .status,
             "upload-throughput": (.uploadThroughput.median // null),
             "download-throughput": (.downloadThroughput.median // null)
         }' "$PERF_RESULTS" 2>/dev/null | \
@@ -250,14 +251,14 @@ EOF
     # Extract main test results (from .testResults in source) with is-baseline: false
     if [ "$PERF_TEST_COUNT" -gt 0 ]; then
         yq eval '.testResults[] | {
-            "name": .id,
+            "name": .name,
             "is-baseline": false,
-            "dialer": .dialer.id,
-            "listener": .listener.id,
+            "dialer": .dialer,
+            "listener": .listener,
             "transport": .transport,
             "secure-channel": (.secureChannel // null),
             "muxer": (.muxer // null),
-            "status": .outcome,
+            "status": .status,
             "upload": {
                 "min": (.uploadThroughput.min // null),
                 "q1": (.uploadThroughput.q1 // null),
