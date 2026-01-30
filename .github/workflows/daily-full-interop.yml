@@ -663,6 +663,18 @@ jobs:
             "results/daily-full-interop.yml" \
             "$WORKFLOW_RUN_URL"
 
+      - name: Verify files to commit
+        shell: bash
+        run: |
+          echo "=== Files in results/ directory ==="
+          ls -la results/
+          echo ""
+          echo "=== Box plot files ==="
+          ls -la results/*.png 2>/dev/null || echo "No PNG files found"
+          echo ""
+          echo "=== Generated YAML content preview ==="
+          head -100 results/daily-full-interop.yml
+
       - name: Commit and push combined results
         shell: bash
         run: |
