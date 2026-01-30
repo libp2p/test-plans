@@ -558,3 +558,173 @@ jobs:
               ATTEMPT=$((ATTEMPT + 1))
             fi
           done
+
+  merge-and-commit-results:
+    needs: [run-transport-full, run-hole-punch-full, run-perf-full]
+    if: |
+      always() &&
+      (needs.run-transport-full.result != 'skipped' ||
+       needs.run-hole-punch-full.result != 'skipped' ||
+       needs.run-perf-full.result != 'skipped')
+    runs-on: [self-hosted, linux, x64, ephemeral]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Download transport test results
+        if: needs.run-transport-full.result != 'skipped'
+        uses: actions/download-artifact@v4
+        with:
+          pattern: transport-test-results-*
+          path: /tmp/transport-results
+          merge-multiple: true
+
+      - name: Download hole-punch test results
+        if: needs.run-hole-punch-full.result != 'skipped'
+        uses: actions/download-artifact@v4
+        with:
+          pattern: hole-punch-test-results-*
+          path: /tmp/hole-punch-results
+          merge-multiple: true
+
+      - name: Download perf test results
+        if: needs.run-perf-full.result != 'skipped'
+        uses: actions/download-artifact@v4
+        with:
+          pattern: perf-test-results-*
+          path: /tmp/perf-results
+          merge-multiple: true
+
+      - name: Download perf box plots
+        if: needs.run-perf-full.result != 'skipped'
+        uses: actions/download-artifact@v4
+        with:
+          pattern: perf-test-box-plot-*
+          path: /tmp/perf-boxplots
+          merge-multiple: true
+
+      - name: Find result directories and prepare merge
+        id: find-results
+        shell: bash
+        run: |
+          # Find transport results directory
+          TRANSPORT_DIR=""
+          if [ -d /tmp/transport-results ]; then
+            if [ -f /tmp/transport-results/results.yaml ]; then
+              TRANSPORT_DIR="/tmp/transport-results"
+            else
+              # Results might be in a subdirectory
+              TRANSPORT_DIR=$(find /tmp/transport-results -name "results.yaml" -exec dirname {} \; | head -1)
+            fi
+          fi
+          echo "transport-dir=$TRANSPORT_DIR" >> $GITHUB_OUTPUT
+          echo "→ Transport results: ${TRANSPORT_DIR:-not found}"
+
+          # Find hole-punch results directory
+          HOLE_PUNCH_DIR=""
+          if [ -d /tmp/hole-punch-results ]; then
+            if [ -f /tmp/hole-punch-results/results.yaml ]; then
+              HOLE_PUNCH_DIR="/tmp/hole-punch-results"
+            else
+              HOLE_PUNCH_DIR=$(find /tmp/hole-punch-results -name "results.yaml" -exec dirname {} \; | head -1)
+            fi
+          fi
+          echo "hole-punch-dir=$HOLE_PUNCH_DIR" >> $GITHUB_OUTPUT
+          echo "→ Hole-punch results: ${HOLE_PUNCH_DIR:-not found}"
+
+          # Find perf results directory (merge boxplots into it)
+          PERF_DIR=""
+          if [ -d /tmp/perf-results ]; then
+            if [ -f /tmp/perf-results/results.yaml ]; then
+              PERF_DIR="/tmp/perf-results"
+            else
+              PERF_DIR=$(find /tmp/perf-results -name "results.yaml" -exec dirname {} \; | head -1)
+            fi
+            # Copy boxplots to perf results directory
+            if [ -n "$PERF_DIR" ] && [ -d /tmp/perf-boxplots ]; then
+              cp /tmp/perf-boxplots/*.png "$PERF_DIR/" 2>/dev/null || true
+            fi
+          fi
+          echo "perf-dir=$PERF_DIR" >> $GITHUB_OUTPUT
+          echo "→ Perf results: ${PERF_DIR:-not found}"
+
+      - name: Run merge-interop-results script
+        shell: bash
+        run: |
+          WORKFLOW_RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+          bash lib/merge-interop-results.sh \
+            "${{ steps.find-results.outputs.transport-dir }}" \
+            "${{ steps.find-results.outputs.hole-punch-dir }}" \
+            "${{ steps.find-results.outputs.perf-dir }}" \
+            "results/daily-full-interop.yml" \
+            "$WORKFLOW_RUN_URL"
+
+      - name: Commit and push combined results
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Check if there are changes to commit
+          git add results/
+
+          if git diff --cached --quiet 2>/dev/null; then
+            echo "→ No changes to commit"
+            exit 0
+          fi
+
+          git commit -m "chore: update combined interop results [skip ci]" \
+                     -m "Combined results from daily full interoperability test run." \
+                     -m "Workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+                     -m "Co-authored-by: github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
+
+          echo "→ Commit created successfully"
+
+          # Push with retry logic (handles race conditions)
+          MAX_ATTEMPTS=5
+          ATTEMPT=1
+
+          while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
+            echo "→ Push attempt $ATTEMPT/$MAX_ATTEMPTS"
+
+            if git push origin master; then
+              echo "✓ Combined results committed and pushed successfully"
+              exit 0
+            else
+              echo "✗ Push failed (attempt $ATTEMPT/$MAX_ATTEMPTS)"
+
+              if [ $ATTEMPT -eq $MAX_ATTEMPTS ]; then
+                echo "✗ Failed to push after $MAX_ATTEMPTS attempts"
+                exit 1
+              fi
+
+              echo "→ Pulling latest changes and rebasing..."
+
+              git fetch origin master
+              if git rebase origin/master; then
+                echo "✓ Rebase successful"
+              else
+                echo "✗ Rebase conflict detected, resolving..."
+                git checkout --ours results/ 2>/dev/null || true
+                git add results/
+                git rebase --continue || {
+                  echo "✗ Failed to resolve rebase conflict"
+                  git rebase --abort
+                  exit 1
+                }
+                echo "✓ Rebase conflict resolved"
+              fi
+
+              SLEEP_TIME=$((5 * (2 ** ($ATTEMPT - 1))))
+              echo "→ Waiting ${SLEEP_TIME}s before retry..."
+              sleep $SLEEP_TIME
+
+              ATTEMPT=$((ATTEMPT + 1))
+            fi
+          done
