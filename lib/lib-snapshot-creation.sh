@@ -188,8 +188,8 @@ copy_config_files() {
 
     # Copy test-type-specific files
     if [ "${test_type}" == "perf" ]; then
-      # Copy box plot images
-      cp "${test_pass_dir}"/*_boxplot.png "${snapshot_dir}/" 2>/dev/null || true
+      # Copy box plot images (generated as boxplot-{upload,download,latency}.png)
+      cp "${test_pass_dir}"/boxplot-*.png "${snapshot_dir}/" 2>/dev/null || true
     fi
 
     print_success "Copied configuration and results files"

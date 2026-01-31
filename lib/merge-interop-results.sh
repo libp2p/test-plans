@@ -113,8 +113,8 @@ EOF
     # Extract individual test results from .tests[] (correct source field)
     TRANSPORT_TEST_COUNT=$(yq eval '.tests | length // 0' "$TRANSPORT_RESULTS" 2>/dev/null || echo "0")
     if [ "$TRANSPORT_TEST_COUNT" -gt 0 ]; then
-        # Transform each test to the output format
-        yq eval '.tests[] | {
+        # Transform each test to the output format as a proper YAML array
+        yq '.tests | map({
             "name": .name,
             "dialer": .dialer,
             "listener": .listener,
@@ -122,8 +122,7 @@ EOF
             "secure-channel": (.secureChannel // null),
             "muxer": (.muxer // null),
             "status": .status
-        }' "$TRANSPORT_RESULTS" 2>/dev/null | \
-        yq eval -o=yaml '.' - | sed 's/^/    /' >> "$OUTPUT_FILE"
+        })' "$TRANSPORT_RESULTS" 2>/dev/null | sed 's/^/    /' >> "$OUTPUT_FILE"
     else
         echo "    []" >> "$OUTPUT_FILE"
     fi
@@ -167,8 +166,8 @@ EOF
     # Extract individual test results from .tests[] (correct source field)
     HP_TEST_COUNT=$(yq eval '.tests | length // 0' "$HOLE_PUNCH_RESULTS" 2>/dev/null || echo "0")
     if [ "$HP_TEST_COUNT" -gt 0 ]; then
-        # Transform each test to the output format
-        yq eval '.tests[] | {
+        # Transform each test to the output format as a proper YAML array
+        yq '.tests | map({
             "name": .name,
             "dialer": .dialer,
             "listener": .listener,
@@ -177,8 +176,7 @@ EOF
             "listener-router": (.listenerRouter // "unknown"),
             "transport": .transport,
             "status": .status
-        }' "$HOLE_PUNCH_RESULTS" 2>/dev/null | \
-        yq eval -o=yaml '.' - | sed 's/^/    /' >> "$OUTPUT_FILE"
+        })' "$HOLE_PUNCH_RESULTS" 2>/dev/null | sed 's/^/    /' >> "$OUTPUT_FILE"
     else
         echo "    []" >> "$OUTPUT_FILE"
     fi
@@ -222,37 +220,37 @@ perf:
     main-total: $MAIN_TOTAL
     main-passed: $MAIN_PASSED
     main-failed: $MAIN_FAILED
-  results:
 EOF
 
     # Count baseline and main test results
     BASELINE_COUNT=$(yq eval '.baselineResults | length // 0' "$PERF_RESULTS" 2>/dev/null || echo "0")
     PERF_TEST_COUNT=$(yq eval '.testResults | length // 0' "$PERF_RESULTS" 2>/dev/null || echo "0")
 
-    # Track if we've added any results
-    RESULTS_ADDED=false
+    # Add baselines section
+    echo "  baselines:" >> "$OUTPUT_FILE"
 
-    # Extract baseline results (from .baselineResults in source) with is-baseline: true
+    # Extract baseline results (from .baselineResults in source) as proper YAML array
     if [ "$BASELINE_COUNT" -gt 0 ]; then
-        yq eval '.baselineResults[] | {
+        yq '.baselineResults | map({
             "name": .name,
-            "is-baseline": true,
             "dialer": .dialer,
             "listener": .listener,
             "transport": .transport,
             "status": .status,
             "upload-throughput": (.uploadThroughput.median // null),
             "download-throughput": (.downloadThroughput.median // null)
-        }' "$PERF_RESULTS" 2>/dev/null | \
-        yq eval -o=yaml '.' - | sed 's/^/    /' >> "$OUTPUT_FILE"
-        RESULTS_ADDED=true
+        })' "$PERF_RESULTS" 2>/dev/null | sed 's/^/    /' >> "$OUTPUT_FILE"
+    else
+        echo "    []" >> "$OUTPUT_FILE"
     fi
 
-    # Extract main test results (from .testResults in source) with is-baseline: false
+    # Add tests section
+    echo "  tests:" >> "$OUTPUT_FILE"
+
+    # Extract main test results (from .testResults in source) as proper YAML array
     if [ "$PERF_TEST_COUNT" -gt 0 ]; then
-        yq eval '.testResults[] | {
+        yq '.testResults | map({
             "name": .name,
-            "is-baseline": false,
             "dialer": .dialer,
             "listener": .listener,
             "transport": .transport,
@@ -280,13 +278,8 @@ EOF
                 "q3": (.latency.q3 // null),
                 "max": (.latency.max // null)
             }
-        }' "$PERF_RESULTS" 2>/dev/null | \
-        yq eval -o=yaml '.' - | sed 's/^/    /' >> "$OUTPUT_FILE"
-        RESULTS_ADDED=true
-    fi
-
-    # If no results at all, output empty array
-    if [ "$RESULTS_ADDED" = false ]; then
+        })' "$PERF_RESULTS" 2>/dev/null | sed 's/^/    /' >> "$OUTPUT_FILE"
+    else
         echo "    []" >> "$OUTPUT_FILE"
     fi
 
