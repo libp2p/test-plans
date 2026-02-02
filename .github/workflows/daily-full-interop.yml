@@ -376,7 +376,7 @@ jobs:
           force-image-rebuild: ${{ needs.resolve-perf-parameters.outputs.force-image-rebuild }}
           debug: ${{ needs.resolve-perf-parameters.outputs.debug }}
 
-  update-readmes:
+  merge-and-commit-results:
     needs: [run-transport-full, run-hole-punch-full, run-perf-full]
     if: |
       always() &&
@@ -389,7 +389,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          fetch-depth: 0  # Fetch full history for proper rebase
+          fetch-depth: 0
 
       - name: Download transport test results
         if: needs.run-transport-full.result != 'skipped'
@@ -415,64 +415,142 @@ jobs:
           path: /tmp/perf-results
           merge-multiple: true
 
-      - name: Update transport README
-        if: needs.run-transport-full.result != 'skipped'
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          # Find results.md file
-          RESULTS_MD=$(find /tmp/transport-results -name "results.md" | head -1)
-
-          if [ -z "$RESULTS_MD" ]; then
-            echo "Error: Could not find transport results.md"
-            exit 1
-          fi
-
-          echo "→ Found transport results: $RESULTS_MD"
-
-          # Update README using script
-          bash lib/update-readme-results.sh transport/README.md "$RESULTS_MD"
-
-      - name: Update hole-punch README
-        if: needs.run-hole-punch-full.result != 'skipped'
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          # Find results.md file
-          RESULTS_MD=$(find /tmp/hole-punch-results -name "results.md" | head -1)
-
-          if [ -z "$RESULTS_MD" ]; then
-            echo "Error: Could not find hole-punch results.md"
-            exit 1
-          fi
-
-          echo "→ Found hole-punch results: $RESULTS_MD"
-
-          # Update README using script
-          bash lib/update-readme-results.sh hole-punch/README.md "$RESULTS_MD"
-
-      - name: Update perf README
+      - name: Download perf box plots
         if: needs.run-perf-full.result != 'skipped'
+        uses: actions/download-artifact@v4
+        with:
+          pattern: perf-test-box-plot-*
+          path: /tmp/perf-boxplots
+          merge-multiple: true
+
+      - name: Debug artifact structures
         shell: bash
         run: |
-          set -euo pipefail
-
-          # Find results.md file
-          RESULTS_MD=$(find /tmp/perf-results -name "results.md" | head -1)
-
-          if [ -z "$RESULTS_MD" ]; then
-            echo "Error: Could not find perf results.md"
-            exit 1
+          echo "=== Transport artifact ==="
+          find /tmp/transport-results -type f 2>/dev/null | head -20 || echo "No transport results found"
+          TRANSPORT_YAML=$(find /tmp/transport-results -name "results.yaml" 2>/dev/null | head -1)
+          if [ -n "$TRANSPORT_YAML" ] && [ -f "$TRANSPORT_YAML" ]; then
+            echo "--- First test entry ---"
+            yq eval '.tests[0]' "$TRANSPORT_YAML" 2>/dev/null || echo "No tests found"
           fi
 
-          echo "→ Found perf results: $RESULTS_MD"
+          echo ""
+          echo "=== Hole-punch artifact ==="
+          find /tmp/hole-punch-results -type f 2>/dev/null | head -20 || echo "No hole-punch results found"
+          HP_YAML=$(find /tmp/hole-punch-results -name "results.yaml" 2>/dev/null | head -1)
+          if [ -n "$HP_YAML" ] && [ -f "$HP_YAML" ]; then
+            echo "--- First test entry ---"
+            yq eval '.tests[0]' "$HP_YAML" 2>/dev/null || echo "No tests found"
+          fi
 
-          # Update README using script
-          bash lib/update-readme-results.sh perf/README.md "$RESULTS_MD"
+          echo ""
+          echo "=== Perf artifact ==="
+          find /tmp/perf-results -type f 2>/dev/null | head -20 || echo "No perf results found"
+          PERF_YAML=$(find /tmp/perf-results -name "results.yaml" 2>/dev/null | head -1)
+          if [ -n "$PERF_YAML" ] && [ -f "$PERF_YAML" ]; then
+            echo "--- First baseline entry ---"
+            yq eval '.baselineResults[0]' "$PERF_YAML" 2>/dev/null || echo "No baseline results found"
+            echo "--- First test entry ---"
+            yq eval '.testResults[0]' "$PERF_YAML" 2>/dev/null || echo "No test results found"
+          fi
 
-      - name: Commit and push changes
+          echo ""
+          echo "=== Boxplot artifact ==="
+          find /tmp/perf-boxplots -name "*.png" -type f 2>/dev/null | head -10 || echo "No boxplots found"
+
+      - name: Find result directories and prepare merge
+        id: find-results
+        shell: bash
+        run: |
+          # Find transport results directory
+          TRANSPORT_DIR=""
+          if [ -d /tmp/transport-results ]; then
+            if [ -f /tmp/transport-results/results.yaml ]; then
+              TRANSPORT_DIR="/tmp/transport-results"
+            else
+              # Results might be in a subdirectory
+              TRANSPORT_DIR=$(find /tmp/transport-results -name "results.yaml" -exec dirname {} \; | head -1)
+            fi
+          fi
+          echo "transport-dir=$TRANSPORT_DIR" >> $GITHUB_OUTPUT
+          echo "→ Transport results: ${TRANSPORT_DIR:-not found}"
+
+          # Find hole-punch results directory
+          HOLE_PUNCH_DIR=""
+          if [ -d /tmp/hole-punch-results ]; then
+            if [ -f /tmp/hole-punch-results/results.yaml ]; then
+              HOLE_PUNCH_DIR="/tmp/hole-punch-results"
+            else
+              HOLE_PUNCH_DIR=$(find /tmp/hole-punch-results -name "results.yaml" -exec dirname {} \; | head -1)
+            fi
+          fi
+          echo "hole-punch-dir=$HOLE_PUNCH_DIR" >> $GITHUB_OUTPUT
+          echo "→ Hole-punch results: ${HOLE_PUNCH_DIR:-not found}"
+
+          # Find perf results directory (merge boxplots into it)
+          PERF_DIR=""
+          if [ -d /tmp/perf-results ]; then
+            if [ -f /tmp/perf-results/results.yaml ]; then
+              PERF_DIR="/tmp/perf-results"
+            else
+              PERF_DIR=$(find /tmp/perf-results -name "results.yaml" -exec dirname {} \; | head -1)
+            fi
+            # Copy boxplots to perf results directory (use find to handle nested directories)
+            if [ -n "$PERF_DIR" ] && [ -d /tmp/perf-boxplots ]; then
+              echo "Copying boxplots to $PERF_DIR"
+              find /tmp/perf-boxplots -name "*.png" -type f -exec cp -v {} "$PERF_DIR/" \; 2>/dev/null || echo "No boxplots found"
+            fi
+          fi
+          echo "perf-dir=$PERF_DIR" >> $GITHUB_OUTPUT
+          echo "→ Perf results: ${PERF_DIR:-not found}"
+
+      - name: Verify merge script version
+        shell: bash
+        run: |
+          echo "=== Checking merge script uses correct field names ==="
+          if grep -q '\.dialer\.id' lib/merge-interop-results.sh; then
+            echo "ERROR: Script still uses old .dialer.id syntax"
+            exit 1
+          fi
+          if grep -q '\.listener\.id' lib/merge-interop-results.sh; then
+            echo "ERROR: Script still uses old .listener.id syntax"
+            exit 1
+          fi
+          if grep -q '"name": \.id' lib/merge-interop-results.sh; then
+            echo "ERROR: Script still uses old .id syntax for name"
+            exit 1
+          fi
+          if grep -q '"status": \.outcome' lib/merge-interop-results.sh; then
+            echo "ERROR: Script still uses old .outcome syntax for status"
+            exit 1
+          fi
+          echo "Script version verified - using correct field names"
+
+      - name: Run merge-interop-results script
+        shell: bash
+        run: |
+          WORKFLOW_RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+          bash lib/merge-interop-results.sh \
+            "${{ steps.find-results.outputs.transport-dir }}" \
+            "${{ steps.find-results.outputs.hole-punch-dir }}" \
+            "${{ steps.find-results.outputs.perf-dir }}" \
+            "results/daily-full-interop.yml" \
+            "$WORKFLOW_RUN_URL"
+
+      - name: Verify files to commit
+        shell: bash
+        run: |
+          echo "=== Files in results/ directory ==="
+          ls -la results/
+          echo ""
+          echo "=== Box plot files ==="
+          ls -la results/*.png 2>/dev/null || echo "No PNG files found"
+          echo ""
+          echo "=== Generated YAML content preview ==="
+          head -100 results/daily-full-interop.yml
+
+      - name: Commit and push combined results
         shell: bash
         run: |
           set -euo pipefail
@@ -480,22 +558,17 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Check if there are changes
-          if git diff --quiet transport/README.md transport/LATEST_TEST_RESULTS.md hole-punch/README.md hole-punch/LATEST_TEST_RESULTS.md perf/README.md perf/LATEST_TEST_RESULTS.md perf/upload_boxplot.png perf/download_boxplot.png perf/latency_boxplot.png 2>/dev/null; then
+          # Check if there are changes to commit
+          git add results/
+
+          if git diff --cached --quiet 2>/dev/null; then
             echo "→ No changes to commit"
             exit 0
           fi
 
-          git add transport/README.md transport/LATEST_TEST_RESULTS.md hole-punch/README.md hole-punch/LATEST_TEST_RESULTS.md perf/README.md perf/LATEST_TEST_RESULTS.md perf/upload_boxplot.png perf/download_boxplot.png perf/latency_boxplot.png 2>/dev/null || true
-
-          # Only commit if there are staged changes
-          if git diff --cached --quiet 2>/dev/null; then
-            echo "→ No staged changes to commit"
-            exit 0
-          fi
-
-          git commit -m "chore: update test results [skip ci]" \
-                     -m "Updated test results from daily full interoperability test run." \
+          git commit -m "chore: update combined interop results [skip ci]" \
+                     -m "Combined results from daily full interoperability test run." \
+                     -m "Workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
                      -m "Co-authored-by: github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
 
           echo "→ Commit created successfully"
@@ -508,7 +581,7 @@ jobs:
             echo "→ Push attempt $ATTEMPT/$MAX_ATTEMPTS"
 
             if git push origin master; then
-              echo "✓ Changes committed and pushed successfully"
+              echo "✓ Combined results committed and pushed successfully"
               exit 0
             else
               echo "✗ Push failed (attempt $ATTEMPT/$MAX_ATTEMPTS)"
@@ -520,37 +593,21 @@ jobs:
 
               echo "→ Pulling latest changes and rebasing..."
 
-              # Fetch latest changes
               git fetch origin master
-
-              # Rebase our commit on top of the latest remote
               if git rebase origin/master; then
                 echo "✓ Rebase successful"
               else
                 echo "✗ Rebase conflict detected, resolving..."
-
-                # For README and results files, prefer our changes (fresh test results)
-                git checkout --ours transport/README.md 2>/dev/null || true
-                git checkout --ours transport/LATEST_TEST_RESULTS.md 2>/dev/null || true
-                git checkout --ours hole-punch/README.md 2>/dev/null || true
-                git checkout --ours hole-punch/LATEST_TEST_RESULTS.md 2>/dev/null || true
-                git checkout --ours perf/README.md 2>/dev/null || true
-                git checkout --ours perf/LATEST_TEST_RESULTS.md 2>/dev/null || true
-                git checkout --ours perf/upload_boxplot.png 2>/dev/null || true
-                git checkout --ours perf/download_boxplot.png 2>/dev/null || true
-                git checkout --ours perf/latency_boxplot.png 2>/dev/null || true
-
-                git add transport/README.md transport/LATEST_TEST_RESULTS.md hole-punch/README.md hole-punch/LATEST_TEST_RESULTS.md perf/README.md perf/LATEST_TEST_RESULTS.md perf/upload_boxplot.png perf/download_boxplot.png perf/latency_boxplot.png 2>/dev/null || true
+                git checkout --ours results/ 2>/dev/null || true
+                git add results/
                 git rebase --continue || {
                   echo "✗ Failed to resolve rebase conflict"
                   git rebase --abort
                   exit 1
                 }
-
                 echo "✓ Rebase conflict resolved"
               fi
 
-              # Exponential backoff before retry
               SLEEP_TIME=$((5 * (2 ** ($ATTEMPT - 1))))
               echo "→ Waiting ${SLEEP_TIME}s before retry..."
               sleep $SLEEP_TIME
