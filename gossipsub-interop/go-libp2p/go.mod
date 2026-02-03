@@ -109,3 +109,5 @@ require (
 	google.golang.org/protobuf v1.36.5 // indirect
 	lukechampine.com/blake3 v1.4.0 // indirect
 )
+
+replace github.com/libp2p/go-libp2p-pubsub => github.com/ppopth/go-libp2p-pubsub v0.15.1-0.20251104105446-b797c629a411

@@ -61,7 +61,7 @@ func (n *scriptedNode) runInstruction(ctx context.Context, instruction ScriptIns
 	// Process each script instruction
 	switch a := instruction.(type) {
 	case InitGossipSubInstruction:
-		psOpts := pubsubOptions(n.slogger, a.GossipSubParams)
+		psOpts := pubsubOptions(n.slogger, a.TopicBundles, a.GossipSubParams)
 		ps, err := pubsub.NewGossipSub(ctx, n.h, psOpts...)
 		if err != nil {
 			return err

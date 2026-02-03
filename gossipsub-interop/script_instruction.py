@@ -64,6 +64,7 @@ class InitGossipSub(BaseModel):
     """
 
     type: Literal["initGossipSub"] = "initGossipSub"
+    topicBundles: List[List[str]]
     gossipSubParams: GossipSubParams
 
 
