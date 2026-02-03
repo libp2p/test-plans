@@ -237,15 +237,15 @@ EOF
             "listener": .listener,
             "transport": .transport,
             "status": .status,
-            "upload-throughput": (.uploadThroughput.median // null),
-            "download-throughput": (.downloadThroughput.median // null)
+            "upload-throughput": (.upload.median // null),
+            "download-throughput": (.download.median // null)
         })' "$PERF_RESULTS" 2>/dev/null | sed 's/^/    /' >> "$OUTPUT_FILE"
     else
         echo "    []" >> "$OUTPUT_FILE"
     fi
 
-    # Add tests section
-    echo "  tests:" >> "$OUTPUT_FILE"
+    # Add results section (main test results)
+    echo "  results:" >> "$OUTPUT_FILE"
 
     # Extract main test results (from .testResults in source) as proper YAML array
     if [ "$PERF_TEST_COUNT" -gt 0 ]; then
@@ -258,18 +258,18 @@ EOF
             "muxer": (.muxer // null),
             "status": .status,
             "upload": {
-                "min": (.uploadThroughput.min // null),
-                "q1": (.uploadThroughput.q1 // null),
-                "median": (.uploadThroughput.median // null),
-                "q3": (.uploadThroughput.q3 // null),
-                "max": (.uploadThroughput.max // null)
+                "min": (.upload.min // null),
+                "q1": (.upload.q1 // null),
+                "median": (.upload.median // null),
+                "q3": (.upload.q3 // null),
+                "max": (.upload.max // null)
             },
             "download": {
-                "min": (.downloadThroughput.min // null),
-                "q1": (.downloadThroughput.q1 // null),
-                "median": (.downloadThroughput.median // null),
-                "q3": (.downloadThroughput.q3 // null),
-                "max": (.downloadThroughput.max // null)
+                "min": (.download.min // null),
+                "q1": (.download.q1 // null),
+                "median": (.download.median // null),
+                "q3": (.download.q3 // null),
+                "max": (.download.max // null)
             },
             "latency": {
                 "min": (.latency.min // null),
