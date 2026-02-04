@@ -137,12 +137,34 @@ def composition(preset_name: str) -> List[Binary]:
                     "rust-libp2p/target/debug/rust-libp2p-gossip", percent_of_nodes=100
                 )
             ]
+        case "all-python":
+            return [Binary("py-libp2p/main.py", percent_of_nodes=100)]
         case "rust-and-go":
             return [
                 Binary(
                     "rust-libp2p/target/debug/rust-libp2p-gossip", percent_of_nodes=50
                 ),
                 Binary("go-libp2p/gossipsub-bin", percent_of_nodes=50),
+            ]
+        case "python-and-go":
+            return [
+                Binary("py-libp2p/main.py", percent_of_nodes=50),
+                Binary("go-libp2p/gossipsub-bin", percent_of_nodes=50),
+            ]
+        case "python-and-rust":
+            return [
+                Binary("py-libp2p/main.py", percent_of_nodes=50),
+                Binary(
+                    "rust-libp2p/target/debug/rust-libp2p-gossip", percent_of_nodes=50
+                ),
+            ]
+        case "all-three":
+            return [
+                Binary("py-libp2p/main.py", percent_of_nodes=34),
+                Binary("go-libp2p/gossipsub-bin", percent_of_nodes=33),
+                Binary(
+                    "rust-libp2p/target/debug/rust-libp2p-gossip", percent_of_nodes=33
+                ),
             ]
     raise ValueError(f"Unknown preset name: {preset_name}")
 
