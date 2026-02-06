@@ -1,5 +1,20 @@
 [
   {
+    "id": "python-v0.4",
+    "transports": [
+      "tcp",
+      "ws",
+      "quic-v1"
+    ],
+    "secureChannels": [
+      "noise"
+    ],
+    "muxers": [
+      "mplex",
+      "yamux"
+    ]
+  },
+  {
     "id": "rust-v0.53",
     "transports": [
       "ws",
@@ -34,7 +49,41 @@
     ]
   },
   {
-    "id": "rust-chromium-v0.53",
+    "id": "rust-v0.55",
+    "transports": [
+      "ws",
+      "tcp",
+      "quic-v1",
+      "webrtc-direct"
+    ],
+    "secureChannels": [
+      "tls",
+      "noise"
+    ],
+    "muxers": [
+      "mplex",
+      "yamux"
+    ]
+  },
+  {
+    "id": "rust-v0.56",
+    "transports": [
+      "ws",
+      "tcp",
+      "quic-v1",
+      "webrtc-direct"
+    ],
+    "secureChannels": [
+      "tls",
+      "noise"
+    ],
+    "muxers": [
+      "mplex",
+      "yamux"
+    ]
+  },
+  {
+    "id": "chromium-rust-v0.53",
     "transports": [
       {
         "name": "webtransport",
@@ -58,7 +107,7 @@
     ]
   },
   {
-    "id": "rust-chromium-v0.54",
+    "id": "chromium-rust-v0.54",
     "transports": [
       {
         "name": "webtransport",
@@ -138,6 +187,10 @@
     "containerImageID": "browser",
     "transports": [
       {
+        "name": "webtransport",
+        "onlyDial": true
+      },
+      {
         "name": "wss",
         "onlyDial": true
       },
@@ -157,6 +210,54 @@
   },
   {
     "id": "firefox-js-v2.x",
+    "containerImageID": "browser",
+    "transports": [
+      {
+        "name": "webtransport",
+        "onlyDial": true
+      },
+      {
+        "name": "wss",
+        "onlyDial": true
+      },
+      {
+        "name": "webrtc-direct",
+        "onlyDial": true
+      },
+      "webrtc"
+    ],
+    "secureChannels": [
+      "noise"
+    ],
+    "muxers": [
+      "mplex",
+      "yamux"
+    ]
+  },
+  {
+    "id": "webkit-js-v1.x",
+    "containerImageID": "browser",
+    "transports": [
+      {
+        "name": "wss",
+        "onlyDial": true
+      },
+      {
+        "name": "webrtc-direct",
+        "onlyDial": true
+      },
+      "webrtc"
+    ],
+    "secureChannels": [
+      "noise"
+    ],
+    "muxers": [
+      "mplex",
+      "yamux"
+    ]
+  },
+  {
+    "id": "webkit-js-v2.x",
     "containerImageID": "browser",
     "transports": [
       {
@@ -228,20 +329,25 @@
     ]
   },
   {
-    "id": "go-v0.42",
+    "id": "js-v3.x",
     "transports": [
       "tcp",
       "ws",
-      "wss",
-      "quic-v1",
-      "webtransport",
-      "webrtc-direct"
+      {
+        "name": "wss",
+        "onlyDial": true
+      }
     ],
-    "secureChannels": ["tls", "noise"],
-    "muxers": ["yamux"]
+    "secureChannels": [
+      "noise"
+    ],
+    "muxers": [
+      "mplex",
+      "yamux"
+    ]
   },
   {
-    "id": "go-v0.41",
+    "id": "go-v0.45",
     "transports": [
       "tcp",
       "ws",
@@ -250,11 +356,16 @@
       "webtransport",
       "webrtc-direct"
     ],
-    "secureChannels": ["tls", "noise"],
-    "muxers": ["yamux"]
+    "secureChannels": [
+      "tls",
+      "noise"
+    ],
+    "muxers": [
+      "yamux"
+    ]
   },
   {
-    "id": "go-v0.40",
+    "id": "go-v0.46",
     "transports": [
       "tcp",
       "ws",
@@ -263,8 +374,31 @@
       "webtransport",
       "webrtc-direct"
     ],
-    "secureChannels": ["tls", "noise"],
-    "muxers": ["yamux"]
+    "secureChannels": [
+      "tls",
+      "noise"
+    ],
+    "muxers": [
+      "yamux"
+    ]
+  },
+  {
+    "id": "go-v0.47",
+    "transports": [
+      "tcp",
+      "ws",
+      "wss",
+      "quic-v1",
+      "webtransport",
+      "webrtc-direct"
+    ],
+    "secureChannels": [
+      "tls",
+      "noise"
+    ],
+    "muxers": [
+      "yamux"
+    ]
   },
   {
     "id": "jvm-v1.2",
@@ -281,5 +415,39 @@
       "mplex",
       "yamux"
     ]
+  },
+  {
+    "id": "c-v0.0.1",
+    "transports": [
+      "tcp",
+      "quic-v1"
+    ],
+    "secureChannels": [
+      "noise"
+    ],
+    "muxers": [
+      "mplex",
+      "yamux"
+    ]
+  },
+  {
+    "id": "dotnet-v1.0",
+    "transports": [
+      "tcp"
+    ],
+    "secureChannels": [
+      "noise"
+    ],
+    "muxers": [
+      "yamux"
+    ]
+  },
+  {
+    "id": "eth-p2p-z-v0.0.1",
+    "transports": [
+      "quic-v1"
+    ],
+    "secureChannels": [],
+    "muxers": []
   }
 ]

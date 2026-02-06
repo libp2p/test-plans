@@ -9,7 +9,7 @@ image.json: nim-libp2p-${commitSha}
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
 
 nim-libp2p-${commitSha}: nim-libp2p-${commitSha}.zip
-	unzip nim-libp2p-${commitSha}.zip
+	unzip -o nim-libp2p-${commitSha}.zip
 
 nim-libp2p-${commitSha}.zip:
 	wget -O $@ "https://github.com/status-im/nim-libp2p/archive/${commitSha}.zip"
