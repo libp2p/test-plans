@@ -1,0 +1,34 @@
+# .gitattributes - normalize line endings and enforce LF for text
+# See: https://git-scm.com/docs/gitattributes
+
+# Detect text files automatically and normalize to LF in the repo
+* text=auto
+
+# Force LF on common source and docs files
+*.sh     text eol=lf
+*.py     text eol=lf
+*.md     text eol=lf
+*.markdown text eol=lf
+*.yaml   text eol=lf
+*.yml    text eol=lf
+*.toml   text eol=lf
+*.json   text eol=lf
+*.rs     text eol=lf
+*.go     text eol=lf
+*.js     text eol=lf
+*.ts     text eol=lf
+*.c      text eol=lf
+*.h      text eol=lf
+*.cpp    text eol=lf
+*.java   text eol=lf
+
+# Treat common binary files as binary
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.gif    binary
+*.ico    binary
+*.zip    binary
+*.tar.gz binary
+
+# End of file
