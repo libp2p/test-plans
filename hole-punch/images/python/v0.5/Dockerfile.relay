@@ -1,0 +1,23 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies (including build deps for fastecdsa)
+RUN apt-get update && apt-get install -y \
+    iproute2 \
+    git \
+    build-essential \
+    libgmp-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application
+COPY relay.py .
+COPY run-relay.sh /usr/local/bin/
+
+RUN chmod +x /usr/local/bin/run-relay.sh
+
+ENTRYPOINT ["/usr/local/bin/run-relay.sh"]
