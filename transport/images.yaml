@@ -33,7 +33,7 @@ test-aliases:
   - alias: "eth-p2p"
     value: "eth-p2p-z-v0.0.1"
   - alias: "failing" # everything except rust-v0.56 and js and python-v0.x implementations as of 25 Jan 2026
-    value: "~browsers|~go|~nim|~jvm|~c|~dotnet|~zig|~eth-p2p|rust-v0.53|rust-v0.54|rust-v0.55"
+    value: "~browsers|~go|~nim|~jvm|~c|~zig|~eth-p2p|rust-v0.53|rust-v0.54|rust-v0.55"
 
 implementations:
   # Rust implementations
@@ -242,9 +242,9 @@ implementations:
     source:
       type: github
       repo: NethermindEth/dotnet-libp2p
-      commit: 91be8757237dba57b1f1688799c4fec808060fdb
+      commit: e46c0227b3916552162fde18f258e22790429d2f
       dockerfile: src/samples/transport-interop/Dockerfile
-    transports: [tcp]
+    transports: [tcp, quic-v1]
     secureChannels: [noise]
     muxers: [yamux]
 
