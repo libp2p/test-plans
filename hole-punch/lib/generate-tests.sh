@@ -546,8 +546,8 @@ generate_tests_worker() {
 
         print_debug "selecting listener router: ${listener_router_id}"
 
-        # Iterate through all dialers
-        for dialer_id in "${all_image_ids[@]}"; do
+        # Iterate through this worker's chunk of dialers
+        for dialer_id in "${dialer_chunk[@]}"; do
           dialer_transports="${image_transports[$dialer_id]}"
           dialer_secure="${image_secure[$dialer_id]}"
           dialer_muxers="${image_muxers[$dialer_id]}"
