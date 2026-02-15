@@ -1,0 +1,14 @@
+# py-libp2p with DCUtR support
+libp2p @ git+https://github.com/libp2p/py-libp2p.git@main
+
+# Redis client for test coordination
+redis>=4.0.0
+
+# Async framework (py-libp2p uses trio)
+trio>=0.26.0
+
+# Multiaddr handling
+multiaddr>=0.0.9
+
+# HTTP requests (required by py-libp2p's auto-TLS/ACME)
+requests>=2.25.0
