@@ -49,9 +49,26 @@ export default {
         console.error('Redis client error:', err)
       })
 
+      // Sometimes Docker DNS is slow and Redis hostname isn't found right away
+      // so we just try a few times instead of giving up immediately
+      const maxRetries = 10
       let start = Date.now()
       console.error('connect redis client')
-      await redisClient.connect()
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          await redisClient.connect()
+          if (attempt > 1) {
+            console.error(`Redis connected on attempt ${attempt}`)
+          }
+          break
+        } catch (err) {
+          if (attempt === maxRetries) {
+            throw new Error(`Failed to connect to Redis after ${maxRetries} attempts: ${err.message}`)
+          }
+          console.error(`Redis connection attempt ${attempt}/${maxRetries} failed: ${err.message}`)
+          await new Promise(resolve => setTimeout(resolve, attempt * 1000))
+        }
+      }
       console.error('connected redis client after', Date.now() - start, 'ms')
 
       const requestListener = async function (req, res) {

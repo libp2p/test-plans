@@ -12,4 +12,12 @@ ENV BROWSER=${BROWSER}
 # container and not during the test run which slows everything down
 RUN npx playwright-test --runner mocha --browser $BROWSER --grep do-not-match-anything
 
+# Playwright install can break /etc/resolv.conf by turning it into
+# a dead symlink. If that happens, DNS lookups fail with EAI_AGAIN.
+# This just checks for that and fixes it.
+RUN if [ -L /etc/resolv.conf ]; then \
+      rm -f /etc/resolv.conf && \
+      echo "nameserver 8.8.8.8" > /etc/resolv.conf; \
+    fi
+
 ENTRYPOINT ["sh", "-c", "npm test -- -t browser -- --browser \"$BROWSER\""]

@@ -104,6 +104,8 @@ services:
     image: "${LISTENER_IMAGE}"
     container_name: ${TEST_SLUG}_listener
     init: true
+    dns:
+      - 127.0.0.11
     networks:
       - transport-network
     environment:
@@ -112,6 +114,9 @@ ${LISTENER_ENV}
   dialer:
     image: "${DIALER_IMAGE}"
     container_name: ${TEST_SLUG}_dialer
+    init: true
+    dns:
+      - 127.0.0.11
     depends_on:
       - listener
     networks:
