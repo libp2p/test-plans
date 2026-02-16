@@ -1,0 +1,12 @@
+[package]
+name = "redis-proxy"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1", features = ["rt-multi-thread", "net", "io-util", "macros"] }
+
+[profile.release]
+opt-level = "s"
+lto = true
+strip = true

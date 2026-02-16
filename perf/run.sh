@@ -636,6 +636,13 @@ IMAGE_FILTER=$(cat "${REQUIRED_IMAGES}" | paste -sd'|' -)
 build_images_from_section "baselines" "${IMAGE_FILTER}" "${FORCE_IMAGE_REBUILD}"
 build_images_from_section "implementations" "${IMAGE_FILTER}" "${FORCE_IMAGE_REBUILD}"
 
+# Build Redis proxy image if any legacy tests are selected
+if yq eval '.tests[] | select(.dialer.legacy == true or .listener.legacy == true) | .id' "${TEST_PASS_DIR}/test-matrix.yaml" 2>/dev/null | grep -q .; then
+  println
+  print_message "Legacy tests detected, building Redis proxy..."
+  build_redis_proxy_image "${FORCE_IMAGE_REBUILD}"
+fi
+
 print_success "All images built successfully"
 
 rm -f "${REQUIRED_IMAGES}"

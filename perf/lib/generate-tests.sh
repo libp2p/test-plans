@@ -303,6 +303,7 @@ declare -A image_secure
 declare -A image_muxers
 declare -A image_dial_only
 declare -A image_commit
+declare -A image_legacy
 
 for image_id in "${all_image_ids[@]}"; do
   transports=$(yq eval ".implementations[] | select(.id == \"${image_id}\") | .transports | join(\" \")" "${IMAGES_YAML}")
@@ -310,6 +311,7 @@ for image_id in "${all_image_ids[@]}"; do
   muxers=$(yq eval ".implementations[] | select(.id == \"${image_id}\") | .muxers | join(\" \")" "${IMAGES_YAML}")
   dial_only=$(yq eval ".implementations[] | select(.id == \"${image_id}\") | .dialOnly | join(\" \")" "${IMAGES_YAML}" 2>/dev/null || echo "")
   commit=$(yq eval ".implementations[] | select (.id == \"${image_id}\") | .source.commit" "${IMAGES_YAML}" 2>/dev/null || echo "")
+  legacy=$(yq eval ".implementations[] | select(.id == \"${image_id}\") | .legacy // false" "${IMAGES_YAML}" 2>/dev/null || echo "false")
 
   image_transports["${image_id}"]="${transports}"
   image_secure["${image_id}"]="${secure}"
@@ -318,6 +320,7 @@ for image_id in "${all_image_ids[@]}"; do
   if [ -n "${commit}" ]; then
     image_commit["${image_id}"]="${commit}"
   fi
+  image_legacy["${image_id}"]="${legacy}"
 done
 
 indent
@@ -577,6 +580,9 @@ EOF
     local listener_commit=$(get_source_commit "${entity_type}" "${listener}")
     local listener_image_name=$(get_image_name "${TEST_TYPE}" "${entity_type}" "${listener}")
 
+    local dialer_legacy="${image_legacy[${dialer}]:-false}"
+    local listener_legacy="${image_legacy[${listener}]:-false}"
+
     cat >> "${TEST_PASS_DIR}/test-matrix.yaml" <<EOF
   - id: "${id}"
     transport: ${transport}
@@ -590,6 +596,9 @@ EOF
     if [ ! -z "${dialer_commit}" ]; then
       echo "      snapshot: snapshots/${dialer_commit}.zip" >> "${TEST_PASS_DIR}/test-matrix.yaml"
     fi
+    if [ "${dialer_legacy}" == "true" ]; then
+      echo "      legacy: true" >> "${TEST_PASS_DIR}/test-matrix.yaml"
+    fi
 
     cat >> "${TEST_PASS_DIR}/test-matrix.yaml" <<EOF
     listener:
@@ -598,6 +607,9 @@ EOF
 EOF
     if [ ! -z "${listener_commit}" ]; then
       echo "      snapshot: snapshots/${listener_commit}.zip" >> "${TEST_PASS_DIR}/test-matrix.yaml"
+    fi
+    if [ "${listener_legacy}" == "true" ]; then
+      echo "      legacy: true" >> "${TEST_PASS_DIR}/test-matrix.yaml"
     fi
   done
 }

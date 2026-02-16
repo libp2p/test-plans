@@ -124,6 +124,9 @@ modify_inputs_for_snapshot() {
     yq eval -i '.environmentVariables.SCRIPT_DIR = "./lib"' "${inputs_file}"
     yq eval -i '.environmentVariables.SCRIPT_LIB_DIR = "./lib"' "${inputs_file}"
 
+    # Remove HOST_OS so it gets re-detected on the target machine
+    yq eval -i 'del(.environmentVariables.HOST_OS)' "${inputs_file}"
+
     # Remove snapshot flag from command line args if present
     yq eval -i 'del(.commandLineArgs[] | select(. == "--snapshot"))' "${inputs_file}"
 

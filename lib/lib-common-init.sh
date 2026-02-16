@@ -32,8 +32,9 @@ init_common_variables() {
   SHUTDOWN=false
 
   # Host operating system detection
-  # Detect or use existing HOST_OS value (may be loaded from inputs.yaml)
-  HOST_OS="${HOST_OS:-$(detect_host_os)}"
+  # Always re-detect: HOST_OS is a runtime property of the current machine,
+  # not a reproducible config value (inputs.yaml may carry a stale value)
+  HOST_OS="$(detect_host_os)"
 
   # Files
   IMAGES_YAML="${IMAGES_YAML:-${TEST_ROOT}/images.yaml}"

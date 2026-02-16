@@ -573,3 +573,29 @@ build_browser_image() {
 
   return 0
 }
+
+# Build the Redis proxy image used for legacy test support.
+# The proxy translates legacy Redis key names to modern format,
+# allowing legacy and modern containers to share one global Redis.
+#
+# Usage: build_redis_proxy_image [force_rebuild]
+#   force_rebuild: "true" to rebuild even if image exists (default: "false")
+build_redis_proxy_image() {
+  local force_rebuild="${1:-false}"
+  local image_name="libp2p-redis-proxy"
+  local proxy_dir="${SCRIPT_LIB_DIR}/redis-proxy"
+
+  if [ "${force_rebuild}" != "true" ] && docker_image_exists "${image_name}"; then
+    print_success "${image_name} (already built)"
+    return 0
+  fi
+
+  print_message "Building Redis proxy image..."
+  if ! docker build -t "${image_name}" "${proxy_dir}"; then
+    print_error "Redis proxy build failed"
+    return 1
+  fi
+
+  print_success "${image_name} built successfully"
+  return 0
+}

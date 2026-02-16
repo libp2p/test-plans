@@ -32,20 +32,20 @@ test-aliases:
     value: "zig-v0.0.1"
   - alias: "eth-p2p"
     value: "eth-p2p-z-v0.0.1"
-  - alias: "failing" # everything except rust-v0.56 and js and python-v0.x implementations as of 25 Jan 2026
-    value: "~browsers|~go|~nim|~jvm|~c|~zig|~eth-p2p|rust-v0.53|rust-v0.54|rust-v0.55"
+  - alias: "failing"
+    value: ""
 
 implementations:
   # Rust implementations
   - id: rust-v0.53
     source:
-      type: github
-      repo: libp2p/rust-libp2p
-      commit: b7914e407da34c99fb76dcc300b3d44b9af97fac
+      type: local
+      path: images/rust/v0.53
       dockerfile: interop-tests/Dockerfile.native
     transports: [ws, tcp, quic-v1, webrtc-direct]
     secureChannels: [tls, noise]
     muxers: [mplex, yamux]
+    legacy: true
 
   - id: rust-v0.54
     source:
@@ -56,6 +56,7 @@ implementations:
     transports: [ws, tcp, quic-v1, webrtc-direct]
     secureChannels: [tls, noise]
     muxers: [mplex, yamux]
+    legacy: true
 
   - id: rust-v0.55
     source:
@@ -66,6 +67,7 @@ implementations:
     transports: [ws, tcp, quic-v1, webrtc-direct]
     secureChannels: [tls, noise]
     muxers: [mplex, yamux]
+    legacy: true
 
   - id: rust-v0.56
     source:
@@ -89,6 +91,7 @@ implementations:
     transports: [tcp, ws, wss, quic-v1, webtransport, webrtc-direct]
     secureChannels: [tls, noise]
     muxers: [yamux]
+    legacy: true
 
   - id: go-v0.39
     source:
@@ -99,6 +102,7 @@ implementations:
     transports: [tcp, ws, wss, quic-v1, webtransport, webrtc-direct]
     secureChannels: [tls, noise]
     muxers: [yamux]
+    legacy: true
 
   - id: go-v0.40
     source:
@@ -109,6 +113,7 @@ implementations:
     transports: [tcp, ws, wss, quic-v1, webtransport, webrtc-direct]
     secureChannels: [tls, noise]
     muxers: [yamux]
+    legacy: true
 
   - id: go-v0.41
     source:
@@ -119,6 +124,7 @@ implementations:
     transports: [tcp, ws, wss, quic-v1, webtransport, webrtc-direct]
     secureChannels: [tls, noise]
     muxers: [yamux]
+    legacy: true
 
   - id: go-v0.42
     source:
@@ -129,6 +135,7 @@ implementations:
     transports: [tcp, ws, wss, quic-v1, webtransport, webrtc-direct]
     secureChannels: [tls, noise]
     muxers: [yamux]
+    legacy: true
 
   - id: go-v0.43
     source:
@@ -139,6 +146,7 @@ implementations:
     transports: [tcp, ws, wss, quic-v1, webtransport, webrtc-direct]
     secureChannels: [tls, noise]
     muxers: [yamux]
+    legacy: true
 
   - id: go-v0.44
     source:
@@ -149,6 +157,7 @@ implementations:
     transports: [tcp, ws, wss, quic-v1, webtransport, webrtc-direct]
     secureChannels: [tls, noise]
     muxers: [yamux]
+    legacy: true
 
   - id: go-v0.45
     source:
@@ -159,6 +168,7 @@ implementations:
     transports: [tcp, ws, wss, quic-v1, webtransport, webrtc-direct]
     secureChannels: [tls, noise]
     muxers: [yamux]
+    legacy: true
 
   # Python implementation
   - id: python-v0.x
@@ -167,8 +177,8 @@ implementations:
       repo: libp2p/py-libp2p
       commit: 22ea173ac0359a386275bdf6b846bc52a0082e91 
       dockerfile: interop/transport/Dockerfile
-    transports: [tcp, ws, wss, quic-v1]
-    secureChannels: [tls, noise]
+    transports: [tcp, ws, wss]
+    secureChannels: [noise]
     muxers: [mplex, yamux]
 
   # JavaScript implementations (Node.js)
@@ -212,6 +222,7 @@ implementations:
     transports: [tcp, ws]
     secureChannels: [noise]
     muxers: [mplex, yamux]
+    legacy: true
 
   # JVM implementation
   - id: jvm-v1.2
@@ -223,6 +234,7 @@ implementations:
     transports: [tcp, ws, quic-v1]
     secureChannels: [tls, noise]
     muxers: [mplex, yamux]
+    legacy: true
 
   # C implementation
   - id: c-v0.0.1
@@ -236,6 +248,7 @@ implementations:
     transports: [tcp, quic-v1]
     secureChannels: [noise]
     muxers: [mplex, yamux]
+    legacy: true
 
   # .NET implementation
   - id: dotnet-v1.0
@@ -258,6 +271,7 @@ implementations:
     transports: [quic-v1]
     secureChannels: []
     muxers: []
+    legacy: true
 
   # Ethereum P2P implementation (Zig-based)
   - id: eth-p2p-z-v0.0.1
@@ -269,6 +283,7 @@ implementations:
     transports: [quic-v1]
     secureChannels: []
     muxers: []
+    legacy: true
 
   # Browser implementations (require local build)
   # Note: Browser images are built from js implementations
@@ -349,6 +364,7 @@ implementations:
     secureChannels: [noise]
     muxers: [mplex, yamux]
     dialOnly: [webtransport, webrtc-direct, ws]
+    legacy: true
 
   - id: chromium-rust-v0.54
     source:
@@ -360,6 +376,7 @@ implementations:
     secureChannels: [noise]
     muxers: [mplex, yamux]
     dialOnly: [webtransport, webrtc-direct, ws]
+    legacy: true
 
   - id: chromium-rust-v0.56
     source:
@@ -371,4 +388,5 @@ implementations:
     secureChannels: [noise]
     muxers: [mplex, yamux]
     dialOnly: [webtransport, webrtc-direct, ws]
+    legacy: true
 

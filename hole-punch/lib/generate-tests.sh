@@ -395,6 +395,7 @@ declare -A image_secure
 declare -A image_muxers
 declare -A image_dial_only
 declare -A image_commit
+declare -A image_legacy
 
 for image_id in "${all_image_ids[@]}"; do
   transports=$(yq eval ".implementations[] | select(.id == \"${image_id}\") | .transports | join(\" \")" "${IMAGES_YAML}")
@@ -402,6 +403,7 @@ for image_id in "${all_image_ids[@]}"; do
   muxers=$(yq eval ".implementations[] | select(.id == \"${image_id}\") | .muxers | join(\" \")" "${IMAGES_YAML}")
   dial_only=$(yq eval ".implementations[] | select(.id == \"${image_id}\") | .dialOnly | join(\" \")" "${IMAGES_YAML}" 2>/dev/null || echo "")
   commit=$(yq eval ".implementations[] | select (.id == \"${image_id}\") | .source.commit" "${IMAGES_YAML}" 2>/dev/null || echo "")
+  legacy=$(yq eval ".implementations[] | select(.id == \"${image_id}\") | .legacy // false" "${IMAGES_YAML}" 2>/dev/null || echo "false")
 
   image_transports["${image_id}"]="${transports}"
   image_secure["${image_id}"]="${secure}"
@@ -410,6 +412,7 @@ for image_id in "${all_image_ids[@]}"; do
   if [ -n "${commit}" ]; then
     image_commit["${image_id}"]="${commit}"
   fi
+  image_legacy["${image_id}"]="${legacy}"
 done
 
 indent
@@ -510,6 +513,13 @@ generate_tests_worker() {
     done < "${WORKER_DATA_DIR}/image-commits.dat"
   fi
 
+  declare -A image_legacy
+  if [ -f "${WORKER_DATA_DIR}/image-legacy.dat" ]; then
+    while IFS='|' read -r key value; do
+      image_legacy["${key}"]="${value}"
+    done < "${WORKER_DATA_DIR}/image-legacy.dat"
+  fi
+
   # Iterate through all relays
   for relay_id in "${all_relay_ids[@]}"; do
     relay_transports="${relay_image_transports[${relay_id}]}"
@@ -588,6 +598,10 @@ generate_tests_worker() {
             local relay_commit="${relay_image_commit[${relay_id}]:-}"
             local dialer_router_commit="${router_image_commit[${dialer_router_id}]:-}"
             local listener_router_commit="${router_image_commit[${listener_router_id}]:-}"
+
+            # Get legacy status
+            local dialer_legacy="${image_legacy[${dialer_id}]:-false}"
+            local listener_legacy="${image_legacy[${listener_id}]:-false}"
 
             # Get the image names
             local dialer_image_name=$(get_image_name "${TEST_TYPE}" "implementations" "${dialer_id}")
@@ -668,6 +682,9 @@ EOF
                   if [ -n "${dialer_commit}" ]; then
                     echo "      snapshot: snapshots/${dialer_commit}.zip" >> "${worker_selected}"
                   fi
+                  if [ "${dialer_legacy}" == "true" ]; then
+                    echo "      legacy: true" >> "${worker_selected}"
+                  fi
                   cat >> "${worker_selected}" <<EOF
     listener:
       id: ${listener_id}
@@ -675,6 +692,9 @@ EOF
 EOF
                   if [ -n "${listener_commit}" ]; then
                     echo "      snapshot: snapshots/${listener_commit}.zip" >> "${worker_selected}"
+                  fi
+                  if [ "${listener_legacy}" == "true" ]; then
+                    echo "      legacy: true" >> "${worker_selected}"
                   fi
                   cat >> "${worker_selected}" <<EOF
     relay:
@@ -719,6 +739,9 @@ EOF
                   if [ -n "${dialer_commit}" ]; then
                     echo "      snapshot: snapshots/${dialer_commit}.zip" >> "${worker_ignored}"
                   fi
+                  if [ "${dialer_legacy}" == "true" ]; then
+                    echo "      legacy: true" >> "${worker_ignored}"
+                  fi
                   cat >> "${worker_ignored}" <<EOF
     listener:
       id: ${listener_id}
@@ -726,6 +749,9 @@ EOF
 EOF
                   if [ -n "${listener_commit}" ]; then
                     echo "      snapshot: snapshots/${listener_commit}.zip" >> "${worker_ignored}"
+                  fi
+                  if [ "${listener_legacy}" == "true" ]; then
+                    echo "      legacy: true" >> "${worker_ignored}"
                   fi
                   cat >> "${worker_ignored}" <<EOF
     relay:
@@ -838,6 +864,9 @@ EOF
                       if [ -n "${dialer_commit}" ]; then
                         echo "      snapshot: snapshots/${dialer_commit}.zip" >> "${worker_selected}"
                       fi
+                      if [ "${dialer_legacy}" == "true" ]; then
+                        echo "      legacy: true" >> "${worker_selected}"
+                      fi
                       cat >> "${worker_selected}" <<EOF
     listener:
       id: ${listener_id}
@@ -845,6 +874,9 @@ EOF
 EOF
                       if [ -n "${listener_commit}" ]; then
                         echo "      snapshot: snapshots/${listener_commit}.zip" >> "${worker_selected}"
+                      fi
+                      if [ "${listener_legacy}" == "true" ]; then
+                        echo "      legacy: true" >> "${worker_selected}"
                       fi
                       cat >> "${worker_selected}" <<EOF
     relay:
@@ -887,6 +919,9 @@ EOF
                       if [ -n "${dialer_commit}" ]; then
                         echo "      snapshot: snapshots/${dialer_commit}.zip" >> "${worker_ignored}"
                       fi
+                      if [ "${dialer_legacy}" == "true" ]; then
+                        echo "      legacy: true" >> "${worker_ignored}"
+                      fi
                       cat >> "${worker_ignored}" <<EOF
     listener:
       id: ${listener_id}
@@ -894,6 +929,9 @@ EOF
 EOF
                       if [ -n "${listener_commit}" ]; then
                         echo "      snapshot: snapshots/${listener_commit}.zip" >> "${worker_ignored}"
+                      fi
+                      if [ "${listener_legacy}" == "true" ]; then
+                        echo "      legacy: true" >> "${worker_ignored}"
                       fi
                       cat >> "${worker_ignored}" <<EOF
     relay:
@@ -982,6 +1020,10 @@ done
 
 for key in "${!image_commit[@]}"; do
   echo "${key}|${image_commit[${key}]}" >> "${WORKER_DATA_DIR}/image-commits.dat"
+done
+
+for key in "${!image_legacy[@]}"; do
+  echo "${key}|${image_legacy[${key}]}" >> "${WORKER_DATA_DIR}/image-legacy.dat"
 done
 
 # Export necessary variables and functions for workers
