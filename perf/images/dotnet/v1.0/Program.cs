@@ -86,16 +86,16 @@ class Program
         // Route to listener or dialer based on IS_DIALER
         if (isDialer)
         {
-            await RunDialer(peerFactory, logger, redisAddr, transport, uploadBytes, downloadBytes,
+            await RunDialer(peerFactory, logger, redisAddr, transport, testKey, uploadBytes, downloadBytes,
                 uploadIterations, downloadIterations, latencyIterations);
         }
         else
         {
-            await RunListener(peerFactory, logger, redisAddr, transport);
+            await RunListener(peerFactory, logger, redisAddr, transport, testKey);
         }
     }
 
-    static async Task RunListener(IPeerFactory peerFactory, ILogger<Program> logger, string redisAddr, string transport)
+    static async Task RunListener(IPeerFactory peerFactory, ILogger<Program> logger, string redisAddr, string transport, string testKey)
     {
         logger.LogInformation("Starting perf listener...");
 
@@ -138,10 +138,11 @@ class Program
         await localPeer.StartListenAsync(new[] { listenAddr });
         logger.LogInformation("Listener started");
 
-        // Publish the same multiaddr to Redis with TEST_KEY namespacing
+        // Publish the full multiaddr (including peer id) to Redis with TEST_KEY namespacing
+        var publishMultiaddr = $"{listenMultiaddr}/p2p/{peerId}";
         var listenerAddrKey = $"{testKey}_listener_multiaddr";
-        await db.StringSetAsync(listenerAddrKey, listenMultiaddr);
-        logger.LogInformation("Published multiaddr to Redis: {Multiaddr} (key: {Key})", listenMultiaddr, listenerAddrKey);
+        await db.StringSetAsync(listenerAddrKey, publishMultiaddr);
+        logger.LogInformation("Published multiaddr to Redis: {Multiaddr} (key: {Key})", publishMultiaddr, listenerAddrKey);
 
         logger.LogInformation("Listener ready, waiting for connections...");
 
@@ -168,7 +169,7 @@ class Program
     }
 
     static async Task RunDialer(IPeerFactory peerFactory, ILogger<Program> logger, string redisAddr,
-        string transport, ulong uploadBytes, ulong downloadBytes,
+        string transport, string testKey, ulong uploadBytes, ulong downloadBytes,
         int uploadIterations, int downloadIterations, int latencyIterations)
     {
         logger.LogInformation("Starting perf dialer...");
@@ -180,6 +181,11 @@ class Program
 
         // Wait for listener multiaddr
         var listenerAddr = await WaitForListener(db, logger, testKey);
+        if (string.IsNullOrWhiteSpace(listenerAddr))
+        {
+            logger.LogError("Listener multiaddr from Redis is empty");
+            throw new InvalidOperationException("Listener multiaddr is empty");
+        }
         logger.LogInformation("Got listener multiaddr: {Addr}", listenerAddr);
 
         // Give listener a moment to be fully ready
@@ -191,16 +197,14 @@ class Program
 
         try
         {
-            // Connect to listener
+            // Parse listener multiaddr 
             var targetAddr = Multiaddress.Decode(listenerAddr);
-            logger.LogInformation("Connecting to listener at: {Addr}", targetAddr);
-            var remotePeer = await localPeer.DialAsync(targetAddr);
-            logger.LogInformation("Successfully connected to listener");
+            logger.LogInformation("Will dial protocol directly to: {Addr}", targetAddr);
 
             // Run three measurements sequentially
-            var uploadStats = await RunMeasurement(remotePeer, logger, uploadBytes, 0, uploadIterations, "upload");
-            var downloadStats = await RunMeasurement(remotePeer, logger, 0, downloadBytes, downloadIterations, "download");
-            var latencyStats = await RunMeasurement(remotePeer, logger, 1, 1, latencyIterations, "latency");
+            var uploadStats = await RunMeasurement(localPeer, logger, targetAddr, uploadBytes, 0, uploadIterations, "upload");
+            var downloadStats = await RunMeasurement(localPeer, logger, targetAddr, 0, downloadBytes, downloadIterations, "download");
+            var latencyStats = await RunMeasurement(localPeer, logger, targetAddr, 1, 1, latencyIterations, "latency");
 
             logger.LogInformation("All measurements complete!");
 
@@ -339,7 +343,7 @@ class Program
         return sortedValues[lower] * (1.0 - weight) + sortedValues[upper] * weight;
     }
 
-    static async Task<Stats> RunMeasurement(dynamic remotePeer, ILogger<Program> logger,
+    static async Task<Stats> RunMeasurement(dynamic localPeer, ILogger<Program> logger, Multiaddress targetAddr,
         ulong uploadBytes, ulong downloadBytes, int iterations, string measurementType)
     {
         var values = new List<double>();
@@ -358,8 +362,8 @@ class Program
 
             try
             {
-                // Run perf protocol
-                await remotePeer.DialAsync<PerfProtocol>();
+                // Dial the protocol directly for each iteration
+                await localPeer.DialAsync<PerfProtocol>(targetAddr);
             }
             catch (Exception ex)
             {
