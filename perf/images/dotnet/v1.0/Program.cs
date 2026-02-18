@@ -1,5 +1,7 @@
 using System.Diagnostics;
-using System.Text.Json;
+using System.Net;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using DataTransferBenchmark;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -15,7 +17,7 @@ class Program
         var services = new ServiceCollection()
             .AddLibp2p(builder =>
             {
-                // Enable both TCP and QUIC transports
+                // TCP is enabled by default, also enable QUIC
                 return builder
                     .WithQuic()  // Enable QUIC transport
                     .AddProtocol<PerfProtocol>();
@@ -120,15 +122,16 @@ class Program
         var peerId = localPeer.Identity.PeerId.ToString();
         logger.LogInformation("Peer ID: {PeerId}", peerId);
 
-        // Construct listen multiaddr using LISTENER_IP (not 0.0.0.0)
+        // Construct listen multiaddr - bind to LISTENER_IP (usually 0.0.0.0)
         string listenMultiaddr;
+        int listenPort = 4001;
         if (transport == "quic" || transport == "quic-v1")
         {
-            listenMultiaddr = $"/ip4/{listenerIp}/udp/4001/quic-v1";
+            listenMultiaddr = $"/ip4/{listenerIp}/udp/{listenPort}/quic-v1";
         }
         else
         {
-            listenMultiaddr = $"/ip4/{listenerIp}/tcp/4001";
+            listenMultiaddr = $"/ip4/{listenerIp}/tcp/{listenPort}";
         }
 
         logger.LogInformation("Will listen on: {Multiaddr}", listenMultiaddr);
@@ -138,8 +141,27 @@ class Program
         await localPeer.StartListenAsync(new[] { listenAddr });
         logger.LogInformation("Listener started");
 
-        // Publish the full multiaddr (including peer id) to Redis with TEST_KEY namespacing
-        var publishMultiaddr = $"{listenMultiaddr}/p2p/{peerId}";
+        // Resolve the actual container IP for publishing to Redis
+        // When LISTENER_IP is 0.0.0.0, we need to find the real routable IP
+        string publishIp = listenerIp;
+        if (listenerIp == "0.0.0.0")
+        {
+            publishIp = GetContainerIp(logger);
+            logger.LogInformation("Resolved container IP: {Ip}", publishIp);
+        }
+
+        // Construct the publish multiaddr with the real IP
+        string publishAddrBase;
+        if (transport == "quic" || transport == "quic-v1")
+        {
+            publishAddrBase = $"/ip4/{publishIp}/udp/{listenPort}/quic-v1";
+        }
+        else
+        {
+            publishAddrBase = $"/ip4/{publishIp}/tcp/{listenPort}";
+        }
+
+        var publishMultiaddr = $"{publishAddrBase}/p2p/{peerId}";
         var listenerAddrKey = $"{testKey}_listener_multiaddr";
         await db.StringSetAsync(listenerAddrKey, publishMultiaddr);
         logger.LogInformation("Published multiaddr to Redis: {Multiaddr} (key: {Key})", publishMultiaddr, listenerAddrKey);
@@ -160,7 +182,7 @@ class Program
             var addr = await db.StringGetAsync(listenerAddrKey);
             if (!addr.IsNullOrEmpty)
             {
-                return addr.ToString()!;
+                return addr.ToString()!.Trim();
             }
             await Task.Delay(500);
         }
@@ -189,16 +211,56 @@ class Program
         logger.LogInformation("Got listener multiaddr: {Addr}", listenerAddr);
 
         // Give listener a moment to be fully ready
-        await Task.Delay(2000);
+        await Task.Delay(500);
 
         // Create libp2p host
         var localPeer = peerFactory.Create();
-        logger.LogInformation("Client peer created");
+        logger.LogInformation("Client peer created with ID: {PeerId}", localPeer.Identity.PeerId);
+
+        // Initialize the peer by starting to listen on a local address
+        // This ensures the peer is ready for outbound connections
+        string dialerListenAddr;
+        if (transport == "quic" || transport == "quic-v1")
+        {
+            dialerListenAddr = "/ip4/0.0.0.0/udp/0/quic-v1";
+        }
+        else
+        {
+            dialerListenAddr = "/ip4/0.0.0.0/tcp/0";
+        }
+        await localPeer.StartListenAsync(new[] { Multiaddress.Decode(dialerListenAddr) });
+        logger.LogInformation("Dialer peer initialized, listening on {Addr}", dialerListenAddr);
 
         try
         {
             // Parse listener multiaddr 
             var targetAddr = Multiaddress.Decode(listenerAddr);
+
+            // Validate the multiaddr was parsed correctly
+            if (targetAddr == null)
+            {
+                throw new InvalidOperationException(
+                    $"Failed to parse listener multiaddr: {listenerAddr}");
+            }
+
+            // Check that the multiaddress has protocols (not empty)
+            var protocols = targetAddr.Protocols;
+            if (protocols == null || !protocols.Any())
+            {
+                throw new InvalidOperationException(
+                    $"Parsed multiaddr has no protocols. Raw string: '{listenerAddr}', Parsed: '{targetAddr}'");
+            }
+
+            logger.LogInformation("Parsed multiaddr protocols: {Protocols}", 
+                string.Join(", ", protocols.Select(p => p.Name)));
+
+            // Validate the multiaddr has a peer ID (required for dialing)
+            if (!listenerAddr.Contains("/p2p/"))
+            {
+                throw new InvalidOperationException(
+                    $"Listener multiaddr missing /p2p/<peerId> component: {listenerAddr}");
+            }
+
             logger.LogInformation("Will dial protocol directly to: {Addr}", targetAddr);
 
             // Run three measurements sequentially
@@ -209,64 +271,9 @@ class Program
             logger.LogInformation("All measurements complete!");
 
             // Output results as YAML to stdout
-            Console.WriteLine("# Upload measurement");
-            Console.WriteLine("upload:");
-            Console.WriteLine($"  iterations: {uploadIterations}");
-            Console.WriteLine($"  min: {uploadStats.Min:F2}");
-            Console.WriteLine($"  q1: {uploadStats.Q1:F2}");
-            Console.WriteLine($"  median: {uploadStats.Median:F2}");
-            Console.WriteLine($"  q3: {uploadStats.Q3:F2}");
-            Console.WriteLine($"  max: {uploadStats.Max:F2}");
-            if (uploadStats.Outliers.Any())
-            {
-                var outliers = string.Join(", ", uploadStats.Outliers.Select(v => v.ToString("F2")));
-                Console.WriteLine($"  outliers: [{outliers}]");
-            }
-            else
-            {
-                Console.WriteLine("  outliers: []");
-            }
-            Console.WriteLine("  unit: Gbps");
-            Console.WriteLine();
-
-            Console.WriteLine("# Download measurement");
-            Console.WriteLine("download:");
-            Console.WriteLine($"  iterations: {downloadIterations}");
-            Console.WriteLine($"  min: {downloadStats.Min:F2}");
-            Console.WriteLine($"  q1: {downloadStats.Q1:F2}");
-            Console.WriteLine($"  median: {downloadStats.Median:F2}");
-            Console.WriteLine($"  q3: {downloadStats.Q3:F2}");
-            Console.WriteLine($"  max: {downloadStats.Max:F2}");
-            if (downloadStats.Outliers.Any())
-            {
-                var outliers = string.Join(", ", downloadStats.Outliers.Select(v => v.ToString("F2")));
-                Console.WriteLine($"  outliers: [{outliers}]");
-            }
-            else
-            {
-                Console.WriteLine("  outliers: []");
-            }
-            Console.WriteLine("  unit: Gbps");
-            Console.WriteLine();
-
-            Console.WriteLine("# Latency measurement");
-            Console.WriteLine("latency:");
-            Console.WriteLine($"  iterations: {latencyIterations}");
-            Console.WriteLine($"  min: {latencyStats.Min:F3}");
-            Console.WriteLine($"  q1: {latencyStats.Q1:F3}");
-            Console.WriteLine($"  median: {latencyStats.Median:F3}");
-            Console.WriteLine($"  q3: {latencyStats.Q3:F3}");
-            Console.WriteLine($"  max: {latencyStats.Max:F3}");
-            if (latencyStats.Outliers.Any())
-            {
-                var outliers = string.Join(", ", latencyStats.Outliers.Select(v => v.ToString("F3")));
-                Console.WriteLine($"  outliers: [{outliers}]");
-            }
-            else
-            {
-                Console.WriteLine("  outliers: []");
-            }
-            Console.WriteLine("  unit: ms");
+            WriteStatsYaml("upload", uploadStats, uploadIterations, "Gbps", "F2");
+            WriteStatsYaml("download", downloadStats, downloadIterations, "Gbps", "F2");
+            WriteStatsYaml("latency", latencyStats, latencyIterations, "ms", "F3");
 
             logger.LogInformation("Results output complete");
         }
@@ -278,11 +285,74 @@ class Program
         }
     }
 
-    private static Identity GenerateDeterministicIdentity(byte seed)
+    static void WriteStatsYaml(string name, Stats stats, int iterations, string unit, string fmt)
     {
-        var fixedSeed = new byte[32];
-        Array.Fill(fixedSeed, seed);
-        return new Identity(fixedSeed);
+        Console.WriteLine($"# {char.ToUpper(name[0])}{name[1..]} measurement");
+        Console.WriteLine($"{name}:");
+        Console.WriteLine($"  iterations: {iterations}");
+        Console.WriteLine($"  min: {stats.Min.ToString(fmt)}");
+        Console.WriteLine($"  q1: {stats.Q1.ToString(fmt)}");
+        Console.WriteLine($"  median: {stats.Median.ToString(fmt)}");
+        Console.WriteLine($"  q3: {stats.Q3.ToString(fmt)}");
+        Console.WriteLine($"  max: {stats.Max.ToString(fmt)}");
+        if (stats.Outliers.Count > 0)
+        {
+            var outliers = string.Join(", ", stats.Outliers.Select(v => v.ToString(fmt)));
+                Console.WriteLine($"  outliers: [{outliers}]");
+        }
+        else
+        {
+            Console.WriteLine("  outliers: []");
+        }
+        if (stats.Samples.Count > 0)
+        {
+            var samples = string.Join(", ", stats.Samples.Select(v => v.ToString(fmt)));
+            Console.WriteLine($"  samples: [{samples}]");
+        }
+        else
+        {
+            Console.WriteLine("  samples: []");
+        }
+        Console.WriteLine($"  unit: {unit}");
+        Console.WriteLine();
+    }
+
+    /// <summary>
+    /// Get the container's routable IP address (non-loopback IPv4).
+    /// In Docker, this returns the IP assigned by the Docker network (e.g., 10.5.0.x).
+    /// </summary>
+    static string GetContainerIp(ILogger logger)
+    {
+        // Try to find a non-loopback IPv4 address from network interfaces
+        foreach (var iface in NetworkInterface.GetAllNetworkInterfaces())
+        {
+            if (iface.OperationalStatus != OperationalStatus.Up)
+                continue;
+            if (iface.NetworkInterfaceType == NetworkInterfaceType.Loopback)
+                continue;
+
+            foreach (var addr in iface.GetIPProperties().UnicastAddresses)
+            {
+                if (addr.Address.AddressFamily == AddressFamily.InterNetwork &&
+                    !IPAddress.IsLoopback(addr.Address))
+                {
+                    logger.LogInformation("Found routable IP {Ip} on interface {Iface}", addr.Address, iface.Name);
+                    return addr.Address.ToString();
+                }
+            }
+        }
+
+        // Fallback: resolve hostname
+        var hostEntry = Dns.GetHostEntry(Dns.GetHostName());
+        foreach (var addr in hostEntry.AddressList)
+        {
+            if (addr.AddressFamily == AddressFamily.InterNetwork && !IPAddress.IsLoopback(addr))
+            {
+                return addr.ToString();
+            }
+        }
+
+        throw new Exception("Could not determine container IP address");
     }
 
     // Box plot statistics
@@ -294,15 +364,15 @@ class Program
         public double Q3 { get; set; }
         public double Max { get; set; }
         public List<double> Outliers { get; set; } = new();
+        public List<double> Samples { get; set; } = new();
     }
 
     static Stats CalculateStats(List<double> values)
     {
+        var samples = new List<double>(values); // Keep original samples
         values.Sort();
 
         var n = values.Count;
-        var min = values[0];
-        var max = values[n - 1];
 
         // Calculate percentiles
         var q1 = Percentile(values, 25.0);
@@ -315,6 +385,21 @@ class Program
         var upperFence = q3 + 1.5 * iqr;
 
         var outliers = values.Where(v => v < lowerFence || v > upperFence).ToList();
+        var nonOutliers = values.Where(v => v >= lowerFence && v <= upperFence).ToList();
+
+        // Min/Max from non-outliers only (matching Rust)
+        double min, max;
+        if (nonOutliers.Count > 0)
+        {
+            min = nonOutliers[0];
+            max = nonOutliers[nonOutliers.Count - 1];
+        }
+        else
+        {
+            // Fallback if all values are outliers
+            min = values[0];
+            max = values[n - 1];
+        }
 
         return new Stats
         {
@@ -323,7 +408,8 @@ class Program
             Median = median,
             Q3 = q3,
             Max = max,
-            Outliers = outliers
+            Outliers = outliers,
+            Samples = samples
         };
     }
 
@@ -343,35 +429,50 @@ class Program
         return sortedValues[lower] * (1.0 - weight) + sortedValues[upper] * weight;
     }
 
-    static async Task<Stats> RunMeasurement(dynamic localPeer, ILogger<Program> logger, Multiaddress targetAddr,
+    static async Task<Stats> RunMeasurement(ILocalPeer localPeer, ILogger<Program> logger, Multiaddress targetAddr,
         ulong uploadBytes, ulong downloadBytes, int iterations, string measurementType)
     {
         var values = new List<double>();
 
         logger.LogInformation("Running {Type} test ({Iterations} iterations)...", measurementType, iterations);
 
+        // Establish a session (connection) to the remote peer once
+        ISession? session = null;
+
         for (int i = 0; i < iterations; i++)
         {
-            // Reset counters for this iteration
             PerfProtocol.BytesToSend = uploadBytes;
             PerfProtocol.BytesToReceive = downloadBytes;
-            PerfProtocol.ActualBytesSent = 0;
-            PerfProtocol.ActualBytesReceived = 0;
 
-            var start = DateTime.UtcNow;
+            var sw = Stopwatch.StartNew();
 
             try
             {
-                // Dial the protocol directly for each iteration
-                await localPeer.DialAsync<PerfProtocol>(targetAddr);
+                // Establish session if not yet connected or if previous session was disconnected
+                if (session == null)
+                {
+                    logger.LogInformation("Dialing target address (raw): '{Raw}', protocols: {Count}",
+                        targetAddr.ToString(), targetAddr.Protocols?.Count() ?? 0);
+                    
+                    session = await localPeer.DialAsync(targetAddr);
+                    logger.LogInformation("Session established to {Addr}", session.RemoteAddress);
+                }
+
+                // Dial the perf protocol on the session (opens a new stream)
+                await session.DialAsync<PerfProtocol>();
             }
             catch (Exception ex)
             {
-                logger.LogWarning("Iteration {Iter} failed: {Message}", i + 1, ex.Message);
+                logger.LogWarning("Iteration {Iter} failed: {Message}\nFull Exception: {Ex}", 
+                    i + 1, ex.Message, ex.ToString());
+                // Reset session so we reconnect on next iteration
+                try { if (session != null) await session.DisconnectAsync(); } catch { }
+                session = null;
                 continue; // Skip this iteration
             }
 
-            var elapsed = (DateTime.UtcNow - start).TotalSeconds;
+            sw.Stop();
+            var elapsed = sw.Elapsed.TotalSeconds;
 
             // Calculate throughput (Gbps) or latency (seconds)
             double value;
