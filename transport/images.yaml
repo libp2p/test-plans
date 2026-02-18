@@ -40,9 +40,9 @@ implementations:
   - id: leanp2p
     source:
       type: github
-      repo: bismuth01/leanp2p
-      commit: c026347b07bc5a1e64293d3523135b576e7f8316
-      dockerfile: test-plans/ping/Dockerfile
+      repo: qdrvm/leanp2p
+      commit: 344c66e46780944d24117d0014da1cfe2b5fc8c4
+      dockerfile: test-plans/transport_interop/Dockerfile
     transports: [quic-v1]
     secureChannels: []
     muxers: []
