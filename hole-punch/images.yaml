@@ -31,9 +31,9 @@ relays:
       type: local
       path: images/python/v0.5
       dockerfile: Dockerfile.relay
-    transports: [tcp]
-    secureChannels: [noise]
-    muxers: [yamux]
+    transports: [quic-v1, tcp, ws]
+    secureChannels: [noise, tls]
+    muxers: [yamux, mplex]
 
 # Implementation definitions
 implementations:
@@ -51,6 +51,6 @@ implementations:
       type: local
       path: images/python/v0.5
       dockerfile: Dockerfile.peer
-    transports: [tcp]
-    secureChannels: [noise]
-    muxers: [yamux]
+    transports: [quic-v1, tcp, ws]
+    secureChannels: [noise, tls]
+    muxers: [yamux, mplex]
