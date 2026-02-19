@@ -36,6 +36,17 @@ test-aliases:
     value: "~browsers|~go|~nim|~jvm|~c|~zig|~eth-p2p|rust-v0.53|rust-v0.54|rust-v0.55"
 
 implementations:
+  # Leanp2p implementations
+  - id: leanp2p
+    source:
+      type: github
+      repo: qdrvm/leanp2p
+      commit: 344c66e46780944d24117d0014da1cfe2b5fc8c4
+      dockerfile: test-plans/transport_interop/Dockerfile
+    transports: [quic-v1]
+    secureChannels: []
+    muxers: []
+    
   # Rust implementations
   - id: rust-v0.53
     source:
