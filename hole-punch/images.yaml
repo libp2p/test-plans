@@ -26,6 +26,15 @@ relays:
     secureChannels: [noise, tls]
     muxers: [yamux, mplex]
 
+  - id: py-v0.5
+    source:
+      type: local
+      path: images/python/v0.5
+      dockerfile: Dockerfile.relay
+    transports: [quic-v1, tcp, ws]
+    secureChannels: [noise, tls]
+    muxers: [yamux, mplex]
+
 # Implementation definitions
 implementations:
   - id: rust-v0.56
@@ -34,5 +43,14 @@ implementations:
       path: images/rust/v0.56
       dockerfile: Dockerfile.peer
     transports: [quic-v1, tcp, webrtc-direct, ws]
+    secureChannels: [noise, tls]
+    muxers: [yamux, mplex]
+
+  - id: py-v0.5
+    source:
+      type: local
+      path: images/python/v0.5
+      dockerfile: Dockerfile.peer
+    transports: [quic-v1, tcp, ws]
     secureChannels: [noise, tls]
     muxers: [yamux, mplex]
