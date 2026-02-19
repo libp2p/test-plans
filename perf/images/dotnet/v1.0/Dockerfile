@@ -16,6 +16,18 @@ RUN dotnet publish -c Release -o /app/publish --no-restore \
 # Runtime stage (slim image with only the .NET runtime)
 FROM mcr.microsoft.com/dotnet/runtime:9.0
 
+# Install libmsquic for QUIC transport support
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends wget && \
+    wget https://packages.microsoft.com/config/debian/12/packages-microsoft-prod.deb -O packages-microsoft-prod.deb && \
+    dpkg -i packages-microsoft-prod.deb && \
+    rm packages-microsoft-prod.deb && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends libmsquic && \
+    apt-get purge -y wget && \
+    apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/*
+
 # Create a non-root user (matches common host UID/GID for volume mounts)
 ARG UID=1000
 ARG GID=1000

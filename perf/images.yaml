@@ -94,5 +94,5 @@ implementations:
       dockerfile: Dockerfile
     transports: [tcp, quic-v1]
     secureChannels: [noise, tls]
-    muxers: [yamux, mplex]
+    muxers: [yamux]
 
