@@ -190,7 +190,7 @@ function buildSpec(containerImages: { [key: string]: () => string }, { name, dia
                 environment: {
                     version: dialerID,
                     transport,
-                    is_dialer: true,
+                    is_dialer: "true",
                     ip: "0.0.0.0",
                     ...(!!muxer && { muxer }),
                     ...(!!security && { security }),
@@ -206,7 +206,7 @@ function buildSpec(containerImages: { [key: string]: () => string }, { name, dia
                 environment: {
                     version: listenerID,
                     transport,
-                    is_dialer: false,
+                    is_dialer: "false",
                     ip: "0.0.0.0",
                     ...(!!muxer && { muxer }),
                     ...(!!security && { security }),
