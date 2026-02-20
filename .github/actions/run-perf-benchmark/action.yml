@@ -1,5 +1,5 @@
-name: "libp2p perf benchmark test"
-description: "Run the libp2p perf benchmark test suite"
+name: "libp2p ping interop test"
+description: "Run the libp2p ping interoperability test suite"
 inputs:
   test-filter:
     description: "Filter which tests to run, only these implementations will be run"
