@@ -9,7 +9,9 @@ test-aliases:
   - alias: "none"
     value: "!~all"
   - alias: "images"
-    value: "dotnet-v1.0|go-v0.45|js-v3.x|rust-v0.56"
+    value: "dotnet-v1.0|go-v0.45|js-v3.x|python-v0.x|rust-v0.56"
+  - alias: "python"
+    value: "python-v0.x"
   - alias: "baselines"
     value: "https|quic-go|iperf"
   - alias: "go"
@@ -20,7 +22,7 @@ test-aliases:
     value: "js-v3.x"
   - alias: "dotnet"
     value: "dotnet-v1.0"
-  - alias: "failing" # as of 20 Jan 2026
+  - alias: "failing" # as of 29 Jan 2026
     value: "go-v0.45|js-v3.x|dotnet-v1.0|rust-v0.56 x rust-v0.56 (webrtc-direct)"
 
 # Baseline implementations - Separate from main tests
@@ -96,3 +98,22 @@ implementations:
     secureChannels: [noise, tls]
     muxers: [yamux, mplex]
 
+  # Python implementation (github snapshot; Dockerfile uses repo-root context like interop/transport)
+  - id: python-v0.x
+    source:
+      type: github
+      repo: libp2p/py-libp2p
+      commit: 5eded13c516380ba42aa5432a437ff7b228454cc 
+      dockerfile: interop/perf/Dockerfile
+    transports: [quic-v1, tcp, ws]
+    secureChannels: [noise, tls]
+    muxers: [yamux, mplex]
+  # Local python config (same Dockerfile; context = repo root = images/python/v0.x/py-libp2p)
+  # - id: python-v0.x
+  #   source:
+  #     type: local
+  #     path: images/python/v0.x/py-libp2p
+  #     dockerfile: interop/perf/Dockerfile
+  #   transports: [quic-v1, tcp, ws]
+  #   secureChannels: [noise, tls]
+  #   muxers: [yamux, mplex]
