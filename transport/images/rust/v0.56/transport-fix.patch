@@ -1,32 +1,14 @@
 diff --git a/interop-tests/Dockerfile.chromium b/interop-tests/Dockerfile.chromium
-index 73a9ab82e..749b51334 100644
+index 73a9ab8..92e268a 100644
 --- a/interop-tests/Dockerfile.chromium
 +++ b/interop-tests/Dockerfile.chromium
-@@ -1,9 +1,9 @@
- # syntax=docker/dockerfile:1.5-labs
--FROM rust:1.83 as chef
-+FROM rust:1.92 AS chef
+@@ -1,4 +1,3 @@
+-# syntax=docker/dockerfile:1.5-labs
+ FROM rust:1.83 as chef
  RUN rustup target add wasm32-unknown-unknown
--RUN wget -q -O- https://github.com/rustwasm/wasm-pack/releases/download/v0.12.1/wasm-pack-v0.12.1-x86_64-unknown-linux-musl.tar.gz | tar -zx -C /usr/local/bin --strip-components 1 --wildcards "wasm-pack-*/wasm-pack"
--RUN wget -q -O- https://github.com/WebAssembly/binaryen/releases/download/version_115/binaryen-version_115-x86_64-linux.tar.gz | tar -zx -C /usr/local/bin --strip-components 2 --wildcards "binaryen-version_*/bin/wasm-opt"
--RUN wget -q -O- https://github.com/LukeMathWalker/cargo-chef/releases/download/v0.1.62/cargo-chef-x86_64-unknown-linux-gnu.tar.gz | tar -zx -C /usr/local/bin
-+RUN wget -q -O- https://github.com/drager/wasm-pack/releases/download/v0.13.1/wasm-pack-v0.13.1-x86_64-unknown-linux-musl.tar.gz | tar -zx -C /usr/local/bin --strip-components 1 --wildcards "wasm-pack-*/wasm-pack"
-+RUN wget -q -O- https://github.com/WebAssembly/binaryen/releases/download/version_125/binaryen-version_125-x86_64-linux.tar.gz | tar -zx -C /usr/local/bin --strip-components 2 --wildcards "binaryen-version_*/bin/wasm-opt"
-+RUN wget -q -O- https://github.com/LukeMathWalker/cargo-chef/releases/download/v0.1.73/cargo-chef-x86_64-unknown-linux-musl.tar.gz | tar -zx -C /usr/local/bin
- WORKDIR /app
- 
- FROM chef AS planner
-@@ -20,7 +20,7 @@ COPY . .
- RUN wasm-pack build --target web interop-tests
- RUN RUSTFLAGS='-C target-feature=+crt-static' cargo build --release --package interop-tests --target x86_64-unknown-linux-gnu --bin wasm_ping
- 
--FROM selenium/standalone-chrome:125.0
-+FROM selenium/standalone-chrome:143.0-20251212
- COPY --from=builder /app/target/x86_64-unknown-linux-gnu/release/wasm_ping /usr/local/bin/testplan
- ENV RUST_BACKTRACE=1
- ENTRYPOINT ["testplan"]
+ RUN wget -q -O- https://github.com/rustwasm/wasm-pack/releases/download/v0.12.1/wasm-pack-v0.12.1-x86_64-unknown-linux-musl.tar.gz | tar -zx -C /usr/local/bin --strip-components 1 --wildcards "wasm-pack-*/wasm-pack"
 diff --git a/interop-tests/Dockerfile.native b/interop-tests/Dockerfile.native
-index fab50dc50..644d3c874 100644
+index fab50dc..644d3c8 100644
 --- a/interop-tests/Dockerfile.native
 +++ b/interop-tests/Dockerfile.native
 @@ -1,5 +1,4 @@
@@ -46,10 +28,29 @@ index fab50dc50..644d3c874 100644
  ENV RUST_BACKTRACE=1
  ENTRYPOINT ["testplan"]
 diff --git a/interop-tests/src/arch.rs b/interop-tests/src/arch.rs
-index 88c4c5767..c13d47375 100644
+index 88c4c57..008397c 100644
 --- a/interop-tests/src/arch.rs
 +++ b/interop-tests/src/arch.rs
-@@ -39,11 +39,11 @@ pub(crate) mod native {
+@@ -26,9 +26,16 @@ pub(crate) mod native {
+ 
+     pub(crate) type Instant = std::time::Instant;
+ 
+-    pub(crate) fn init_logger() {
++    pub(crate) fn init_logger(debug: bool) {
++        // If DEBUG=true, enable debug logging for libp2p components
++        let filter = if debug {
++            EnvFilter::try_new("debug,libp2p=debug,libp2p_tls=debug,libp2p_noise=debug,libp2p_tcp=debug,libp2p_websocket=debug,libp2p_quic=debug,libp2p_swarm=debug,libp2p_core=debug,interop_tests=debug")
++                .unwrap_or_else(|_| EnvFilter::from_default_env())
++        } else {
++            EnvFilter::from_default_env()
++        };
+         let _ = tracing_subscriber::fmt()
+-            .with_env_filter(EnvFilter::from_default_env())
++            .with_env_filter(filter)
+             .try_init();
+     }
+ 
+@@ -39,11 +46,11 @@ pub(crate) mod native {
      pub(crate) async fn build_swarm<B: NetworkBehaviour>(
          ip: &str,
          transport: Transport,
@@ -63,7 +64,24 @@ index 88c4c5767..c13d47375 100644
              (Transport::QuicV1, None, None) => (
                  libp2p::SwarmBuilder::with_new_identity()
                      .with_tokio()
-@@ -207,11 +207,11 @@ pub(crate) mod wasm {
+@@ -195,9 +202,14 @@ pub(crate) mod wasm {
+ 
+     pub(crate) type Instant = web_time::Instant;
+ 
+-    pub(crate) fn init_logger() {
++    pub(crate) fn init_logger(debug: bool) {
+         console_error_panic_hook::set_once();
+-        wasm_logger::init(wasm_logger::Config::default());
++        let config = if debug {
++            wasm_logger::Config::new(log::Level::Debug)
++        } else {
++            wasm_logger::Config::default()
++        };
++        wasm_logger::init(config);
+     }
+ 
+     pub(crate) fn sleep(duration: Duration) -> BoxFuture<'static, ()> {
+@@ -207,11 +219,11 @@ pub(crate) mod wasm {
      pub(crate) async fn build_swarm<B: NetworkBehaviour>(
          ip: &str,
          transport: Transport,
@@ -78,10 +96,10 @@ index 88c4c5767..c13d47375 100644
                  libp2p::SwarmBuilder::with_new_identity()
                      .with_wasm_bindgen()
 diff --git a/interop-tests/src/bin/config/mod.rs b/interop-tests/src/bin/config/mod.rs
-index dff297ef4..578490864 100644
+index dff297e..6009159 100644
 --- a/interop-tests/src/bin/config/mod.rs
 +++ b/interop-tests/src/bin/config/mod.rs
-@@ -5,40 +5,43 @@ use anyhow::{Context, Result};
+@@ -5,40 +5,48 @@ use anyhow::{Context, Result};
  #[derive(Debug, Clone)]
  pub(crate) struct Config {
      pub(crate) transport: String,
@@ -92,6 +110,7 @@ index dff297ef4..578490864 100644
 +    pub(crate) listener_ip: String,
      pub(crate) is_dialer: bool,
 -    pub(crate) test_timeout: u64,
++    pub(crate) test_timeout_secs: u64,
      pub(crate) redis_addr: String,
 +    pub(crate) debug: bool,
 +    pub(crate) test_key: String,
@@ -113,8 +132,9 @@ index dff297ef4..578490864 100644
              .unwrap_or_else(|_| "true".into())
              .parse::<bool>()?;
 -        let test_timeout = env::var("test_timeout_seconds")
--            .unwrap_or_else(|_| "180".into())
--            .parse::<u64>()?;
++        let test_timeout_secs = env::var("TEST_TIMEOUT_SECS")
+             .unwrap_or_else(|_| "180".into())
+             .parse::<u64>()?;
 -        let redis_addr = env::var("redis_addr")
 +        let redis_addr = env::var("REDIS_ADDR")
              .map(|addr| format!("redis://{addr}"))
@@ -134,17 +154,18 @@ index dff297ef4..578490864 100644
 +            listener_ip,
              is_dialer,
 -            test_timeout,
++            test_timeout_secs,
              redis_addr,
 +            debug,
-+            test_key
++            test_key,
          })
      }
  }
 diff --git a/interop-tests/src/bin/native_ping.rs b/interop-tests/src/bin/native_ping.rs
-index 2fb6ce12e..486dddbbd 100644
+index 2fb6ce1..f8dd24e 100644
 --- a/interop-tests/src/bin/native_ping.rs
 +++ b/interop-tests/src/bin/native_ping.rs
-@@ -8,16 +8,20 @@ async fn main() -> Result<()> {
+@@ -8,16 +8,21 @@ async fn main() -> Result<()> {
  
      let report = interop_tests::run_test(
          &config.transport,
@@ -152,6 +173,7 @@ index 2fb6ce12e..486dddbbd 100644
 +        &config.listener_ip,
          config.is_dialer,
 -        config.test_timeout,
++        config.test_timeout_secs,
          &config.redis_addr,
 -        config.sec_protocol,
 +        config.secure_channel,
@@ -170,7 +192,7 @@ index 2fb6ce12e..486dddbbd 100644
      Ok(())
  }
 diff --git a/interop-tests/src/bin/wasm_ping.rs b/interop-tests/src/bin/wasm_ping.rs
-index 7730b8694..f9ea7bce9 100644
+index 7730b86..dc27ece 100644
 --- a/interop-tests/src/bin/wasm_ping.rs
 +++ b/interop-tests/src/bin/wasm_ping.rs
 @@ -50,7 +50,7 @@ async fn main() -> Result<()> {
@@ -178,7 +200,7 @@ index 7730b8694..f9ea7bce9 100644
      // read env variables
      let config = config::Config::from_env()?;
 -    let test_timeout = Duration::from_secs(config.test_timeout);
-+    let test_timeout = Duration::from_secs(300);
++    let test_timeout = Duration::from_secs(config.test_timeout_secs);
  
      // create a redis client
      let redis_client =
@@ -196,7 +218,7 @@ index 7730b8694..f9ea7bce9 100644
          Err(error) => bail!("Tests failed: {error}"),
      }
  
-@@ -181,15 +186,16 @@ async fn post_results(
+@@ -181,15 +186,17 @@ async fn post_results(
  async fn serve_index_html(state: State<TestState>) -> Result<impl IntoResponse, StatusCode> {
      let config::Config {
          transport,
@@ -205,6 +227,7 @@ index 7730b8694..f9ea7bce9 100644
          is_dialer,
 -        test_timeout,
 -        sec_protocol,
++        test_timeout_secs,
 +        secure_channel,
          muxer,
 +        debug,
@@ -217,7 +240,7 @@ index 7730b8694..f9ea7bce9 100644
          .map(|p| format!(r#""{p}""#))
          .unwrap_or("null".to_owned());
      let muxer = muxer
-@@ -212,12 +218,13 @@ async fn serve_index_html(state: State<TestState>) -> Result<impl IntoResponse,
+@@ -212,12 +219,14 @@ async fn serve_index_html(state: State<TestState>) -> Result<impl IntoResponse,
                  // run our entrypoint with params from the env
                  await run_test_wasm(
                      "{transport}",
@@ -225,6 +248,7 @@ index 7730b8694..f9ea7bce9 100644
 +                    "{listener_ip}",
                      {is_dialer},
 -                    "{test_timeout}",
++                    "{test_timeout_secs}",
                      "{BIND_ADDR}",
 -                    {sec_protocol},
 -                    {muxer}
@@ -236,10 +260,10 @@ index 7730b8694..f9ea7bce9 100644
              </script>
          </head>
 diff --git a/interop-tests/src/lib.rs b/interop-tests/src/lib.rs
-index a16dc4b82..6a9c6a9d5 100644
+index a16dc4b..f603a2d 100644
 --- a/interop-tests/src/lib.rs
 +++ b/interop-tests/src/lib.rs
-@@ -18,37 +18,38 @@ use arch::{build_swarm, init_logger, Instant, RedisClient};
+@@ -18,37 +18,40 @@ use arch::{build_swarm, init_logger, Instant, RedisClient};
  
  pub async fn run_test(
      transport: &str,
@@ -247,16 +271,19 @@ index a16dc4b82..6a9c6a9d5 100644
 +    listener_ip: &str,
      is_dialer: bool,
 -    test_timeout_seconds: u64,
++    test_timeout_secs: u64,
      redis_addr: &str,
 -    sec_protocol: Option<String>,
 +    secure_channel: Option<String>,
      muxer: Option<String>,
-+    _debug: bool,
++    debug: bool,
 +    test_key: &str,
  ) -> Result<Report> {
-     init_logger();
+-    init_logger();
++    init_logger(debug);
  
 -    let test_timeout = Duration::from_secs(test_timeout_seconds);
++    let test_timeout = Duration::from_secs(test_timeout_secs);
      let transport = transport.parse().context("Couldn't parse transport")?;
 -    let sec_protocol = sec_protocol
 -        .map(|sec_protocol| {
@@ -289,18 +316,16 @@ index a16dc4b82..6a9c6a9d5 100644
  
      tracing::info!(local_peer=%swarm.local_peer_id(), "Running ping test");
  
-@@ -67,8 +68,9 @@ pub async fn run_test(
-     // `dialerDone` key ready on the redis connection.
+@@ -68,7 +71,7 @@ pub async fn run_test(
      match is_dialer {
          true => {
-+
              let result: Vec<String> = redis_client
 -                .blpop("listenerAddr", test_timeout.as_secs())
-+                .blpop(&redis_key, 300)
++                .blpop(&redis_key, test_timeout.as_secs())
                  .await?;
              let other = result
                  .get(1)
-@@ -92,8 +94,8 @@ pub async fn run_test(
+@@ -92,8 +95,8 @@ pub async fn run_test(
  
              let handshake_plus_ping = handshake_start.elapsed().as_micros() as f32 / 1000.;
              Ok(Report {
@@ -311,7 +336,7 @@ index a16dc4b82..6a9c6a9d5 100644
              })
          }
          false => {
-@@ -120,7 +122,7 @@ pub async fn run_test(
+@@ -120,7 +123,7 @@ pub async fn run_test(
                      }
                      if listener_id == id {
                          let ma = format!("{address}/p2p/{}", swarm.local_peer_id());
@@ -320,23 +345,14 @@ index a16dc4b82..6a9c6a9d5 100644
                          break;
                      }
                  }
-@@ -136,7 +138,7 @@ pub async fn run_test(
-                     }
-                 }
-                 .boxed(),
--                arch::sleep(test_timeout),
-+                arch::sleep(Duration::from_secs(300)),
-             )
-             .await;
- 
-@@ -150,21 +152,23 @@ pub async fn run_test(
+@@ -150,21 +153,25 @@ pub async fn run_test(
  #[wasm_bindgen]
  pub async fn run_test_wasm(
      transport: &str,
 -    ip: &str,
 +    listener_ip: &str,
      is_dialer: bool,
--    test_timeout_secs: u64,
+     test_timeout_secs: u64,
      base_url: &str,
 -    sec_protocol: Option<String>,
 +    secure_channel: Option<String>,
@@ -349,7 +365,7 @@ index a16dc4b82..6a9c6a9d5 100644
 -        ip,
 +        listener_ip,
          is_dialer,
--        test_timeout_secs,
+         test_timeout_secs,
          base_url,
 -        sec_protocol,
 +        secure_channel,
@@ -359,7 +375,7 @@ index a16dc4b82..6a9c6a9d5 100644
      )
      .await;
      tracing::info!(?result, "Sending test result");
-@@ -190,10 +194,8 @@ pub struct BlpopRequest {
+@@ -190,10 +197,8 @@ pub struct BlpopRequest {
  /// A report generated by the test
  #[derive(Copy, Clone, Debug, serde::Serialize, serde::Deserialize)]
  pub struct Report {
