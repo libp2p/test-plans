@@ -77,6 +77,12 @@ save_docker_images_for_tests() {
     done
   fi
 
+  # If any test uses legacy containers, include the Redis proxy image
+  if yq eval '.tests[] | select(.dialer.legacy == true or .listener.legacy == true) | .id' \
+      "$snapshot_dir/test-matrix.yaml" 2>/dev/null | grep -q .; then
+    unique_images["libp2p-redis-proxy"]=1
+  fi
+
   # Count total images to save
   local total_images=${#unique_images[@]}
     local current_image=0

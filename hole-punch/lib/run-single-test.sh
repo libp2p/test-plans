@@ -7,6 +7,8 @@ export LOG_FILE
 
 source "${SCRIPT_LIB_DIR}/lib-output-formatting.sh"
 source "${SCRIPT_LIB_DIR}/lib-test-caching.sh"
+source "${SCRIPT_LIB_DIR}/lib-generate-tests.sh"
+source "${SCRIPT_LIB_DIR}/lib-test-execution.sh"
 
 TEST_INDEX="${1}"
 TEST_PASS="${2:-tests}"  # "tests" (no baselines in transport)
@@ -26,6 +28,13 @@ SECURE_CHANNEL_NAME=$(yq eval ".${TEST_PASS}[${TEST_INDEX}].secureChannel" "${TE
 MUXER_NAME=$(yq eval ".${TEST_PASS}[${TEST_INDEX}].muxer" "${TEST_PASS_DIR}/test-matrix.yaml")
 TEST_NAME=$(yq eval ".${TEST_PASS}[${TEST_INDEX}].id" "${TEST_PASS_DIR}/test-matrix.yaml")
 
+DIALER_LEGACY=$(yq eval ".${TEST_PASS}[${TEST_INDEX}].dialer.legacy // \"false\"" "${TEST_PASS_DIR}/test-matrix.yaml")
+LISTENER_LEGACY=$(yq eval ".${TEST_PASS}[${TEST_INDEX}].listener.legacy // \"false\"" "${TEST_PASS_DIR}/test-matrix.yaml")
+IS_LEGACY_TEST="false"
+if [ "${DIALER_LEGACY}" == "true" ] || [ "${LISTENER_LEGACY}" == "true" ]; then
+  IS_LEGACY_TEST="true"
+fi
+
 print_debug "test_name: ${TEST_NAME}"
 print_debug "dialer id: ${DIALER_ID}"
 print_debug "listener id: ${LISTENER_ID}"
@@ -35,6 +44,9 @@ print_debug "listener router id: ${LISTENER_ROUTER_ID}"
 print_debug "transport: ${TRANSPORT_NAME}"
 print_debug "secure: ${SECURE_CHANNEL_NAME}"
 print_debug "muxer: ${MUXER_NAME}"
+print_debug "dialer legacy: ${DIALER_LEGACY}"
+print_debug "listener legacy: ${LISTENER_LEGACY}"
+print_debug "is legacy test: ${IS_LEGACY_TEST}"
 print_debug "debug: ${DEBUG}"
 
 # Compute TEST_KEY for Redis key namespacing (8-char hex hash)
@@ -100,7 +112,17 @@ COMPOSE_FILE="${TEST_PASS_DIR}/docker-compose/${TEST_SLUG}-compose.yaml"
 
 print_debug "docker compose file: ${COMPOSE_FILE}"
 
-# Build environment variables for relay
+# Ensure cleanup runs regardless of how the script exits
+cleanup() {
+  if [ -n "${COMPOSE_FILE:-}" ] && [ -f "${COMPOSE_FILE}" ]; then
+    log_debug "  Cleaning up containers..."
+    # WARNING: Do NOT put quotes around this because the command has two parts
+    ${DOCKER_COMPOSE_CMD} -f "${COMPOSE_FILE}" down --volumes --remove-orphans >> "${LOG_FILE}" 2>&1 || true
+  fi
+}
+trap cleanup EXIT
+
+# Build environment variables for relay (always modern - connects to global Redis)
 RELAY_ENV="      - REDIS_ADDR=hole-punch-redis:6379
       - TEST_KEY=${TEST_KEY}
       - TRANSPORT=${TRANSPORT_NAME}
@@ -121,7 +143,7 @@ if [ "${MUXER_NAME}" != "null" ]; then
       - MUXER=${MUXER_NAME}"
 fi
 
-# Build environment variables for dialer
+# Build environment variables for routers (always modern)
 DIALER_ROUTER_ENV="      - WAN_IP=${DIALER_ROUTER_WAN_IP}
       - WAN_SUBNET=${WAN_SUBNET}
       - LAN_IP=${DIALER_ROUTER_LAN_IP}
@@ -129,7 +151,6 @@ DIALER_ROUTER_ENV="      - WAN_IP=${DIALER_ROUTER_WAN_IP}
       - TEST_KEY=${TEST_KEY}
       - DEBUG=${DEBUG:-false}"
 
-# Build environment variables for listener
 LISTENER_ROUTER_ENV="      - WAN_IP=${LISTENER_ROUTER_WAN_IP}
       - WAN_SUBNET=${WAN_SUBNET}
       - LAN_IP=${LISTENER_ROUTER_LAN_IP}
@@ -137,8 +158,16 @@ LISTENER_ROUTER_ENV="      - WAN_IP=${LISTENER_ROUTER_WAN_IP}
       - TEST_KEY=${TEST_KEY}
       - DEBUG=${DEBUG:-false}"
 
-# Build environment variables for dialer
-DIALER_ENV="      - IS_DIALER=true
+# Build environment variables for dialer (may be legacy or modern)
+if [ "${DIALER_LEGACY}" == "true" ]; then
+  DIALER_ENV=$(generate_legacy_env_vars "true" "proxy-${TEST_KEY}:6379" "${TRANSPORT_NAME}" "${SECURE_CHANNEL_NAME}" "${MUXER_NAME}")
+  # Add hole-punch-specific vars in lowercase
+  DIALER_ENV="${DIALER_ENV}
+      - dialer_ip=${DIALER_IP}
+      - wan_subnet=${WAN_SUBNET}
+      - wan_router_ip=${DIALER_ROUTER_LAN_IP}"
+else
+  DIALER_ENV="      - IS_DIALER=true
       - REDIS_ADDR=hole-punch-redis:6379
       - TEST_KEY=${TEST_KEY}
       - TRANSPORT=${TRANSPORT_NAME}
@@ -146,19 +175,26 @@ DIALER_ENV="      - IS_DIALER=true
       - WAN_SUBNET=${WAN_SUBNET}
       - WAN_ROUTER_IP=${DIALER_ROUTER_LAN_IP}
       - DEBUG=${DEBUG:-false}"
-
-if [ "${SECURE_CHANNEL_NAME}" != "null" ]; then
+  if [ "${SECURE_CHANNEL_NAME}" != "null" ]; then
     DIALER_ENV="${DIALER_ENV}
       - SECURE_CHANNEL=${SECURE_CHANNEL_NAME}"
-fi
-
-if [ "${MUXER_NAME}" != "null" ]; then
+  fi
+  if [ "${MUXER_NAME}" != "null" ]; then
     DIALER_ENV="${DIALER_ENV}
       - MUXER=${MUXER_NAME}"
+  fi
 fi
 
-# Build environment variables for listener
-LISTENER_ENV="      - IS_DIALER=false
+# Build environment variables for listener (may be legacy or modern)
+if [ "${LISTENER_LEGACY}" == "true" ]; then
+  LISTENER_ENV=$(generate_legacy_env_vars "false" "proxy-${TEST_KEY}:6379" "${TRANSPORT_NAME}" "${SECURE_CHANNEL_NAME}" "${MUXER_NAME}")
+  # Add hole-punch-specific vars in lowercase
+  LISTENER_ENV="${LISTENER_ENV}
+      - listener_ip=${LISTENER_IP}
+      - wan_subnet=${WAN_SUBNET}
+      - wan_router_ip=${LISTENER_ROUTER_LAN_IP}"
+else
+  LISTENER_ENV="      - IS_DIALER=false
       - REDIS_ADDR=hole-punch-redis:6379
       - TEST_KEY=${TEST_KEY}
       - TRANSPORT=${TRANSPORT_NAME}
@@ -166,19 +202,167 @@ LISTENER_ENV="      - IS_DIALER=false
       - WAN_SUBNET=${WAN_SUBNET}
       - WAN_ROUTER_IP=${LISTENER_ROUTER_LAN_IP}
       - DEBUG=${DEBUG:-false}"
-
-if [ "${SECURE_CHANNEL_NAME}" != "null" ]; then
+  if [ "${SECURE_CHANNEL_NAME}" != "null" ]; then
     LISTENER_ENV="${LISTENER_ENV}
       - SECURE_CHANNEL=${SECURE_CHANNEL_NAME}"
-fi
-
-if [ "${MUXER_NAME}" != "null" ]; then
+  fi
+  if [ "${MUXER_NAME}" != "null" ]; then
     LISTENER_ENV="${LISTENER_ENV}
       - MUXER=${MUXER_NAME}"
+  fi
 fi
 
 # Generate docker-compose file
-cat > "${COMPOSE_FILE}" <<EOF
+if [ "${IS_LEGACY_TEST}" == "true" ]; then
+  # Legacy test: external shared network + Redis proxy for legacy containers
+  # Relay and routers always connect to global Redis directly
+  cat > "${COMPOSE_FILE}" <<EOF
+name: ${TEST_SLUG}
+
+networks:
+  hole-punch-network:
+    external: true
+  wan:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: ${WAN_SUBNET}
+  lan-dialer:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: ${DIALER_LAN_SUBNET}
+  lan-listener:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: ${LISTENER_LAN_SUBNET}
+
+services:
+  proxy-${TEST_KEY}:
+    image: libp2p-redis-proxy
+    container_name: ${TEST_SLUG}_proxy
+    networks:
+      - hole-punch-network
+    environment:
+      - TEST_KEY=${TEST_KEY}
+      - REDIS_ADDR=hole-punch-redis:6379
+
+  relay:
+    image: ${RELAY_IMAGE}
+    container_name: ${TEST_SLUG}_relay
+    init: true
+    networks:
+      wan:
+        ipv4_address: ${RELAY_IP}
+        interface_name: wan0
+        gw_priority: 1000
+      hole-punch-network:
+        interface_name: redis0
+        gw_priority: 100
+    cap_add:
+      - NET_ADMIN
+    environment:
+${RELAY_ENV}
+
+  dialer-router:
+    image: ${DIALER_ROUTER_IMAGE}
+    container_name: ${TEST_SLUG}_dialer_router
+    init: true
+    networks:
+      wan:
+        ipv4_address: ${DIALER_ROUTER_WAN_IP}
+        interface_name: wan0
+        gw_priority: 1000
+      lan-dialer:
+        ipv4_address: ${DIALER_ROUTER_LAN_IP}
+        interface_name: lan0
+        gw_priority: 100
+    cap_add:
+      - NET_ADMIN
+    sysctls:
+      - net.ipv4.ip_forward=1
+      - net.ipv4.conf.all.forwarding=1
+      - net.ipv4.conf.default.forwarding=1
+      - net.ipv4.conf.all.rp_filter=0
+      - net.ipv4.conf.default.rp_filter=0
+    depends_on:
+      - relay
+    environment:
+${DIALER_ROUTER_ENV}
+
+  listener-router:
+    image: ${LISTENER_ROUTER_IMAGE}
+    container_name: ${TEST_SLUG}_listener_router
+    init: true
+    networks:
+      wan:
+        ipv4_address: ${LISTENER_ROUTER_WAN_IP}
+        interface_name: wan0
+        gw_priority: 1000
+      lan-listener:
+        ipv4_address: ${LISTENER_ROUTER_LAN_IP}
+        interface_name: lan0
+        gw_priority: 100
+    cap_add:
+      - NET_ADMIN
+    sysctls:
+      - net.ipv4.ip_forward=1
+      - net.ipv4.conf.all.forwarding=1
+      - net.ipv4.conf.default.forwarding=1
+      - net.ipv4.conf.all.rp_filter=0
+      - net.ipv4.conf.default.rp_filter=0
+    depends_on:
+      - relay
+    environment:
+${LISTENER_ROUTER_ENV}
+
+  dialer:
+    image: ${DIALER_IMAGE}
+    container_name: ${TEST_SLUG}_dialer
+    init: true
+    networks:
+      lan-dialer:
+        ipv4_address: ${DIALER_IP}
+        interface_name: lan0
+        gw_priority: 1000
+      hole-punch-network:
+        interface_name: redis0
+        gw_priority: 1000
+    cap_add:
+      - NET_ADMIN
+    depends_on:
+      - relay
+      - dialer-router
+      - proxy-${TEST_KEY}
+    environment:
+${DIALER_ENV}
+
+  listener:
+    image: ${LISTENER_IMAGE}
+    container_name: ${TEST_SLUG}_listener
+    init: true
+    networks:
+      lan-listener:
+        ipv4_address: ${LISTENER_IP}
+        interface_name: lan0
+        gw_priority: 1000
+      hole-punch-network:
+        interface_name: redis0
+        gw_priority: 1000
+    cap_add:
+      - NET_ADMIN
+    depends_on:
+      - relay
+      - listener-router
+      - proxy-${TEST_KEY}
+    environment:
+${LISTENER_ENV}
+
+EOF
+else
+  # Modern test: external shared network, no proxy needed
+  cat > "${COMPOSE_FILE}" <<EOF
 name: ${TEST_SLUG}
 
 networks:
@@ -311,6 +495,7 @@ ${DIALER_ENV}
 ${LISTENER_ENV}
 
 EOF
+fi
 
 # Run the test
 log_debug "  Starting containers..."
@@ -349,11 +534,17 @@ TEST_DURATION=$((${TEST_END} - ${TEST_START}))
 # WARNING: Do NOT put quotes around this because the command has two parts
 DIALER_LOGS=$(${DOCKER_COMPOSE_CMD} -f "${COMPOSE_FILE}" logs dialer 2>/dev/null || echo "")
 
-# Extract the results YAML
+# Extract the measurement data from dialer logs
 # Docker compose prefixes each line with: "container_name  | "
-# We need to strip this prefix and keep only the YAML content
-# Match only measurement sections and their fields (not logging output)
-DIALER_YAML=$(echo "${DIALER_LOGS}" | grep -E "dialer.*\| (latency:|  (handshake_plus_one_rtt|ping_rtt|unit):)" | sed 's/^.*| //' || echo "")
+if [ "${DIALER_LEGACY}" == "true" ]; then
+  # Legacy: extract JSON from dialer logs and convert to YAML
+  DIALER_JSON=$(echo "${DIALER_LOGS}" | grep "dialer.*|" | sed 's/^.*| //' | tr -d '\r' | grep -v '^\s*$' | grep -E '^\s*[\[{"]' | tr '\n' ' ') || true
+  DIALER_YAML=$(echo "${DIALER_JSON}" | yq eval -P '.' - 2>/dev/null || echo "")
+else
+  # Normal: extract YAML from dialer logs
+  # Match only measurement sections and their fields (not logging output)
+  DIALER_YAML=$(echo "${DIALER_LOGS}" | grep -E "dialer.*\| (latency:|  (handshake_plus_one_rtt|ping_rtt|unit):)" | sed 's/^.*| //' || echo "")
+fi
 
 # Save complete result to individual file
 cat > "${TEST_PASS_DIR}/results/${TEST_NAME}.yaml" <<EOF
@@ -394,11 +585,6 @@ INDENTED_YAML=$(echo "${DIALER_YAML}" | sed 's/^/    /')
 ${INDENTED_YAML}
 EOF
 ) 200>/tmp/results.lock
-
-# Cleanup
-log_debug "  Cleaning up containers..."
-# WARNING: Do NOT put quotes around this because the command has two parts
-${DOCKER_COMPOSE_CMD} -f "${COMPOSE_FILE}" down --volumes --remove-orphans >> "${LOG_FILE}" 2>&1 || true
 
 exit "${EXIT_CODE}"
 
