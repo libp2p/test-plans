@@ -47,14 +47,3 @@ dist
 
 # ignore system files
 .DS_Store
-
-# ignore downloads directory
-downloads/
-
-.nvim
-
-# Rust build artifacts
-target/
-
-# the local build cache folder
-**/.cache/

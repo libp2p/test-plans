@@ -28,11 +28,7 @@ def main():
     parser.add_argument(
         "--scenario", type=str, required=False, default="subnet-blob-msg"
     )
-    parser.add_argument("--composition", type=str,
-                        required=False, default="all-go")
-    parser.add_argument("--graph", type=str, choices=["random", "custom"], required=False, default="random")
-    parser.add_argument("--nodes_file", type=str, required=False, default="", help="File containing nodes information for custom graph")
-    parser.add_argument("--edges_file", type=str, required=False, default="", help="File containing edges information for cusotm graph")
+    parser.add_argument("--composition", type=str, required=False, default="all-go")
     parser.add_argument("--output_dir", type=str, required=False)
     args = parser.parse_args()
 
@@ -75,18 +71,12 @@ def main():
         k=args.node_count,
     )
 
-    optional_args = {
-        "nodes_file": args.nodes_file,
-        "edges_file": args.edges_file,
-    }
     # Generate the network graph and the Shadow config for the binaries
     generate_graph(
-        args.graph,
         binary_paths,
         "graph.gml",
         "shadow.yaml",
         params_file_location=os.path.join(os.getcwd(), params_file_name),
-        **optional_args,
     )
 
     if args.dry_run:
