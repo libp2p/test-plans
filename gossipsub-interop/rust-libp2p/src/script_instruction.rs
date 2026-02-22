@@ -4,8 +4,8 @@ use std::fmt::Display;
 use std::{path::Path, time::Duration};
 
 use byteorder::{ByteOrder, LittleEndian};
-use libp2p::gossipsub::ConfigBuilder;
 use libp2p::identity::Keypair;
+use libp2p_gossipsub::ConfigBuilder;
 use serde::{Deserialize, Serialize};
 
 /// NodeID is a unique identifier for a node in the network.
@@ -77,6 +77,7 @@ pub enum ScriptInstruction {
     SubscribeToTopic {
         #[serde(rename = "topicID")]
         topic_id: String,
+        partial: bool,
     },
 
     #[serde(rename = "setTopicValidationDelay", rename_all = "camelCase")]
@@ -89,6 +90,21 @@ pub enum ScriptInstruction {
     #[serde(rename = "initGossipSub", rename_all = "camelCase")]
     InitGossipSub {
         gossip_sub_params: Box<GossipSubParams>,
+    },
+    #[serde(rename = "addPartialMessage", rename_all = "camelCase")]
+    AddPartialMessage {
+        parts: u8,
+        #[serde(rename = "topicID")]
+        topic_id: String,
+        #[serde(rename = "groupID")]
+        group_id: u64,
+    },
+    #[serde(rename = "publishPartial", rename_all = "camelCase")]
+    PublishPartial {
+        #[serde(rename = "topicID")]
+        topic_id: String,
+        #[serde(rename = "groupID")]
+        group_id: u64,
     },
 }
 
@@ -246,7 +262,7 @@ impl From<GossipSubParams> for ConfigBuilder {
             builder.prune_backoff(Duration::from_nanos(prune_backoff as u64));
         }
         if let Some(unsubscribe_backoff) = params.unsubscribe_backoff {
-            builder.unsubscribe_backoff(Duration::from_nanos(unsubscribe_backoff as u64).as_secs());
+            builder.unsubscribe_backoff(Duration::from_nanos(unsubscribe_backoff as u64));
         }
         if let Some(opportunistic_graft_ticks) = params.opportunistic_graft_ticks {
             builder.opportunistic_graft_ticks(opportunistic_graft_ticks);

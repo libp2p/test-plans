@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-from dataclasses import asdict
 import argparse
 import json
 import os
 import random
 import subprocess
-from network_graph import generate_graph
-import experiment
+from dataclasses import asdict
 
+import experiment
 from analyze_message_deliveries import analyse_message_deliveries
+from network_graph import generate_graph
 
 params_file_name = "params.json"
 
@@ -32,6 +32,9 @@ def main():
     parser.add_argument("--output_dir", type=str, required=False)
     args = parser.parse_args()
 
+    shadow_outputs_dir = os.path.join(os.getcwd(), "shadow-outputs")
+    os.makedirs(shadow_outputs_dir, exist_ok=True)
+
     if args.output_dir is None:
         try:
             git_describe = (
@@ -48,6 +51,9 @@ def main():
         args.output_dir = f"{args.scenario}-{args.node_count}-{args.composition}-{
             args.seed
         }-{timestamp}-{git_describe}.data"
+
+    if not os.path.isabs(args.output_dir):
+        args.output_dir = os.path.join(shadow_outputs_dir, args.output_dir)
 
     random.seed(args.seed)
 
@@ -96,7 +102,7 @@ def main():
     link_name = "latest"
     if os.path.islink(link_name) or os.path.exists(link_name):
         os.remove(link_name)
-    os.symlink(os.path.join(os.getcwd(), args.output_dir), link_name)
+    os.symlink(args.output_dir, link_name)
 
     # Analyse message deliveries. Skip the first 4 as warmup messages
     analyse_message_deliveries(args.output_dir, f"{args.output_dir}/plots", 4)

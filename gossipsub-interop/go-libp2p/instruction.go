@@ -40,6 +40,27 @@ type WaitUntilInstruction struct {
 // isInstruction implements the ScriptInstruction interface
 func (WaitUntilInstruction) isInstruction() {}
 
+type AddPartialMessage struct {
+	Type    string `json:"type"`
+	TopicID string `json:"topicID"`
+	GroupID int    `json:"groupID"`
+	Parts   int    `json:"parts"`
+}
+
+// isInstruction implements the ScriptInstruction interface
+func (AddPartialMessage) isInstruction() {}
+
+// PublishPartialInstruction represents a partial publish instruction in the script
+type PublishPartialInstruction struct {
+	Type             string `json:"type"`
+	TopicID          string `json:"topicID"`
+	GroupID          int    `json:"groupID"`
+	PublishToNodeIDs []int  `json:"publishToNodeIDs"`
+}
+
+// isInstruction implements the ScriptInstruction interface
+func (PublishPartialInstruction) isInstruction() {}
+
 // PublishInstruction represents a publish instruction in the script
 type PublishInstruction struct {
 	Type             string `json:"type"`
@@ -55,6 +76,7 @@ func (PublishInstruction) isInstruction() {}
 type SubscribeToTopicInstruction struct {
 	Type    string `json:"type"`
 	TopicID string `json:"topicID"`
+	Partial bool   `json:"partial"`
 }
 
 // isInstruction implements the ScriptInstruction interface
@@ -143,6 +165,18 @@ func UnmarshalScriptInstruction(data []byte) (ScriptInstruction, error) {
 
 	case "setTopicValidationDelay":
 		var instruction SetTopicValidationDelayInstruction
+		if err := json.Unmarshal(data, &instruction); err != nil {
+			return nil, err
+		}
+		return instruction, nil
+	case "addPartialMessage":
+		var instruction AddPartialMessage
+		if err := json.Unmarshal(data, &instruction); err != nil {
+			return nil, err
+		}
+		return instruction, nil
+	case "publishPartial":
+		var instruction PublishPartialInstruction
 		if err := json.Unmarshal(data, &instruction); err != nil {
 			return nil, err
 		}

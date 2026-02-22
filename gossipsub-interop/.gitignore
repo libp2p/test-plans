@@ -1,5 +1,7 @@
 *.swp
 /shadow.data
+shadow-outputs/*
+latest
 synctest*.data
 /shadow.yaml
 /graph.gml

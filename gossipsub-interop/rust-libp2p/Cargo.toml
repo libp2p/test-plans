@@ -4,17 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-libp2p = { version = "0.55.0", features = [
-    "gossipsub",
-    "dns",
-    "tcp",
-    "tokio",
-    "noise",
-    "macros",
-    "websocket",
-    "identify",
-    "yamux",
-] }
 tokio = { version = "1.33.0", features = ["full"] }
 futures = "0.3.28"
 tracing = "0.1.37"
@@ -34,3 +23,25 @@ byteorder = "1.4.3"
 hostname = "0.3.1"
 ed25519-dalek = "1.0.1"
 thiserror = "2.0.12"
+
+[dependencies.libp2p]
+features = [
+    "dns",
+    "tcp",
+    "tokio",
+    "noise",
+    "macros",
+    "websocket",
+    "identify",
+    "yamux",
+]
+# version = "0.56.0"
+git = "https://github.com/jxs/rust-libp2p/"
+branch = "gossipsub-partial-messages"
+# path = "../../../rust-libp2p/libp2p"
+
+[dependencies.libp2p-gossipsub]
+git = "https://github.com/jxs/rust-libp2p/"
+branch = "gossipsub-partial-messages"
+# path = "../../../rust-libp2p/protocols/gossipsub"
+features = ["partial_messages"]

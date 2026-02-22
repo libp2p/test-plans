@@ -1,14 +1,15 @@
 use byteorder::{BigEndian, ByteOrder};
 use futures::channel::mpsc;
 use futures::{SinkExt, StreamExt};
-use libp2p::gossipsub::{self, IdentTopic};
 use libp2p::swarm::{NetworkBehaviour, SwarmEvent};
 use libp2p::{identify, Swarm};
+use libp2p_gossipsub::{self as gossipsub, partial_messages::Partial, IdentTopic};
 use slog::{error, info, Logger};
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 use tokio::time::sleep;
 
+use crate::bitmap::Bitmap;
 use crate::connector;
 use crate::script_instruction::{ExperimentParams, NodeID, ScriptInstruction};
 
@@ -39,6 +40,7 @@ pub struct ScriptedNode {
     topics: HashMap<String, IdentTopic>,
     topic_validation_delays: HashMap<String, Duration>,
     start_time: Instant,
+    partials: HashMap<String, HashMap<[u8; 8], Bitmap>>,
 }
 
 impl ScriptedNode {
@@ -61,6 +63,7 @@ impl ScriptedNode {
             start_time,
             gossipsub_validation_rx,
             gossipsub_validation_tx,
+            partials: HashMap::new(),
         }
     }
 
@@ -141,40 +144,95 @@ impl ScriptedNode {
                             }
                             event = self.swarm.select_next_some() => {
                                 // Process any messages that arrive during sleep
-                                if let SwarmEvent::Behaviour(MyBehaviorEvent::Gossipsub(gossipsub::Event::Message {
-                                    propagation_source: peer_id,
-                                    message_id,
-                                    message,
-                                })) = event {
-                                    let topic = message.topic.into_string();
-                                    if message.data.len() >= 8 {
-                                        info!(self.stdout_logger, "Received Message";
-                                            "topic" => &topic,
-                                            "id" => format_message_id(&message.data),
-                                            "from" => peer_id.to_string());
-                                    }
-                                    // Shadow doesn’t model CPU execution time,
-                                    // instructions execute instantly in the simulations.
-                                    // Usually in lighthouse blob verification takes ~5ms,
-                                    // so calling `thread::sleep` aims at replicating the same behaviour.
-                                    // See https://github.com/shadow/shadow/issues/2060 for more info.
+                                match event {
+                                    SwarmEvent::Behaviour(MyBehaviorEvent::Gossipsub(gossipsub::Event::Message {
+                                        propagation_source: peer_id,
+                                        message_id,
+                                        message,
+                                    })) => {
+                                        let topic = message.topic.into_string();
+                                        if message.data.len() >= 8 {
+                                            info!(self.stdout_logger, "Received Message";
+                                                "topic" => &topic,
+                                                "id" => format_message_id(&message.data),
+                                                "from" => peer_id.to_string());
+                                        }
+                                        // Shadow doesn’t model CPU execution time,
+                                        // instructions execute instantly in the simulations.
+                                        // Usually in lighthouse blob verification takes ~5ms,
+                                        // so calling `thread::sleep` aims at replicating the same behaviour.
+                                        // See https://github.com/shadow/shadow/issues/2060 for more info.
 
-                                    let mut tx = self.gossipsub_validation_tx.clone();
-                                    if let Some(&delay) = self.topic_validation_delays.get(&topic) {
-                                        tokio::spawn(async move {
-                                            sleep(delay).await;
+                                        let mut tx = self.gossipsub_validation_tx.clone();
+                                        if let Some(&delay) = self.topic_validation_delays.get(&topic) {
+                                            tokio::spawn(async move {
+                                                sleep(delay).await;
+                                                tx.send(ValidationResult {
+                                                    peer_id,
+                                                    msg_id: message_id,
+                                                    result: gossipsub::MessageAcceptance::Accept,
+                                                }).await.unwrap();
+                                            });
+                                        } else {
                                             tx.send(ValidationResult {
                                                 peer_id,
                                                 msg_id: message_id,
                                                 result: gossipsub::MessageAcceptance::Accept,
                                             }).await.unwrap();
-                                        });
-                                    } else {
-                                        tx.send(ValidationResult {
-                                            peer_id,
-                                            msg_id: message_id,
-                                            result: gossipsub::MessageAcceptance::Accept,
-                                        }).await.unwrap();
+                                        }
+                                    }
+                                    SwarmEvent::Behaviour(MyBehaviorEvent::Gossipsub(gossipsub::Event::Partial {group_id, topic_hash, peer_id, message, metadata })) => {
+                                        info!(self.stdout_logger, "Received partial message for topic {topic_hash} and group {group_id:?}");
+
+                                        let topic_partials = self
+                                            .partials
+                                            .entry(topic_hash.to_string())
+                                            .or_default();
+                                        let group_id_array: [u8; 8] = group_id
+                                            .as_slice()
+                                            .try_into()
+                                            .map_err(|_| "Invalid group_id length")?;
+                                        let partial = topic_partials
+                                            .entry(group_id_array)
+                                            .or_insert_with(|| Bitmap::new(group_id_array));
+
+                                        let before_extension = partial.metadata();
+                                        if let Some(message) = message {
+                                            if !message.is_empty() {
+                                                info!(self.stderr_logger, "new data len is {}", message.len());
+                                                partial.extend_from_encoded_partial_message(&message)?;
+                                            }
+                                        }
+                                        let after_extension = partial.metadata();
+
+                                        let mut should_republish = false;
+                                        if before_extension != after_extension {
+                                            info!(self.stderr_logger, "Got new data. Will republish. {before_extension:?} {after_extension:?}");
+                                            if after_extension == vec![255] {
+                                                info!(self.stdout_logger, "All parts received";
+                                                    // "topic" => topic_id,
+                                                    // "group_id" => group_id,
+                                                    "from" => peer_id.to_string());
+                                            }
+
+                                            should_republish = true;
+                                        }
+                                        if !should_republish && metadata.as_ref() != Some(&after_extension) {
+                                            info!(self.stderr_logger, "I have something the peer doesn't or vice versa. {metadata:?} {after_extension:?}");
+                                            should_republish = true;
+                                        }
+                                        info!(self.stderr_logger, "I have {:?}", after_extension);
+                                        info!(self.stderr_logger, "Peer has {:?}", metadata);
+
+                                        if should_republish {
+                                            self.swarm
+                                                .behaviour_mut()
+                                                .gossipsub
+                                                .publish_partial(topic_hash, partial.clone())?;
+                                        }
+                                    }
+                                    ev => {
+                                        info!(self.stderr_logger, "Some other event, {:?}", ev)
                                     }
                                 }
                             }
@@ -212,10 +270,15 @@ impl ScriptedNode {
                     }
                 }
             }
-            ScriptInstruction::SubscribeToTopic { topic_id } => {
+            ScriptInstruction::SubscribeToTopic { topic_id, partial } => {
                 let topic = self.get_topic(&topic_id);
 
-                match self.swarm.behaviour_mut().gossipsub.subscribe(&topic) {
+                match self
+                    .swarm
+                    .behaviour_mut()
+                    .gossipsub
+                    .subscribe_partial(&topic, partial)
+                {
                     Ok(_) => {
                         info!(self.stderr_logger, "Subscribed to topic {}", topic_id);
                     }
@@ -243,6 +306,50 @@ impl ScriptedNode {
                     self.stderr_logger,
                     "InitGossipSub instruction already processed"
                 );
+            }
+            ScriptInstruction::AddPartialMessage {
+                parts,
+                topic_id,
+                group_id,
+                ..
+            } => {
+                let topic_partials = self.partials.entry(topic_id).or_default();
+                let group_id = group_id.to_be_bytes();
+                let mut partial = Bitmap::new(group_id);
+                info!(
+                    self.stderr_logger,
+                    "partial message for group {group_id:?} parts {parts:?}"
+                );
+                partial.fill_parts(parts);
+                let avail = partial.metadata();
+                info!(self.stderr_logger, "available parts: {avail:?}");
+                if avail == vec![255] {
+                    info!(self.stdout_logger, "All parts received"; 
+                    "group_id" => format!("{:?}", group_id));
+                }
+                topic_partials.insert(group_id, partial);
+            }
+            ScriptInstruction::PublishPartial {
+                topic_id, group_id, ..
+            } => {
+                let group_id = group_id.to_be_bytes();
+                let topic_partials = self
+                    .partials
+                    .get(&topic_id)
+                    .ok_or(format!("Topic {topic_id} doesn't exist"))?;
+
+                let partial = topic_partials
+                    .get(&group_id)
+                    .ok_or(format!("GroupId {group_id:?} doesn't exist"))?;
+                let topic = IdentTopic::new(topic_id);
+                info!(self.stdout_logger, "Publish Partial called";
+                    "group_id" => format!("{group_id:?}"),
+                    "topic_id" => format!("{topic:?}"),
+                );
+                self.swarm
+                    .behaviour_mut()
+                    .gossipsub
+                    .publish_partial(topic, partial.clone())?;
             }
         }
 
