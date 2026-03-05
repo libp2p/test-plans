@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"log/slog"
+	"slices"
 	"time"
 
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
@@ -80,11 +81,15 @@ func (m *partialMsgManager) run() {
 			m.addMsg(req)
 		case req := <-m.publish:
 			pm := m.partialMessages[req.topic][string(req.groupID)]
-			m.Info("publishing partial message", "groupID", hex.EncodeToString(pm.GroupID()), "topic", req.topic)
-			opts := partialmessages.PublishOptions{
-				PublishToPeers: req.publishToPeers,
+			m.Info("publishing partial message", "groupID", hex.EncodeToString(pm.GroupID()), "topic", req.topic, "peers", req.publishToPeers)
+			if len(req.publishToPeers) > 0 {
+				pm.peersToPublishTo = slices.Values(req.publishToPeers)
 			}
-			m.pubsub.PublishPartialMessage(req.topic, pm, opts)
+			err := pubsub.PublishPartial(m.pubsub, req.topic, pm.groupID[:], pm.PublishActions)
+			pm.peersToPublishTo = nil
+			if err != nil {
+				m.Error("failed to publish partial message", "err", err)
+			}
 		case <-m.done:
 			return
 		}
@@ -115,7 +120,7 @@ func (m *partialMsgManager) handleRPC(rpc incomingPartialRPC) {
 	}
 
 	// Extend first, so we don't request something we just got.
-	beforeExtend := pm.PartsMetadata()[0]
+	beforeExtend := pm.PartsMetadata()
 	if len(rpc.PartialMessage) != 0 {
 		err := pm.Extend(rpc.PartialMessage)
 		if err != nil {
@@ -123,39 +128,18 @@ func (m *partialMsgManager) handleRPC(rpc incomingPartialRPC) {
 			return
 		}
 	}
-	afterExtend := pm.PartsMetadata()[0]
-	var extended bool
+	afterExtend := pm.PartsMetadata()
 	if beforeExtend != afterExtend {
 		m.Info("Extended partial message")
-		extended = true
-
-	}
-
-	gid := binary.BigEndian.Uint64(rpc.GroupID)
-	if extended && pm.complete() {
-		m.Info("All parts received", "group id", gid)
-	}
-
-	pmHas := pm.PartsMetadata()
-	var shouldRequest bool
-	if len(rpc.PartsMetadata) == 1 {
-		shouldRequest = pmHas[0] != rpc.PartsMetadata[0]
-		if shouldRequest {
-			m.Info("Republishing partial message because a peer has something I want")
+		if pm.complete() {
+			gid := binary.BigEndian.Uint64(rpc.GroupID)
+			m.Info("All parts received", "group id", gid)
 		}
 	}
 
-	if extended {
-		// We've extended our set. Let our mesh peers know
-		m.pubsub.PublishPartialMessage(rpc.GetTopicID(), pm, partialmessages.PublishOptions{})
-	}
-
-	if shouldRequest {
-		// This peer has parts we are missing. Request them from the peer
-		// explicitly.
-		m.pubsub.PublishPartialMessage(rpc.GetTopicID(), pm, partialmessages.PublishOptions{
-			PublishToPeers: []peer.ID{rpc.from},
-		})
+	err := pubsub.PublishPartial(m.pubsub, rpc.GetTopicID(), pm.groupID[:], pm.PublishActions)
+	if err != nil {
+		m.Error("failed to publish partial message after handling rpc", "err", err)
 	}
 }
 
@@ -206,20 +190,33 @@ func (n *scriptedNode) runInstruction(ctx context.Context, instruction ScriptIns
 	switch a := instruction.(type) {
 	case InitGossipSubInstruction:
 		slog.SetLogLoggerLevel(slog.LevelDebug)
-		pme := &partialmessages.PartialMessageExtension{
+		pme := &partialmessages.PartialMessagesExtension[peerState]{
 			Logger: slog.Default(),
-			ValidateRPC: func(from peer.ID, rpc *pubsub_pb.PartialMessagesExtension) error {
-				// Not doing any validation for now
-				return nil
-			},
-			OnIncomingRPC: func(from peer.ID, rpc *pubsub_pb.PartialMessagesExtension) error {
+			OnIncomingRPC: func(from peer.ID, peerStates map[peer.ID]peerState, rpc *pubsub_pb.PartialMessagesExtension) error {
+				pState := peerStates[from]
+				if len(rpc.PartsMetadata) > 0 {
+					pState.hasReceivedInitialPartsMetadata = true
+					pState.recvdPartsMetadata |= rpc.PartsMetadata[0]
+				}
+				if len(rpc.PartialMessage) > 0 {
+					partBitmap := rpc.PartialMessage[0]
+					pState.recvdPartsMetadata |= partBitmap
+					pState.sentPartsMetadata |= partBitmap
+				}
+				peerStates[from] = pState
 				n.partialMsgMgr.incomingRPC <- incomingPartialRPC{
 					from:                     from,
 					PartialMessagesExtension: *rpc,
 				}
+
 				return nil
 			},
-			MergePartsMetadata: MergeMetadata,
+			OnEmitGossip: func(topic string, groupID []byte, gossipPeers []peer.ID, peerStates map[peer.ID]peerState) {
+				n.partialMsgMgr.publish <- publishReq{
+					topic:   topic,
+					groupID: groupID,
+				}
+			},
 		}
 
 		psOpts := pubsubOptions(n.slogger, a.GossipSubParams, pme)

@@ -4,25 +4,38 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
+	"iter"
+	"maps"
 	"math/bits"
-	"slices"
 
 	"github.com/libp2p/go-libp2p-pubsub/partialmessages"
+	"github.com/libp2p/go-libp2p/core/peer"
 )
 
 const partLen = 1024
 
+type peerState struct {
+	hasReceivedInitialPartsMetadata bool
+	recvdPartsMetadata              byte
+	hasSentInitialPartsMetadata     bool
+	sentPartsMetadata               byte
+}
+
 type PartialMessage struct {
 	groupID [8]byte
 	parts   [8][]byte // each part is partLen sized or nil if empty
+
+	// peersToPublishTo overrides who we publish to. If unset publishes to
+	// peers gossipsub is tracking.
+	peersToPublishTo iter.Seq[peer.ID]
 }
 
-// PartsMetadata implements partialmessages.PartialMessage.
-func (p *PartialMessage) PartsMetadata() partialmessages.PartsMetadata {
-	out := partialmessages.PartsMetadata{0}
+func (p *PartialMessage) PartsMetadata() byte {
+	var out byte
 	for i := range p.parts {
 		if len(p.parts[i]) > 0 {
-			out[0] |= 1 << i
+			out |= 1 << i
 		}
 	}
 	return out
@@ -35,18 +48,6 @@ func (p *PartialMessage) complete() bool {
 		}
 	}
 	return true
-}
-
-func MergeMetadata(_topic string, left, right partialmessages.PartsMetadata) partialmessages.PartsMetadata {
-	// by convention let the left be the larger one
-	if len(right) > len(left) {
-		left, right = right, left
-	}
-	out := slices.Clone(left)
-	for i := range right {
-		out[i] |= right[i]
-	}
-	return out
 }
 
 // FillParts is used to initialize this PartialMessage for testing by filling in
@@ -110,15 +111,11 @@ func (p *PartialMessage) Extend(data []byte) error {
 }
 
 // PartialMessageBytes implements partialmessages.PartialMessage.
-func (p *PartialMessage) PartialMessageBytes(metadata partialmessages.PartsMetadata) ([]byte, error) {
-	if len(metadata) != 1 {
-		return nil, errors.New("invalid metadata length")
-	}
-
-	out := make([]byte, 0, 1+1024*(bits.OnesCount8(metadata[0]))+len(p.groupID))
+func (p *PartialMessage) PartialMessageBytes(peerParts byte) ([]byte, error) {
+	out := make([]byte, 0, 1+1024*(bits.OnesCount8(peerParts))+len(p.groupID))
 	out = append(out, 0) // This byte will contain the parts we are including in the message
 	for i, a := range p.parts {
-		if metadata[0]&(1<<i) != 0 {
+		if peerParts&(1<<i) != 0 {
 			// They already have this part
 			continue
 		}
@@ -135,4 +132,48 @@ func (p *PartialMessage) PartialMessageBytes(metadata partialmessages.PartsMetad
 	return out, nil
 }
 
-var _ partialmessages.Message = (*PartialMessage)(nil)
+func (p *PartialMessage) PublishActions(peerStates map[peer.ID]peerState, peerRequestsPartial func(peer.ID) bool) iter.Seq2[peer.ID, partialmessages.PublishAction] {
+	return func(yield func(peer.ID, partialmessages.PublishAction) bool) {
+		peersToPublishTo := p.peersToPublishTo
+		if peersToPublishTo == nil {
+			peersToPublishTo = maps.Keys(peerStates)
+		}
+
+		for peer := range peersToPublishTo {
+			fmt.Println("xxxxxxxxpublishing to", peer)
+			pState := peerStates[peer]
+			myParts := p.PartsMetadata()
+			var action partialmessages.PublishAction
+			fmt.Println("peer state", pState, peerRequestsPartial(peer), (myParts & ^pState.recvdPartsMetadata))
+			if peerRequestsPartial(peer) && pState.hasReceivedInitialPartsMetadata && (myParts & ^pState.recvdPartsMetadata) != 0 {
+				action.EncodedPartialMessage, action.Err = p.PartialMessageBytes(pState.recvdPartsMetadata)
+				fmt.Println("action", action)
+				if action.Err != nil {
+					if !yield(peer, action) {
+						return
+					}
+					continue
+				}
+				// They can infer we have these parts from the message we are sending
+				pState.sentPartsMetadata |= myParts
+				// We can infer they have these parts from the message we are sending
+				pState.recvdPartsMetadata |= myParts
+			}
+			if !pState.hasSentInitialPartsMetadata || (myParts & ^pState.sentPartsMetadata) != 0 {
+				pState.hasSentInitialPartsMetadata = true
+				// We are checking if myParts is not a subset of
+				// sentPartsMetadata. If it isn't we should send them an update.
+				pState.sentPartsMetadata |= myParts
+				action.EncodedPartsMetadata = []byte{pState.sentPartsMetadata}
+			}
+
+			// Persist our state update
+			peerStates[peer] = pState
+			if !yield(peer, action) {
+				return
+			}
+		}
+	}
+}
+
+var _ partialmessages.PublishActionsFn[peerState] = (*PartialMessage)(nil).PublishActions
