@@ -76,6 +76,24 @@ After implementing it, make sure to add build commands in the Makefile's `binari
 
 Finally, add it to the `composition` function in `experiment.py`.
 
+## Examples
+
+Minimal test of partial messages
+
+```bash
+uv run run.py --node_count 2 --composition "all-go" --scenario "partial-messages" && uv run checks/partial_messages.py latest/
+```
+
+That command runs the shadow simulation and then verifies the stdout logs have the expected message.
+
+## Tests
+
+```bash
+make test
+```
+
+This runs various shadow simulations and checks.
+
 ## Future work (contributions welcome)
 
 - Add more scenarios.
