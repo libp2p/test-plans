@@ -1,0 +1,24 @@
+name: Build JS
+
+on:
+  push:
+    branches: [master, publish-images]
+    paths:
+      - "transport-interop/impl/js/**"
+      - ".github/workflows/js.yml"
+      - ".github/workflows/build-and-publish.yml"
+      - ".github/scripts/compute-cache-key.mjs"
+  pull_request:
+    branches: [master]
+    paths:
+      - "transport-interop/impl/js/**"
+      - ".github/workflows/js.yml"
+      - ".github/workflows/build-and-publish.yml"
+      - ".github/scripts/compute-cache-key.mjs"
+  workflow_dispatch:
+
+jobs:
+  build:
+    uses: ./.github/workflows/build-and-publish.yml
+    with:
+      implementation: js
