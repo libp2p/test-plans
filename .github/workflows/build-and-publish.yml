@@ -1,0 +1,112 @@
+name: Build and Publish Implementation Images
+
+on:
+  workflow_dispatch:
+    inputs:
+      implementation:
+        description: 'Implementation family (e.g. go, js, rust)'
+        required: true
+        type: string
+  workflow_call:
+    inputs:
+      implementation:
+        description: 'Implementation family (e.g. go, js, rust)'
+        required: true
+        type: string
+
+env:
+  REGISTRY: ghcr.io
+
+defaults:
+  run:
+    working-directory: transport-interop
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    outputs:
+      versions: ${{ steps.list.outputs.versions }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: list
+        run: |
+          versions=$(ls -d impl/${{ inputs.implementation }}/*/ 2>/dev/null | xargs -I{} basename {} | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          echo "versions=$versions" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: discover
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ${{ fromJson(needs.discover.outputs.versions) }}
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Compute cache key
+        id: cache-key
+        run: |
+          key=$(node ../.github/scripts/compute-cache-key.mjs "${{ inputs.implementation }}" "${{ matrix.version }}")
+          echo "key=$key" >> "$GITHUB_OUTPUT"
+
+      - name: Check if image already exists in GHCR
+        id: check-cache
+        run: |
+          image="${{ env.REGISTRY }}/${{ github.repository }}/${{ inputs.implementation }}-${{ matrix.version }}:${{ steps.cache-key.outputs.key }}"
+          if docker manifest inspect "$image" > /dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Image already exists: $image"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "Image not found, will build: $image"
+          fi
+
+      - name: Build images
+        if: steps.check-cache.outputs.exists == 'false'
+        run: make -C "impl/${{ inputs.implementation }}/${{ matrix.version }}"
+
+      - name: Tag and push images to GHCR
+        if: steps.check-cache.outputs.exists == 'false'
+        run: |
+          impl="${{ inputs.implementation }}"
+          version="${{ matrix.version }}"
+          cache_key="${{ steps.cache-key.outputs.key }}"
+          repo="${{ env.REGISTRY }}/${{ github.repository }}"
+
+          for image_file in impl/${impl}/${version}/*image.json; do
+            [ -f "$image_file" ] || continue
+
+            filename=$(basename "$image_file")
+            # Strip -image.json suffix to get the prefix (e.g. "chromium-image.json" -> "chromium")
+            # For "image.json" itself, strip ".json" then check if remainder is "image"
+            if [ "$filename" = "image.json" ]; then
+              prefix=""
+            else
+              prefix="${filename%-image.json}"
+            fi
+
+            image_id=$(jq -r .imageID "$image_file")
+
+            if [ -z "$prefix" ]; then
+              tag="${repo}/${impl}-${version}:${cache_key}"
+            else
+              tag="${repo}/${impl}-${version}-${prefix}:${cache_key}"
+            fi
+
+            echo "Tagging $image_id as $tag"
+            docker tag "$image_id" "$tag"
+            docker push "$tag"
+          done
