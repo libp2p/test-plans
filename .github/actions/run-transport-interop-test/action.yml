@@ -41,6 +41,18 @@ inputs:
     description: "How many workers to use for the test"
     required: false
     default: "2"
+  shard-count:
+    description: "Total number of shards"
+    required: false
+    default: "1"
+  shard-index:
+    description: "0-based shard index"
+    required: false
+    default: "0"
+  render:
+    description: "Whether to render results after testing"
+    required: false
+    default: "true"
   timeout:
     description: "How many seconds to let each test run for"
     required: false
@@ -100,6 +112,8 @@ runs:
         NAME_IGNORE: ${{ inputs.test-ignore }}
         TIMEOUT: ${{ inputs.timeout }}
         VERBOSE: ${{ inputs.verbose }}
+        SHARD_COUNT: ${{ inputs.shard-count }}
+        SHARD_INDEX: ${{ inputs.shard-index }}
       run: npm run test -- --extra-version=$EXTRA_VERSION --name-filter="$NAME_FILTER" --name-ignore="$NAME_IGNORE" --verbose="$VERBOSE"
       shell: bash
 
@@ -109,16 +123,19 @@ runs:
       shell: bash
 
     - name: Render results
+      if: inputs.render == 'true'
       working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
       run: npm run renderResults > ./dashboard.md
       shell: bash
 
     - name: Show Dashboard Output
+      if: inputs.render == 'true'
       working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
       run: cat ./dashboard.md >> $GITHUB_STEP_SUMMARY
       shell: bash
 
     - name: Exit with Error
+      if: inputs.render == 'true'
       working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
       run: |
         if grep -q ":red_circle:" ./dashboard.md; then
@@ -128,7 +145,7 @@ runs:
         fi
       shell: bash
     - name: Upload test results
-      if: ${{ inputs.upload-results == 'true' }}
+      if: inputs.upload-results == 'true'
       uses: actions/upload-artifact@v4
       with:
         name: ${{ inputs.test-results-suffix && format('test-plans-output-{0}', inputs.test-results-suffix) || 'test-plans-output' }}
