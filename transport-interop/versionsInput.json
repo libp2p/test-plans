@@ -1,6 +1,7 @@
 [
   {
     "id": "python-v0.4",
+    "containerImageID": "ghcr.io/libp2p/test-plans/python-v0.4",
     "transports": [
       "tcp",
       "ws",
@@ -16,6 +17,7 @@
   },
   {
     "id": "rust-v0.53",
+    "containerImageID": "ghcr.io/libp2p/test-plans/rust-v0.53",
     "transports": [
       "ws",
       "tcp",
@@ -33,6 +35,7 @@
   },
   {
     "id": "rust-v0.54",
+    "containerImageID": "ghcr.io/libp2p/test-plans/rust-v0.54",
     "transports": [
       "ws",
       "tcp",
@@ -50,6 +53,7 @@
   },
   {
     "id": "rust-v0.55",
+    "containerImageID": "ghcr.io/libp2p/test-plans/rust-v0.55",
     "transports": [
       "ws",
       "tcp",
@@ -67,6 +71,7 @@
   },
   {
     "id": "rust-v0.56",
+    "containerImageID": "ghcr.io/libp2p/test-plans/rust-v0.56",
     "transports": [
       "ws",
       "tcp",
@@ -84,6 +89,7 @@
   },
   {
     "id": "chromium-rust-v0.53",
+    "containerImageID": "ghcr.io/libp2p/test-plans/chromium-rust-v0.53",
     "transports": [
       {
         "name": "webtransport",
@@ -108,6 +114,7 @@
   },
   {
     "id": "chromium-rust-v0.54",
+    "containerImageID": "ghcr.io/libp2p/test-plans/chromium-rust-v0.54",
     "transports": [
       {
         "name": "webtransport",
@@ -132,7 +139,7 @@
   },
   {
     "id": "chromium-js-v1.x",
-    "containerImageID": "browser",
+    "containerImageID": "ghcr.io/libp2p/test-plans/js-v1.x-chromium",
     "transports": [
       {
         "name": "webtransport",
@@ -158,7 +165,7 @@
   },
   {
     "id": "chromium-js-v2.x",
-    "containerImageID": "browser",
+    "containerImageID": "ghcr.io/libp2p/test-plans/js-v2.x-chromium",
     "transports": [
       {
         "name": "webtransport",
@@ -184,7 +191,7 @@
   },
   {
     "id": "firefox-js-v1.x",
-    "containerImageID": "browser",
+    "containerImageID": "ghcr.io/libp2p/test-plans/js-v1.x-firefox",
     "transports": [
       {
         "name": "webtransport",
@@ -210,7 +217,7 @@
   },
   {
     "id": "firefox-js-v2.x",
-    "containerImageID": "browser",
+    "containerImageID": "ghcr.io/libp2p/test-plans/js-v2.x-firefox",
     "transports": [
       {
         "name": "webtransport",
@@ -236,7 +243,7 @@
   },
   {
     "id": "webkit-js-v1.x",
-    "containerImageID": "browser",
+    "containerImageID": "ghcr.io/libp2p/test-plans/js-v1.x-webkit",
     "transports": [
       {
         "name": "wss",
@@ -258,7 +265,7 @@
   },
   {
     "id": "webkit-js-v2.x",
-    "containerImageID": "browser",
+    "containerImageID": "ghcr.io/libp2p/test-plans/js-v2.x-webkit",
     "transports": [
       {
         "name": "wss",
@@ -280,6 +287,7 @@
   },
   {
     "id": "nim-v1.14",
+    "containerImageID": "ghcr.io/libp2p/test-plans/nim-v1.14",
     "transports": [
       "tcp",
       "ws"
@@ -294,6 +302,7 @@
   },
   {
     "id": "js-v1.x",
+    "containerImageID": "ghcr.io/libp2p/test-plans/js-v1.x",
     "transports": [
       "tcp",
       "ws",
@@ -312,6 +321,7 @@
   },
   {
     "id": "js-v2.x",
+    "containerImageID": "ghcr.io/libp2p/test-plans/js-v2.x",
     "transports": [
       "tcp",
       "ws",
@@ -330,6 +340,7 @@
   },
   {
     "id": "js-v3.x",
+    "containerImageID": "ghcr.io/libp2p/test-plans/js-v3.x",
     "transports": [
       "tcp",
       "ws",
@@ -348,6 +359,7 @@
   },
   {
     "id": "go-v0.45",
+    "containerImageID": "ghcr.io/libp2p/test-plans/go-v0.45",
     "transports": [
       "tcp",
       "ws",
@@ -366,6 +378,7 @@
   },
   {
     "id": "go-v0.46",
+    "containerImageID": "ghcr.io/libp2p/test-plans/go-v0.46",
     "transports": [
       "tcp",
       "ws",
@@ -384,6 +397,7 @@
   },
   {
     "id": "go-v0.47",
+    "containerImageID": "ghcr.io/libp2p/test-plans/go-v0.47",
     "transports": [
       "tcp",
       "ws",
@@ -402,6 +416,7 @@
   },
   {
     "id": "jvm-v1.2",
+    "containerImageID": "ghcr.io/libp2p/test-plans/jvm-v1.2",
     "transports": [
       "tcp",
       "ws",
@@ -418,6 +433,7 @@
   },
   {
     "id": "c-v0.0.1",
+    "containerImageID": "ghcr.io/libp2p/test-plans/c-v0.0.1",
     "transports": [
       "tcp",
       "quic-v1"
@@ -432,6 +448,7 @@
   },
   {
     "id": "dotnet-v1.0",
+    "containerImageID": "ghcr.io/libp2p/test-plans/dotnet-v1.0",
     "transports": [
       "tcp"
     ],
@@ -444,6 +461,7 @@
   },
   {
     "id": "eth-p2p-z-v0.0.1",
+    "containerImageID": "ghcr.io/libp2p/test-plans/eth-p2p-z-v0.0.1",
     "transports": [
       "quic-v1"
     ],
