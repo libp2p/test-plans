@@ -1,0 +1,51 @@
+name: Build Implementation Images
+
+on:
+  push:
+    branches: [master, publish-images]
+    paths:
+      - "transport-interop/impl/**"
+      - ".github/workflows/build-implementations.yml"
+      - ".github/workflows/build-and-publish.yml"
+      - ".github/scripts/compute-cache-key.mjs"
+  pull_request:
+    branches: [master]
+    paths:
+      - "transport-interop/impl/**"
+      - ".github/workflows/build-implementations.yml"
+      - ".github/workflows/build-and-publish.yml"
+      - ".github/scripts/compute-cache-key.mjs"
+  workflow_dispatch:
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    outputs:
+      implementations: ${{ steps.detect.outputs.implementations }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: detect
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            # Build all implementations on manual trigger
+            impls=$(ls -d transport-interop/impl/*/ | xargs -I{} basename {} | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
+            impls=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- transport-interop/impl/ | sed 's|transport-interop/impl/\([^/]*\)/.*|\1|' | sort -u | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          else
+            impls=$(git diff --name-only HEAD~1 -- transport-interop/impl/ | sed 's|transport-interop/impl/\([^/]*\)/.*|\1|' | sort -u | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          fi
+          echo "implementations=$impls" >> "$GITHUB_OUTPUT"
+          echo "Will build: $impls"
+
+  build:
+    needs: discover
+    if: needs.discover.outputs.implementations != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        implementation: ${{ fromJson(needs.discover.outputs.implementations) }}
+    uses: ./.github/workflows/build-and-publish.yml
+    with:
+      implementation: ${{ matrix.implementation }}
