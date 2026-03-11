@@ -21,22 +21,6 @@ inputs:
     description: "Space-separated paths to JSON files describing additional images"
     required: false
     default: ""
-  s3-cache-bucket:
-    description: "Which S3 bucket to use for container layer caching"
-    required: false
-    default: ""
-  s3-access-key-id:
-    description: "S3 Access key id for the cache"
-    required: false
-    default: ""
-  s3-secret-access-key:
-    description: "S3 secret key id for the cache"
-    required: false
-    default: ""
-  aws-region:
-    description: "Which AWS region to use"
-    required: false
-    default: "us-east-1"
   worker-count:
     description: "How many workers to use for the test"
     required: false
@@ -63,12 +47,6 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Configure AWS credentials for S3 build cache
-      if: inputs.s3-access-key-id != '' && inputs.s3-secret-access-key != ''
-      run: |
-        echo "PUSH_CACHE=true" >> $GITHUB_ENV
-      shell: bash
-
     # This depends on where this file is within this repository. This walks up
     # from here to the transport-interop folder
     - run: |
