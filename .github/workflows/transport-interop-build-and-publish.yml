@@ -65,7 +65,7 @@ jobs:
       - name: Check if image already exists in GHCR
         id: check-cache
         run: |
-          image="${{ env.REGISTRY }}/${{ github.repository }}/${{ inputs.implementation }}-${{ matrix.version }}:${{ steps.cache-key.outputs.key }}"
+          image="${{ env.REGISTRY }}/${{ github.repository }}/transport-interop/${{ inputs.implementation }}-${{ matrix.version }}:${{ steps.cache-key.outputs.key }}"
           if docker manifest inspect "$image" > /dev/null 2>&1; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
             echo "Image already exists: $image"
@@ -84,7 +84,7 @@ jobs:
           impl="${{ inputs.implementation }}"
           version="${{ matrix.version }}"
           cache_key="${{ steps.cache-key.outputs.key }}"
-          repo="${{ env.REGISTRY }}/${{ github.repository }}"
+          repo="${{ env.REGISTRY }}/${{ github.repository }}/transport-interop"
 
           for image_file in impl/${impl}/${version}/*image.json; do
             [ -f "$image_file" ] || continue

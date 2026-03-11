@@ -6,14 +6,14 @@ on:
     paths:
       - "transport-interop/impl/**"
       - ".github/workflows/build-implementations.yml"
-      - ".github/workflows/build-and-publish.yml"
+      - ".github/workflows/transport-interop-build-and-publish.yml"
       - ".github/scripts/compute-cache-key.mjs"
   pull_request:
     branches: [master]
     paths:
       - "transport-interop/impl/**"
       - ".github/workflows/build-implementations.yml"
-      - ".github/workflows/build-and-publish.yml"
+      - ".github/workflows/transport-interop-build-and-publish.yml"
       - ".github/scripts/compute-cache-key.mjs"
   workflow_dispatch:
 
@@ -46,6 +46,6 @@ jobs:
       fail-fast: false
       matrix:
         implementation: ${{ fromJson(needs.discover.outputs.implementations) }}
-    uses: ./.github/workflows/build-and-publish.yml
+    uses: ./.github/workflows/transport-interop-build-and-publish.yml
     with:
       implementation: ${{ matrix.implementation }}
