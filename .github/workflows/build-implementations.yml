@@ -2,7 +2,7 @@ name: Build Implementation Images
 
 on:
   push:
-    branches: [master]
+    branches: [master, publish-images]
     paths:
       - "transport-interop/impl/**"
       - ".github/workflows/build-implementations.yml"
