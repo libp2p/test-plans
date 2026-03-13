@@ -93,6 +93,23 @@ import path from "path";
 
     let testSpecs = await buildTestSpecs(versions.concat(extraVersions), nameFilter, nameIgnore, verbose)
 
+    // Sharding support
+    const rawShardCount = process.env.SHARD_COUNT
+    const rawShardIndex = process.env.SHARD_INDEX
+    if ((rawShardCount && !rawShardIndex) || (!rawShardCount && rawShardIndex)) {
+        throw new Error("Both SHARD_COUNT and SHARD_INDEX must be set, or neither")
+    }
+    if (rawShardCount && rawShardIndex) {
+        const shardCount = parseInt(rawShardCount)
+        const shardIndex = parseInt(rawShardIndex)
+        if (isNaN(shardCount) || isNaN(shardIndex) || shardCount < 1 || shardIndex < 0 || shardIndex >= shardCount) {
+            throw new Error(`Invalid shard config: SHARD_COUNT=${rawShardCount}, SHARD_INDEX=${rawShardIndex}`)
+        }
+        testSpecs.sort((a, b) => (a.name || "").localeCompare(b.name || ""))
+        testSpecs = testSpecs.filter((_, i) => i % shardCount === shardIndex)
+        console.log(`Running shard ${shardIndex + 1}/${shardCount}: ${testSpecs.length} tests`)
+    }
+
     if (argv["emit-only"]) {
         for (const testSpec of testSpecs) {
             console.log("## " + testSpec.name)

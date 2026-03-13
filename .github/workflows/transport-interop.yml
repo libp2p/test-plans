@@ -15,27 +15,71 @@ name: libp2p transport interop test
 
 jobs:
   run-transport-interop:
-    runs-on: [self-hosted, linux, x64, ephemeral]
+    # runs-on: [self-hosted, linux, x64, ephemeral]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3]
     steps:
       - name: Install deps
-        run: apt-get update && apt-get install -y unzip python3 python3-setuptools build-essential
+        run: sudo apt-get update && sudo apt-get install -y unzip python3 python3-setuptools build-essential
       - uses: actions/checkout@v3
       - uses: ./.github/actions/run-transport-interop-test
         with:
-          # s3-cache-bucket: ${{ vars.S3_LIBP2P_BUILD_CACHE_BUCKET_NAME }}
-          # s3-access-key-id: ${{ vars.S3_LIBP2P_BUILD_CACHE_AWS_ACCESS_KEY_ID }}
-          # s3-secret-access-key: ${{ secrets.S3_LIBP2P_BUILD_CACHE_AWS_SECRET_ACCESS_KEY }}
           worker-count: 16
           test-ignore: "jvm-v1.2 x zig-v0.0.1 (quic-v1)|zig-v0.0.1 x jvm-v1.2 (quic-v1)|rust-chromium-v0.53 x jvm-v1.2 (ws)|js-v1.x x jvm-v1.2 (ws, noise, yamux)|js-v1.x x jvm-v1.2 (ws, noise, mplex)|rust-chromium-v0.53 x jvm-v1.2 (ws, noise, mplex)"
-  # build-without-secrets:
-  #   runs-on: [self-hosted, linux, x64, ephemeral]
-  #   steps:
-  #     - name: Install unzip
-  #       run: sudo apt-get update && sudo apt-get install -y unzip
-  #     - uses: actions/checkout@v3
-  #     # Purposely not using secrets to replicate how forks will behave.
-  #     - uses: ./.github/actions/run-transport-interop-test
-  #       with:
-  #         # It's okay to not run the tests, we only care to check if the tests build without cache.
-  #         upload-results: false
-  #         test-filter: '"no test matches this, skip all"'
+          shard-count: "4"
+          shard-index: ${{ matrix.shard }}
+          render: "false"
+          test-results-suffix: shard-${{ matrix.shard }}
+
+  combine-results:
+    needs: run-transport-interop
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+      - name: Install deps
+        working-directory: transport-interop
+        run: npm ci
+      - name: Download all shard artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: test-plans-output-shard-*
+          path: shards
+      - name: Combine results
+        working-directory: transport-interop
+        run: |
+          # Take header from the first shard's results.csv
+          head -1 ../shards/test-plans-output-shard-0/results.csv > results.csv
+          # Append data rows from all shards
+          for f in ../shards/test-plans-output-shard-*/results.csv; do
+            tail -n +2 "$f" >> results.csv
+          done
+          echo "Combined $(wc -l < results.csv) lines into results.csv"
+        shell: bash
+      - name: Render results
+        working-directory: transport-interop
+        run: npm run renderResults > ./dashboard.md
+      - name: Show Dashboard Output
+        working-directory: transport-interop
+        run: cat ./dashboard.md >> $GITHUB_STEP_SUMMARY
+      - name: Exit with Error
+        working-directory: transport-interop
+        run: |
+          if grep -q ":red_circle:" ./dashboard.md; then
+            exit 1
+          else
+            exit 0
+          fi
+      - name: Upload combined results
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-plans-output
+          path: |
+            transport-interop/results.csv
+            transport-interop/dashboard.md
