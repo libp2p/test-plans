@@ -5,8 +5,7 @@
     "main": "testplans.ts",
     "scripts": {
         "test": "ts-node src/compose-stdout-helper.ts && ts-node testplans.ts",
-        "renderResults": "ts-node renderResults.ts",
-        "cache": "ts-node helpers/cache.ts"
+        "renderResults": "ts-node renderResults.ts"
     },
     "author": "marcopolo",
     "license": "MIT",
