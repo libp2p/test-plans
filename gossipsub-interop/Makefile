@@ -4,6 +4,7 @@ all: binaries
 binaries:
 	cd go-libp2p && go build -linkshared -o gossipsub-bin
 	cd rust-libp2p && cargo build
+	cd jvm-libp2p && ./gradlew installDist
 
 # Clean all generated shadow simulation files
 clean:
