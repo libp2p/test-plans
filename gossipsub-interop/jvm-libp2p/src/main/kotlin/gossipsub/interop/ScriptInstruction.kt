@@ -30,7 +30,7 @@ data class Connect(val connectTo: List<Int>) : ScriptInstruction
 data class IfNodeIDEquals(val nodeID: Int, val instruction: ScriptInstruction) : ScriptInstruction
 data class WaitUntil(val elapsedSeconds: Int) : ScriptInstruction
 data class Publish(val messageID: Int, val messageSizeBytes: Int, val topicID: String) : ScriptInstruction
-data class SubscribeToTopic(val topicID: String) : ScriptInstruction
+data class SubscribeToTopic(val topicID: String, val partial: Boolean = false) : ScriptInstruction
 data class SetTopicValidationDelay(val topicID: String, val delaySeconds: Double) : ScriptInstruction
 data class InitGossipSub(val gossipSubParams: GossipSubParamsJson) : ScriptInstruction
 
