@@ -1,12 +1,32 @@
+import fs from 'fs'
 import { generateTable, load, makeDefaultCellRender, markdownTable } from './src/lib'
 
-function parseKnownErrors(): Set<string> {
+function loadKnownErrorsFile(): RegExp | null {
+    if (process.argv.includes("--ignore-known-errors-file")) {
+        return null
+    }
+    const path = __dirname + "/knownErrors.json"
+    if (!fs.existsSync(path)) {
+        return null
+    }
+    const patterns: string[] = JSON.parse(fs.readFileSync(path, "utf8"))
+    if (patterns.length === 0) {
+        return null
+    }
+    return new RegExp(patterns.join("|"))
+}
+
+function parseKnownErrors(): RegExp | null {
     const flagIndex = process.argv.indexOf("--known-errors")
     if (flagIndex === -1 || flagIndex + 1 >= process.argv.length) {
-        return new Set()
+        return loadKnownErrorsFile()
     }
-    const names = process.argv[flagIndex + 1].split(";").map(s => s.trim()).filter(Boolean)
-    return new Set(names)
+    const flagPattern = process.argv[flagIndex + 1]
+    const fileRegex = loadKnownErrorsFile()
+    if (fileRegex === null) {
+        return new RegExp(flagPattern)
+    }
+    return new RegExp(`${fileRegex.source}|${flagPattern}`)
 }
 
 // Read results.csv
@@ -50,7 +70,7 @@ export async function render() {
 
     // Known errors that now pass
     const knownErrorsPassing = parsedRuns
-        .filter(r => r.outcome === "success" && knownErrors.has(r.name))
+        .filter(r => r.outcome === "success" && knownErrors !== null && knownErrors.test(r.name))
         .map(r => r.name)
 
     if (knownErrorsPassing.length > 0) {
@@ -63,20 +83,13 @@ export async function render() {
         outMd += "\n"
     }
 
-    // Build the flag value: all current failures + any known errors that are still failing
-    const allKnownErrorNames = new Set([
-        ...allFailures,
-        ...Array.from(knownErrors).filter(name => {
-            // Keep previously known errors that are still in the results and failing
-            return allFailures.includes(name)
-        }),
-    ])
-
-    if (allKnownErrorNames.size > 0) {
+    if (allFailures.length > 0) {
+        const escapedNames = allFailures.map(name => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+        const regex = `^(${escapedNames.join("|")})$`
         outMd += `## Mark all errors as known\n\n`
         outMd += `To mark all current errors as known, pass the following flag:\n\n`
         outMd += "```\n"
-        outMd += `--known-errors "${Array.from(allKnownErrorNames).join(";")}"\n`
+        outMd += `--known-errors "${regex}"\n`
         outMd += "```\n"
     }
 

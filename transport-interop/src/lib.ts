@@ -24,12 +24,12 @@ export type CellRender = (a: string, b: string, line: ResultLine) => string;
  *
  * This is designed to let future implementers add more complex ouput interpretation, with nested tables, etc.
  */
-export const makeDefaultCellRender = (knownErrors: Set<string> = new Set()): CellRender => (a, b, line) => {
+export const makeDefaultCellRender = (knownErrors: RegExp | null = null): CellRender => (a, b, line) => {
   let result = ":red_circle:";
 
   if (line.outcome === "success") {
     result = ":green_circle:";
-  } else if (knownErrors.has(line.name)) {
+  } else if (knownErrors !== null && knownErrors.test(line.name)) {
     result = ":yellow_circle:";
   }
 

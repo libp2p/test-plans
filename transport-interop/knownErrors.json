@@ -1,0 +1,12 @@
+[
+  "rust.*\\(webrtc-direct\\)",
+  "^chromium-rust",
+  "jvm-v1\\.2",
+  "c-v0\\.0\\.1",
+  "^dotnet-v1\\.0 x js",
+  "^firefox-js.+\\(webtransport\\)",
+  "^go-v0\\.47 x go-v0\\.4[56] \\(webtransport\\)",
+  "^chromium-js-v1\\.x x go-v0\\.47 \\(webtransport\\)",
+  "^chromium-js-v2\\.x x (chromium-js-v1\\.x|webkit-js-v2\\.x) \\(webrtc\\)",
+  "^chromium-js-v2\\.x x go-v0\\.45 \\(wss, noise, yamux\\)"
+]
