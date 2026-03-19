@@ -1,8 +1,12 @@
 on:
   workflow_dispatch:
+  workflow_run:
+    workflows: ["Transport Interop - Build Implementation Images"]
+    types: [completed]
   pull_request:
     paths:
       - "transport-interop/**"
+      - "!transport-interop/impl/**"
       - ".github/actions/run-transport-interop-test/action.yml"
       - ".github/workflows/transport-interop.yml"
   push:
@@ -10,6 +14,7 @@ on:
       - "master"
     paths:
       - "transport-interop/**"
+      - "!transport-interop/impl/**"
 
 name: libp2p transport interop test
 
