@@ -358,25 +358,6 @@
     ]
   },
   {
-    "id": "go-v0.45",
-    "containerImageID": "ghcr.io/libp2p/test-plans/go-v0.45",
-    "transports": [
-      "tcp",
-      "ws",
-      "wss",
-      "quic-v1",
-      "webtransport",
-      "webrtc-direct"
-    ],
-    "secureChannels": [
-      "tls",
-      "noise"
-    ],
-    "muxers": [
-      "yamux"
-    ]
-  },
-  {
     "id": "go-v0.46",
     "containerImageID": "ghcr.io/libp2p/test-plans/transport-interop/go-v0.46",
     "transports": [
@@ -413,6 +394,25 @@
     "muxers": [
       "yamux"
     ]
+  },
+  {
+      "id": "go-v0.48",
+      "containerImageID": "ghcr.io/libp2p/test-plans/transport-interop/go-v0.48",
+      "transports": [
+        "tcp",
+        "ws",
+        "wss",
+        "quic-v1",
+        "webtransport",
+        "webrtc-direct"
+      ],
+      "secureChannels": [
+        "tls",
+        "noise"
+      ],
+      "muxers": [
+        "yamux"
+      ]
   },
   {
     "id": "jvm-v1.2",
