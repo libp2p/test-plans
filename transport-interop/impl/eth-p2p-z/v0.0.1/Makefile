@@ -5,6 +5,7 @@ ZIG_LOG_LEVEL ?= warn
 all: image.json
 
 image.json: eth-p2p-z-${commitSha}
+	cd eth-p2p-z-${commitSha} && patch -p1 <../generic-cpu.patch
 	cd eth-p2p-z-${commitSha} && IMAGE_NAME=${image_name} ../../../../dockerBuildWrapper.sh -f interop/transport/Dockerfile --build-arg ZIG_LOG_LEVEL=$(ZIG_LOG_LEVEL) .
 	docker image inspect ${image_name} -f "{{.Id}}" | \
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@

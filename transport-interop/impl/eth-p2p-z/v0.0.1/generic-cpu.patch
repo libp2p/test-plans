@@ -1,0 +1,25 @@
+From 482d3fe2b1728e5603597d1138a261745bab5134 Mon Sep 17 00:00:00 2001
+From: Marco Munizaga <marco@marcopolo.io>
+Date: Thu, 19 Mar 2026 10:09:38 -0700
+Subject: [PATCH] Build transport interop for generic x86_64 cpu
+
+Without this zig builds the binary tailored for the specific CPU that compiled it, which may include instructions that won't work on older CPUs.
+
+This shows up as an issue in the transport interop tests where one machine builds the docker images, and another runs it. It causes the binary to exit with code 132. Example log: https://github.com/libp2p/test-plans/actions/runs/23261744812/job/67643456062?pr=840#step:4:16608
+---
+ interop/transport/Dockerfile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/interop/transport/Dockerfile b/interop/transport/Dockerfile
+index 2d24488..5cba516 100644
+--- a/interop/transport/Dockerfile
++++ b/interop/transport/Dockerfile
+@@ -36,7 +36,7 @@ WORKDIR /app
+ 
+ COPY . .
+ 
+-RUN zig build -Doptimize=ReleaseFast -Dlibxev-backend=epoll -Dlog-level=${ZIG_LOG_LEVEL}
++RUN zig build -Doptimize=ReleaseFast -Dlibxev-backend=epoll -Dcpu=x86_64 -Dlog-level=${ZIG_LOG_LEVEL}
+ 
+ FROM debian:bookworm-slim AS runtime
+ 
