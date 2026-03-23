@@ -10,5 +10,6 @@
   "^chromium-js-v1\\.x x go-v0\\.47 \\(webtransport\\)",
   "^chromium-js-v2\\.x x (chromium-js-v1\\.x|webkit-js-v2\\.x) \\(webrtc\\)",
   "firefox-js-v2\\.x x webkit-js-v1\\.x \\(webrtc\\)",
-  "^chromium-js-v2\\.x x go-v0\\.45 \\(wss, noise, yamux\\)"
+  "^chromium-js-v2\\.x x go-v0\\.45 \\(wss, noise, yamux\\)",
+  "eth-p2p-z-v0\\.0\\.1"
 ]
