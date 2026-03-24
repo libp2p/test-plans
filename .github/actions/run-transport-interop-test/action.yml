@@ -45,7 +45,7 @@ inputs:
     required: false
     default: false
   known-errors:
-    description: "Regex pattern matching known/expected test failures. Matched failures show as yellow (warning) instead of red (error) and won't fail the workflow."
+    description: "Regex for known test failures. Matched failures show as yellow instead of red and won't fail the workflow. Merged with knownErrors.json if present."
     required: false
     default: ""
 runs:
