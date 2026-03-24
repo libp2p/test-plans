@@ -44,6 +44,10 @@ inputs:
     description: "Enable verbose output"
     required: false
     default: false
+  known-errors:
+    description: "Regex pattern matching known/expected test failures. Matched failures show as yellow (warning) instead of red (error) and won't fail the workflow."
+    required: false
+    default: ""
 runs:
   using: "composite"
   steps:
@@ -103,7 +107,12 @@ runs:
     - name: Render results
       if: inputs.render == 'true'
       working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
-      run: npm run renderResults > ./dashboard.md
+      run: |
+        if [ -n "${{ inputs.known-errors }}" ]; then
+          npm run renderResults -- --known-errors "${{ inputs.known-errors }}" > ./dashboard.md
+        else
+          npm run renderResults > ./dashboard.md
+        fi
       shell: bash
 
     - name: Show Dashboard Output
