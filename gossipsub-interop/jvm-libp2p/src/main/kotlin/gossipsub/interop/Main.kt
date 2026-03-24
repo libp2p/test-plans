@@ -81,4 +81,7 @@ fun main(args: Array<String>) {
 
     // Run the experiment
     runExperiment(startTimeMillis, libp2pHost, gossip, nodeId, params)
+
+    // Exit explicitly since Netty's non-daemon threads would keep the JVM alive
+    System.exit(0)
 }
