@@ -91,7 +91,7 @@ class ScriptedNode(
                 val msg = ByteArray(instruction.messageSizeBytes)
                 ByteBuffer.wrap(msg, 0, 8).putLong(instruction.messageID.toLong())
 
-                val publisher = gossip.createPublisher(null, 0L)
+                val publisher = gossip.createPublisher(null) { null }
                 publisher.publish(msg.toByteBuf(), topic).get(30, TimeUnit.SECONDS)
                 JsonLogger.logStderr("Published message ${instruction.messageID}")
             }
