@@ -91,7 +91,6 @@
   },
   {
     "id": "chromium-rust-v0.53",
-    "timeoutSecs": 1200,
     "containerImageID": "ghcr.io/libp2p/test-plans/transport-interop/chromium-rust-v0.53",
     "transports": [
       {
@@ -117,7 +116,6 @@
   },
   {
     "id": "chromium-rust-v0.54",
-    "timeoutSecs": 1200,
     "containerImageID": "ghcr.io/libp2p/test-plans/transport-interop/chromium-rust-v0.54",
     "transports": [
       {
@@ -143,7 +141,6 @@
   },
   {
     "id": "chromium-js-v1.x",
-    "timeoutSecs": 1200,
     "containerImageID": "ghcr.io/libp2p/test-plans/transport-interop/js-v1.x-chromium",
     "transports": [
       {
@@ -170,7 +167,6 @@
   },
   {
     "id": "chromium-js-v2.x",
-    "timeoutSecs": 1200,
     "containerImageID": "ghcr.io/libp2p/test-plans/transport-interop/js-v2.x-chromium",
     "transports": [
       {
