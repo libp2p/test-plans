@@ -100,8 +100,8 @@ def analyze_results(results_file=None):
             continue
         
         # Determine if Python is involved and which role
-        is_python_dialer = "python-v0.4" in dialer
-        is_python_listener = "python-v0.4" in listener
+        is_python_dialer = "python-v0.x" in dialer
+        is_python_listener = "python-v0.x" in listener
         
         # Get implementation name (the non-Python one, or both if Python vs Python)
         if is_python_dialer and not is_python_listener:
@@ -111,7 +111,7 @@ def analyze_results(results_file=None):
             impl = dialer
             direction = "Python listener"
         elif is_python_dialer and is_python_listener:
-            impl = "python-v0.4"
+            impl = "python-v0.x"
             direction = "Python vs Python"
         else:
             impl = f"{dialer} vs {listener}"
