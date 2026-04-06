@@ -1,14 +1,16 @@
 [
   {
-    "id": "python-v0.4",
-    "containerImageID": "ghcr.io/libp2p/test-plans/transport-interop/python-v0.4",
+    "id": "python-v0.x",
+    "containerImageID": "ghcr.io/libp2p/test-plans/transport-interop/python-v0.x",
     "transports": [
       "tcp",
       "ws",
+      "wss",
       "quic-v1"
     ],
     "secureChannels": [
-      "noise"
+      "noise",
+      "tls"
     ],
     "muxers": [
       "mplex",
