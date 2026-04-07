@@ -43,5 +43,13 @@
     "transportStacks": [
       "tcp"
     ]
+  },
+  {
+    "id": "v0.6",
+    "implementation": "py-libp2p",
+    "transportStacks": [
+      "tcp",
+      "quic-v1"
+    ]
   }
 ]
