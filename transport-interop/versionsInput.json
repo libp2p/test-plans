@@ -255,8 +255,13 @@
       "webtransport",
       "webrtc-direct"
     ],
-    "secureChannels": ["tls", "noise"],
-    "muxers": ["yamux"]
+    "secureChannels": [
+      "tls",
+      "noise"
+    ],
+    "muxers": [
+      "yamux"
+    ]
   },
   {
     "id": "go-v0.41",
@@ -268,8 +273,13 @@
       "webtransport",
       "webrtc-direct"
     ],
-    "secureChannels": ["tls", "noise"],
-    "muxers": ["yamux"]
+    "secureChannels": [
+      "tls",
+      "noise"
+    ],
+    "muxers": [
+      "yamux"
+    ]
   },
   {
     "id": "go-v0.40",
@@ -281,8 +291,13 @@
       "webtransport",
       "webrtc-direct"
     ],
-    "secureChannels": ["tls", "noise"],
-    "muxers": ["yamux"]
+    "secureChannels": [
+      "tls",
+      "noise"
+    ],
+    "muxers": [
+      "yamux"
+    ]
   },
   {
     "id": "jvm-v1.2",
@@ -374,6 +389,24 @@
   },
   {
     "id": "js-v3.1",
+    "transports": [
+      "tcp",
+      "ws",
+      {
+        "name": "wss",
+        "onlyDial": true
+      }
+    ],
+    "secureChannels": [
+      "noise"
+    ],
+    "muxers": [
+      "mplex",
+      "yamux"
+    ]
+  },
+  {
+    "id": "js-v3.2",
     "transports": [
       "tcp",
       "ws",
