@@ -80,6 +80,11 @@ import path from "path";
 
     let testSpecs = await buildTestSpecs(versions.concat(extraVersions), nameFilter, nameIgnore, routerImageId, relayImageId, routerDelay, relayDelay, assetDir)
 
+    // Workers use pop() (LIFO). Ascending name sort puts "(quic)" before "(tcp)" for the same
+    // pair (since 'q' < 't'), so tcp ends up last and runs first. QUIC-heavy teardown has been
+    // observed to break the following TCP relay dial on some hosts; tcp-first avoids that.
+    testSpecs.sort((a, b) => (a.name || "").localeCompare(b.name || ""))
+
     console.log(`Running ${testSpecs.length} tests`)
     const failures: Array<{ name: String, e: ExecException }> = []
     const statuses: Array<string[]> = [["name", "outcome"]]
