@@ -70,7 +70,7 @@ import path from "path";
     let routerImageId = JSON.parse(await fs.readFile(path.join(".", "router", "image.json"), "utf-8")).imageID;
     let relayImageId = JSON.parse(await fs.readFile(path.join(".", "rust-relay", "image.json"), "utf-8")).imageID;
 
-    const routerDelay = 100;
+    const routerDelay = 50; // Changed from 100 to 50
     const relayDelay = 25;
 
     const rttRelayedConnection = routerDelay * 2 + relayDelay * 2;

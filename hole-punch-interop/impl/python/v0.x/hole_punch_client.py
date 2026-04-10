@@ -187,7 +187,7 @@ async def run_listener(tp: str) -> None:
             async with background_trio_service(discovery):
                 async with background_trio_service(dcutr):
                     await _connect_relay(host, relay_info)
-                    await trio.sleep(0.5)
+                    await trio.sleep(2.0) # Changed from 0.5 to 2.0
                     # discover_relays() may skip the relay if mux protocol probes fail
                     # against rust-libp2p; seed the relay we are connected to.
                     await discovery._add_relay(relay_peer_id)
@@ -219,7 +219,7 @@ async def run_dial(tp: str) -> None:
             async with background_trio_service(discovery):
                 async with background_trio_service(dcutr):
                     await _connect_relay(host, relay_info)
-                    await trio.sleep(0.5)
+                    await trio.sleep(2.0) # Changed from 0.5 to 2.0
                     await discovery._add_relay(relay_peer_id)
 
                     listener_str = _pop_listener_id(r)
