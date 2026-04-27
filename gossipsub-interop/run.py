@@ -55,9 +55,7 @@ def main():
         import datetime
 
         timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-        args.output_dir = f"{args.scenario}-{args.node_count}-{args.composition}-{
-            args.seed
-        }-{timestamp}-{git_describe}.data"
+        args.output_dir = f"{args.scenario}-{args.node_count}-{args.composition}-{args.seed}-{timestamp}-{git_describe}.data"
 
     if not os.path.isabs(args.output_dir):
         args.output_dir = os.path.join(shadow_outputs_dir, args.output_dir)
