@@ -1,0 +1,32 @@
+language: c
+sudo: false
+addons:
+  apt:
+matrix:
+    include:
+        - name: Linux (gcc-8)
+          os: linux
+          dist: xenial
+          compiler: gcc-8
+          addons:
+             apt:
+               sources:
+                 - ubuntu-toolchain-r-test
+               packages: g++-8
+        - name: Linux (clang)
+          os: linux
+          dist: xenial
+          compiler: clang
+        - name: macOS (xcode)
+          os: osx
+        - name: macOS (xcode 10.1)
+          os: osx
+          image: xcode10.1
+before_install:
+  - $CC --version
+  - cmake --version
+before_script:
+  - cmake -DLSQPACK_TESTS=ON .
+script:
+  - make
+  - make test

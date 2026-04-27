@@ -1,0 +1,45 @@
+language: c
+if: branch = master
+matrix:
+    include:
+        - name: Linux (gcc)
+          os: linux
+          compiler: gcc
+          addons:
+            apt:
+                packages:
+                - libevent-dev
+        - name: Linux (clang)
+          os: linux
+          compiler: clang
+          addons:
+            apt:
+                packages:
+                - libevent-dev
+        - name: macOS
+          os: osx
+sudo: false
+before_install:
+    - if [ $TRAVIS_OS_NAME = linux ]; then sudo add-apt-repository -y ppa:longsleep/golang-backports; fi
+    - if [ $TRAVIS_OS_NAME = linux ]; then sudo apt-get update; fi
+    - if [ $TRAVIS_OS_NAME = linux ]; then sudo apt-get install golang-1.13-go; fi
+install:
+    - if [ $TRAVIS_OS_NAME = linux ]; then export PATH=/usr/lib/go-1.13/bin:$PATH; fi
+    - if [ $TRAVIS_OS_NAME = linux ]; then export GOPATH=/usr/lib/go-1.13:$GOPATH; fi
+    - if [ $TRAVIS_OS_NAME = linux ]; then export GOROOT=/usr/lib/go-1.13; fi
+before_script:
+    - git clone https://boringssl.googlesource.com/boringssl
+    - cd boringssl
+    # This is so that both GQUIC and IETF branches build.  Just picking
+    # a known good revision:
+    - git checkout a2278d4d2cabe73f6663e3299ea7808edfa306b9
+    - cmake .
+    - make
+    - cd -
+    - git submodule init
+    - git submodule update
+    - cmake -DBORINGSSL_DIR=$PWD/boringssl .
+script:
+    # Now build lsquic-client
+    - make
+    - make test

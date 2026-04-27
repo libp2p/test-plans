@@ -1,0 +1,26 @@
+function(lsqpack_add_executable TARGET)
+    add_executable(${TARGET} "")
+    target_link_libraries(${TARGET} PRIVATE ls-qpack)
+
+    if(LSQPACK_XXH)
+        target_sources(${TARGET} PRIVATE ${TARGET}.c ../deps/xxhash/xxhash.c)
+        target_include_directories(${TARGET} PRIVATE ../deps/xxhash)
+    else()
+        target_sources(${TARGET} PRIVATE ${TARGET}.c)
+        target_link_libraries(${TARGET} PUBLIC xxHash::xxhash)
+    endif()
+
+    if(WIN32)
+        target_include_directories(${TARGET} PRIVATE ../wincompat)
+        target_link_libraries(${TARGET} PRIVATE ${GETOPT_LIB})
+    else()
+        target_link_libraries(${TARGET} PRIVATE m)
+    endif()
+endfunction()
+
+lsqpack_add_executable(interop-encode)
+lsqpack_add_executable(interop-decode)
+lsqpack_add_executable(encode-int)
+lsqpack_add_executable(fuzz-decode)
+
+target_include_directories(interop-decode PRIVATE ../test)

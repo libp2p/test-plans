@@ -1,0 +1,12 @@
+.{
+    .name = .example,
+    .version = "0.15.2",
+    .dependencies = .{
+        .gremlin = .{
+            .url = "https://github.com/norma-core/gremlin.zig/archive/refs/heads/zig-0.15.zip",
+            .hash = "gremlin-0.1.0-E2s91SgREQB11pVPxWoYgCEUw7XPbcHjFG5FZGs9Dm3j",
+        },
+    },
+    .paths = .{""},
+    .fingerprint = 0x6eec9b9f9a92e672,
+}

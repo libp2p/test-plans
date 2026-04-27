@@ -1,0 +1,16 @@
+.{
+    .name = .zmultiformats,
+
+    .fingerprint = 0x8fb7678286dc3bca,
+
+    .version = "0.1.0",
+
+    .minimum_zig_version = "0.15.2",
+
+    .dependencies = .{},
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+    },
+}

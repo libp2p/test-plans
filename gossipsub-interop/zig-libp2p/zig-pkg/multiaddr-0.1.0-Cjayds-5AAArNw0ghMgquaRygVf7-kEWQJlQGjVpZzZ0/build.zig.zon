@@ -1,0 +1,25 @@
+.{
+    .name = .multiaddr,
+
+    .fingerprint = 0x94ccdcfa76b2360a,
+
+    .version = "0.1.0",
+
+    .minimum_zig_version = "0.15.2",
+
+    .dependencies = .{
+        .zmultiformats = .{
+            .url = "https://github.com/zen-eth/multiformats-zig/archive/refs/heads/rm-circular-dep.tar.gz",
+            .hash = "zmultiformats-0.1.0-yjvchohoBADALnCylBLeQF7Vn0SKULmQ_sFOrhzgmvQO",
+        },
+        .peer_id = .{
+            .url = "https://github.com/blockblaz/peer-id/archive/refs/heads/v0.15.2.tar.gz",
+            .hash = "peer_id-0.0.0-vHIk8ZdfAADctTzIgznksWwEzygVynEeSKDim42Pz-QL",
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+    },
+}
