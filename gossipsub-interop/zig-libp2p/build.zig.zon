@@ -1,0 +1,15 @@
+.{
+    .name = .gossipsub_bin,
+    .version = "0.1.0",
+    .fingerprint = 0xa3892b19cdfabd6c,
+    .dependencies = .{
+        .libp2p = .{
+            .path = "../../../eth-p2p-z",
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+    },
+}

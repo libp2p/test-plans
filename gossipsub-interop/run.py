@@ -38,6 +38,13 @@ def main():
         "Nodes are split evenly across them.",
     )
     parser.add_argument("--output_dir", type=str, required=False)
+    parser.add_argument(
+        "--skip_build",
+        type=bool,
+        required=False,
+        default=False,
+        help="If set, skip running 'make binaries' (binary already built)",
+    )
     args = parser.parse_args()
 
     shadow_outputs_dir = os.path.join(os.getcwd(), "shadow-outputs")
@@ -97,7 +104,8 @@ def main():
     if args.dry_run:
         return
 
-    subprocess.run(["make", "binaries"], check=True)
+    if not args.skip_build:
+        subprocess.run(["make", "binaries"], check=True)
 
     subprocess.run(
         ["shadow", "--progress", "true", "-d", args.output_dir, "shadow.yaml"],
