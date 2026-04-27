@@ -4,6 +4,8 @@ all: binaries
 binaries:
 	cd go-libp2p && go build -linkshared -o gossipsub-bin
 	cd rust-libp2p && cargo build
+	zig build --build-file $(CURDIR)/../../eth-p2p-z/build.zig --prefix $(CURDIR)/zig-libp2p/zig-out -Doptimize=ReleaseFast
+	cp $(CURDIR)/zig-libp2p/zig-out/bin/gossipsub-bin $(CURDIR)/zig-libp2p/gossipsub-bin
 
 # Clean all generated shadow simulation files
 clean:

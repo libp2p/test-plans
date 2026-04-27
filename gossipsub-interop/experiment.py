@@ -358,6 +358,13 @@ def composition(preset_name: str) -> List[Binary]:
                 ),
                 Binary("go-libp2p/gossipsub-bin", percent_of_nodes=50),
             ]
+        case "all-zig":
+            return [Binary("zig-libp2p/gossipsub-bin", percent_of_nodes=100)]
+        case "zig-and-go":
+            return [
+                Binary("zig-libp2p/gossipsub-bin", percent_of_nodes=50),
+                Binary("go-libp2p/gossipsub-bin", percent_of_nodes=50),
+            ]
     raise ValueError(f"Unknown preset name: {preset_name}")
 
 
