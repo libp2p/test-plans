@@ -30,6 +30,13 @@ def main():
     )
     parser.add_argument("--composition", type=str, required=False, default="all-go")
     parser.add_argument("--output_dir", type=str, required=False)
+    parser.add_argument(
+        "--skip_build",
+        type=bool,
+        required=False,
+        default=False,
+        help="If set, skip running 'make binaries' (binary already built)",
+    )
     args = parser.parse_args()
 
     shadow_outputs_dir = os.path.join(os.getcwd(), "shadow-outputs")
@@ -48,9 +55,7 @@ def main():
         import datetime
 
         timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-        args.output_dir = f"{args.scenario}-{args.node_count}-{args.composition}-{
-            args.seed
-        }-{timestamp}-{git_describe}.data"
+        args.output_dir = f"{args.scenario}-{args.node_count}-{args.composition}-{args.seed}-{timestamp}-{git_describe}.data"
 
     if not os.path.isabs(args.output_dir):
         args.output_dir = os.path.join(shadow_outputs_dir, args.output_dir)
@@ -88,7 +93,8 @@ def main():
     if args.dry_run:
         return
 
-    subprocess.run(["make", "binaries"], check=True)
+    if not args.skip_build:
+        subprocess.run(["make", "binaries"], check=True)
 
     subprocess.run(
         ["shadow", "--progress", "true", "-d", args.output_dir, "shadow.yaml"],
