@@ -4,13 +4,17 @@ all: binaries
 binaries:
 	cd go-libp2p && go build -linkshared -o gossipsub-bin
 	cd rust-libp2p && cargo build
+	cd jvm-libp2p && ./gradlew installDist
 
 # Clean all generated shadow simulation files
 clean:
 	rm -rf shadow-outputs || true
+	rm latest
 	rm plots/* || true
 
-test:
+test: test-partial-messages test-subnet-blob
+
+test-partial-messages:
 	# Testing partial messages
 	@echo "Testing partial messages"
 	@uv run run.py --node_count 32 --composition "rust-and-go" --scenario "partial-messages" && uv run checks/partial_messages.py latest --count 1
@@ -23,6 +27,22 @@ test:
 	uv run run.py --node_count 8 --seed 1 --composition "rust-and-go" --scenario "partial-messages-fanout" && uv run checks/partial_messages.py latest/
 	uv run run.py --node_count 8 --seed 2 --composition "rust-and-go" --scenario "partial-messages-fanout" && uv run checks/partial_messages.py latest/
 	uv run run.py --node_count 8 --seed 3 --composition "rust-and-go" --scenario "partial-messages-fanout" && uv run checks/partial_messages.py latest/
+
+test-subnet-blob:
+	# Testing subnet blob scenario
+	@echo "Testing subnet blob messages"
+	@echo "Testing single implementations"
+	uv run run.py --node_count 32 --composition "all-go" && uv run checks/subnet_blob_msg.py latest/
+	uv run run.py --node_count 32 --composition "all-rust" && uv run checks/subnet_blob_msg.py latest/
+	uv run run.py --node_count 32 --composition "all-jvm" && uv run checks/subnet_blob_msg.py latest/
+
+	@echo "Testing impl pairs"
+	uv run run.py --node_count 32 --composition "rust-and-go" && uv run checks/subnet_blob_msg.py latest/
+	uv run run.py --node_count 32 --composition "jvm-and-go" && uv run checks/subnet_blob_msg.py latest/
+	uv run run.py --node_count 32 --composition "jvm-and-rust" && uv run checks/subnet_blob_msg.py latest/
+
+	@echo "Testing all"
+	uv run run.py --node_count 32 --composition "all-three" && uv run checks/subnet_blob_msg.py latest/
 
 test-go:
 	# Testing partial messages
@@ -49,4 +69,4 @@ test-rust-only:
 
 
 
-.PHONY: binaries all clean test
+.PHONY: binaries all clean test test-rust-only test-go test-subnet-blob test-partial-messages
