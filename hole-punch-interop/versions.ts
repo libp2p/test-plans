@@ -13,6 +13,10 @@ export const versions: Array<Version> = [
         id: "rust-v0.53",
         transports: ["tcp", "quic"]
     } as Version,
+    {
+        id: "nim-v1.1",
+        transports: ["tcp"],
+    },
 ].map((v: Version) => (typeof v.containerImageID === "undefined" ? ({ ...v, containerImageID: readImageId(canonicalImagePath(v.id)) }) : v))
 
 function readImageId(path: string): string {
