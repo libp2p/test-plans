@@ -1,7 +1,7 @@
 # Default target
 all: binaries
 
-NIM_LIBP2P_COMMIT = 19d6127890c80bc65323c6f5e4ef03d868378d0d
+NIM_LIBP2P_COMMIT = 220a07fd49531505d7191c96521a627280712e35
 nim-libp2p/gossipsub-bin:
 	@echo "Building nim-libp2p from commit: $(NIM_LIBP2P_COMMIT)"
 	# Clone nim-libp2p (if not already present) and build gossipsub binary
