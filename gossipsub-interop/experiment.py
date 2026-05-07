@@ -352,20 +352,20 @@ IMPLEMENTATIONS: Dict[str, str] = {
 def composition(impls: List[str]) -> List[Binary]:
     if not impls:
         raise ValueError("composition requires at least one implementation")
-    unknown = [n for n in impls if n not in IMPLEMENTATIONS]
-    if unknown:
-        raise ValueError(
-            f"Unknown implementation(s) {unknown}. "
-            f"Known: {sorted(IMPLEMENTATIONS)}"
-        )
-    base = 100 // len(impls)
-    remainder = 100 - base * len(impls)
+    for name in impls:
+        if name not in IMPLEMENTATIONS:
+            raise ValueError(
+                f"Unknown implementation '{name}'. "
+                f"Known: {sorted(IMPLEMENTATIONS)}"
+            )
+
+    # Split 100% as evenly as possible. First `leftover` impls get +1 (e.g. 3 impls -> 34/33/33).
+    base, leftover = divmod(100, len(impls))
+    percents = [base + 1] * leftover + [base] * (len(impls) - leftover)
+
     return [
-        Binary(
-            IMPLEMENTATIONS[name],
-            percent_of_nodes=base + (1 if i < remainder else 0),
-        )
-        for i, name in enumerate(impls)
+        Binary(IMPLEMENTATIONS[name], percent_of_nodes=pct)
+        for name, pct in zip(impls, percents)
     ]
 
 
