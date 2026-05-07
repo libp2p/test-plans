@@ -340,39 +340,33 @@ def scenario(
     return ExperimentParams(script=instructions)
 
 
-def composition(preset_name: str) -> List[Binary]:
-    match preset_name:
-        case "all-go":
-            return [Binary("go-libp2p/gossipsub-bin", percent_of_nodes=100)]
-        case "all-rust":
-            # Always use debug. We don't measure compute performance here.
-            return [
-                Binary(
-                    "rust-libp2p/target/debug/rust-libp2p-gossip", percent_of_nodes=100
-                )
-            ]
-        case "rust-and-go":
-            return [
-                Binary(
-                    "rust-libp2p/target/debug/rust-libp2p-gossip", percent_of_nodes=50
-                ),
-                Binary("go-libp2p/gossipsub-bin", percent_of_nodes=50),
-            ]
-        case "all-nim":
-            return [Binary("nim-libp2p/gossipsub-bin", percent_of_nodes=100)]
-        case "nim-and-go":
-            return [
-                Binary("nim-libp2p/gossipsub-bin", percent_of_nodes=50),
-                Binary("go-libp2p/gossipsub-bin", percent_of_nodes=50),
-            ]
-        case "nim-and-rust":
-            return [
-                Binary("nim-libp2p/gossipsub-bin", percent_of_nodes=50),
-                Binary(
-                    "rust-libp2p/target/debug/rust-libp2p-gossip", percent_of_nodes=50
-                ),
-            ]
-    raise ValueError(f"Unknown preset name: {preset_name}")
+IMPLEMENTATIONS: Dict[str, str] = {
+    "go": "go-libp2p/gossipsub-bin",
+    # Always use debug rust. We don't measure compute performance here.
+    "rust": "rust-libp2p/target/debug/rust-libp2p-gossip",
+    "nim": "nim-libp2p/gossipsub-bin",
+    "jvm": "jvm-libp2p/build/install/jvm-libp2p-gossip/bin/jvm-libp2p-gossip",
+}
+
+
+def composition(impls: List[str]) -> List[Binary]:
+    if not impls:
+        raise ValueError("composition requires at least one implementation")
+    unknown = [n for n in impls if n not in IMPLEMENTATIONS]
+    if unknown:
+        raise ValueError(
+            f"Unknown implementation(s) {unknown}. "
+            f"Known: {sorted(IMPLEMENTATIONS)}"
+        )
+    base = 100 // len(impls)
+    remainder = 100 - base * len(impls)
+    return [
+        Binary(
+            IMPLEMENTATIONS[name],
+            percent_of_nodes=base + (1 if i < remainder else 0),
+        )
+        for i, name in enumerate(impls)
+    ]
 
 
 def random_network_mesh(
