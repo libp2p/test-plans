@@ -340,61 +340,33 @@ def scenario(
     return ExperimentParams(script=instructions)
 
 
-def composition(preset_name: str) -> List[Binary]:
-    match preset_name:
-        case "all-go":
-            return [Binary("go-libp2p/gossipsub-bin", percent_of_nodes=100)]
-        case "all-rust":
-            # Always use debug. We don't measure compute performance here.
-            return [
-                Binary(
-                    "rust-libp2p/target/debug/rust-libp2p-gossip", percent_of_nodes=100
-                )
-            ]
-        case "rust-and-go":
-            return [
-                Binary(
-                    "rust-libp2p/target/debug/rust-libp2p-gossip", percent_of_nodes=50
-                ),
-                Binary("go-libp2p/gossipsub-bin", percent_of_nodes=50),
-            ]
-        case "all-jvm":
-            return [
-                Binary(
-                    "jvm-libp2p/build/install/jvm-libp2p-gossip/bin/jvm-libp2p-gossip",
-                    percent_of_nodes=100,
-                )
-            ]
-        case "jvm-and-go":
-            return [
-                Binary(
-                    "jvm-libp2p/build/install/jvm-libp2p-gossip/bin/jvm-libp2p-gossip",
-                    percent_of_nodes=50,
-                ),
-                Binary("go-libp2p/gossipsub-bin", percent_of_nodes=50),
-            ]
-        case "jvm-and-rust":
-            return [
-                Binary(
-                    "jvm-libp2p/build/install/jvm-libp2p-gossip/bin/jvm-libp2p-gossip",
-                    percent_of_nodes=50,
-                ),
-                Binary(
-                    "rust-libp2p/target/debug/rust-libp2p-gossip", percent_of_nodes=50
-                ),
-            ]
-        case "all-three":
-            return [
-                Binary("go-libp2p/gossipsub-bin", percent_of_nodes=34),
-                Binary(
-                    "rust-libp2p/target/debug/rust-libp2p-gossip", percent_of_nodes=33
-                ),
-                Binary(
-                    "jvm-libp2p/build/install/jvm-libp2p-gossip/bin/jvm-libp2p-gossip",
-                    percent_of_nodes=33,
-                ),
-            ]
-    raise ValueError(f"Unknown preset name: {preset_name}")
+IMPLEMENTATIONS: Dict[str, str] = {
+    "go": "go-libp2p/gossipsub-bin",
+    # Always use debug rust. We don't measure compute performance here.
+    "rust": "rust-libp2p/target/debug/rust-libp2p-gossip",
+    "nim": "nim-libp2p/gossipsub-bin",
+    "jvm": "jvm-libp2p/build/install/jvm-libp2p-gossip/bin/jvm-libp2p-gossip",
+}
+
+
+def composition(impls: List[str]) -> List[Binary]:
+    if not impls:
+        raise ValueError("composition requires at least one implementation")
+    for name in impls:
+        if name not in IMPLEMENTATIONS:
+            raise ValueError(
+                f"Unknown implementation '{name}'. "
+                f"Known: {sorted(IMPLEMENTATIONS)}"
+            )
+
+    # Split 100% as evenly as possible. First `leftover` impls get +1 (e.g. 3 impls -> 34/33/33).
+    base, leftover = divmod(100, len(impls))
+    percents = [base + 1] * leftover + [base] * (len(impls) - leftover)
+
+    return [
+        Binary(IMPLEMENTATIONS[name], percent_of_nodes=pct)
+        for name, pct in zip(impls, percents)
+    ]
 
 
 def random_network_mesh(
