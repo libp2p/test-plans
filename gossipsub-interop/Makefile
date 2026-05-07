@@ -121,5 +121,9 @@ test-rust-only:
 	@uv run run.py --node_count 2 --composition rust --scenario "partial-messages-fanout" && uv run checks/partial_messages.py latest/
 
 
+test-zig:
+	# Testing all-zig subnet-blob-msg
+	@echo "Testing all-zig subnet-blob-msg"
+	@uv run run.py --node_count 4 --composition zig --scenario "subnet-blob-msg" && uv run checks/subnet_blob_msg.py latest/
 
-.PHONY: binaries all clean test test-rust-only test-go test-subnet-blob test-partial-messages
+.PHONY: binaries all clean test test-rust-only test-go test-subnet-blob test-partial-messages test-zig
