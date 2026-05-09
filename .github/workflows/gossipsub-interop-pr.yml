@@ -15,22 +15,20 @@ jobs:
   test:
     runs-on: ubuntu-22.04
     steps:
-      - name: Checkout test-plans
+      - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          path: test-plans
 
       - name: Checkout eth-p2p-z
         uses: actions/checkout@v4
         with:
           repository: zen-eth/eth-p2p-z
           ref: feat/gossipsub
-          path: eth-p2p-z
+          path: ../eth-p2p-z
 
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version-file: test-plans/gossipsub-interop/go-libp2p/go.mod
+          go-version-file: gossipsub-interop/go-libp2p/go.mod
           cache: true
 
       - name: Set up Rust
@@ -52,9 +50,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/zig
-          key: zig-0.15.2-${{ hashFiles('eth-p2p-z/build.zig.zon') }}
-          restore-keys: |
-            zig-0.15.2-
+          key: zig-0.15.2
 
       - name: Install uv
         run: |
@@ -88,12 +84,12 @@ jobs:
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Run gossipsub interop tests
-        working-directory: test-plans/gossipsub-interop
+        working-directory: gossipsub-interop
         run: make test
         continue-on-error: true
 
       - name: Run gossipsub interop tests (Zig)
-        working-directory: test-plans/gossipsub-interop
+        working-directory: gossipsub-interop
         run: make test-zig
         continue-on-error: true
 
@@ -102,5 +98,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: shadow-output
-          path: test-plans/gossipsub-interop/shadow-outputs/
+          path: gossipsub-interop/shadow-outputs/
           retention-days: 5
