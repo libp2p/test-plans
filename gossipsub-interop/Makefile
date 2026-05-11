@@ -26,6 +26,8 @@ binaries: nim-libp2p/gossipsub-bin
 	cd go-libp2p && go build -linkshared -o gossipsub-bin
 	cd rust-libp2p && cargo build
 	cd jvm-libp2p && ./gradlew installDist
+	zig build --build-file $(CURDIR)/../../eth-p2p-z/build.zig --prefix $(CURDIR)/zig-libp2p/zig-out -Doptimize=ReleaseFast -Dlibxev-backend=epoll
+	cp $(CURDIR)/zig-libp2p/zig-out/bin/gossipsub-bin $(CURDIR)/zig-libp2p/gossipsub-bin
 
 # Clean all generated shadow simulation files
 clean:
@@ -119,5 +121,9 @@ test-rust-only:
 	@uv run run.py --node_count 2 --composition rust --scenario "partial-messages-fanout" && uv run checks/partial_messages.py latest/
 
 
+test-zig:
+	# Testing all-zig subnet-blob-msg
+	@echo "Testing all-zig subnet-blob-msg"
+	@uv run run.py --node_count 4 --composition zig --scenario "subnet-blob-msg" && uv run checks/subnet_blob_msg.py latest/
 
-.PHONY: binaries all clean test test-rust-only test-go test-subnet-blob test-partial-messages
+.PHONY: binaries all clean test test-rust-only test-go test-subnet-blob test-partial-messages test-zig
