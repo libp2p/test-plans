@@ -11,7 +11,7 @@ repositories {
 }
 
 dependencies {
-    implementation("io.libp2p:jvm-libp2p:1.2.2-RELEASE")
+    implementation("io.libp2p:jvm-libp2p:1.3.0-RELEASE")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.15.3")
 
     testImplementation(kotlin("test"))
