@@ -469,5 +469,17 @@
     ],
     "secureChannels": [],
     "muxers": []
+  },
+  {
+    "id": "haskell-v0.1",
+    "transports": [
+      "tcp"
+    ],
+    "secureChannels": [
+      "noise"
+    ],
+    "muxers": [
+      "yamux"
+    ]
   }
 ]
