@@ -126,4 +126,8 @@ test-zig:
 	@echo "Testing all-zig subnet-blob-msg"
 	@uv run run.py --node_count 4 --composition zig --scenario "subnet-blob-msg" && uv run checks/subnet_blob_msg.py latest/
 
-.PHONY: binaries all clean test test-rust-only test-go test-subnet-blob test-partial-messages test-zig
+test-zig-go:
+	@echo "Testing zig+go subnet-blob-msg"
+	@uv run run.py --node_count 16 --composition zig go --scenario "subnet-blob-msg" && uv run checks/subnet_blob_msg.py latest/
+
+.PHONY: binaries all clean test test-rust-only test-go test-subnet-blob test-partial-messages test-zig test-zig-go
