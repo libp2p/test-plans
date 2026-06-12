@@ -2,14 +2,16 @@
 
 This directory contains a Debian-based router implemented on top of nftables.
 
-It expects to be run with two network interfaces:
+It expects to be run with two network interfaces: one "external" interface facing the
+`internet` network and one "internal" interface facing the LAN.
 
-- `eth0`: The "external" interface.
-- `eth1`: The "internal" interface.
-
-The order of these is important.
-The router cannot possibly know which one is which and thus assumes that `eth0` is the external one and `eth1` the internal one.
-The firewall is set up to take incoming traffic on `eth1` and forward + masquerade it to `eth0`.
+The order of the interfaces is **not** important.
+Docker does not guarantee that interface index order (`eth0`, `eth1`) matches the order
+the networks are listed, so the router autodetects which interface is which at startup:
+the external interface is the one that routes toward the `relay` (which lives on the
+`internet` network), and the other inet-bearing interface is treated as internal.
+The firewall is set up to take incoming traffic on the internal interface and forward +
+masquerade it to the external one.
 
 It also expects an env variable `DELAY_MS` to be set and will apply this delay as part of the routing process[^1].
 
