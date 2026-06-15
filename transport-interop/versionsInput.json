@@ -303,6 +303,22 @@
     ]
   },
   {
+    "id": "nim-v2.0.0",
+    "containerImageID": "ghcr.io/libp2p/test-plans/transport-interop/nim-v2.0",
+    "transports": [
+      "tcp",
+      "ws",
+      "quic-v1"
+    ],
+    "secureChannels": [
+      "noise"
+    ],
+    "muxers": [
+      "mplex",
+      "yamux"
+    ]
+  },
+  {
     "id": "js-v1.x",
     "containerImageID": "ghcr.io/libp2p/test-plans/transport-interop/js-v1.x",
     "transports": [
