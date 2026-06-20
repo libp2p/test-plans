@@ -472,6 +472,7 @@
   },
   {
     "id": "haskell-v0.1",
+    "containerImageID": "ghcr.io/libp2p/test-plans/transport-interop/haskell-v0.1",
     "transports": [
       "tcp"
     ],
