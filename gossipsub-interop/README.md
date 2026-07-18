@@ -86,6 +86,14 @@ uv run run.py --node_count 2 --composition go --scenario "partial-messages" && u
 
 That command runs the shadow simulation and then verifies the stdout logs have the expected message.
 
+Topic streams HoL (large then small on different topics; small must not wait for large):
+
+```bash
+uv run run.py --node_count 2 --composition go --scenario "topic-streams-hol" && uv run checks/topic_streams_hol.py latest/
+```
+
+This covers the [Topic Streams Extension](https://github.com/libp2p/specs/pull/729). Implementations without topic streams will HoL-block the small message behind the 1 MiB one; go (with topic streams) should not.
+
 ## Tests
 
 ```bash

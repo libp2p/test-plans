@@ -35,7 +35,7 @@ clean:
 	rm latest
 	rm plots/* || true
 
-test: test-partial-messages test-subnet-blob
+test: test-partial-messages test-subnet-blob test-topic-streams-hol
 
 test-partial-messages:
 	# Testing partial messages
@@ -95,6 +95,12 @@ test-subnet-blob:
 	@echo "Testing all"
 	uv run run.py --node_count 32 --composition go rust jvm nim && uv run checks/subnet_blob_msg.py latest/
 
+test-topic-streams-hol:
+	# Topic streams HoL: large then small on different topics; small must arrive first.
+	# Requires an implementation with topic streams (currently go).
+	@echo "Testing topic-streams HoL (go)"
+	@uv run run.py --node_count 2 --composition go --scenario "topic-streams-hol" && uv run checks/topic_streams_hol.py latest/
+
 test-go:
 	# Testing partial messages
 	@echo "Testing partial messages"
@@ -105,6 +111,9 @@ test-go:
 
 	@echo "Testing fanout"
 	@uv run run.py --node_count 2 --composition go --scenario "partial-messages-fanout" && uv run checks/partial_messages.py latest/
+
+	@echo "Testing topic-streams HoL"
+	@uv run run.py --node_count 2 --composition go --scenario "topic-streams-hol" && uv run checks/topic_streams_hol.py latest/
 
 
 test-rust-only:
@@ -120,4 +129,4 @@ test-rust-only:
 
 
 
-.PHONY: binaries all clean test test-rust-only test-go test-subnet-blob test-partial-messages
+.PHONY: binaries all clean test test-rust-only test-go test-subnet-blob test-partial-messages test-topic-streams-hol

@@ -44,6 +44,9 @@ func pubsubOptions(slogger *slog.Logger, params pubsub.GossipSubParams, pme *par
 		pubsub.WithGossipSubParams(params),
 		pubsub.WithEventTracer(&tr),
 		pubsub.WithRPCLogger(slogger),
+		// Topic streams (gossipsub extension): per-topic streams avoid HoL
+		// blocking across topics. Negotiated only when the peer also supports it.
+		pubsub.WithTopicStreams(),
 	}
 
 	if pme != nil {
