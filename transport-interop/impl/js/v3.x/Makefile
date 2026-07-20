@@ -1,7 +1,7 @@
 image_name := js-v3.x
 
 # TODO Enable webkit once https://github.com/libp2p/js-libp2p/pull/1627 is in
-all: image.json chromium-image.json firefox-image.json update-lock-file
+all: image.json chromium-image.json chromium-no-sdp-mangle-ufrag-image.json firefox-image.json update-lock-file
 
 # Necessary because multistage builds require a docker image name rather than a digest to be used
 load-image-json: image.json
@@ -16,6 +16,11 @@ image.json:
 chromium-image.json: load-image-json
 	docker build -f BrowserDockerfile --build-arg=BASE_IMAGE=node-${image_name} --build-arg=BROWSER=chromium -t chromium-${image_name} .
 	docker image inspect chromium-${image_name} -f "{{.Id}}" | \
+		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
+
+chromium-no-sdp-mangle-ufrag-image.json: load-image-json
+	docker build -f BrowserDockerfile --build-arg=BASE_IMAGE=node-${image_name} --build-arg=BROWSER=chromium --build-arg=CHROMIUM_FLAGS=--force-fieldtrials=WebRTC-NoSdpMangleUfrag/Enabled/ -t chromium-no-sdp-mangle-ufrag-${image_name} .
+	docker image inspect chromium-no-sdp-mangle-ufrag-${image_name} -f "{{.Id}}" | \
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
 
 firefox-image.json: load-image-json
