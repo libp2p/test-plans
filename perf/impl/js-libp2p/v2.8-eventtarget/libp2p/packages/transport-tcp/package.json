@@ -1,0 +1,73 @@
+{
+  "name": "@libp2p/tcp",
+  "version": "10.1.18",
+  "description": "A TCP transport for libp2p",
+  "license": "Apache-2.0 OR MIT",
+  "homepage": "https://github.com/libp2p/js-libp2p/tree/main/packages/transport-tcp#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/libp2p/js-libp2p.git"
+  },
+  "bugs": {
+    "url": "https://github.com/libp2p/js-libp2p/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "keywords": [
+    "IPFS",
+    "TCP",
+    "libp2p",
+    "network",
+    "p2p",
+    "peer",
+    "peer-to-peer"
+  ],
+  "type": "module",
+  "types": "./dist/src/index.d.ts",
+  "files": [
+    "src",
+    "dist",
+    "!dist/test",
+    "!**/*.tsbuildinfo"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/src/index.js"
+    }
+  },
+  "scripts": {
+    "clean": "aegir clean",
+    "lint": "aegir lint",
+    "dep-check": "aegir dep-check",
+    "doc-check": "aegir doc-check",
+    "build": "aegir build",
+    "test": "aegir test -t node -t electron-main",
+    "test:chrome": "aegir test -t browser -f ./dist/test/browser.js --cov",
+    "test:chrome-webworker": "aegir test -t webworker -f ./dist/test/browser.js",
+    "test:firefox": "aegir test -t browser -f ./dist/test/browser.js -- --browser firefox",
+    "test:firefox-webworker": "aegir test -t webworker -f ./dist/test/browser.js -- --browser firefox",
+    "test:node": "aegir test -t node --cov",
+    "test:electron-main": "aegir test -t electron-main"
+  },
+  "dependencies": {
+    "@libp2p/interface": "^2.10.5",
+    "@libp2p/utils": "^6.7.1",
+    "@multiformats/multiaddr": "^12.4.4",
+    "@multiformats/multiaddr-matcher": "^2.0.0",
+    "@types/sinon": "^17.0.4",
+    "main-event": "^1.0.1",
+    "p-event": "^6.0.1",
+    "progress-events": "^1.0.1",
+    "race-event": "^1.6.0"
+  },
+  "browser": {
+    "./dist/src/tcp.js": "./dist/src/tcp.browser.js"
+  },
+  "react-native": {
+    "./dist/src/tcp.js": "./dist/src/tcp.js"
+  },
+  "sideEffects": false
+}
