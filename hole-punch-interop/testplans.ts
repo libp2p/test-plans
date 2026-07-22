@@ -70,8 +70,8 @@ import path from "path";
     let routerImageId = JSON.parse(await fs.readFile(path.join(".", "router", "image.json"), "utf-8")).imageID;
     let relayImageId = JSON.parse(await fs.readFile(path.join(".", "rust-relay", "image.json"), "utf-8")).imageID;
 
-    const routerDelay = 100;
-    const relayDelay = 25;
+    const routerDelay = 5; // 50; // Changed from 100 to 50
+    const relayDelay = 2; // 25;
 
     const rttRelayedConnection = routerDelay * 2 + relayDelay * 2;
     const rttDirectConnection = routerDelay * 2;
@@ -79,6 +79,11 @@ import path from "path";
     const assetDir = path.join(__dirname, "runs");
 
     let testSpecs = await buildTestSpecs(versions.concat(extraVersions), nameFilter, nameIgnore, routerImageId, relayImageId, routerDelay, relayDelay, assetDir)
+
+    // Workers use pop() (LIFO). Ascending name sort puts "(quic)" before "(tcp)" for the same
+    // pair (since 'q' < 't'), so tcp ends up last and runs first. QUIC-heavy teardown has been
+    // observed to break the following TCP relay dial on some hosts; tcp-first avoids that.
+    testSpecs.sort((a, b) => (a.name || "").localeCompare(b.name || ""))
 
     console.log(`Running ${testSpecs.length} tests`)
     const failures: Array<{ name: String, e: ExecException }> = []

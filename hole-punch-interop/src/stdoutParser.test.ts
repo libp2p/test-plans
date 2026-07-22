@@ -19,3 +19,24 @@ const line = lastStdoutLine(exampleStdout, "dialer", "rust-v0_52_x_rust-v0_52__q
 if (line != `{"rtt_to_holepunched_peer_millis":201}`) {
     throw new Error("Unexpected stdout")
 }
+
+// Docker Compose v2 often logs service names without the project prefix.
+let shortFormStdout = `
+Attaching to dialer-1, listener-1, redis-1
+dialer-1           | {"rtt_to_holepunched_peer_millis":202}
+dialer-1 exited with code 0
+`;
+const shortLine = lastStdoutLine(shortFormStdout, "dialer", "rust-v0_52_x_rust-v0_52__quic_");
+if (shortLine != `{"rtt_to_holepunched_peer_millis":202}`) {
+    throw new Error("Unexpected short-form stdout")
+}
+
+// Progress redraws prefix the exit line with \\r and CSI (see docker compose v2 attach).
+let ansiStdout = `
+dialer-1           | {"rtt_to_holepunched_peer_millis":203}
+\r\u001b[Kdialer-1 exited with code 0
+`;
+const ansiLine = lastStdoutLine(ansiStdout, "dialer", "rust-v0_52_x_rust-v0_52__quic_");
+if (ansiLine != `{"rtt_to_holepunched_peer_millis":203}`) {
+    throw new Error("Unexpected ansi stdout")
+}

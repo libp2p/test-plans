@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "py-libp2p-hole-punch-client"
+version = "0.1.0"
+description = "py-libp2p client for libp2p hole-punch interoperability tests"
+requires-python = ">=3.11"
+dependencies = [
+    "libp2p @ file:///app/py-libp2p",
+    "redis>=4.0.0",
+]
+
+[tool.setuptools]
+py-modules = ["hole_punch_client"]
