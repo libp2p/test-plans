@@ -15,6 +15,6 @@ rust-libp2p-${commitSha}.zip:
 	wget -O $@ "https://github.com/libp2p/rust-libp2p/archive/${commitSha}.zip"
 
 clean:
-	rm image.json
-	rm rust-libp2p-*.zip
+	rm -f image.json
+	rm -f rust-libp2p-*.zip
 	rm -rf rust-libp2p-*
