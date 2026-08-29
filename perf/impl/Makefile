@@ -3,8 +3,9 @@ RUST_SUBDIRS := $(wildcard rust-libp2p/*/.)
 HTTPS_SUBDIRS := $(wildcard https/*/.)
 QUIC_GO_SUBDIRS := $(wildcard quic-go/*/.)
 JS_SUBDIRS := $(wildcard js-libp2p/*/.)
+PY_SUBDIRS := $(wildcard py-libp2p/*/.)
 
-all: $(RUST_SUBDIRS) $(GO_SUBDIRS) $(HTTPS_SUBDIRS) $(QUIC_GO_SUBDIRS) $(JS_SUBDIRS)
+all: $(RUST_SUBDIRS) $(GO_SUBDIRS) $(HTTPS_SUBDIRS) $(QUIC_GO_SUBDIRS) $(JS_SUBDIRS) $(PY_SUBDIRS)
 
 $(RUST_SUBDIRS):
 	$(MAKE) -C $@
@@ -21,6 +22,9 @@ $(QUIC_GO_SUBDIRS):
 $(JS_SUBDIRS):
 	$(MAKE) -C $@
 
+$(PY_SUBDIRS):
+	$(MAKE) -C $@
+
 go-libp2p: $(GO_SUBDIRS)
 
 rust-libp2p: $(RUST_SUBDIRS)
@@ -31,9 +35,11 @@ quic-go: $(QUIC_GO_SUBDIRS)
 
 js-libp2p: $(JS_SUBDIRS)
 
-clean: $(RUST_SUBDIRS:%=%clean) $(GO_SUBDIRS:%=%clean) $(HTTPS_SUBDIRS:%=%clean) $(QUIC_GO_SUBDIRS:%=%clean) $(JS_SUBDIRS:%=%clean)
+py-libp2p: $(PY_SUBDIRS)
+
+clean: $(RUST_SUBDIRS:%=%clean) $(GO_SUBDIRS:%=%clean) $(HTTPS_SUBDIRS:%=%clean) $(QUIC_GO_SUBDIRS:%=%clean) $(JS_SUBDIRS:%=%clean) $(PY_SUBDIRS:%=%clean)
 
 %clean:
 	$(MAKE) -C $* clean
 
-.PHONY: $(RUST_SUBDIRS) $(GO_SUBDIRS) $(HTTPS_SUBDIRS) $(QUIC_GO_SUBDIRS) $(JS_SUBDIRS) all clean
+.PHONY: $(RUST_SUBDIRS) $(GO_SUBDIRS) $(HTTPS_SUBDIRS) $(QUIC_GO_SUBDIRS) $(JS_SUBDIRS) $(PY_SUBDIRS) all clean
