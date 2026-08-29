@@ -7,4 +7,4 @@ image.json: Cargo.lock src/** Dockerfile
 	docker image inspect ${image_name} -f "{{.Id}}" | \
 		xargs -I {} echo "{\"imageID\": \"{}\"}" > $@
 clean:
-	rm image.json
+	rm -f image.json
