@@ -6,6 +6,7 @@ import { createClient } from 'redis'
 const redisAddr = process.env.redis_addr || 'redis:6379'
 const transport = process.env.transport
 const isDialer = process.env.is_dialer === 'true'
+const chromiumFlags = (process.env.CHROMIUM_FLAGS ?? '').split(/\s+/).filter(Boolean)
 
 /** @type {import('aegir/types').PartialOptions} */
 export default {
@@ -13,7 +14,10 @@ export default {
     browser: {
       config: {
         // Ignore self signed certificates
-        browserContextOptions: { ignoreHTTPSErrors: true }
+        browserContextOptions: {
+          ignoreHTTPSErrors: true,
+          ...(chromiumFlags.length > 0 ? { args: chromiumFlags } : {})
+        }
       }
     },
     async before () {
