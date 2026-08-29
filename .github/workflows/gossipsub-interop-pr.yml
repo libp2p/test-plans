@@ -18,6 +18,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Checkout eth-p2p-z
+        uses: actions/checkout@v4
+        with:
+          repository: zen-eth/eth-p2p-z
+          ref: feat/gossipsub
+          path: ../eth-p2p-z
+
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
@@ -31,6 +38,19 @@ jobs:
         run: |
           curl https://nim-lang.org/choosenim/init.sh -sSf | sh -s -- -y
           echo "$HOME/.nimble/bin" >> $GITHUB_PATH
+
+      - name: Set up Zig 0.15.2
+        run: |
+          curl -fL https://ziglang.org/download/0.15.2/zig-x86_64-linux-0.15.2.tar.xz \
+            | sudo tar -xJ -C /usr/local
+          sudo ln -sf /usr/local/zig-x86_64-linux-0.15.2/zig /usr/local/bin/zig
+          zig version
+
+      - name: Cache Zig global packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/zig
+          key: zig-0.15.2
 
       - name: Install uv
         run: |
@@ -52,7 +72,8 @@ jobs:
             netbase \
             python3 \
             python3-networkx \
-            xz-utils
+            xz-utils \
+            zlib1g-dev
 
           # Build and install Shadow v3.3.0 from source
           git clone --depth 1 --branch v3.3.0 https://github.com/shadow/shadow.git shadow-simulator
@@ -65,6 +86,11 @@ jobs:
       - name: Run gossipsub interop tests
         working-directory: gossipsub-interop
         run: make test
+        continue-on-error: true
+
+      - name: Run gossipsub interop tests (Zig)
+        working-directory: gossipsub-interop
+        run: make test-zig
         continue-on-error: true
 
       - name: Upload Shadow output

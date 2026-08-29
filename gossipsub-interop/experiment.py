@@ -346,6 +346,7 @@ IMPLEMENTATIONS: Dict[str, str] = {
     "rust": "rust-libp2p/target/debug/rust-libp2p-gossip",
     "nim": "nim-libp2p/gossipsub-bin",
     "jvm": "jvm-libp2p/build/install/jvm-libp2p-gossip/bin/jvm-libp2p-gossip",
+    "zig": "zig-libp2p/gossipsub-bin",
 }
 
 

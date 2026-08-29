@@ -26,6 +26,8 @@ binaries: nim-libp2p/gossipsub-bin
 	cd go-libp2p && go build -linkshared -o gossipsub-bin
 	cd rust-libp2p && cargo build
 	cd jvm-libp2p && ./gradlew installDist
+	zig build --build-file $(CURDIR)/../../eth-p2p-z/build.zig --prefix $(CURDIR)/zig-libp2p/zig-out -Doptimize=ReleaseFast -Dlibxev-backend=epoll
+	cp $(CURDIR)/zig-libp2p/zig-out/bin/gossipsub-bin $(CURDIR)/zig-libp2p/gossipsub-bin
 
 # Clean all generated shadow simulation files
 clean:
@@ -119,5 +121,29 @@ test-rust-only:
 	@uv run run.py --node_count 2 --composition rust --scenario "partial-messages-fanout" && uv run checks/partial_messages.py latest/
 
 
+test-zig:
+	@echo "Testing all-zig subnet-blob-msg (32 nodes)"
+	@uv run run.py --node_count 32 --composition zig --scenario "subnet-blob-msg" && uv run checks/subnet_blob_msg.py latest/
 
-.PHONY: binaries all clean test test-rust-only test-go test-subnet-blob test-partial-messages
+test-zig-go:
+	@echo "Testing zig+go subnet-blob-msg (32 nodes)"
+	@uv run run.py --node_count 32 --composition zig go --scenario "subnet-blob-msg" && uv run checks/subnet_blob_msg.py latest/
+
+test-zig-rust:
+	@echo "Testing zig+rust subnet-blob-msg (32 nodes)"
+	@uv run run.py --node_count 32 --composition zig rust --scenario "subnet-blob-msg" && uv run checks/subnet_blob_msg.py latest/
+
+test-zig-nim:
+	@echo "Testing zig+nim subnet-blob-msg (32 nodes)"
+	@uv run run.py --node_count 32 --composition zig nim --scenario "subnet-blob-msg" && uv run checks/subnet_blob_msg.py latest/
+
+test-zig-jvm:
+	@echo "Testing zig+jvm subnet-blob-msg (32 nodes)"
+	@uv run run.py --node_count 32 --composition zig jvm --scenario "subnet-blob-msg" && uv run checks/subnet_blob_msg.py latest/
+
+test-zig-all:
+	@echo "Testing zig+go+rust+jvm+nim subnet-blob-msg (32 nodes)"
+	@uv run run.py --node_count 32 --composition zig go rust jvm nim --scenario "subnet-blob-msg" && uv run checks/subnet_blob_msg.py latest/
+
+.PHONY: binaries all clean test test-rust-only test-go test-subnet-blob test-partial-messages \
+        test-zig test-zig-go test-zig-rust test-zig-nim test-zig-jvm test-zig-all
