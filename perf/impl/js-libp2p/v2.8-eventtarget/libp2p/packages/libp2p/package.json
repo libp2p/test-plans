@@ -1,0 +1,121 @@
+{
+  "name": "libp2p",
+  "version": "2.9.0",
+  "description": "JavaScript implementation of libp2p, a modular peer to peer network stack",
+  "license": "Apache-2.0 OR MIT",
+  "homepage": "https://github.com/libp2p/js-libp2p/tree/main/packages/libp2p#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/libp2p/js-libp2p.git"
+  },
+  "bugs": {
+    "url": "https://github.com/libp2p/js-libp2p/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "keywords": [
+    "IPFS",
+    "libp2p",
+    "network",
+    "p2p",
+    "peer",
+    "peer-to-peer"
+  ],
+  "type": "module",
+  "types": "./dist/src/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "*": [
+        "*",
+        "dist/*",
+        "dist/src/*",
+        "dist/src/*/index"
+      ],
+      "src/*": [
+        "*",
+        "dist/*",
+        "dist/src/*",
+        "dist/src/*/index"
+      ]
+    }
+  },
+  "files": [
+    "src",
+    "dist",
+    "!dist/test",
+    "!**/*.tsbuildinfo"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/src/index.js"
+    },
+    "./user-agent": {
+      "types": "./dist/src/user-agent.d.ts",
+      "browser": "./dist/src/user-agent.browser.js",
+      "import": "./dist/src/user-agent.js"
+    },
+    "./version": {
+      "types": "./dist/src/version.d.ts",
+      "import": "./dist/src/version.js"
+    }
+  },
+  "scripts": {
+    "clean": "aegir clean",
+    "lint": "aegir lint",
+    "dep-check": "aegir dep-check",
+    "doc-check": "aegir doc-check",
+    "prepublishOnly": "node scripts/update-version.js && npm run build",
+    "build": "aegir build",
+    "test": "aegir test",
+    "test:node": "aegir test -t node --cov",
+    "test:chrome": "aegir test -t browser --cov",
+    "test:chrome-webworker": "aegir test -t webworker",
+    "test:firefox": "aegir test -t browser -- --browser firefox",
+    "test:firefox-webworker": "aegir test -t webworker -- --browser firefox",
+    "test:webkit": "aegir test -t browser -- --browser webkit"
+  },
+  "dependencies": {
+    "@types/react-native": "^0.73.0",
+    "@chainsafe/is-ip": "^2.1.0",
+    "@chainsafe/netmask": "^2.0.0",
+    "@libp2p/crypto": "^5.1.7",
+    "@libp2p/interface": "^2.10.5",
+    "@libp2p/interface-internal": "^2.3.18",
+    "@libp2p/logger": "^5.1.21",
+    "@libp2p/multistream-select": "^6.0.28",
+    "@libp2p/peer-collections": "^6.0.34",
+    "@libp2p/peer-id": "^5.1.8",
+    "@libp2p/peer-store": "^11.2.6",
+    "@libp2p/utils": "^6.7.1",
+    "@multiformats/dns": "^1.0.6",
+    "@multiformats/multiaddr": "^12.4.4",
+    "@multiformats/multiaddr-matcher": "^2.0.0",
+    "any-signal": "^4.1.1",
+    "datastore-core": "^10.0.2",
+    "interface-datastore": "^8.3.1",
+    "it-merge": "^3.0.11",
+    "it-parallel": "^3.0.11",
+    "main-event": "^1.0.1",
+    "multiformats": "^13.3.6",
+    "p-defer": "^4.0.1",
+    "p-retry": "^6.2.1",
+    "progress-events": "^1.0.1",
+    "race-event": "^1.6.0",
+    "race-signal": "^1.1.3",
+    "uint8arrays": "^5.1.0"
+  },
+  "browser": {
+    "./dist/src/connection-manager/constants.js": "./dist/src/connection-manager/constants.browser.js",
+    "./dist/src/config/connection-gater.js": "./dist/src/config/connection-gater.browser.js",
+    "./dist/src/user-agent.js": "./dist/src/user-agent.browser.js"
+  },
+  "react-native": {
+    "./dist/src/connection-manager/constants.js": "./dist/src/connection-manager/constants.browser.js",
+    "./dist/src/config/connection-gater.js": "./dist/src/config/connection-gater.browser.js",
+    "./dist/src/user-agent.js": "./dist/src/user-agent.react-native.js"
+  },
+  "sideEffects": false
+}
