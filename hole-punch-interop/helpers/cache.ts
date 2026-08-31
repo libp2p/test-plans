@@ -50,7 +50,7 @@ switch (modeStr) {
         }
 
         await loadCacheOrBuild("router", ig);
-        await loadCacheOrBuild("rust-relay", ig);
+        await loadCacheOrBuild(path.join("relay", "rust"), ig);
     }
 })()
 
