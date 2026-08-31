@@ -50,7 +50,14 @@ switch (modeStr) {
         }
 
         await loadCacheOrBuild("router", ig);
-        await loadCacheOrBuild(path.join("relay", "rust"), ig);
+
+        for (const relayImpl of fs.readdirSync(path.join(holePunchInteropDir, 'relay'))) {
+            const relayFolder = path.join(holePunchInteropDir, 'relay', relayImpl);
+            if (!fs.statSync(relayFolder).isDirectory()) {
+                continue;
+            }
+            await loadCacheOrBuild(path.join("relay", relayImpl), ig);
+        }
     }
 })()
 
