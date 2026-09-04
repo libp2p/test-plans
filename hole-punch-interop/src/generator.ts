@@ -60,7 +60,7 @@ function buildSpec(name: string, dialerImage: string, listenerImage: string, rou
 
         tcpdump -i eth0 -w /tmp/${actor}.pcap &
 
-        sleep 2 # Let tcpdump start up
+        sleep 5 # Let tcpdump start and stabilize routing before clients compete for relay/redis
 
         hole-punch-client
     `);

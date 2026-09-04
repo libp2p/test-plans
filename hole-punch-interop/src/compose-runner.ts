@@ -8,6 +8,9 @@ import {sanitizeComposeName} from "./lib";
 
 const exec = util.promisify(execStd);
 
+/** Per `docker compose up` cap. Hole-punch scenarios (sleep, relay RTT, DCUtR) often need >60s, especially after a prior compose teardown. */
+const COMPOSE_UP_TIMEOUT_MS = parseInt(process.env.COMPOSE_UP_TIMEOUT_MS || "100000", 10);
+
 export async function run(compose: ComposeSpecification, rootAssetDir: string, dryRun: boolean): Promise<Report | null> {
     const sanitizedComposeName = sanitizeComposeName(compose.name)
     const assetDir = path.join(rootAssetDir, sanitizedComposeName);
@@ -28,7 +31,10 @@ export async function run(compose: ComposeSpecification, rootAssetDir: string, d
     const stderrLogFile = path.join(assetDir, `stderr.log`);
 
     try {
-        const { stdout, stderr } = await exec(`docker compose -f ${composeYmlPath} up --exit-code-from dialer --abort-on-container-exit`, { timeout: 60 * 1000 })
+        const { stdout, stderr } = await exec(
+            `docker compose -f ${composeYmlPath} up --exit-code-from dialer --abort-on-container-exit`,
+            { timeout: COMPOSE_UP_TIMEOUT_MS }
+        )
 
         await fs.writeFile(stdoutLogFile, stdout);
         await fs.writeFile(stderrLogFile, stderr);
@@ -43,7 +49,9 @@ export async function run(compose: ComposeSpecification, rootAssetDir: string, d
         throw e
     } finally {
         try {
-            await exec(`docker compose -f ${composeYmlPath} down`);
+            await exec(
+                `docker compose -f ${composeYmlPath} down --remove-orphans`
+            );
         } catch (e) {
             console.log("Failed to compose down", e)
         }
@@ -67,13 +75,32 @@ interface Report {
     rtt_to_holepunched_peer_millis: number
 }
 
+/** Strip CR and CSI sequences so we match docker compose lines with progress redraws (\r, ESC[K). */
+function normalizeComposeLogLine(line: string): string {
+    return line
+        .replace(/\r/g, "")
+        .replace(/\x1b\[[0-9;]*[A-Za-z]/g, "")
+        .trimStart();
+}
+
 export function lastStdoutLine(stdout: string, component: string, composeName: string): string {
-    const allComponentStdout = stdout.split("\n").filter(line => line.startsWith(`${composeName}-${component}-1`));
+    const longPrefix = `${composeName}-${component}-1`;
+    const shortPrefix = `${component}-1`;
+    const allComponentStdout = stdout.split("\n").filter((line) => {
+        const t = normalizeComposeLogLine(line);
+        return t.startsWith(longPrefix) || t.startsWith(shortPrefix);
+    });
 
-    const exitMessage = allComponentStdout.pop();
+    allComponentStdout.pop(); // "… exited with code …"
     const lastLine = allComponentStdout.pop();
+    if (lastLine == null) {
+        throw new Error(
+            `No ${component} output line found (tried prefixes ${longPrefix} and ${shortPrefix})`
+        );
+    }
 
-    const [front, componentStdout] = lastLine.split("|");
+    const parts = normalizeComposeLogLine(lastLine).split("|");
+    const componentStdout = parts.length >= 2 ? parts.slice(1).join("|") : lastLine;
 
-    return componentStdout.trim()
+    return componentStdout.trim();
 }
