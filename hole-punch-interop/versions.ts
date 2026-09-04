@@ -17,6 +17,11 @@ export const versions: Array<Version> = [
         id: "go-v0.49",
         transports: ["tcp", "quic"]
     } as Version,
+    {
+        // js-libp2p supports DCUtR over TCP only, so QUIC cells are not generated.
+        id: "js-v3.x",
+        transports: ["tcp"]
+    } as Version,
 ].map((v: Version) => (typeof v.containerImageID === "undefined" ? ({ ...v, containerImageID: readImageId(canonicalImagePath(v.id)) }) : v))
 
 function readImageId(path: string): string {
