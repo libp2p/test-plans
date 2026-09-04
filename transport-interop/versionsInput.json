@@ -417,8 +417,8 @@
       ]
   },
   {
-    "id": "jvm-v1.2",
-    "containerImageID": "ghcr.io/libp2p/test-plans/transport-interop/jvm-v1.2",
+    "id": "jvm-v1.3",
+    "containerImageID": "ghcr.io/libp2p/test-plans/transport-interop/jvm-v1.3",
     "transports": [
       "tcp",
       "ws",

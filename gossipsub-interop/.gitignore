@@ -21,3 +21,4 @@ backup
 timelines
 experiment-results/**
 __pycache__
+nim-libp2p-src/
