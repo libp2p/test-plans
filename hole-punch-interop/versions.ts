@@ -18,11 +18,8 @@ export const versions: Array<Version> = [
         transports: ["tcp", "quic"]
     } as Version,
     {
-        // Official js-libp2p has no QUIC transport, so only TCP cells are generated.
-        // Every js cell is known to fail and CI ignores them; see the README
-        // "Known-failing implementations" section.
         id: "js-v3.x",
-        transports: ["tcp"]
+        transports: ["tcp", "quic"]
     } as Version,
 ].map((v: Version) => (typeof v.containerImageID === "undefined" ? ({ ...v, containerImageID: readImageId(canonicalImagePath(v.id)) }) : v))
 
