@@ -1,13 +1,13 @@
 // Hole-punch client for the test-plans interop suite. Runs as either the dialer
 // or the listener, orchestrated over redis.
 
-import { noise } from '@chainsafe/libp2p-noise'
-import { yamux } from '@chainsafe/libp2p-yamux'
 import { circuitRelayTransport } from '@libp2p/circuit-relay-v2'
 import { dcutr } from '@libp2p/dcutr'
 import { identify } from '@libp2p/identify'
+import { noise } from '@libp2p/noise'
 import { ping } from '@libp2p/ping'
 import { tcp } from '@libp2p/tcp'
+import { yamux } from '@libp2p/yamux'
 import { multiaddr } from '@multiformats/multiaddr'
 import { createLibp2p } from 'libp2p'
 import { createClient } from 'redis'
