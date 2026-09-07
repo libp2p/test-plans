@@ -92,18 +92,27 @@ The relay is a shared component. `RELAY_IMPL` selects which one runs, defaulting
 
 Both listen on TCP and QUIC at once and push their `/p2p`-suffixed address twice to `RELAY_TCP_ADDRESS` and `RELAY_QUIC_ADDRESS`.
 
-## Known-failing implementations
+## js-libp2p DCUtR (known-failing)
 
-`js-v3.x` is in the matrix but every js cell fails, so CI ignores them
-(`test-ignore js-v3.x`). js-libp2p DCUtR performs only the unilateral direct-dial
-upgrade; bilateral hole punching over TCP does not work. Node.js does not support
-`SO_REUSEPORT`, so identify drops every observed TCP address and the
-simultaneous-open dial uses a fresh source port rather than the listener's. The
-client then advertises only undialable addresses, and the punch never completes.
-Official js-libp2p also does not include a QUIC transport. The impl is kept in 
-the matrix so a future js-libp2p release can be retested by dropping the ignore. See
-[issue 2620](https://github.com/libp2p/js-libp2p/issues/2620) and
-[discussion 2388](https://github.com/libp2p/js-libp2p/discussions/2388).
+Every `js-v3.x` cell fails, so the cells are disabled in CI with the
+`test-ignore js-v3.x` filter. js-libp2p DCUtR completes the unilateral
+direct-dial upgrade but not the bilateral hole punch. The two transports fail at
+different points; drop the ignore to retest a future release.
+
+**TCP.** Node.js lacks `SO_REUSEPORT`, so each dial uses a fresh source port and
+identify drops every observed TCP address ([issue 2620](https://github.com/libp2p/js-libp2p/issues/2620)). The client
+advertises only undialable addresses, and DCUtR never starts the punch.
+
+**QUIC.** QUIC cells use the third-party `@chainsafe/libp2p-quic` transport.
+identify keeps the observed QUIC address, so the
+exchange runs end to end: `Connect`, `Sync`, a measured RTT, and a
+simultaneous-open dial from both sides but the dial still times out. The observed
+address stays unverified. js-libp2p confirms addresses through AutoNAT, which the
+client does not run, so DCUtR omits the address unless the client confirms it
+directly. Separately, `@chainsafe/libp2p-quic` dials from a separate socket, so
+the observed address points at the relay-dial socket rather than the listener.
+
+See [issue 2620](https://github.com/libp2p/js-libp2p/issues/2620) and [discussion 2388](https://github.com/libp2p/js-libp2p/discussions/2388).
 
 ## Running a single test
 

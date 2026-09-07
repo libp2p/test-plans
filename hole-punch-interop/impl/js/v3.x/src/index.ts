@@ -1,6 +1,7 @@
 // Hole-punch client for the test-plans interop suite. Runs as either the dialer
 // or the listener, orchestrated over redis.
 
+import { quic } from '@chainsafe/libp2p-quic'
 import { circuitRelayTransport } from '@libp2p/circuit-relay-v2'
 import { dcutr } from '@libp2p/dcutr'
 import { identify } from '@libp2p/identify'
@@ -43,11 +44,9 @@ async function main (): Promise<void> {
     throw new Error(`invalid MODE ${JSON.stringify(mode)}`)
   }
 
-  // js-libp2p supports DCUtR over TCP only, so a QUIC run cannot hole punch and
-  // fails here rather than starting a node that never completes.
-  if (transport === transportQUIC) {
-    throw new Error('QUIC hole punching is not supported by js-libp2p')
-  }
+  // QUIC cells use the third-party @chainsafe/libp2p-quic transport, since
+  // official js-libp2p does not provide one. Every js cell is known-failing; see
+  // the README for the per-transport failure paths.
 
   const deadline = AbortSignal.timeout(testTimeoutMillis)
 
@@ -59,7 +58,7 @@ async function main (): Promise<void> {
   log(`relay multiaddr: ${relayAddr}`)
   const relayMaddr = multiaddr(relayAddr)
 
-  const node = await newNode(mode)
+  const node = await newNode(mode, transport)
   log(`peer id: ${node.peerId.toString()}`)
   log(`listening on: ${node.getMultiaddrs().map(m => m.toString()).join(', ')}`)
 
@@ -157,11 +156,11 @@ function directConn (node: Libp2p, peerID: string): Connection | undefined {
     conn.remotePeer.toString() === peerID && !conn.remoteAddr.toString().includes('/p2p-circuit'))
 }
 
-async function newNode (mode: string): Promise<Libp2p<{ ping: Ping }>> {
-  const listen = [`/ip4/0.0.0.0/${transportTCP}/0`]
+async function newNode (mode: string, transport: string): Promise<Libp2p<{ ping: Ping }>> {
+  const listen = [transport === transportQUIC ? '/ip4/0.0.0.0/udp/0/quic-v1' : '/ip4/0.0.0.0/tcp/0']
   if (mode === modeListen) {
     // The listener is reached over the relay, so it listens for a circuit as
-    // well as on its own TCP address for the direct dial DCUtR opens.
+    // well as on its own address for the direct dial DCUtR opens.
     listen.push('/p2p-circuit')
   }
 
@@ -170,7 +169,7 @@ async function newNode (mode: string): Promise<Libp2p<{ ping: Ping }>> {
   return createLibp2p({
     addresses: { listen },
     transports: [
-      tcp({ dialOpts: socketOpts, listenOpts: socketOpts }),
+      transport === transportQUIC ? quic() : tcp({ dialOpts: socketOpts, listenOpts: socketOpts }),
       circuitRelayTransport()
     ],
     connectionEncrypters: [noise()],
