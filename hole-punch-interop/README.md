@@ -92,6 +92,19 @@ The relay is a shared component. `RELAY_IMPL` selects which one runs, defaulting
 
 Both listen on TCP and QUIC at once and push their `/p2p`-suffixed address twice to `RELAY_TCP_ADDRESS` and `RELAY_QUIC_ADDRESS`.
 
+## Known-failing implementations
+
+`js-v3.x` is in the matrix but every js cell fails, so CI ignores them
+(`test-ignore js-v3.x`). js-libp2p DCUtR performs only the unilateral direct-dial
+upgrade; bilateral hole punching over TCP does not work. Node.js does not support
+`SO_REUSEPORT`, so identify drops every observed TCP address and the
+simultaneous-open dial uses a fresh source port rather than the listener's. The
+client then advertises only undialable addresses, and the punch never completes.
+Official js-libp2p also does not include a QUIC transport. The impl is kept in 
+the matrix so a future js-libp2p release can be retested by dropping the ignore. See
+[issue 2620](https://github.com/libp2p/js-libp2p/issues/2620) and
+[discussion 2388](https://github.com/libp2p/js-libp2p/discussions/2388).
+
 ## Running a single test
 
 1. Build all containers using `make`

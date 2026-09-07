@@ -35,3 +35,5 @@ jobs:
           s3-secret-access-key: ${{ secrets.S3_LIBP2P_BUILD_CACHE_AWS_SECRET_ACCESS_KEY }}
           worker-count: 16
           relay-impl: ${{ matrix.relay-impl }}
+          # js cells are known to fail; see hole-punch-interop/README.md.
+          test-ignore: js-v3.x
