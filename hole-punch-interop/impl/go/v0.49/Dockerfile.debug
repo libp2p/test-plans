@@ -1,0 +1,5 @@
+FROM alpine
+WORKDIR /app
+
+RUN --mount=type=cache,target=/var/cache/apk apk add bind-tools jq curl tcpdump iproute2-tc
+COPY ./hole-punch-client /usr/bin/hole-punch-client

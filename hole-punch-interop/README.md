@@ -58,7 +58,7 @@ This includes the `docker-compose.yml` files of each individual run as well as l
 The docker-compose file uses 6 containers in total:
 
 - 1 redis container for orchestrating the test
-- 1 [relay](./rust-relay)
+- 1 [relay](./relay/rust)
 - 1 hole-punch client in `MODE=dial`
 - 1 hole-punch client in `MODE=listen`
 - 2 [routers](./router): 1 per client
@@ -75,6 +75,44 @@ In total, we have three networks:
 The two LANs host a router and a client each whereas the relay is connected (without a router) to the `internet` network.
 On startup of the clients, we add an `ip route` that redirects all traffic to the corresponding `router` container.
 The router container masquerades all traffic upon forwarding, see the [README](./router/README.md) for details.
+
+The `internet` network is pinned to a routable `/24` in `11.0.0.0/8`, one per test.
+go-libp2p starts its DCUtR service only once the host holds an address that `manet.IsPublicAddr` accepts, and a peer's observed address is its router's internet-side IP.
+Docker's default pool is RFC1918, which go filters out of its hole-punch candidates, so on the default pool go never begins a hole punch.
+The two LANs stay on the default pool because the peers genuinely are behind NAT there.
+
+## Relay implementation
+
+The relay is a shared component. `RELAY_IMPL` selects which one runs, defaulting to `rust`:
+
+| value  | directory                  |
+|--------|----------------------------|
+| `rust` | [`relay/rust`](./relay/rust) |
+| `go`   | [`relay/go`](./relay/go)     |
+
+Both listen on TCP and QUIC at once and push their `/p2p`-suffixed address twice to `RELAY_TCP_ADDRESS` and `RELAY_QUIC_ADDRESS`.
+
+## js-libp2p DCUtR (known-failing)
+
+Every `js-v3.x` cell fails, so the cells are disabled in CI with the
+`test-ignore js-v3.x` filter. js-libp2p DCUtR completes the unilateral
+direct-dial upgrade but not the bilateral hole punch. The two transports fail at
+different points; drop the ignore to retest a future release.
+
+**TCP.** Node.js lacks `SO_REUSEPORT`, so each dial uses a fresh source port and
+identify drops every observed TCP address ([issue 2620](https://github.com/libp2p/js-libp2p/issues/2620)). The client
+advertises only undialable addresses, and DCUtR never starts the punch.
+
+**QUIC.** QUIC cells use the third-party `@chainsafe/libp2p-quic` transport.
+identify keeps the observed QUIC address, so the
+exchange runs end to end: `Connect`, `Sync`, a measured RTT, and a
+simultaneous-open dial from both sides but the dial still times out. The observed
+address stays unverified. js-libp2p confirms addresses through AutoNAT, which the
+client does not run, so DCUtR omits the address unless the client confirms it
+directly. Separately, `@chainsafe/libp2p-quic` dials from a separate socket, so
+the observed address points at the relay-dial socket rather than the listener.
+
+See [issue 2620](https://github.com/libp2p/js-libp2p/issues/2620) and [discussion 2388](https://github.com/libp2p/js-libp2p/discussions/2388).
 
 ## Running a single test
 
