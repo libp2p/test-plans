@@ -1,0 +1,15 @@
+[package]
+name = "autonat-client"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.88"
+
+[dependencies]
+libp2p = { version = "0.56", features = ["tokio", "tcp", "quic", "noise", "yamux", "identify", "autonat", "macros"] }
+redis = { version = "0.27", default-features = false, features = ["tokio-comp"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "time"] }
+futures = "0.3"
+
+[[bin]]
+name = "autonat-client"
+path = "src/main.rs"
