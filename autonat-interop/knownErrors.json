@@ -1,3 +1,5 @@
 [
-  "^go-v0\\.49 x rust-v0\\.56 \\(quic\\)$"
+  "^go-v0\\.49 x rust-v0\\.56 \\(quic\\)$",
+  "^go-v0\\.49 x js-v3\\.x \\(quic\\)$",
+  "^js-v3\\.x x rust-v0\\.56 \\(quic\\)$"
 ]
