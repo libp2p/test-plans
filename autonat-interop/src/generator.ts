@@ -33,7 +33,7 @@ export async function buildTestSpecs(versions: Array<Version>, nameFilter: strin
     await db.close();
 
     return queryResults
-        .map(testCase => {
+        .map((testCase, index) => {
             let name = `${testCase.client} x ${testCase.server} (${testCase.transport})`;
 
             if (nameFilter && !name.includes(nameFilter)) {
@@ -43,12 +43,19 @@ export async function buildTestSpecs(versions: Array<Version>, nameFilter: strin
                 return null
             }
 
-            return buildSpec(name, testCase.clientImage, testCase.serverImage, testCase.transport)
+            return buildSpec(name, testCase.clientImage, testCase.serverImage, testCase.transport, index)
         })
         .filter(spec => spec !== null)
 }
 
-function buildSpec(name: string, clientImage: string, serverImage: string, transport: string): ComposeSpecification {
+function networkSubnet(index: number): string {
+    if (index >= 256 * 256) {
+        throw new Error(`test index ${index} exceeds the 11.0.0.0/8 subnet space`)
+    }
+    return `11.${Math.floor(index / 256)}.${index % 256}.0/24`
+}
+
+function buildSpec(name: string, clientImage: string, serverImage: string, transport: string, index: number): ComposeSpecification {
     return {
         name,
         services: {
@@ -89,11 +96,11 @@ function buildSpec(name: string, clientImage: string, serverImage: string, trans
             }
         },
         networks: {
-            // A single flat network. Both peers hold routable-within-network
-            // addresses and can dial each other directly, so the server's
-            // AutoNAT dial-back reaches the client. The private subnet is fine
-            // because the peers run AutoNAT with private addresses allowed.
-            autonat: {},
+            autonat: {
+                ipam: {
+                    config: [{ subnet: networkSubnet(index) }],
+                },
+            },
         }
     }
 }

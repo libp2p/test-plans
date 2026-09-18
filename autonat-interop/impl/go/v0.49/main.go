@@ -104,9 +104,7 @@ func run() error {
 	log.Printf("peer id: %s", h.ID())
 	log.Printf("listening on: %v", h.Addrs())
 
-	// AllowPrivateAddrs lets both the request and the dial-back use the private
-	// addresses the peers hold on the flat test network.
-	an, err := autonatv2.New(dialer, autonatv2.AllowPrivateAddrs)
+	an, err := autonatv2.New(dialer)
 	if err != nil {
 		return fmt.Errorf("creating autonat: %w", err)
 	}
