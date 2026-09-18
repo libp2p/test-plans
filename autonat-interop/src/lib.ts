@@ -24,11 +24,13 @@ export type CellRender = (a: string, b: string, line: ResultLine) => string;
  *
  * This is designed to let future implementers add more complex ouput interpretation, with nested tables, etc.
  */
-export const defaultCellRender: CellRender = (a, b, line) => {
+export const makeDefaultCellRender = (knownErrors: RegExp | null = null): CellRender => (a, b, line) => {
   let result = ":red_circle:";
 
   if (line.outcome === "success") {
     result = ":green_circle:";
+  } else if (knownErrors !== null && knownErrors.test(line.name)) {
+    result = ":yellow_circle:";
   }
 
   if (process.env.RUN_URL) {
@@ -37,6 +39,8 @@ export const defaultCellRender: CellRender = (a, b, line) => {
 
   return result;
 };
+
+export const defaultCellRender: CellRender = makeDefaultCellRender();
 
 export const load = (path: string): ResultFile => {
   return csv.parse(fs.readFileSync(path, "utf8"), {

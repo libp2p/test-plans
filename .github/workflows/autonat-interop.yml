@@ -1,0 +1,28 @@
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'autonat-interop/**'
+  push:
+    branches:
+      - "master"
+    paths:
+      - 'autonat-interop/**'
+
+name: libp2p autonat interop test
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  run-autonat-interop:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/run-interop-autonat-test
+        with:
+          s3-cache-bucket: ${{ vars.S3_LIBP2P_BUILD_CACHE_BUCKET_NAME }}
+          s3-access-key-id: ${{ vars.S3_LIBP2P_BUILD_CACHE_AWS_ACCESS_KEY_ID }}
+          s3-secret-access-key: ${{ secrets.S3_LIBP2P_BUILD_CACHE_AWS_SECRET_ACCESS_KEY }}
+          worker-count: 8
