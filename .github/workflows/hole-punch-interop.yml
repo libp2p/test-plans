@@ -18,12 +18,14 @@ concurrency:
 jobs:
   run-hole-punch-interop:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        relay-impl: [rust, go]
 # Uncomment to test for flakiness.
-#    strategy:
-#      matrix:
 #        dim1: ['a', 'b', 'c', 'd', 'e']
 #        dim2: [1, 2, 3, 4, 5]
-#      fail-fast: false
+    name: run-hole-punch-interop (${{ matrix.relay-impl }} relay)
     steps:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/run-interop-hole-punch-test
@@ -32,3 +34,4 @@ jobs:
           s3-access-key-id: ${{ vars.S3_LIBP2P_BUILD_CACHE_AWS_ACCESS_KEY_ID }}
           s3-secret-access-key: ${{ secrets.S3_LIBP2P_BUILD_CACHE_AWS_SECRET_ACCESS_KEY }}
           worker-count: 16
+          relay-impl: ${{ matrix.relay-impl }}

@@ -19,3 +19,17 @@ const line = lastStdoutLine(exampleStdout, "dialer", "rust-v0_52_x_rust-v0_52__q
 if (line != `{"rtt_to_holepunched_peer_millis":201}`) {
     throw new Error("Unexpected stdout")
 }
+
+// Docker Compose v2 uses the short `<service>-1` prefix and adds ANSI codes to
+// the exit notice.
+let v2Stdout = `Attaching to dialer-1, dialer_router-1, listener-1, listener_router-1, redis-1, relay-1
+redis-1  | 1:M 28 Aug 2026 11:11:18.675 * Ready to accept connections tcp
+dialer-1           | {"rtt_to_holepunched_peer_millis":200}
+\x1b[Kdialer-1 exited with code 0
+`;
+
+const v2Line = lastStdoutLine(v2Stdout, "dialer", "go-v0_49_x_go-v0_49__tcp_");
+
+if (v2Line != `{"rtt_to_holepunched_peer_millis":200}`) {
+    throw new Error("Unexpected v2 stdout: " + v2Line)
+}
