@@ -27,6 +27,10 @@ const listenClientPeerIDKey = 'LISTEN_CLIENT_PEER_ID'
 // down at 60s, so the client exits first with a status it can attribute.
 const testTimeoutMillis = 55_000
 
+// pollIntervalMillis is the wait between checks of the connection state while
+// the dialer and listener poll for a reservation or a direct connection.
+const pollIntervalMillis = 50
+
 const transportTCP = 'tcp'
 const transportQUIC = 'quic'
 const modeListen = 'listen'
@@ -129,7 +133,7 @@ async function waitForReservation (node: Libp2p, deadline: AbortSignal): Promise
       return
     }
     throwIfAborted(deadline, 'timed out waiting for a relay reservation')
-    await sleep(50)
+    await sleep(pollIntervalMillis)
   }
 }
 
@@ -142,7 +146,7 @@ async function waitForDirectConn (node: Libp2p, peerID: string, deadline: AbortS
       return direct
     }
     throwIfAborted(deadline, 'timed out waiting for a direct connection')
-    await sleep(50)
+    await sleep(pollIntervalMillis)
   }
 }
 
