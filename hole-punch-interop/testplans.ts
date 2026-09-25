@@ -68,7 +68,13 @@ import path from "path";
     }
 
     let routerImageId = JSON.parse(await fs.readFile(path.join(".", "router", "image.json"), "utf-8")).imageID;
-    let relayImageId = JSON.parse(await fs.readFile(path.join(".", "rust-relay", "image.json"), "utf-8")).imageID;
+
+    // The relay is a shared component. RELAY_IMPL selects which one to run,
+    // defaulting to the rust relay.
+    const relayImpl = process.env.RELAY_IMPL || "rust";
+    const relayDir = path.join("relay", relayImpl === "go" ? "go" : "rust");
+    console.log(`Using ${relayImpl} relay`)
+    let relayImageId = JSON.parse(await fs.readFile(path.join(".", relayDir, "image.json"), "utf-8")).imageID;
 
     const routerDelay = 100;
     const relayDelay = 25;
