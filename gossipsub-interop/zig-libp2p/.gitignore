@@ -1,0 +1,4 @@
+gossipsub-interop/zig-libp2p/.zig-cache/
+zig-pkg/
+.zig-cache/
+zig-out/
