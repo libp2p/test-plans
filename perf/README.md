@@ -108,4 +108,5 @@ Given you have provisioned your infrastructure, you can now build and run the li
                }
                ```
 2. For a new implementation, in [`impl/Makefile` include your implementation in the `all` target.](./impl/Makefile#L7)
-3. For a new version, reference version in [`runner/src/versions.ts`](./runner/src/versions.ts#L7-L43).
+3. For a new version, add an entry to [`runner/versionsInput.json`](./runner/versionsInput.json) and extend the `implementation` union in [`runner/src/versions.ts`](./runner/src/versions.ts) if needed.
+4. When adding a **new implementation name** (a new top-level folder under `impl/`), add that name to the `choices` list for `--test-filter` in [`runner/src/index.ts`](./runner/src/index.ts). The runner uses yargs with a fixed allow-list; omitting this causes `--test-filter <your-impl>` to fail even if the implementation appears in `versionsInput.json`.
