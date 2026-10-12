@@ -99,9 +99,12 @@ Every `js-v3.x` cell fails, so the cells are disabled in CI with the
 direct-dial upgrade but not the bilateral hole punch. The two transports fail at
 different points; drop the ignore to retest a future release.
 
-**TCP.** Node.js lacks `SO_REUSEPORT`, so each dial uses a fresh source port and
-identify drops every observed TCP address ([issue 2620](https://github.com/libp2p/js-libp2p/issues/2620)). The client
-advertises only undialable addresses, and DCUtR never starts the punch.
+**TCP.** `@libp2p/tcp` dials from a fresh ephemeral source port rather than its
+listen port, so identify drops every observed TCP address ([issue 2620](https://github.com/libp2p/js-libp2p/issues/2620)). The client
+advertises only undialable addresses, and DCUtR never starts the punch. Node
+exposes `SO_REUSEPORT` for TCP as of v24.19.0, through `net.BoundSocket` on both
+the listener and the connection source binding, so dialling from the listen port
+is now possible, pending `@libp2p/tcp` adopting it in issue 2620.
 
 **QUIC.** QUIC cells use the third-party `@chainsafe/libp2p-quic` transport.
 identify keeps the observed QUIC address, so the
