@@ -30,8 +30,9 @@ jobs:
       - uses: actions/checkout@v3
       - uses: ./.github/actions/run-interop-hole-punch-test
         with:
-          s3-cache-bucket: ${{ vars.S3_LIBP2P_BUILD_CACHE_BUCKET_NAME }}
-          s3-access-key-id: ${{ vars.S3_LIBP2P_BUILD_CACHE_AWS_ACCESS_KEY_ID }}
-          s3-secret-access-key: ${{ secrets.S3_LIBP2P_BUILD_CACHE_AWS_SECRET_ACCESS_KEY }}
+          # PR code must not receive long-lived cache credentials.
+          s3-cache-bucket: ${{ github.event_name != 'pull_request' && vars.S3_LIBP2P_BUILD_CACHE_BUCKET_NAME || '' }}
+          s3-access-key-id: ${{ github.event_name != 'pull_request' && vars.S3_LIBP2P_BUILD_CACHE_AWS_ACCESS_KEY_ID || '' }}
+          s3-secret-access-key: ${{ github.event_name != 'pull_request' && secrets.S3_LIBP2P_BUILD_CACHE_AWS_SECRET_ACCESS_KEY || '' }}
           worker-count: 16
           relay-impl: ${{ matrix.relay-impl }}
