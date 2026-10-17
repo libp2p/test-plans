@@ -1,0 +1,22 @@
+# Echo Protocol Interop - Implementation Definitions
+
+implementations:
+  # JavaScript Echo Server
+  - id: js-libp2p-echo-v1.x
+    source:
+      type: local
+      path: images/js-libp2p/v1.x
+      dockerfile: Dockerfile
+    transports: [tcp]
+    secureChannels: [noise]
+    muxers: [mplex, yamux]
+
+  # Python Echo Client  
+  - id: py-libp2p-echo-v0.x
+    source:
+      type: local
+      path: images/py-libp2p/v0.x
+      dockerfile: Dockerfile
+    transports: [tcp]
+    secureChannels: [noise]
+    muxers: [mplex, yamux]

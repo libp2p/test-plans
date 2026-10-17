@@ -1,0 +1,21 @@
+{
+  "name": "js-libp2p-echo-server",
+  "version": "1.0.0",
+  "description": "JS-libp2p Echo Server for interoperability tests",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "keywords": [
+    "libp2p",
+    "interop",
+    "echo"
+  ],
+  "author": "libp2p team",
+  "license": "MIT",
+  "dependencies": {
+    "libp2p": "^3.1.3",
+    "redis": "^5.10.0"
+  }
+}
