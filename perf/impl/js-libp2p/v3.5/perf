@@ -1,0 +1,45 @@
+#!/bin/bash
+
+# In case this script is `kill`ed, `kill` its child process, namely the `node`
+# process below.
+cleanup() {
+    kill $node_pid
+}
+trap cleanup EXIT TERM
+
+# Find the path to the Node.js executable
+node_path=$(which node)
+
+run_server=false
+server_address=""
+upload_bytes=0
+download_bytes=0
+transport=""
+
+# Parse named parameters manually
+for ((i = 1; i <= $#; i++)); do
+    if [ "${!i}" == "--server-address" ]; then
+        server_address="${@:i+1:1}"
+    fi
+    if [ "${!i}" == "--upload-bytes" ]; then
+        upload_bytes="${@:i+1:1}"
+    fi
+    if [ "${!i}" == "--download-bytes" ]; then
+        download_bytes="${@:i+1:1}"
+    fi
+    if [ "${!i}" == "--transport" ]; then
+        transport="${@:i+1:1}"
+    fi
+    if [ "${!i}" == "--run-server" ]; then
+        run_server=true
+    fi
+done
+
+# Run perf
+node $(dirname "$0")/index.js --run-server=$run_server --server-address=$server_address --upload-bytes=$upload_bytes --download-bytes=$download_bytes --transport=$transport &
+
+node_pid=$!
+
+# Wait for `node_pid` to finish, or for it to be `kill`ed by the above
+# `cleanup`.
+wait $node_pid
