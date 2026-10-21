@@ -246,6 +246,72 @@ def partial_message_fanout_scenario(
     return instructions
 
 
+def topic_streams_hol_scenario(
+    disable_gossip: bool, node_count: int
+) -> List[ScriptInstruction]:
+    """Publish a large message then a small one on different topics.
+
+    With topic streams, the small message should not be head-of-line blocked
+    behind the large one (receiver log timestamps: small before large).
+    Without topic streams, the small message arrives only after the large one.
+    """
+    if node_count < 2:
+        raise ValueError("topic-streams-hol requires at least 2 nodes")
+
+    instructions: List[ScriptInstruction] = []
+    gs_params = GossipSubParams()
+    if disable_gossip:
+        gs_params.Dlazy = 0
+        gs_params.GossipFactor = 0
+    instructions.extend(spread_heartbeat_delay(node_count, gs_params))
+
+    number_of_conns_per_node = min(20, node_count - 1)
+    instructions.extend(random_network_mesh(node_count, number_of_conns_per_node))
+
+    topic_large = "topic-large"
+    topic_small = "topic-small"
+    instructions.append(script_instruction.SubscribeToTopic(topicID=topic_large))
+    instructions.append(script_instruction.SubscribeToTopic(topicID=topic_small))
+
+    # Allow mesh formation / topic-stream negotiation before publishing.
+    elapsed_seconds = 30
+    instructions.append(script_instruction.WaitUntil(elapsedSeconds=elapsed_seconds))
+
+    publisher = 0
+    large_message_id = 1
+    small_message_id = 2
+    large_size = 1 * 1024 * 1024  # 1 MiB
+    small_size = 1 * 1024  # 1 KiB
+
+    # Back-to-back publishes: large first, then small. Implementations enqueue
+    # quickly so both are in flight concurrently on the wire when topic streams
+    # (or equivalent multiplexing) are available.
+    instructions.append(
+        script_instruction.IfNodeIDEquals(
+            nodeID=publisher,
+            instruction=script_instruction.Publish(
+                messageID=large_message_id,
+                topicID=topic_large,
+                messageSizeBytes=large_size,
+            ),
+        )
+    )
+    instructions.append(
+        script_instruction.IfNodeIDEquals(
+            nodeID=publisher,
+            instruction=script_instruction.Publish(
+                messageID=small_message_id,
+                topicID=topic_small,
+                messageSizeBytes=small_size,
+            ),
+        )
+    )
+
+    elapsed_seconds += 60
+    instructions.append(script_instruction.WaitUntil(elapsedSeconds=elapsed_seconds))
+    return instructions
+
+
 def scenario(
     scenario_name: str, node_count: int, disable_gossip: bool
 ) -> ExperimentParams:
@@ -333,6 +399,9 @@ def scenario(
                     node_count, num_messages, message_size, [topic_a, topic_b]
                 )
             )
+
+        case "topic-streams-hol":
+            instructions = topic_streams_hol_scenario(disable_gossip, node_count)
 
         case _:
             raise ValueError(f"Unknown scenario name: {scenario_name}")
