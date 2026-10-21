@@ -1,0 +1,7 @@
+# For now, not committing image.json files
+image.json
+
+results.csv
+runs/
+
+node_modules/
