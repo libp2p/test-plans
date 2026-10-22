@@ -50,7 +50,7 @@ nodes with default GossipSub parameters and sending large messages to a network
 of 700 nodes:
 
 ```bash
-uv run run.py --node_count 700 --composition "rust-and-go" --scenario "subnet-blob-msg"
+uv run run.py --node_count 700 --composition rust go --scenario "subnet-blob-msg"
 ```
 
 The definitions of the experiment, composition, and scenarios are defined in `experiment.py`.
@@ -59,7 +59,7 @@ After running an experiment all the results and configuration needed to
 reproduce the test are saved in an output folder which, by default, is named by
 the specific scenario, node count, and composition. For the above
 example, the output folder is
-`subnet-blob-msg-700-rust-and-go.data`. This output folder contains the following files:
+`subnet-blob-msg-700-rust-go.data`. This output folder contains the following files:
 
 - shadow.yaml: The Shadow config defining the binaries and network.
 - graph.gml: The graph of the network links for Shadow.
@@ -74,14 +74,14 @@ To build the implementation reference `./test-specs/implementation.md`.
 
 After implementing it, make sure to add build commands in the Makefile's `binaries` recipe.
 
-Finally, add it to the `composition` function in `experiment.py`.
+Finally, add an entry to the `IMPLEMENTATIONS` dict in `experiment.py` mapping a short name (e.g. `nim`) to the binary path. It then becomes available to `--composition` automatically.
 
 ## Examples
 
 Minimal test of partial messages
 
 ```bash
-uv run run.py --node_count 2 --composition "all-go" --scenario "partial-messages" && uv run checks/partial_messages.py latest/
+uv run run.py --node_count 2 --composition go --scenario "partial-messages" && uv run checks/partial_messages.py latest/
 ```
 
 That command runs the shadow simulation and then verifies the stdout logs have the expected message.

@@ -33,6 +33,10 @@ inputs:
     description: "How many workers to use for the test"
     required: false
     default: "2"
+  relay-impl:
+    description: "Which relay implementation to run for every cell: rust or go"
+    required: false
+    default: "rust"
 runs:
   using: "composite"
   steps:
@@ -119,6 +123,7 @@ runs:
       working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
       env:
         WORKER_COUNT: ${{ inputs.worker-count }}
+        RELAY_IMPL: ${{ inputs.relay-impl }}
         EXTRA_VERSION: ${{ inputs.extra-versions }}
         NAME_FILTER: ${{ inputs.test-filter }}
         NAME_IGNORE: ${{ inputs.test-ignore }}
@@ -153,7 +158,7 @@ runs:
     - uses: actions/upload-artifact@v4
       if: ${{ always() }}
       with:
-        name: test-plans-output
+        name: test-plans-output-${{ inputs.relay-impl }}-relay
         path: |
           ${{ steps.find-workdir.outputs.WORK_DIR }}/results.csv
           ${{ steps.find-workdir.outputs.WORK_DIR }}/dashboard.md

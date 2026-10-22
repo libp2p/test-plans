@@ -28,7 +28,15 @@ def main():
     parser.add_argument(
         "--scenario", type=str, required=False, default="subnet-blob-msg"
     )
-    parser.add_argument("--composition", type=str, required=False, default="all-go")
+    parser.add_argument(
+        "--composition",
+        type=str,
+        nargs="+",
+        required=False,
+        default=["go"],
+        help="One or more implementation names (e.g. go rust nim jvm). "
+        "Nodes are split evenly across them.",
+    )
     parser.add_argument("--output_dir", type=str, required=False)
     args = parser.parse_args()
 
@@ -48,7 +56,8 @@ def main():
         import datetime
 
         timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-        args.output_dir = f"{args.scenario}-{args.node_count}-{args.composition}-{
+        composition_label = "-".join(args.composition)
+        args.output_dir = f"{args.scenario}-{args.node_count}-{composition_label}-{
             args.seed
         }-{timestamp}-{git_describe}.data"
 

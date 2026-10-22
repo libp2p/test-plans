@@ -1,19 +1,20 @@
 RUST_SUBDIRS := $(wildcard impl/rust/*/.)
 GO_SUBDIRS := $(wildcard impl/go/*/.)
+JS_SUBDIRS := $(wildcard impl/js/*/.)
+RELAY_SUBDIRS := $(wildcard relay/*/.)
 
-all: rust-relay router $(RUST_SUBDIRS) $(GO_SUBDIRS)
-rust-relay:
-	$(MAKE) -C rust-relay
+all: router $(RELAY_SUBDIRS) $(RUST_SUBDIRS) $(GO_SUBDIRS) $(JS_SUBDIRS)
 router:
 	$(MAKE) -C router
+$(RELAY_SUBDIRS):
+	$(MAKE) -C $@
 $(RUST_SUBDIRS):
 	$(MAKE) -C $@
 $(GO_SUBDIRS):
 	$(MAKE) -C $@
+$(JS_SUBDIRS):
+	$(MAKE) -C $@
 clean:
-	$(MAKE) -C rust-relay clean
-	$(MAKE) -C router clean
-	$(MAKE) -C $(RUST_SUBDIRS) clean
-	$(MAKE) -C $(GO_SUBDIRS) clean
+	for d in router $(RELAY_SUBDIRS) $(RUST_SUBDIRS) $(GO_SUBDIRS) $(JS_SUBDIRS); do $(MAKE) -C $$d clean; done
 
-.PHONY: rust-relay router all $(RUST_SUBDIRS) $(GO_SUBDIRS)
+.PHONY: router all $(RELAY_SUBDIRS) $(RUST_SUBDIRS) $(GO_SUBDIRS) $(JS_SUBDIRS)

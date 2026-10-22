@@ -47,7 +47,7 @@ npm run test -- --name-filter="go-v0.48 x rust-v0.56"
 **Skip tests** whose names match any pipe-separated substring:
 
 ```bash
-npm run test -- --name-ignore="jvm-v1.2 x zig|zig-v0.0.1 x jvm"
+npm run test -- --name-ignore="jvm-v1.3 x zig|zig-v0.0.1 x jvm"
 ```
 
 **Shard the matrix** (same idea as CI: both must be set):
