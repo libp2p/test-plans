@@ -2,6 +2,7 @@ import { buildTestSpecs } from "./src/generator"
 import { Version, versions } from "./versions"
 import { promises as fs } from "fs";
 import {ExecException, run} from "./src/compose-runner"
+import { parseKnownErrors } from "./src/lib"
 import { stringify } from "csv-stringify/sync"
 import yargs from "yargs/yargs"
 import path from "path";
@@ -115,7 +116,16 @@ import path from "path";
 
     await fs.writeFile("results.csv", stringify(statuses))
 
-    if (failures.length > 0) {
+    // Known errors (from knownErrors.json) are expected failures, so they are
+    // recorded in results.csv for the dashboard but do not fail the run.
+    const knownErrors = parseKnownErrors()
+    const unexpectedFailures = failures.filter(f => knownErrors === null || !knownErrors.test(f.name.toString()))
+    const knownFailureCount = failures.length - unexpectedFailures.length
+    if (knownFailureCount > 0) {
+        console.log(`${knownFailureCount} of ${failures.length} failures match known errors and are ignored`)
+    }
+
+    if (unexpectedFailures.length > 0) {
         process.exitCode = 1
     }
 

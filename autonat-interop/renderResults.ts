@@ -1,37 +1,4 @@
-import fs from 'fs'
-import { generateTable, load, makeDefaultCellRender, markdownTable } from './src/lib'
-
-// loadKnownErrorsFile reads the knownErrors.json regex list into a single
-// RegExp, or null when the file is absent, empty or explicitly ignored.
-function loadKnownErrorsFile(): RegExp | null {
-    if (process.argv.includes("--ignore-known-errors-file")) {
-        return null
-    }
-    const path = __dirname + "/knownErrors.json"
-    if (!fs.existsSync(path)) {
-        return null
-    }
-    const patterns: string[] = JSON.parse(fs.readFileSync(path, "utf8"))
-    if (patterns.length === 0) {
-        return null
-    }
-    return new RegExp(patterns.join("|"))
-}
-
-// parseKnownErrors merges the knownErrors.json file with any --known-errors
-// flag passed on the command line.
-function parseKnownErrors(): RegExp | null {
-    const flagIndex = process.argv.indexOf("--known-errors")
-    if (flagIndex === -1 || flagIndex + 1 >= process.argv.length) {
-        return loadKnownErrorsFile()
-    }
-    const flagPattern = process.argv[flagIndex + 1]
-    const fileRegex = loadKnownErrorsFile()
-    if (fileRegex === null) {
-        return new RegExp(flagPattern)
-    }
-    return new RegExp(`${fileRegex.source}|${flagPattern}`)
-}
+import { generateTable, load, makeDefaultCellRender, markdownTable, parseKnownErrors } from './src/lib'
 
 // Read results.csv
 export async function render() {

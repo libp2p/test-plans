@@ -1,5 +1,38 @@
 import * as csv from "csv-parse/sync";
 import fs from "fs";
+import path from "path";
+
+// loadKnownErrorsFile reads the knownErrors.json regex list into a single
+// RegExp, or null when the file is absent, empty or explicitly ignored.
+export function loadKnownErrorsFile(): RegExp | null {
+  if (process.argv.includes("--ignore-known-errors-file")) {
+    return null;
+  }
+  const knownErrorsPath = path.join(__dirname, "..", "knownErrors.json");
+  if (!fs.existsSync(knownErrorsPath)) {
+    return null;
+  }
+  const patterns: string[] = JSON.parse(fs.readFileSync(knownErrorsPath, "utf8"));
+  if (patterns.length === 0) {
+    return null;
+  }
+  return new RegExp(patterns.join("|"));
+}
+
+// parseKnownErrors merges the knownErrors.json file with any --known-errors
+// flag passed on the command line.
+export function parseKnownErrors(): RegExp | null {
+  const flagIndex = process.argv.indexOf("--known-errors");
+  if (flagIndex === -1 || flagIndex + 1 >= process.argv.length) {
+    return loadKnownErrorsFile();
+  }
+  const flagPattern = process.argv[flagIndex + 1];
+  const fileRegex = loadKnownErrorsFile();
+  if (fileRegex === null) {
+    return new RegExp(flagPattern);
+  }
+  return new RegExp(`${fileRegex.source}|${flagPattern}`);
+}
 
 export type ResultLine = {
   name: string;
