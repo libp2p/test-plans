@@ -58,7 +58,13 @@ async function main (): Promise<void> {
 
   const deadline = AbortSignal.timeout(testTimeoutMillis)
 
-  const rdb = createClient({ url: redisAddr })
+  const rdb = createClient({
+    url: redisAddr,
+    socket: {
+      connectTimeout: 1_000,
+      reconnectStrategy: false
+    }
+  })
   rdb.on('error', () => {})
   await connectRedis(rdb, deadline)
 
@@ -89,6 +95,10 @@ async function runServer (node: Libp2p, rdb: RedisClient, transport: string, dea
 
   await rdb.rPush(serverAddrKey, addr)
   log(`published server address to redis (key: ${serverAddrKey}): ${addr}`)
+
+  if (deadline.aborted) {
+    return
+  }
 
   await new Promise<void>((resolve) => {
     deadline.addEventListener('abort', () => { resolve() }, { once: true })
@@ -189,7 +199,7 @@ async function newNode (transport: string): Promise<Libp2p<{ autoNAT: AutoNATv2 
 }
 
 async function connectRedis (rdb: RedisClient, deadline: AbortSignal): Promise<void> {
-  while (true) {
+  while (!deadline.aborted) {
     try {
       await rdb.connect()
       return
