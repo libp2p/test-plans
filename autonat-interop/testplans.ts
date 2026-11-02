@@ -92,8 +92,9 @@ import path from "path";
 
                 if (report != null && !report.reachable) {
                     // The client exits non-zero on a negative verdict, so a
-                    // returned report is expected to be reachable. Warn if not.
-                    console.warn(`Expected a reachable verdict for ${name} but the client reported unreachable`)
+                    // returned report is expected to be reachable. Treat an
+                    // explicit unreachable verdict as a failure.
+                    throw new Error(`Expected a reachable verdict for ${name} but the client reported unreachable`)
                 }
 
                 statuses.push([name, "success"])
@@ -113,6 +114,10 @@ import path from "path";
     }
 
     await fs.writeFile("results.csv", stringify(statuses))
+
+    if (failures.length > 0) {
+        process.exitCode = 1
+    }
 
     console.log("Run complete")
 })()
