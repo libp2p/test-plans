@@ -126,7 +126,7 @@ runs:
         EXTRA_VERSION: ${{ inputs.extra-versions }}
         NAME_FILTER: ${{ inputs.test-filter }}
         NAME_IGNORE: ${{ inputs.test-ignore }}
-      run: npm run test -- --extra-version=$EXTRA_VERSION --name-filter=$NAME_FILTER --name-ignore=$NAME_IGNORE
+      run: npm run test -- --extra-version=$EXTRA_VERSION --name-filter="$NAME_FILTER" --name-ignore="$NAME_IGNORE"
       shell: bash
 
     - name: Print the results
@@ -136,9 +136,11 @@ runs:
 
     - name: Render results
       working-directory: ${{ steps.find-workdir.outputs.WORK_DIR }}
+      env:
+        KNOWN_ERRORS: ${{ inputs.known-errors }}
       run: |
-        if [ -n "${{ inputs.known-errors }}" ]; then
-          npm run renderResults -- --known-errors "${{ inputs.known-errors }}" > ./dashboard.md
+        if [[ -n "$KNOWN_ERRORS" ]]; then
+          npm run renderResults -- --known-errors "$KNOWN_ERRORS" > ./dashboard.md
         else
           npm run renderResults > ./dashboard.md
         fi

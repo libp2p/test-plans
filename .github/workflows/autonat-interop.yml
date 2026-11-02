@@ -3,11 +3,15 @@ on:
   pull_request:
     paths:
       - 'autonat-interop/**'
+      - '.github/actions/run-interop-autonat-test/**'
+      - '.github/workflows/autonat-interop.yml'
   push:
     branches:
       - "master"
     paths:
       - 'autonat-interop/**'
+      - '.github/actions/run-interop-autonat-test/**'
+      - '.github/workflows/autonat-interop.yml'
 
 name: libp2p autonat interop test
 
