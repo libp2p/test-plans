@@ -17,6 +17,10 @@ export const versions: Array<Version> = [
         id: "go-v0.49",
         transports: ["tcp", "quic"]
     } as Version,
+    {
+        id: "js-v3.x",
+        transports: ["tcp", "quic"]
+    } as Version,
 ].map((v: Version) => (typeof v.containerImageID === "undefined" ? ({ ...v, containerImageID: readImageId(canonicalImagePath(v.id)) }) : v))
 
 function readImageId(path: string): string {
