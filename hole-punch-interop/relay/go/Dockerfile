@@ -1,0 +1,19 @@
+# syntax=docker/dockerfile:1
+
+FROM golang:1.26-alpine AS builder
+
+WORKDIR /app/
+
+COPY go.mod .
+COPY go.sum .
+RUN go env -w GOCACHE=/go-cache
+RUN --mount=type=cache,target=/go-cache go mod download
+COPY main.go .
+RUN --mount=type=cache,target=/go-cache CGO_ENABLED=0 go build -o /relay .
+
+FROM alpine
+WORKDIR /app
+
+RUN --mount=type=cache,target=/var/cache/apk apk add iproute2-tc
+COPY --from=builder /relay /usr/bin/relay
+CMD ["/usr/bin/relay"]
