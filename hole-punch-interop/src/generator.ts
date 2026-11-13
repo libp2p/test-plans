@@ -94,7 +94,8 @@ function buildSpec(name: string, dialerImage: string, listenerImage: string, rou
                 image: routerImageId,
                 init: true,
                 environment: {
-                    DELAY_MS: routerDelay
+                    DELAY_MS: routerDelay,
+                    INTERNET_SUBNET: internetSubnet(name)
                 },
                 networks: {
                     lan_dialer: {},
@@ -122,7 +123,8 @@ function buildSpec(name: string, dialerImage: string, listenerImage: string, rou
                 image: routerImageId,
                 init: true,
                 environment: {
-                    DELAY_MS: routerDelay
+                    DELAY_MS: routerDelay,
+                    INTERNET_SUBNET: internetSubnet(name)
                 },
                 networks: {
                     lan_listener: {},
@@ -167,7 +169,28 @@ function buildSpec(name: string, dialerImage: string, listenerImage: string, rou
         networks: {
             lan_dialer: {},
             lan_listener: {},
-            internet: {},
+            // The internet is pinned to routable space. go-libp2p starts its
+            // DCUtR service only once it holds a manet.IsPublicAddr address, and
+            // a peer's observed address is its router's internet-side IP. Docker's
+            // default pool is RFC1918, which go filters out, so hole punching
+            // never begins. The LANs stay on the default pool because the peers
+            // genuinely are behind NAT there.
+            internet: { ipam: { config: [{ subnet: internetSubnet(name) }] } },
         }
     }
+}
+
+// internetSubnet derives a routable /24 in 11.0.0.0/8 for a test's internet
+// network, unique per test name so concurrent runs do not collide.
+//
+// 11.0.0.0/8 is allocated but not announced, so nothing a runner needs to reach
+// lives there.
+function internetSubnet(name: string): string {
+    let hash = 0
+    for (let i = 0; i < name.length; i++) {
+        hash = (hash * 31 + name.charCodeAt(i)) & 0xffff
+    }
+    const b = (hash >> 8) & 0xff
+    const c = hash & 0xff
+    return `11.${b}.${c}.0/24`
 }

@@ -68,12 +68,27 @@ interface Report {
 }
 
 export function lastStdoutLine(stdout: string, component: string, composeName: string): string {
-    const allComponentStdout = stdout.split("\n").filter(line => line.startsWith(`${composeName}-${component}-1`));
+    // Docker Compose v1 prefixed log lines with `<project>-<service>-1`, v2 uses
+    // the short `<service>-1`. Accept either, and drop the ANSI control codes v2
+    // adds. Lines without a `|` (the "Attaching" and "exited with code" notices)
+    // carry no container output and are skipped, so the last remaining line is
+    // the component's final stdout.
+    const stripAnsi = (line: string) => line.replace(/\[[0-9;?]*[A-Za-z]/g, "");
+    const longPrefix = `${composeName}-${component}-1`;
+    const shortPrefix = `${component}-1`;
 
-    const exitMessage = allComponentStdout.pop();
-    const lastLine = allComponentStdout.pop();
+    const componentLines = stdout
+        .split("\n")
+        .map(stripAnsi)
+        .filter(line => {
+            const pipe = line.indexOf("|");
+            if (pipe === -1) {
+                return false;
+            }
+            const prefix = line.slice(0, pipe).trim();
+            return prefix === longPrefix || prefix === shortPrefix;
+        })
+        .map(line => line.slice(line.indexOf("|") + 1).trim());
 
-    const [front, componentStdout] = lastLine.split("|");
-
-    return componentStdout.trim()
+    return componentLines[componentLines.length - 1] ?? "";
 }
