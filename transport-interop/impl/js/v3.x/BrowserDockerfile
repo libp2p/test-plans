@@ -7,6 +7,8 @@ WORKDIR /app
 # Options: chromium, firefox, webkit
 ARG BROWSER=chromium
 ENV BROWSER=${BROWSER}
+ARG CHROMIUM_FLAGS=""
+ENV CHROMIUM_FLAGS=${CHROMIUM_FLAGS}
 
 # hack to ensure the correct browser version is installed while building the
 # container and not during the test run which slows everything down

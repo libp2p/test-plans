@@ -192,6 +192,44 @@
     ]
   },
   {
+    "id": "chromium-js-v3.x",
+    "containerImageID": "ghcr.io/libp2p/test-plans/transport-interop/js-v3.x-chromium",
+    "transports": [
+      {
+        "name": "webtransport",
+        "onlyDial": true
+      },
+      {
+        "name": "wss",
+        "onlyDial": true
+      },
+      {
+        "name": "webrtc-direct",
+        "onlyDial": true
+      },
+      "webrtc"
+    ],
+    "secureChannels": [
+      "noise"
+    ],
+    "muxers": [
+      "mplex",
+      "yamux"
+    ]
+  },
+  {
+    "id": "chromium-js-v3.x-no-sdp-mangle-ufrag",
+    "containerImageID": "ghcr.io/libp2p/test-plans/transport-interop/js-v3.x-chromium-no-sdp-mangle-ufrag",
+    "transports": [
+      {
+        "name": "webrtc-direct",
+        "onlyDial": true
+      }
+    ],
+    "secureChannels": [],
+    "muxers": []
+  },
+  {
     "id": "firefox-js-v1.x",
     "containerImageID": "ghcr.io/libp2p/test-plans/transport-interop/js-v1.x-firefox",
     "transports": [
