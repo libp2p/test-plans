@@ -319,6 +319,20 @@
     ]
   },
   {
+    "id": "minip2p-v0.11",
+    "containerImageID": "ghcr.io/libp2p/test-plans/transport-interop/minip2p-v0.11",
+    "transports": [
+      "tcp",
+      "quic-v1"
+    ],
+    "secureChannels": [
+      "noise"
+    ],
+    "muxers": [
+      "yamux"
+    ]
+  },
+  {
     "id": "js-v1.x",
     "containerImageID": "ghcr.io/libp2p/test-plans/transport-interop/js-v1.x",
     "transports": [
