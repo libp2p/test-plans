@@ -1,5 +1,5 @@
 image_name := minip2p-v0.11
-commitSha := 960193187315bd3af628fa8d243355941ce6d6d7
+commitSha := 2877abdaf7595c8b492b78850ed15506016099b5
 
 all: image.json
 
@@ -12,7 +12,7 @@ minip2p-${commitSha}: minip2p-${commitSha}.zip
 	unzip -o minip2p-${commitSha}.zip
 
 minip2p-${commitSha}.zip:
-	wget -O $@ "https://github.com/yashksaini-coder/minip2p/archive/${commitSha}.zip"
+	wget -O $@ "https://github.com/deepso7/minip2p/archive/${commitSha}.zip"
 
 clean:
 	rm -f image.json
